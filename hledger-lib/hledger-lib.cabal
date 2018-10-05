@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: f3cc307bb564ecec4c16143a1d254c4cbbbee1483eb7860c711e3c4c5ed46431
+-- hash: 39b3061b2c59fc695920e38406c8a9d3b233e87720d731cfb6db20ef4a31da4e
 
 name:           hledger-lib
 version:        1.11
