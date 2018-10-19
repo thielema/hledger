@@ -8,7 +8,7 @@ typically adding automated postings to them.
 
 -}
 module Hledger.Data.TransactionModifier (
-    transactionModifierToFunction
+   transactionApplyTransactionModifiers
 )
 where
 
@@ -23,6 +23,7 @@ import Hledger.Data.Dates
 import Hledger.Data.Amount
 import Hledger.Data.Transaction
 import Hledger.Query
+import Hledger.Data.Posting (commentAddTag)
 import Hledger.Utils.UTF8IOCompat (error')
 -- import Hledger.Utils.Debug
 
@@ -31,6 +32,19 @@ import Hledger.Utils.UTF8IOCompat (error')
 -- >>> import Hledger.Data.Posting
 -- >>> import Hledger.Data.Transaction
 -- >>> import Hledger.Data.Journal
+
+-- | Apply the given transaction modifier rules (which may or may not affect it)
+-- to the transaction. (In right to left order ?)
+-- If the transaction was modified, a modified: tag is added.
+transactionApplyTransactionModifiers :: [TransactionModifier] -> Transaction -> Transaction 
+transactionApplyTransactionModifiers tmodrules t = t''
+  where
+    t' = foldr (flip (.) . transactionModifierToFunction) id tmodrules t
+    -- PERF: to see if any modifier had an effect, we compare txns. Inefficient ?
+    t'' | t' == t   = t'
+        | otherwise = t'{tcomment = tcomment t' `commentAddTag` ("modified","")
+                        ,ttags    = ("modified","") : ttags t'
+                        } 
 
 -- | Converts a 'TransactionModifier' to a 'Transaction'-transforming function,
 -- which applies the modification(s) specified by the TransactionModifier.
@@ -55,12 +69,16 @@ import Hledger.Utils.UTF8IOCompat (error')
 --
 transactionModifierToFunction :: TransactionModifier -> (Transaction -> Transaction)
 transactionModifierToFunction mt = 
-  \t@(tpostings -> ps) -> txnTieKnot t{ tpostings=generatePostings ps } -- TODO add modifier txn comment/tags ?
+  \t@(tpostings -> ps) -> txnTieKnot t{ tpostings=generatePostings ps }
   where
     q = simplifyQuery $ tmParseQuery mt (error' "a transaction modifier's query cannot depend on current date")
-    mods = map tmPostingToFunction $ tmpostings mt
-    generatePostings ps = [p' | p <- ps
-                              , p' <- if q `matchesPosting` p then p:[ m p | m <- mods] else [p]]
+    newpfns = map tmPostingToFunction $ tmpostings mt
+    generatePostings ps = 
+      [p' | p <- ps
+          , p' <- if q `matchesPosting` p 
+                  then p : [ newp p | newp <- newpfns] 
+                  else [p]
+      ]
     
 -- | Parse the 'Query' from a 'TransactionModifier's 'tmquerytxt', 
 -- and return it as a function requiring the current date. 
@@ -107,14 +125,19 @@ postingScale p =
 
 -- | Converts a 'TransactionModifier''s posting to a 'Posting'-generating function,
 -- which will be used to make a new posting based on the old one (an "automated posting").
+-- The new posting will have two tags added: a normal generated-posting: tag and
+-- a hidden _generated-posting: tag which does not appear in the comment. 
 tmPostingToFunction :: Posting -> (Posting -> Posting)
 tmPostingToFunction p' = 
   \p -> renderPostingCommentDates $ p'
       { pdate = pdate p
       , pdate2 = pdate2 p
       , pamount = amount' p
-      , pcomment     = (if T.null $ pcomment p then "\n" else pcomment p) <> "modified:"
-      , ptags        = ("modified", "") : ptags p
+      -- refactor
+      , pcomment = pcomment p `commentAddTag` ("generated-posting","")
+      , ptags    = ("generated-posting", "") :
+                   ("_generated-posting","") : 
+                   ptags p
       }
   where
     amount' = case postingScale p' of

@@ -22,7 +22,7 @@ import Text.Printf
 import Hledger.Data.Types
 import Hledger.Data.Dates
 import Hledger.Data.Amount
-import Hledger.Data.Posting (post)
+import Hledger.Data.Posting (post, commentAddTag, commentAddTagNextLine)
 import Hledger.Data.Transaction
 import Hledger.Utils.UTF8IOCompat (error')
 -- import Hledger.Utils.Debug
@@ -67,9 +67,12 @@ instance Show PeriodicTransaction where
 
 --nullperiodictransaction is defined in Types.hs
 
--- | Generate transactions from 'PeriodicTransaction' within a 'DateSpan'
---
+-- | Generate transactions from 'PeriodicTransaction' within a 'DateSpan'.
 -- Note that new transactions require 'txnTieKnot' post-processing.
+-- The new transactions will have three tags added: 
+-- - a recur:PERIODICEXPR tag whose value is the generating periodic expression
+-- - a generated-transaction: tag
+-- - a hidden _generated-transaction: tag which does not appear in the comment. 
 --
 -- >>> _ptgen "monthly from 2017/1 to 2017/4"
 -- 2017/01/01
@@ -204,9 +207,15 @@ runPeriodicTransaction PeriodicTransaction{..} requestedspan =
     t = nulltransaction{
            tstatus      = ptstatus
           ,tcode        = ptcode
-          ,tdescription = ptdescription 
-          ,tcomment     = (if T.null ptcomment then "\n" else ptcomment) <> "recur: " <> ptperiodexpr
-          ,ttags        = ("recur", ptperiodexpr) : pttags 
+          ,tdescription = ptdescription
+          -- XXX refactor
+          ,tcomment     = ptcomment 
+                          `commentAddTagNextLine` ("recur", ptperiodexpr) 
+                          `commentAddTag` ("generated-transaction","")
+          ,ttags        = ("recur", ptperiodexpr)       : 
+                          ("generated-transaction","")  : 
+                          ("_generated-transaction","") : 
+                          pttags 
           ,tpostings    = ptpostings
           }
 

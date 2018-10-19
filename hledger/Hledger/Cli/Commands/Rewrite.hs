@@ -178,10 +178,9 @@ but with these differences:
 
 rewrite opts@CliOpts{rawopts_=rawopts,reportopts_=ropts} j@Journal{jtxns=ts} = do 
   -- create re-writer
-  let modifiers = transactionModifierFromOpts opts : jtxnmodifiers j
-      applyallmodifiers = foldr (flip (.) . transactionModifierToFunction) id modifiers
+  let tmods = transactionModifierFromOpts opts : jtxnmodifiers j
   -- rewrite matched transactions
-  let j' = j{jtxns=map applyallmodifiers ts}
+  let j' = j{jtxns=map (transactionApplyTransactionModifiers tmods) ts}
   -- run the print command, showing all transactions, or show diffs
   printOrDiff rawopts opts{reportopts_=ropts{query_=""}} j j'
 

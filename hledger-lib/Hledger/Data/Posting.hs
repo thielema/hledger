@@ -48,6 +48,9 @@ module Hledger.Data.Posting (
   transactionPayee,
   transactionNote,
   payeeAndNoteFromDescription,
+  -- * comment/tag operations
+  commentAddTag,
+  commentAddTagNextLine,
   -- * arithmetic
   sumPostings,
   -- * rendering
@@ -289,6 +292,13 @@ aliasReplace (BasicAlias old new) a
   | old `isAccountNamePrefixOf` a || old == a = new <> T.drop (T.length old) a
   | otherwise = a
 aliasReplace (RegexAlias re repl) a = T.pack $ regexReplaceCIMemo re repl $ T.unpack a -- XXX
+
+commentAddTag :: Text -> Tag -> Text
+commentAddTag cmt (t,v) = textchomp cmt <> ", " <> t <> ":" <> v 
+
+commentAddTagNextLine :: Text -> Tag -> Text
+commentAddTagNextLine cmt (t,v) =
+  cmt <> if "\n" `T.isSuffixOf` cmt then "" else "\n" <> t <> ":" <> v 
 
 
 -- tests

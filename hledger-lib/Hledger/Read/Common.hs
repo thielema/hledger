@@ -33,7 +33,7 @@ module Hledger.Read.Common (
   rejp,
   genericSourcePos,
   journalSourcePos,
-  applyTransactionModifiers,
+  journalApplyTransactionModifiers,
   parseAndFinaliseJournal,
   parseAndFinaliseJournal',
   setYear,
@@ -229,12 +229,10 @@ journalSourcePos p p' = JournalSourcePos (sourceName p) (fromIntegral . unPos $ 
 
 
 -- | Apply any transaction modifier rules in the journal 
--- (adding automated postings to transactions, eg).
-applyTransactionModifiers :: Journal -> Journal
-applyTransactionModifiers j = j { jtxns = map applyallmodifiers $ jtxns j }
-  where
-    applyallmodifiers = 
-      foldr (flip (.) . transactionModifierToFunction) id (jtxnmodifiers j)
+-- to all transactions (adding automated postings, eg).
+journalApplyTransactionModifiers :: Journal -> Journal
+journalApplyTransactionModifiers j@Journal{..} =
+  j { jtxns = map (transactionApplyTransactionModifiers jtxnmodifiers) jtxns }
 
 -- | Given a megaparsec ParsedJournal parser, input options, file
 -- path and file content: parse and post-process a Journal, or give an error.
@@ -263,7 +261,7 @@ parseAndFinaliseJournal parser iopts f txt = do
         -- time. If we are only running once, we reorder and follow
         -- the options for checking assertions.
         let fj = if auto_ iopts && (not . null . jtxnmodifiers) pj
-                 then applyTransactionModifiers <$>
+                 then journalApplyTransactionModifiers <$>
                       (journalBalanceTransactions False $
                        journalReverse $
                        journalApplyCommodityStyles pj) >>=
@@ -302,7 +300,7 @@ parseAndFinaliseJournal' parser iopts f txt = do
       -- time. If we are only running once, we reorder and follow the
       -- options for checking assertions.
       let fj = if auto_ iopts && (not . null . jtxnmodifiers) pj
-               then applyTransactionModifiers <$>
+               then journalApplyTransactionModifiers <$>
                     (journalBalanceTransactions False $
                      journalReverse $
                      journalApplyCommodityStyles pj) >>=
