@@ -113,6 +113,8 @@ tmPostingToFunction p' =
       { pdate = pdate p
       , pdate2 = pdate2 p
       , pamount = amount' p
+      , pcomment     = (if T.null $ pcomment p then "\n" else pcomment p) <> "modified:"
+      , ptags        = ("modified", "") : ptags p
       }
   where
     amount' = case postingScale p' of
