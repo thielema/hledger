@@ -1,0 +1,34 @@
+
+# Input for the following tests:
+
+2019-01-01
+    (a)   2
+
+2019-02-01
+    (a)   1
+
+
+
+# Test the date output format.
+# If this fails, the inverted regex tests below are also wrong.
+$ hledger -f- register
+> /2019\/01\/01/
+
+# Show only February
+$ hledger -f- register -p 2019-02
+> !/2019\/01\/01/
+
+# The later -b overrides the earlier -b
+# -> show only February
+$ hledger -f- register -b 2019 -b 2019-02
+> !/2019\/01\/01/
+
+# -p's begin overrides -b
+# -> show only February
+$ hledger -f- register -b 2019-01-01 -p 2019-02
+> !/2019\/01\/01/
+
+# -e overrides -p's end
+# -> show only first part of January
+$ hledger -f- register -p 2019 -e 2019-01-20
+> !/2019\/02\/01/
