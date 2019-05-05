@@ -39,3 +39,19 @@ $ hledger -f- register -b 2019-01-01 -p 2019-02
 # -> show only first part of January
 $ hledger -f- register -p 2019 -e 2019-01-20
 > !/2019\/02\/01/
+
+# Date options and queries are and'ed and produce the intersection independent of order
+$ hledger -f- register date:2019-02 -p 2019
+> !/2019\/01\/01/
+$ hledger -f- register -p 2019 date:2019-02
+> !/2019\/01\/01/
+
+# Date queries are and'ed and produce the intersection independent of order
+$ hledger -f- register date:2019 date:2019-02
+> !/2019\/01\/01/
+$ hledger -f- register date:2019-02 date:2019
+> !/2019\/01\/01/
+
+## Date options override date queries
+#$ hledger -f- register date:2019-02 -p 2019
+#> /2019\/01\/01/
