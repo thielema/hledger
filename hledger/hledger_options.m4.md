@@ -244,7 +244,8 @@ Some notes:
   option takes precedence.
 - The effective report start and end dates are the intersection of the
   start/end dates from options and that from `date:` queries.
-  That is, `date:2019-01 date:2019 -p'2000 to 2030'` yields January 2019.
+  That is, `date:2019-01 date:2019 -p'2000 to 2030'` yields January 2019, the
+  smallest common time span.
 
 Examples:
 
