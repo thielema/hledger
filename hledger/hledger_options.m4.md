@@ -234,8 +234,17 @@ You can specify a start and/or end date using
 [`-p/--period`](#period-expressions) 
 or a [`date:` query](#queries) (described below).
 All of these accept the [smart date](#smart-dates) syntax.
-One important thing to be aware of when specifying end dates: as in Ledger, end dates are exclusive, 
-so you need to write the date *after* the last day you want to include.
+
+Some notes:
+
+- As in Ledger, end dates are exclusive, so you need to write the date *after*
+  the last day you want to include.
+- As noted in [reporting options](#general-options):
+  among start/end dates specified with *options*, the last (i.e. right-most)
+  option takes precedence.
+- The effective report start and end dates are the intersection of the
+  start/end dates from options and that from `date:` queries.
+  That is, `date:2019-01 date:2019 -p'2000 to 2030'` yields January 2019.
 
 Examples:
 
