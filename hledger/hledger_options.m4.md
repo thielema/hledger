@@ -267,7 +267,7 @@ reports into multiple subperiods.  The basic intervals can be
 selected with one of `-D/--daily`, `-W/--weekly`, `-M/--monthly`,
 `-Q/--quarterly`, or `-Y/--yearly`.  More complex intervals may be
 specified with a [period expression](#period-expressions). 
-Report intervals can not be specified with a [query](#queries), currently. 
+Report intervals can not be specified with a [query](#queries).
 
 ## Period expressions
 
