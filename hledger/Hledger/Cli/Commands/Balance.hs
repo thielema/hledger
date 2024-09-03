@@ -758,10 +758,10 @@ multiBalanceReportHtmlRows ropts mbr =
       | transpose_ ropts = error' "Sorry, --transpose with HTML output is not yet supported"  -- PARTIAL:
       | otherwise = multiBalanceReportAsCsvRecords True ropts mbr
   in
-    (multiBalanceReportHtmlHeadRow ropts headingsrow
-    ,map (multiBalanceReportHtmlBodyRow ropts) bodyrows
+    (multiBalanceReportHtmlHeadRow headingsrow
+    ,map multiBalanceReportHtmlBodyRow bodyrows
     ,zipWith3 ($)
-      (repeat (multiBalanceReportHtmlFootRow ropts))
+      (repeat multiBalanceReportHtmlFootRow)
       (True : repeat False)  -- mark the first html table row for special styling
       mtotalsrows
       -- TODO pad totals row with zeros when there are
@@ -769,8 +769,8 @@ multiBalanceReportHtmlRows ropts mbr =
 
 -- | Render one MultiBalanceReport heading row as a HTML table row.
 multiBalanceReportHtmlHeadRow ::
-    ReportOpts -> MultiBalanceFullRecord T.Text -> Html ()
-multiBalanceReportHtmlHeadRow ropts
+    MultiBalanceFullRecord T.Text -> Html ()
+multiBalanceReportHtmlHeadRow
         (WithHeader acct (MultiBalanceRecord amts mtot mavg)) =
     tr_ $ mconcat $
           th_ [styles_ [bottomdoubleborder,alignleft], class_ "account"]    (toHtml acct)
@@ -780,8 +780,8 @@ multiBalanceReportHtmlHeadRow ropts
 
 -- | Render one MultiBalanceReport data row as a HTML table row.
 multiBalanceReportHtmlBodyRow ::
-    ReportOpts -> MultiBalanceFullRecord T.Text -> Html ()
-multiBalanceReportHtmlBodyRow ropts
+    MultiBalanceFullRecord T.Text -> Html ()
+multiBalanceReportHtmlBodyRow
         (WithHeader label (MultiBalanceRecord amts mtot mavg)) =
     tr_ $ mconcat $
           td_ [styles_ [],  class_ "account"]           (toHtml label)
@@ -791,14 +791,14 @@ multiBalanceReportHtmlBodyRow ropts
 
 -- | Render one MultiBalanceReport totals row as a HTML table row.
 multiBalanceReportHtmlFootRow ::
-    ReportOpts -> Bool -> MultiBalanceFullRecord T.Text -> Html ()
+    Bool -> MultiBalanceFullRecord T.Text -> Html ()
 -- TODO pad totals row with zeros when subreport is empty
 --  multiBalanceReportHtmlFootRow ropts $
 --     ""
 --   : repeat nullmixedamt zeros
 --  ++ (if row_total_ ropts then [nullmixedamt] else [])
 --  ++ (if average_ ropts   then [nullmixedamt]   else [])
-multiBalanceReportHtmlFootRow ropts isfirstline
+multiBalanceReportHtmlFootRow isfirstline
         (WithHeader hdr (MultiBalanceRecord amts mtot mavg)) =
     tr_ $ mconcat $
           td_ [styles_ $ [topdoubleborder | isfirstline] ++ [bold], class_ "account"]                 (toHtml hdr)

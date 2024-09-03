@@ -366,7 +366,7 @@ compoundBalanceReportAsHtml ropts cbr =
         & zipWith WithHeader ("Net:":repeat "")              -- insert a headings column, with Net: on the first line only
         & zipWith3                                           -- convert to a list of HTML totals rows, marking the first for special styling
           (\f isfirstline r -> f isfirstline r)
-          (repeat (multiBalanceReportHtmlFootRow ropts))
+          (repeat multiBalanceReportHtmlFootRow)
           (True : repeat False)
 
   in do
