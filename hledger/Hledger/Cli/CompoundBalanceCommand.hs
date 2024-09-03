@@ -362,9 +362,9 @@ compoundBalanceReportAsHtml ropts cbr =
     totalrows =
       if no_total_ ropts || length subreports == 1 then []
       else
-        multiBalanceRowAsCsvText ropts colspans totalrow  -- make a table of rendered lines of the report totals row
-        & zipWith (:) ("Net:":repeat "")                  -- insert a headings column, with Net: on the first line only
-        & zipWith3                                        -- convert to a list of HTML totals rows, marking the first for special styling
+        multiBalanceRowAsCsvRecords ropts colspans totalrow  -- make a table of rendered lines of the report totals row
+        & zipWith WithHeader ("Net:":repeat "")              -- insert a headings column, with Net: on the first line only
+        & zipWith3                                           -- convert to a list of HTML totals rows, marking the first for special styling
           (\f isfirstline r -> f isfirstline r)
           (repeat (multiBalanceReportHtmlFootRow ropts))
           (True : repeat False)

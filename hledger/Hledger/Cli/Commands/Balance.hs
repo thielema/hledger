@@ -251,6 +251,7 @@ module Hledger.Cli.Commands.Balance (
  ,balanceReportAsSpreadsheet
  ,balanceReportItemAsText
  ,multiBalanceRowAsCsvText
+ ,multiBalanceRowAsCsvRecords
  ,multiBalanceRowAsText
  ,multiBalanceReportAsText
  ,multiBalanceReportAsCsv
@@ -260,6 +261,8 @@ module Hledger.Cli.Commands.Balance (
  ,multiBalanceReportAsTable
  ,multiBalanceReportTableAsText
  ,multiBalanceReportAsSpreadsheet
+ ,MultiBalanceRecord(..)
+ ,WithHeader(..)
   -- ** HTML output helpers
  ,stylesheet_
  ,styles_
@@ -283,10 +286,11 @@ import Control.Arrow ((***))
 import Data.Decimal (roundTo)
 import Data.Default (def)
 import Data.Function (on)
-import Data.List (find, transpose, foldl')
+import Data.List (find, transpose, foldl', unfoldr)
 import qualified Data.Map as Map
 import qualified Data.Set as S
-import Data.Maybe (catMaybes, fromMaybe)
+import qualified Data.Foldable as Fold
+import Data.Maybe (catMaybes, fromMaybe, maybeToList)
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
@@ -304,7 +308,7 @@ import qualified System.IO as IO
 import Hledger
 import Hledger.Cli.CliOptions
 import Hledger.Cli.Utils
-import Hledger.Write.Csv (CSV, printCSV, printTSV)
+import Hledger.Write.Csv (CSV, CsvValue, printCSV, printTSV)
 import Hledger.Write.Ods (printFods)
 import Hledger.Write.Html (printHtml)
 import qualified Hledger.Write.Spreadsheet as Ods
@@ -622,37 +626,98 @@ multiBalanceReportAsCsv opts@ReportOpts{..} report = maybeTranspose allRows
     (rows, totals) = multiBalanceReportAsCsvHelper False opts report
     maybeTranspose = if transpose_ then transpose else id
 
+-- isomorphic to non-empty:NonEmpty
+data WithHeader f a = WithHeader a (f a)
+
+instance (Functor f) => Functor (WithHeader f) where
+    fmap f (WithHeader header body) = WithHeader (f header) (fmap f body)
+
+instance (Foldable f) => Foldable (WithHeader f) where
+    foldMap f (WithHeader header body) = f header <> foldMap f body
+
+
+type MultiBalanceFullRecord = WithHeader MultiBalanceRecord
+
+data MultiBalanceRecord a =
+    MultiBalanceRecord {
+        mbrAmts :: [a],
+        mbrTot :: Maybe a,
+        mbrAvg :: Maybe a
+    }
+
+instance Functor MultiBalanceRecord where
+    fmap f (MultiBalanceRecord amts mtot mavg) =
+        MultiBalanceRecord (map f amts) (fmap f mtot) (fmap f mavg)
+
+instance Foldable MultiBalanceRecord where
+    foldMap f (MultiBalanceRecord amts mtot mavg) =
+        foldMap f amts <> foldMap f mtot <> foldMap f mavg
+
+flattenFullMBR :: MultiBalanceFullRecord a -> [a]
+flattenFullMBR = Fold.toList
+
+multiBalanceRecordTidy :: [a] -> MultiBalanceRecord a
+multiBalanceRecordTidy body = MultiBalanceRecord body Nothing Nothing
+
+
+
 -- Helper for CSV (and HTML) rendering.
 multiBalanceReportAsCsvHelper :: Bool -> ReportOpts -> MultiBalanceReport -> (CSV, CSV)
 multiBalanceReportAsCsvHelper ishtml opts =
-    (map (map Ods.cellContent) *** map (map Ods.cellContent)) .
+    (map flattenFullMBR *** map flattenFullMBR) .
+    multiBalanceReportAsCsvRecords ishtml opts
+
+multiBalanceReportAsCsvRecords ::
+    Bool -> ReportOpts -> MultiBalanceReport ->
+    ([MultiBalanceFullRecord CsvValue], [MultiBalanceFullRecord CsvValue])
+multiBalanceReportAsCsvRecords ishtml opts =
+    (map (fmap Ods.cellContent) *** map (fmap Ods.cellContent)) .
     multiBalanceReportAsSpreadsheetHelper ishtml opts
+
+-- taken from utility-ht:Data.Maybe.HT
+toMaybe :: Bool -> a -> Maybe a
+toMaybe b a = if b then Just a else Nothing
 
 -- Helper for CSV and ODS and HTML rendering.
 multiBalanceReportAsSpreadsheetHelper ::
-    Bool -> ReportOpts -> MultiBalanceReport -> ([[Ods.Cell Text]], [[Ods.Cell Text]])
+    Bool -> ReportOpts -> MultiBalanceReport ->
+    ([MultiBalanceFullRecord (Ods.Cell Text)],
+     [MultiBalanceFullRecord (Ods.Cell Text)])
 multiBalanceReportAsSpreadsheetHelper ishtml opts@ReportOpts{..} (PeriodicReport colspans items tr) =
     (headers : concatMap fullRowAsTexts items,
-        map (map (\c -> c{Ods.cellStyle = Ods.Body Ods.Total})) totalrows)
+        map (fmap (\c -> c{Ods.cellStyle = Ods.Body Ods.Total})) totalrows)
   where
     cell = Ods.defaultCell
+    multiBalanceHeader prepend =
+      MultiBalanceRecord
+        (prepend $ map showDateSpan colspans)
+        (toMaybe row_total_ "total")
+        (toMaybe average_ "average")
     headers =
-      map (\content -> (cell content) {Ods.cellStyle = Ods.Head}) $
-      "account" :
+      fmap (\content -> (cell content) {Ods.cellStyle = Ods.Head}) $
+      WithHeader "account" $
       case layout_ of
-      LayoutTidy -> ["period", "start_date", "end_date", "commodity", "value"]
-      LayoutBare -> "commodity" : dateHeaders
-      _          -> dateHeaders
-    dateHeaders = map showDateSpan colspans ++ ["total" | row_total_] ++ ["average" | average_]
-    fullRowAsTexts row = map (cell (showName row) :) $ rowAsText row
+      LayoutTidy ->
+          multiBalanceRecordTidy
+              ["period", "start_date", "end_date", "commodity", "value"]
+      LayoutBare -> multiBalanceHeader ("commodity" :)
+      _          -> multiBalanceHeader id
+    multiBalanceRecord header mbr =
+        WithHeader (cell header) (fmap (fmap wbToText) mbr)
+    fullRowAsTexts row =
+        map (multiBalanceRecord (showName row)) $ rowAsText row
       where showName = accountNameDrop drop_ . prrFullName
     totalrows
       | no_total_ = []
-      | ishtml    = zipWith (:) (cell totalRowHeadingHtml : repeat Ods.emptyCell) $ rowAsText tr
-      | otherwise = map (cell totalRowHeadingCsv :) $ rowAsText tr
+      | ishtml    =
+          zipWith multiBalanceRecord
+              (totalRowHeadingHtml : repeat T.empty)
+              (rowAsText tr)
+      | otherwise =
+          map (multiBalanceRecord totalRowHeadingCsv) $ rowAsText tr
     rowAsText =
         let fmt = if ishtml then oneLineNoCostFmt else machineFmt
-        in  map (map (fmap wbToText)) . multiBalanceRowAsCellBuilders fmt opts colspans
+        in  multiBalanceRowAsCellBuilders fmt opts colspans
 
 -- Helpers and CSS styles for HTML output.
 
@@ -691,7 +756,7 @@ multiBalanceReportHtmlRows ropts mbr =
     -- TODO: should the commodity_column be displayed as a subaccount in this case as well?
     (headingsrow:bodyrows, mtotalsrows)
       | transpose_ ropts = error' "Sorry, --transpose with HTML output is not yet supported"  -- PARTIAL:
-      | otherwise = multiBalanceReportAsCsvHelper True ropts mbr
+      | otherwise = multiBalanceReportAsCsvRecords True ropts mbr
   in
     (multiBalanceReportHtmlHeadRow ropts headingsrow
     ,map (multiBalanceReportHtmlBodyRow ropts) bodyrows
@@ -703,77 +768,43 @@ multiBalanceReportHtmlRows ropts mbr =
     )
 
 -- | Render one MultiBalanceReport heading row as a HTML table row.
-multiBalanceReportHtmlHeadRow :: ReportOpts -> [T.Text] -> Html ()
-multiBalanceReportHtmlHeadRow _ [] = mempty  -- shouldn't happen
-multiBalanceReportHtmlHeadRow ropts (acct:cells) =
-  let
-    (amts,tot,avg)
-      | row_total_ ropts && average_ ropts = (ini2,  sndlst2, lst2)
-      | row_total_ ropts                   = (ini1,  lst1,    [])
-      |                     average_ ropts = (ini1,  [],      lst1)
-      | otherwise                          = (cells, [],      [])
-      where
-        n = length cells
-        (ini1,lst1)    = splitAt (n-1) cells
-        (ini2, rest)   = splitAt (n-2) cells
-        (sndlst2,lst2) = splitAt 1 rest
-
-  in
+multiBalanceReportHtmlHeadRow ::
+    ReportOpts -> MultiBalanceFullRecord T.Text -> Html ()
+multiBalanceReportHtmlHeadRow ropts
+        (WithHeader acct (MultiBalanceRecord amts mtot mavg)) =
     tr_ $ mconcat $
           th_ [styles_ [bottomdoubleborder,alignleft], class_ "account"]    (toHtml acct)
        : [th_ [styles_ [bottomdoubleborder,alignright], class_ ""]           (toHtml a) | a <- amts]
-      ++ [th_ [styles_ [bottomdoubleborder,alignright], class_ "rowtotal"]   (toHtml a) | a <- tot]
-      ++ [th_ [styles_ [bottomdoubleborder,alignright], class_ "rowaverage"] (toHtml a) | a <- avg]
+      ++ [th_ [styles_ [bottomdoubleborder,alignright], class_ "rowtotal"]   (toHtml a) | a <- maybeToList mtot]
+      ++ [th_ [styles_ [bottomdoubleborder,alignright], class_ "rowaverage"] (toHtml a) | a <- maybeToList mavg]
 
 -- | Render one MultiBalanceReport data row as a HTML table row.
-multiBalanceReportHtmlBodyRow :: ReportOpts -> [T.Text] -> Html ()
-multiBalanceReportHtmlBodyRow _ [] = mempty  -- shouldn't happen
-multiBalanceReportHtmlBodyRow ropts (label:cells) =
-  let
-    (amts,tot,avg)
-      | row_total_ ropts && average_ ropts = (ini2,  sndlst2, lst2)
-      | row_total_ ropts                   = (ini1,  lst1,    [])
-      |                     average_ ropts = (ini1,  [],      lst1)
-      | otherwise                          = (cells, [],      [])
-      where
-        n = length cells
-        (ini1,lst1)    = splitAt (n-1) cells
-        (ini2, rest)   = splitAt (n-2) cells
-        (sndlst2,lst2) = splitAt 1 rest
-  in
+multiBalanceReportHtmlBodyRow ::
+    ReportOpts -> MultiBalanceFullRecord T.Text -> Html ()
+multiBalanceReportHtmlBodyRow ropts
+        (WithHeader label (MultiBalanceRecord amts mtot mavg)) =
     tr_ $ mconcat $
           td_ [styles_ [],  class_ "account"]           (toHtml label)
        : [td_ [styles_ [alignright], class_ "amount"]            (toHtml a) | a <- amts]
-      ++ [td_ [styles_ [alignright], class_ "amount rowtotal"]   (toHtml a) | a <- tot]
-      ++ [td_ [styles_ [alignright], class_ "amount rowaverage"] (toHtml a) | a <- avg]
+      ++ [td_ [styles_ [alignright], class_ "amount rowtotal"]   (toHtml a) | a <- maybeToList mtot]
+      ++ [td_ [styles_ [alignright], class_ "amount rowaverage"] (toHtml a) | a <- maybeToList mavg]
 
 -- | Render one MultiBalanceReport totals row as a HTML table row.
-multiBalanceReportHtmlFootRow :: ReportOpts -> Bool -> [T.Text] -> Html ()
-multiBalanceReportHtmlFootRow _ _ [] = mempty
+multiBalanceReportHtmlFootRow ::
+    ReportOpts -> Bool -> MultiBalanceFullRecord T.Text -> Html ()
 -- TODO pad totals row with zeros when subreport is empty
 --  multiBalanceReportHtmlFootRow ropts $
 --     ""
 --   : repeat nullmixedamt zeros
 --  ++ (if row_total_ ropts then [nullmixedamt] else [])
 --  ++ (if average_ ropts   then [nullmixedamt]   else [])
-multiBalanceReportHtmlFootRow ropts isfirstline (hdr:cells) =
-  let
-    (amts,tot,avg)
-      | row_total_ ropts && average_ ropts = (ini2,  sndlst2, lst2)
-      | row_total_ ropts                   = (ini1,  lst1,    [])
-      |                     average_ ropts = (ini1,  [],      lst1)
-      | otherwise                          = (cells, [],      [])
-      where
-        n = length cells
-        (ini1,lst1)    = splitAt (n-1) cells
-        (ini2, rest)   = splitAt (n-2) cells
-        (sndlst2,lst2) = splitAt 1 rest
-  in
+multiBalanceReportHtmlFootRow ropts isfirstline
+        (WithHeader hdr (MultiBalanceRecord amts mtot mavg)) =
     tr_ $ mconcat $
           td_ [styles_ $ [topdoubleborder | isfirstline] ++ [bold], class_ "account"]                 (toHtml hdr)
        : [td_ [styles_ $ [topdoubleborder | isfirstline] ++ [alignright], class_ "amount coltotal"]   (toHtml a) | a <- amts]
-      ++ [td_ [styles_ $ [topdoubleborder | isfirstline] ++ [alignright], class_ "amount coltotal"]   (toHtml a) | a <- tot]
-      ++ [td_ [styles_ $ [topdoubleborder | isfirstline] ++ [alignright], class_ "amount colaverage"] (toHtml a) | a <- avg]
+      ++ [td_ [styles_ $ [topdoubleborder | isfirstline] ++ [alignright], class_ "amount coltotal"]   (toHtml a) | a <- maybeToList mtot]
+      ++ [td_ [styles_ $ [topdoubleborder | isfirstline] ++ [alignright], class_ "amount colaverage"] (toHtml a) | a <- maybeToList mavg]
 
 --thRow :: [String] -> Html ()
 --thRow = tr_ . mconcat . map (th_ . toHtml)
@@ -784,9 +815,9 @@ multiBalanceReportHtmlFootRow ropts isfirstline (hdr:cells) =
 multiBalanceReportAsSpreadsheet ::
   ReportOpts -> MultiBalanceReport -> ((Maybe Int, Maybe Int), [[Ods.Cell Text]])
 multiBalanceReportAsSpreadsheet ropts mbr =
-  let (upper,lower) = multiBalanceReportAsSpreadsheetHelper True ropts mbr
+  let (body,footer) = multiBalanceReportAsSpreadsheetHelper True ropts mbr
   in  ((Just 1, case layout_ ropts of LayoutWide _ -> Just 1; _ -> Nothing),
-            upper ++ lower)
+            map flattenFullMBR $ body ++ footer)
 
 
 -- | Render a multi-column balance report as plain text suitable for console output.
@@ -879,25 +910,27 @@ multiBalanceReportAsTable opts@ReportOpts{summary_only_, average_, row_total_, b
     multiColumnTableInterRowBorder    = NoLine
     multiColumnTableInterColumnBorder = if pretty_ opts then SingleLine else NoLine
 
-multiBalanceRowAsTextBuilders :: AmountFormat -> ReportOpts -> [DateSpan] -> PeriodicReportRow a MixedAmount -> [[WideBuilder]]
+multiBalanceRowAsTextBuilders :: AmountFormat -> ReportOpts -> [DateSpan] -> PeriodicReportRow a MixedAmount -> [MultiBalanceRecord WideBuilder]
 multiBalanceRowAsTextBuilders bopts ropts colspans row =
-    map (map Ods.cellContent) $
+    map (fmap Ods.cellContent) $
     multiBalanceRowAsCellBuilders bopts ropts colspans row
 
 multiBalanceRowAsCellBuilders ::
-    AmountFormat -> ReportOpts -> [DateSpan] -> PeriodicReportRow a MixedAmount -> [[Ods.Cell WideBuilder]]
+    AmountFormat -> ReportOpts -> [DateSpan] ->
+    PeriodicReportRow a MixedAmount ->
+    [MultiBalanceRecord (Ods.Cell WideBuilder)]
 multiBalanceRowAsCellBuilders bopts ReportOpts{..} colspans (PeriodicReportRow _ as rowtot rowavg) =
     case layout_ of
       LayoutWide width -> [fmap (cellFromMixedAmount bopts{displayMaxWidth=width}) allamts]
-      LayoutTall       -> paddedTranspose Ods.emptyCell
+      LayoutTall       -> mbrTranspose Ods.emptyCell
                            . fmap (cellsFromMixedAmount bopts{displayMaxWidth=Nothing})
                            $ allamts
-      LayoutBare       -> zipWith (:) (map wbCell cs)  -- add symbols
-                           . transpose                         -- each row becomes a list of Text quantities
+      LayoutBare       -> zipWith mbrConsAmts (map wbCell cs)  -- add symbols
+                           . mbrTranspose Ods.emptyCell        -- each row becomes a list of Text quantities
                            . fmap (cellsFromMixedAmount bopts{displayCommodity=False, displayCommodityOrder=Just cs, displayMinWidth=Nothing})
                            $ allamts
       LayoutTidy       -> concat
-                           . zipWith (map . addDateColumns) colspans
+                           . zipWith (map . (multiBalanceRecordTidy.) . addDateColumns) colspans
                            . fmap ( zipWith (\c a -> [wbCell c, a]) cs
                                   . cellsFromMixedAmount bopts{displayCommodity=False, displayCommodityOrder=Just cs, displayMinWidth=Nothing})
                            $ as  -- Do not include totals column or average for tidy output, as this
@@ -907,33 +940,51 @@ multiBalanceRowAsCellBuilders bopts ReportOpts{..} colspans (PeriodicReportRow _
     wbDate content = (wbCell content) {Ods.cellType = Ods.TypeDate}
     totalscolumn = row_total_ && balanceaccum_ `notElem` [Cumulative, Historical]
     cs = if all mixedAmountLooksZero allamts then [""] else S.toList $ foldMap maCommodities allamts
-    allamts = (if not summary_only_ then as else []) ++
-                [rowtot | totalscolumn && not (null as)] ++
-                [rowavg | average_ && not (null as)]
+    allamts =
+        MultiBalanceRecord
+            (if summary_only_ then [] else as)
+            (toMaybe (totalscolumn && not (null as)) rowtot)
+            (toMaybe (average_ && not (null as)) rowavg)
+    mbrConsAmts :: a -> MultiBalanceRecord a -> MultiBalanceRecord a
+    mbrConsAmts a mbr = mbr{mbrAmts = a : mbrAmts mbr}
     addDateColumns spn@(DateSpan s e) = (wbCell (showDateSpan spn) :)
                                        . (wbDate (maybe "" showEFDate s) :)
                                        . (wbDate (maybe "" (showEFDate . modifyEFDay (addDays (-1))) e) :)
 
-    paddedTranspose :: a -> [[a]] -> [[a]]
-    paddedTranspose _ [] = [[]]
-    paddedTranspose n as1 = take (maximum . map length $ as1) . trans $ as1
-        where
-          trans ([] : xss)  = (n : map h xss) :  trans ([n] : map t xss)
-          trans ((x : xs) : xss) = (x : map h xss) : trans (m xs : map t xss)
-          trans [] = []
-          h (x:_) = x
-          h [] = n
-          t (_:xs) = xs
-          t [] = [n]
-          m (x:xs) = x:xs
-          m [] = [n]
+mbrTranspose :: a -> MultiBalanceRecord [a] -> [MultiBalanceRecord a]
+mbrTranspose empty =
+    let uncons xt =
+            case xt of
+                [] -> (empty,[])
+                x:xs -> (x,xs)
+        unconsMaybe m =
+            case m of
+                Nothing -> (Nothing, Nothing)
+                Just [] -> (Just empty, Just [])
+                Just (b:bs) -> (Just b, Just bs)
+    in  unfoldr $
+        \mbr@(MultiBalanceRecord amts0 mtot mavg) ->
+            toMaybe (Fold.any (not.null) mbr) $
+                let (amt,amts) = unzip $ map uncons amts0
+                    (tot,tots) = unconsMaybe mtot
+                    (avg,avgs) = unconsMaybe mavg
+                in  (MultiBalanceRecord amt tot avg,
+                     MultiBalanceRecord amts tots avgs)
 
 
 multiBalanceRowAsText :: ReportOpts -> PeriodicReportRow a MixedAmount -> [[WideBuilder]]
-multiBalanceRowAsText opts = multiBalanceRowAsTextBuilders oneLineNoCostFmt{displayColour=color_ opts} opts []
+multiBalanceRowAsText opts =
+    map Fold.toList .
+    multiBalanceRowAsTextBuilders oneLineNoCostFmt{displayColour=color_ opts} opts []
 
 multiBalanceRowAsCsvText :: ReportOpts -> [DateSpan] -> PeriodicReportRow a MixedAmount -> [[T.Text]]
-multiBalanceRowAsCsvText opts colspans = fmap (fmap wbToText) . multiBalanceRowAsTextBuilders machineFmt opts colspans
+multiBalanceRowAsCsvText opts colspans =
+    map Fold.toList . multiBalanceRowAsCsvRecords opts colspans
+
+multiBalanceRowAsCsvRecords :: ReportOpts -> [DateSpan] -> PeriodicReportRow a MixedAmount -> [MultiBalanceRecord T.Text]
+multiBalanceRowAsCsvRecords opts colspans =
+    map (fmap wbToText) .
+    multiBalanceRowAsTextBuilders machineFmt opts colspans
 
 -- Budget reports
 
