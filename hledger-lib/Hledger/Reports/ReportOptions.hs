@@ -140,6 +140,7 @@ data ReportOpts = ReportOpts {
     ,no_elide_         :: Bool
     ,real_             :: Bool
     ,format_           :: StringFormat
+    ,anchor_           :: Maybe T.Text
     ,pretty_           :: Bool
     ,querystring_      :: [T.Text]
     --
@@ -199,6 +200,7 @@ defreportopts = ReportOpts
     , no_elide_         = False
     , real_             = False
     , format_           = def
+    , anchor_           = Nothing
     , pretty_           = False
     , querystring_      = []
     , average_          = False
@@ -255,6 +257,7 @@ rawOptsToReportOpts d rawopts =
           ,no_elide_         = boolopt "no-elide" rawopts
           ,real_             = boolopt "real" rawopts
           ,format_           = format
+          ,anchor_           = T.pack <$> maybestringopt "anchor" rawopts
           ,querystring_      = querystring
           ,average_          = boolopt "average" rawopts
           ,related_          = boolopt "related" rawopts

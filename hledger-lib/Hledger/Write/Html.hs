@@ -35,7 +35,11 @@ formatRow = Lucid.tr_ . traverse_ formatCell
 
 formatCell :: (Lines border) => Cell border (Lucid.Html ()) -> Lucid.Html ()
 formatCell cell =
-    let str = cellContent cell in
+    let str =  cellContent cell in
+    let content =
+            if Text.null $ cellAnchor cell
+                then str
+                else Lucid.a_ [Lucid.href_ $ cellAnchor cell] str in
     let border field access =
             map (field<>) $ borderLines $ access $ cellBorder cell in
     let leftBorder   = border "border-left:"   Spr.borderLeft   in
@@ -50,7 +54,7 @@ formatCell cell =
             map Lucid.class_ $
             filter (not . Text.null) [Spr.textFromClass $ cellClass cell] in
     case cellStyle cell of
-        Head -> Lucid.th_ (style++class_) str
+        Head -> Lucid.th_ (style++class_) content
         Body emph ->
             let align =
                     case cellType cell of
@@ -61,7 +65,7 @@ formatCell cell =
                     case emph of
                         Item -> id
                         Total -> Lucid.b_
-            in  Lucid.td_ (style++align++class_) $ withEmph str
+            in  Lucid.td_ (style++align++class_) $ withEmph content
 
 
 class (Spr.Lines border) => Lines border where
