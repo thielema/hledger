@@ -1,5 +1,6 @@
 {- |
-Rich data type to describe data in a table.
+Describe a Spreadsheet table as array (list of lists) of cells.
+Cells can have some style attributes.
 This is the basis for ODS and HTML export.
 -}
 module Hledger.Write.Spreadsheet (
@@ -16,11 +17,20 @@ module Hledger.Write.Spreadsheet (
     emptyCell,
     transposeCell,
     transpose,
+    Content,
+    setBorders,
+    flattenTable,
+    flattenTable0,
+    flattenRows0,
     ) where
 
+import qualified Hledger.Write.Tabular as Tab
+import Hledger.Write.Tabular (Lines(..), NumLines(..))
 import Hledger.Data.Types (Amount)
 
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.List as List
+import Data.List.NonEmpty (NonEmpty((:|)))
 import Data.Text (Text)
 
 
@@ -37,17 +47,6 @@ data Style = Body Emphasis | Head
 data Emphasis = Item | Total
     deriving (Eq, Ord, Show)
 
-
-class Lines border where noLine :: border
-instance Lines () where noLine = ()
-instance Lines NumLines where noLine = NoLine
-
-{- |
-The same as Tab.Properties, but has 'Eq' and 'Ord' instances.
-We need those for storing 'NumLines' in 'Set's.
--}
-data NumLines = NoLine | SingleLine | DoubleLine
-    deriving (Eq, Ord, Show)
 
 data Border lines =
     Border {
@@ -71,6 +70,13 @@ instance Foldable Border where
 
 noBorder :: (Lines border) => Border border
 noBorder = pure noLine
+
+instance (Ord lines) => Semigroup (Border lines) where
+    (<>) = liftA2 max
+
+instance (Lines lines, Ord lines) => Monoid (Border lines) where
+    mempty = noBorder
+    mappend = (<>)
 
 transposeBorder :: Border lines -> Border lines
 transposeBorder (Border left right top bottom) =
@@ -110,9 +116,138 @@ defaultCell text =
 emptyCell :: (Lines border, Monoid text) => Cell border text
 emptyCell = defaultCell mempty
 
+mapCellBorder ::
+    (Border border0 -> Border border1) -> Cell border0 text -> Cell border1 text
+mapCellBorder f cell = cell {cellBorder = f $ cellBorder cell}
+
 transposeCell :: Cell border text -> Cell border text
-transposeCell cell =
-    cell {cellBorder = transposeBorder $ cellBorder cell}
+transposeCell = mapCellBorder transposeBorder
 
 transpose :: [[Cell border text]] -> [[Cell border text]]
 transpose = List.transpose . map (map transposeCell)
+
+
+
+setBorders :: Cell () text -> Border lines -> Cell lines text
+setBorders cell border = cell {cellBorder = border}
+
+adaptBorders :: Cell NumLines text -> Border NumLines -> Cell NumLines text
+adaptBorders cell border =
+    cell {cellBorder = border <> cellBorder cell}
+
+combineBorders ::
+    Cell () text -> Border NumLines -> Border NumLines -> Cell NumLines text
+combineBorders cell rh ch =
+    adaptBorders (setBorders cell noBorder) $
+    Border
+        (borderLeft   ch)
+        (borderRight  ch)
+        (borderTop    rh)
+        (borderBottom rh)
+
+
+squishNonEmpty ::
+    (NumLines -> NumLines -> h -> a) ->
+    Tab.Header h -> Maybe (Tab.Group h) -> NonEmpty a
+squishNonEmpty f h hs = Tab.squish f $ Tab.consHeaderGroup h hs
+
+squishMaybeEmpty ::
+    (NumLines -> NumLines -> h -> a) -> Maybe (Tab.Group h) -> [a]
+squishMaybeEmpty f =
+    maybe [] (NonEmpty.toList . Tab.squish f . Tab.HeaderGroup)
+
+flattenTable1 ::
+    Cell () text ->
+    Tab.Table (Cell () text) (Cell () text) (Cell () text) ->
+    [[Cell NumLines text]]
+flattenTable1 leftTop (Tab.Table rhs chs cells) =
+    let (rfh:|rfhs) =
+            squishNonEmpty
+                (\topBorder bottomBorder cell ->
+                    setBorders cell $
+                    Border NoLine NoLine topBorder bottomBorder)
+                (Tab.Header leftTop) rhs in
+    let cfhs = map cellBorder $ NonEmpty.tail headerRow
+        headerRow =
+            squishNonEmpty
+                (\leftBorder rightBorder cell ->
+                    adaptBorders cell $
+                    cellBorder rfh <>
+                    Border leftBorder rightBorder NoLine NoLine)
+                (Tab.Header rfh) (fmap (flip setBorders noBorder <$>) chs) in
+
+    NonEmpty.toList headerRow
+    :
+    zipWith
+        (\rh row ->
+            rh :
+            zipWith
+                (\ch cell -> combineBorders cell ch (cellBorder rh))
+                cfhs row)
+        rfhs
+        cells
+
+flattenTable0 ::
+    Tab.Table () (Cell () text) (Cell () text) -> [[Cell NumLines text]]
+flattenTable0 (Tab.Table rhs chs cells) =
+    let (rfh:|rfhs) =
+            squishNonEmpty
+                (\topBorder bottomBorder () ->
+                    Border NoLine NoLine topBorder bottomBorder)
+                (Tab.Header ()) rhs in
+    let cfhs = map cellBorder headerRow
+        headerRow =
+            squishMaybeEmpty
+                (\leftBorder rightBorder cell ->
+                    setBorders cell $
+                    rfh <> Border leftBorder rightBorder NoLine NoLine)
+                chs in
+
+    headerRow
+    :
+    zipWith
+        (\rh -> zipWith (\ch cell -> combineBorders cell rh ch) cfhs)
+        rfhs
+        cells
+
+flattenRows0 ::
+    Maybe (Tab.Group ch) ->
+    Tab.Rows () (Cell () text) -> NonEmpty [Cell NumLines text]
+flattenRows0 chs (Tab.Rows rhs cells) =
+    let rfhs =
+            Tab.squish
+                (\topBorder bottomBorder () ->
+                    Border NoLine NoLine topBorder bottomBorder)
+                rhs in
+    let cfhs =
+            squishMaybeEmpty
+                (\leftBorder rightBorder _ch ->
+                    Border leftBorder rightBorder NoLine NoLine)
+                chs in
+
+    NonEmpty.zipWith
+        (\rh -> zipWith (\ch cell -> combineBorders cell rh ch) cfhs)
+        rfhs
+        cells
+
+{-
+For symmetry reasons
+we would need all four combinations of pairs of () and Text,
+also because tables can be transposed.
+However, it is easier to do transposition of the flat cell array,
+because the types of original and transposed table mismatch.
+-}
+class Content content where
+    flattenTable ::
+        Tab.Table content Text (Cell () Text) ->
+        ((Maybe Int, Maybe Int), [[Cell NumLines Text]])
+
+instance Content Text where
+    flattenTable =
+        (,) (Just 1, Just 1) . flattenTable1 emptyCell .
+        Tab.mapRowHeaders defaultCell .
+        Tab.mapColumnHeaders defaultCell
+
+instance Content () where
+    flattenTable =
+        (,) (Just 1, Nothing) . flattenTable0 . Tab.mapColumnHeaders defaultCell
