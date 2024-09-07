@@ -248,7 +248,7 @@ module Hledger.Cli.Commands.Balance (
   -- ** balance output rendering
  ,balanceReportAsText
  ,balanceReportAsCsv
- ,balanceReportAsSpreadsheet
+ ,balanceReportAsTableNoTrans
  ,balanceReportItemAsText
  ,multiBalanceRowAsCellBuilders
  ,multiBalanceRowAsCsvText
@@ -259,6 +259,7 @@ module Hledger.Cli.Commands.Balance (
  ,multiBalanceReportHtmlRows
  ,multiBalanceReportAsTable
  ,multiBalanceReportTableAsText
+ ,multiBalanceReportAsTableNoTrans
  ,multiBalanceReportAsSpreadsheet
  ,addTotalBorders
  ,RowClass(..)
@@ -312,6 +313,7 @@ import Hledger.Write.Csv (CSV, printCSV, printTSV)
 import Hledger.Write.Ods (printFods)
 import Hledger.Write.Html (printHtml)
 import qualified Hledger.Write.Html as Html
+import qualified Hledger.Write.Tabular as Tab
 import qualified Hledger.Write.Spreadsheet as Ods
 
 
@@ -391,9 +393,12 @@ balance opts@CliOpts{reportspec_=rspec} j = case balancecalc_ of
             "csv"  -> printCSV . budgetReportAsCsv ropts
             "tsv"  -> printTSV . budgetReportAsCsv ropts
             "html" -> (<>"\n") . L.renderText .
-                      printHtml . map (map (fmap L.toHtml)) . budgetReportAsSpreadsheet ropts
+                      printHtml . map (map (fmap L.toHtml)) .
+                      snd . flattenTable ropts .
+                      budgetReportAsTableNoTrans ropts
             "fods" -> printFods IO.localeEncoding .
-                      Map.singleton "Hledger" . (,) (Just 1, Nothing) . budgetReportAsSpreadsheet ropts
+                      Map.singleton "Hledger" . flattenTable ropts .
+                      budgetReportAsTableNoTrans ropts
             _      -> error' $ unsupportedOutputFormatError fmt
       writeOutputLazyText opts $ render budgetreport
 
@@ -417,9 +422,15 @@ balance opts@CliOpts{reportspec_=rspec} j = case balancecalc_ of
               "csv"  -> \ropts1 -> printCSV . balanceReportAsCsv ropts1
               "tsv"  -> \ropts1 -> printTSV . balanceReportAsCsv ropts1
               "html" -> \ropts1 -> (<>"\n") . L.renderText .
-                                   printHtml . map (map (fmap L.toHtml)) . balanceReportAsSpreadsheet ropts1
+                            printHtml .
+                            map (map (fmap L.toHtml)) .
+                            snd . flattenTable ropts1 .
+                            balanceReportAsTableNoTrans ropts1
               "json" -> const $ (<>"\n") . toJsonText
-              "fods" -> \ropts1 -> printFods IO.localeEncoding . Map.singleton "Hledger" . (,) (Just 1, Nothing) . balanceReportAsSpreadsheet ropts1
+              "fods" -> \ropts1 -> printFods IO.localeEncoding .
+                            Map.singleton "Hledger" .
+                            flattenTable ropts1 .
+                            balanceReportAsTableNoTrans ropts1
               _      -> error' $ unsupportedOutputFormatError fmt  -- PARTIAL:
         writeOutputLazyText opts $ render ropts report
   where
@@ -478,7 +489,7 @@ totalRowHeadingBudgetCsv  = "Total:"
 -- | Render a single-column balance report as CSV.
 balanceReportAsCsv :: ReportOpts -> BalanceReport -> CSV
 balanceReportAsCsv opts =
-    rawTableContent . balanceReportAsSpreadsheet opts
+    rawTableContent . snd . flattenTable opts . balanceReportAsTableNoTrans opts
 
 -- | Render a single-column balance report as plain text.
 balanceReportAsText :: ReportOpts -> BalanceReport -> TB.Builder
@@ -590,15 +601,29 @@ renderComponent topaligned oneline opts (acctname, dep, total) (FormatField ljus
                   }
 
 
-headerCell :: Text -> Ods.Cell Ods.NumLines Text
-headerCell text =
-    let deflt = Ods.defaultCell text
-    in
-    deflt {
-        Ods.cellStyle = Ods.Head,
-        Ods.cellBorder =
-            (Ods.cellBorder deflt) {Ods.borderBottom = Ods.DoubleLine}
-    }
+classifiedCell ::
+    (Ods.Lines border) => Ods.Class -> Text -> Ods.Cell border Text
+classifiedCell cls label =
+    (Ods.defaultCell label) {Ods.cellClass = cls}
+
+assembleRows :: [[a]] -> Tab.Rows () a
+assembleRows = foldMap (Tab.row ())
+
+addTotalStyle ::
+    (Functor f) => f (Ods.Cell border text) -> f (Ods.Cell border text)
+addTotalStyle = fmap (\c -> c {Ods.cellStyle = Ods.Body Ods.Total})
+
+headerGroup :: [label] -> Tab.Group label
+headerGroup =
+    Tab.Group Tab.Before Tab.NoLine . map Tab.Header
+
+makeTable :: Tab.Group ch -> Tab.Rows rh a -> Tab.Table rh ch a
+makeTable headers block =
+    Tab.fromRowGroup Tab.After Tab.DoubleLine headers [block]
+
+addFooter :: Tab.Rows rh a -> Tab.Rows rh a -> Tab.Rows rh a
+addFooter body footer =
+    Tab.above Tab.Before Tab.DoubleLine body footer
 
 addTotalBorders :: [[Ods.Cell border text]] -> [[Ods.Cell Ods.NumLines text]]
 addTotalBorders =
@@ -608,6 +633,21 @@ addTotalBorders =
                     Ods.cellStyle = Ods.Body Ods.Total,
                     Ods.cellBorder = Ods.noBorder {Ods.borderTop = border}}))
         (Ods.DoubleLine : repeat Ods.NoLine)
+
+maybeTransposeSpreadsheet ::
+    ReportOpts ->
+    ((n,n), [[Ods.Cell border text]]) ->
+    ((n,n), [[Ods.Cell border text]])
+maybeTransposeSpreadsheet ropts =
+    if transpose_ ropts then swap *** Ods.transpose else id
+
+flattenTable ::
+    (Ods.Content content) =>
+    ReportOpts ->
+    Tab.Table content Text (Ods.Cell () Text) ->
+    ((Maybe Int, Maybe Int), [[Ods.Cell Ods.NumLines Text]])
+flattenTable ropts =
+    maybeTransposeSpreadsheet ropts . Ods.flattenTable
 
 rawTableContent :: [[Ods.Cell border text]] -> [[text]]
 rawTableContent = map (map Ods.cellContent)
@@ -623,24 +663,23 @@ setAccountAnchor base acct cell =
 
 
 -- | Render a single-column balance report as FODS.
-balanceReportAsSpreadsheet ::
-    ReportOpts -> BalanceReport -> [[Ods.Cell Ods.NumLines Text]]
-balanceReportAsSpreadsheet opts (items, total) =
-    (if transpose_ opts then Ods.transpose else id) $
-    headers :
-    concatMap (\(a, _, _, b) -> rows Value a b) items ++
-    if no_total_ opts then []
-      else addTotalBorders $ rows Total totalRowHeadingCsv total
+balanceReportAsTableNoTrans ::
+    ReportOpts -> BalanceReport -> Tab.Table () Text (Ods.Cell () Text)
+balanceReportAsTableNoTrans opts (items, total) =
+    makeTable headers $
+    let body = foldMap (\(a, _, _, b) -> assembleRows $ rows Value a b) items in
+    if no_total_ opts
+      then body
+      else addFooter body $
+           addTotalStyle $ assembleRows $
+           rows Total totalRowHeadingCsv total
   where
     cell = Ods.defaultCell
-    headers =
-      map headerCell $
+    headers = headerGroup $
       "account" : case layout_ opts of
         LayoutBare -> ["commodity", "balance"]
         _          -> ["balance"]
-    rows ::
-        RowClass -> AccountName ->
-        MixedAmount -> [[Ods.Cell Ods.NumLines Text]]
+    rows :: RowClass -> AccountName -> MixedAmount -> [[Ods.Cell () Text]]
     rows rc name ma =
       let accountCell =
               setAccountAnchor (guard (rc==Value) >> anchor_ opts) name $
@@ -701,42 +740,43 @@ amountType bopts amt =
 -- The CSV will always include the initial headings row,
 -- and will include the final totals row unless --no-total is set.
 multiBalanceReportAsCsv :: ReportOpts -> MultiBalanceReport -> CSV
-multiBalanceReportAsCsv opts@ReportOpts{..} report = maybeTranspose allRows
-  where
-    allRows =
-      rawTableContent $
+multiBalanceReportAsCsv opts@ReportOpts{..} report =
+      rawTableContent $ snd $ flattenTable opts $
+      makeTable (fmap snd header) $
       case layout_ of
-      LayoutTidy -> rows  -- tidy csv should not include totals or averages
-      _ -> rows ++ totals
-    rows = header:body
+      LayoutTidy -> body  -- tidy csv should not include totals or averages
+      _ -> addFooter body totals
+  where
     (header, body, totals) =
-        multiBalanceReportAsSpreadsheetHelper False opts report
-    maybeTranspose = if transpose_ then transpose else id
+        multiBalanceReportAsTableNoTrans False opts report
 
 -- Helper for CSV and ODS and HTML rendering.
-multiBalanceReportAsSpreadsheetHelper ::
+multiBalanceReportAsTableNoTrans ::
     Bool -> ReportOpts -> MultiBalanceReport ->
-    ([Ods.Cell Ods.NumLines Text],
-     [[Ods.Cell Ods.NumLines Text]],
-     [[Ods.Cell Ods.NumLines Text]])
-multiBalanceReportAsSpreadsheetHelper ishtml opts@ReportOpts{..} (PeriodicReport colspans items tr) =
-    (headers, concatMap fullRowAsTexts items, addTotalBorders totalrows)
+    (Tab.Group (Ods.Class, Text),
+     Tab.Rows () (Ods.Cell () Text),
+     Tab.Rows () (Ods.Cell () Text))
+multiBalanceReportAsTableNoTrans ishtml opts@ReportOpts{..} (PeriodicReport colspans items tr) =
+    (headers,
+        foldMap (assembleRows . fullRowAsTexts) items,
+        addTotalStyle $ assembleRows totalrows)
+
   where
-    accountCell label =
-        (Ods.defaultCell label) {Ods.cellClass = Ods.Class "account"}
-    hCell cls label = (headerCell label) {Ods.cellClass = Ods.Class cls}
-    headers =
-      hCell "account" "account" :
+    accountCell = classifiedCell (Ods.Class "account")
+    labelledHeader cls label = (Ods.Class cls, label)
+    plainHeader label = (Ods.Class mempty, label)
+    headers = headerGroup $
+      labelledHeader "account" "account" :
       case layout_ of
       LayoutTidy ->
-          map headerCell
+          map plainHeader
               ["period", "start_date", "end_date", "commodity", "value"]
-      LayoutBare -> headerCell "commodity" : dateHeaders
+      LayoutBare -> plainHeader "commodity" : dateHeaders
       _          -> dateHeaders
     dateHeaders =
-      map (headerCell . showDateSpan) colspans ++
-      [hCell "rowtotal" "total" | row_total_] ++
-      [hCell "rowaverage" "average" | average_]
+      map (plainHeader . showDateSpan) colspans ++
+      [labelledHeader "rowtotal" "total" | row_total_] ++
+      [labelledHeader "rowaverage" "average" | average_]
     fullRowAsTexts row = map (anchorCell:) $ rowAsText Value row
       where anchorCell =
               let name = prrFullName row in
@@ -787,14 +827,19 @@ multiBalanceReportHtmlRows :: ReportOpts -> MultiBalanceReport -> (Html (), [Htm
 multiBalanceReportHtmlRows ropts mbr =
   let
     -- TODO: should the commodity_column be displayed as a subaccount in this case as well?
-    (headingsrow, bodyrows, mtotalsrows)
+    (header, body, footer)
       | transpose_ ropts = error' "Sorry, --transpose with HTML output is not yet supported"  -- PARTIAL:
-      | otherwise = multiBalanceReportAsSpreadsheetHelper True ropts mbr
+      | otherwise = multiBalanceReportAsTableNoTrans True ropts mbr
     formatRow = Html.formatRow . map (fmap L.toHtml)
   in
-    (formatRow headingsrow
-    ,map formatRow bodyrows
-    ,map formatRow mtotalsrows
+    (formatRow $
+     Tab.squish
+        (\leftBorder rightBorder cell ->
+            Ods.setBorders cell $
+            Ods.Border leftBorder rightBorder Tab.NoLine Tab.DoubleLine)
+        (fmap (uncurry classifiedCell) $ Tab.HeaderGroup header)
+    ,map formatRow $ Ods.flattenRows0 header body
+    ,map formatRow $ Ods.flattenRows0 header footer
       -- TODO pad totals row with zeros when there are
     )
 
@@ -812,10 +857,12 @@ multiBalanceReportAsSpreadsheet ::
   ReportOpts -> MultiBalanceReport ->
   ((Maybe Int, Maybe Int), [[Ods.Cell Ods.NumLines Text]])
 multiBalanceReportAsSpreadsheet ropts mbr =
-  let (header,body,total) = multiBalanceReportAsSpreadsheetHelper True ropts mbr
-  in  (if transpose_ ropts then swap *** Ods.transpose else id) $
-      ((Just 1, case layout_ ropts of LayoutWide _ -> Just 1; _ -> Nothing),
-            header : body ++ total)
+  let (header,body,footer) = multiBalanceReportAsTableNoTrans True ropts mbr
+  in  maybeTransposeSpreadsheet ropts $
+      (,) (Just 1, case layout_ ropts of LayoutWide _ -> Just 1; _ -> Nothing) $
+      Ods.flattenTable0 $
+      Tab.mapColumnHeaders (uncurry classifiedCell) $
+      makeTable header $ addFooter body footer
 
 
 -- | Render a multi-column balance report as plain text suitable for console output.
@@ -911,7 +958,7 @@ multiBalanceReportAsTable opts@ReportOpts{summary_only_, average_, row_total_, b
 multiBalanceRowAsCellBuilders ::
     AmountFormat -> ReportOpts -> [DateSpan] ->
     RowClass -> PeriodicReportRow a MixedAmount ->
-    [[Ods.Cell Ods.NumLines WideBuilder]]
+    [[Ods.Cell () WideBuilder]]
 multiBalanceRowAsCellBuilders bopts ReportOpts{..} colspans
       rc (PeriodicReportRow _ as rowtot rowavg) =
     case layout_ of
@@ -1224,34 +1271,32 @@ budgetReportAsTable ReportOpts{..} (PeriodicReport spans items totrow) =
 -- but includes alternating actual and budget amount columns.
 budgetReportAsCsv :: ReportOpts -> BudgetReport -> [[Text]]
 budgetReportAsCsv ropts report
-  = rawTableContent $
-    budgetReportAsSpreadsheet ropts report
+  = rawTableContent $ snd $ flattenTable ropts $
+    budgetReportAsTableNoTrans ropts report
 
-budgetReportAsSpreadsheet ::
-  ReportOpts -> BudgetReport -> [[Ods.Cell Ods.NumLines Text]]
-budgetReportAsSpreadsheet
+budgetReportAsTableNoTrans ::
+  ReportOpts -> BudgetReport -> Tab.Table () Text (Ods.Cell () Text)
+budgetReportAsTableNoTrans
   ReportOpts{..}
   (PeriodicReport colspans items totrow)
-  = (if transpose_ then Ods.transpose else id) $
+  =
 
-  -- heading row
-  (map headerCell $
-  "Account" :
-  ["Commodity" | layout_ == LayoutBare ]
-   ++ concatMap (\spn -> [showDateSpan spn, "budget"]) colspans
-   ++ concat [["Total"  ,"budget"] | row_total_]
-   ++ concat [["Average","budget"] | average_]
-  ) :
+  makeTable headers $
+  let body = foldMap (assembleRows . rowAsTexts Value prrFullName) items in
 
-  -- account rows
-  concatMap (rowAsTexts Value prrFullName) items
-
-  -- totals row
-  ++ addTotalBorders
-        (concat [ rowAsTexts Total (const totalRowHeadingBudgetCsv) totrow | not no_total_ ])
+  if no_total_
+    then body
+    else addFooter body $ addTotalStyle $ assembleRows $
+         rowAsTexts Total (const totalRowHeadingBudgetCsv) totrow
 
   where
     cell = Ods.defaultCell
+    headers = headerGroup $
+      "Account" :
+      ["Commodity" | layout_ == LayoutBare ] ++
+      concatMap (\spn -> [showDateSpan spn, "budget"]) colspans ++
+      concat [["Total"  ,"budget"] | row_total_] ++
+      concat [["Average","budget"] | average_]
     {-
     ToDo: The chosen HTML cell class names are not put in stone.
     If you find you need more systematic names,
@@ -1265,7 +1310,7 @@ budgetReportAsSpreadsheet
     rowAsTexts :: RowClass
                -> (PeriodicReportRow a BudgetCell -> Text)
                -> PeriodicReportRow a BudgetCell
-               -> [[Ods.Cell Ods.NumLines Text]]
+               -> [[Ods.Cell () Text]]
     rowAsTexts rc render row@(PeriodicReportRow _ as (rowtot,budgettot) (rowavg, budgetavg))
       | layout_ /= LayoutBare = [accountCell : map showNorm vals]
       | otherwise =
