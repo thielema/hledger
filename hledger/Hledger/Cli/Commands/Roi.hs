@@ -173,7 +173,7 @@ roi CliOpts{rawopts_=rawopts, reportspec_=rspec@ReportSpec{_rsReportOpts=ReportO
               (Tab.Group Tab.DoubleLine
                [ Tab.Group Tab.SingleLine [Header "Begin", Header "End"]
                , Tab.Group Tab.SingleLine [Header "Value (begin)", Header "Cashflow", Header "Value (end)", Header "PnL"]
-               , Tab.Group Tab.SingleLine [Header "IRR"]
+               , Header "IRR"
                , Tab.Group Tab.SingleLine [Header "TWR/period", Header "TWR/year"]])
               (if isSingleSpan then periodRows else periodRows ++ [totalRow])
 
@@ -273,7 +273,7 @@ timeWeightedReturn styles showCashFlow prettyTables investmentsQuery trans mixed
        (Tab.Group NoLine (map (Header . showDate) dates))
        (Tab.Group DoubleLine [ Tab.Group Tab.SingleLine [Tab.Header "Portfolio value", Tab.Header "Unit balance"]
                          , Tab.Group Tab.SingleLine [Tab.Header "Pnl", Tab.Header "Cashflow", Tab.Header "Unit price", Tab.Header "Units"]
-                         , Tab.Group Tab.SingleLine [Tab.Header "New Unit Balance"]])
+                         , Tab.Header "New Unit Balance"])
        [ [val, oldBalance, pnl', cashflow, prc, udelta, balance]
        | val <- map showDecimal valuesOnDate
        | oldBalance <- map showDecimal (0:unitBalances)
@@ -301,7 +301,7 @@ internalRateOfReturn styles showCashFlow prettyTables (OneSpan begin end valueBe
     TL.putStrLn $ Tab.render prettyTables id id id
       (Table
        (Tab.Group Tab.NoLine (map (Header . showDate) dates))
-       (Tab.Group Tab.SingleLine [Header "Amount"])
+       (Header "Amount")
        (map ((:[]) . T.pack . showMixedAmountOneLineWithoutCost False . styleAmounts styles) amts))
 
   -- 0% is always a solution, so require at least something here
