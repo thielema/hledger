@@ -136,6 +136,7 @@ import Data.Decimal (DecimalRaw (Decimal), Decimal)
 import Data.Either (rights)
 import Data.Function ((&))
 import Data.Functor ((<&>), ($>), void)
+import Data.Foldable (fold)
 import Data.List (find, genericReplicate, union)
 import Data.List.NonEmpty (NonEmpty(..))
 import Data.Maybe (catMaybes, fromMaybe, isJust, listToMaybe)
@@ -341,7 +342,7 @@ journalFinalise iopts@InputOpts{auto_,balancingopts_,infer_costs_,infer_equity_,
 
   t <- liftIO getPOSIXTime
   liftEither $
-    pj{jglobalcommoditystyles=fromMaybe mempty commodity_styles_}
+    pj{jglobalcommoditystyles=fold commodity_styles_}
       &   journalSetLastReadTime t                       -- save the last read time
       &   journalAddFile (f, txt)                        -- save the main file's info
       &   journalReverse                                 -- convert all lists to the order they were parsed
@@ -1077,8 +1078,8 @@ fromRawNumber raw mExp = do
 
     mDecPt (NoSeparators _ mDecimals)           = fst <$> mDecimals
     mDecPt (WithSeparators _ _ mDecimals)       = fst <$> mDecimals
-    decimalGroup (NoSeparators _ mDecimals)     = maybe mempty snd mDecimals
-    decimalGroup (WithSeparators _ _ mDecimals) = maybe mempty snd mDecimals
+    decimalGroup (NoSeparators _ mDecimals)     = foldMap snd mDecimals
+    decimalGroup (WithSeparators _ _ mDecimals) = foldMap snd mDecimals
     digitGroup (NoSeparators digitGrp _)        = digitGrp
     digitGroup (WithSeparators _ digitGrps _)   = mconcat digitGrps
     digitGroupStyle (NoSeparators _ _)          = Nothing

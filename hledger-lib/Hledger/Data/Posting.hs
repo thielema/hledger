@@ -302,7 +302,7 @@ postingAsLines elideamount onelineamounts acctwidth amtwidth p =
       where
         shownAssertions = replicate (length shownAmounts - 1) mempty ++ [assertion]
           where
-            assertion = maybe mempty ((WideBuilder (TB.singleton ' ') 1 <>).showBalanceAssertion) $ pbalanceassertion p
+            assertion = foldMap ((WideBuilder (TB.singleton ' ') 1 <>).showBalanceAssertion) $ pbalanceassertion p
 
     -- pad to the maximum account name width, plus 2 to leave room for status flags, to keep amounts aligned
     statusandaccount = lineIndent . fitText (Just $ 2 + acctwidth) Nothing False True $ pstatusandacct p
@@ -370,7 +370,7 @@ postingAsLinesBeancount elideamount acctwidth amtwidth p =
       where
         shownAssertions = replicate (length shownAmounts - 1) mempty ++ [assertion]
           where
-            assertion = maybe mempty ((WideBuilder (TB.singleton ' ') 1 <>).showBalanceAssertion) $ pbalanceassertion p
+            assertion = foldMap ((WideBuilder (TB.singleton ' ') 1 <>).showBalanceAssertion) $ pbalanceassertion p
 
     -- pad to the maximum account name width, plus 2 to leave room for status flags, to keep amounts aligned
     statusandaccount = lineIndent . fitText (Just $ 2 + acctwidth) Nothing False True $ pstatusandacct p

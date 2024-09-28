@@ -164,7 +164,7 @@ accountTransactionsReportAsText copts reportq thisacctq items = TB.toLazyText $
     itembal (_,_,_,_,_,a) = a
 
     -- show a title indicating which account was picked, which can be confusing otherwise
-    title = maybe mempty (\s -> foldMap TB.fromText ["Transactions in ", s, " and subaccounts", qmsg, ":"]) macct
+    title = foldMap (\s -> foldMap TB.fromText ["Transactions in ", s, " and subaccounts", qmsg, ":"]) macct
       where
         -- XXX temporary hack ? recover the account name from the query
         macct = case filterQuery queryIsAcct thisacctq of

@@ -36,7 +36,7 @@ where
 
 import Control.Monad (guard)
 import Data.Bifunctor (second)
-import Data.Foldable (toList)
+import Data.Foldable (toList, fold)
 import Data.List (sortOn, transpose)
 import Data.List.NonEmpty (NonEmpty((:|)))
 import Data.HashMap.Strict (HashMap)
@@ -540,7 +540,7 @@ transposeMap = foldr (uncurry addSpan) mempty
     addSpan spn acctmap seen = HM.foldrWithKey (addAcctSpan spn) seen acctmap
 
     addAcctSpan spn acct a = HM.alter f acct
-      where f = Just . M.insert spn a . fromMaybe mempty
+      where f = Just . M.insert spn a . fold
 
 -- | A sorting helper: sort a list of things (eg report rows) keyed by account name
 -- to match the provided ordering of those same account names.
