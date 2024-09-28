@@ -54,19 +54,30 @@ formatCell cell =
     let class_ =
             map Lucid.class_ $
             filter (not . Text.null) [Spr.textFromClass $ cellClass cell] in
+    let span_ makeCell attrs cont =
+            case Spr.cellSpan cell of
+                Spr.NoSpan -> makeCell attrs cont
+                Spr.Covered -> pure ()
+                Spr.SpanHorizontal n ->
+                    makeCell (Lucid.colspan_ (Text.pack $ show n) : attrs) cont
+                Spr.SpanVertical n ->
+                    makeCell (Lucid.rowspan_ (Text.pack $ show n) : attrs) cont
+            in
     case cellStyle cell of
-        Head -> Lucid.th_ (style++class_) content
+        Head -> span_ Lucid.th_ (style++class_) content
         Body emph ->
             let align =
                     case cellType cell of
                         TypeString -> []
                         TypeDate -> []
                         _ -> [LucidBase.makeAttribute "align" "right"]
+                valign = [LucidBase.makeAttribute "valign" "top"]
                 withEmph =
                     case emph of
                         Item -> id
                         Total -> Lucid.b_
-            in  Lucid.td_ (style++align++class_) $ withEmph content
+            in  span_ Lucid.td_ (style++align++valign++class_) $
+                withEmph content
 
 
 class (Spr.Lines border) => Lines border where
