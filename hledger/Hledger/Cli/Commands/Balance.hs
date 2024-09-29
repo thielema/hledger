@@ -1177,7 +1177,7 @@ budgetReportAsTable ReportOpts{..} (PeriodicReport spans items totrow) =
           where
             budgetCellCommodities :: BudgetCell -> S.Set CommoditySymbol
             budgetCellCommodities (am, bm) = f am `S.union` f bm
-              where f = maybe mempty maCommodities
+              where f = foldMap maCommodities
 
         -- | Render a "BudgetCell"'s amounts as "BudgetDisplayCell"s (one per commodity).
         showcell :: BudgetShowAmountsFn -> BudgetCalcPercentagesFn -> BudgetCell -> BudgetDisplayRow

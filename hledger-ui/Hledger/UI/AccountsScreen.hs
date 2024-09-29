@@ -173,7 +173,7 @@ asDrawItem (acctwidth, balwidth) selected AccountsScreenItem{..} =
       txt balspace <+>
       splitAmounts balBuilder
       where
-        balBuilder = maybe mempty showamt asItemMixedAmount
+        balBuilder = foldMap showamt asItemMixedAmount
         showamt = showMixedAmountB oneLineNoCostFmt{displayMinWidth=Just balwidth, displayMaxWidth=Just balwidth}
         balspace = T.replicate (2 + balwidth - wbWidth balBuilder) " "
         splitAmounts = foldr1 (<+>) . intersperse (str ", ") . map renderamt . T.splitOn ", " . wbToText
