@@ -674,7 +674,7 @@ Here are those commands and the formats currently supported:
 | cashflow           | Y   | Y    | Y       |      |           |     | Y    |
 | incomestatement    | Y   | Y    | Y       |      |           |     | Y    |
 | print              | Y   |      | Y       |      | Y         | Y   | Y    |
-| register           | Y   |      | Y       |      |           |     | Y    |
+| register           | Y   | Y    | Y       | Y    |           |     | Y    |
 
 <!--
 | accounts              |     |     |      |      |     |
@@ -703,17 +703,20 @@ Here are those commands and the formats currently supported:
 | test                  |     |     |      |      |     |
 -->
 
-The output format is selected by the `-O`/`--output-format=FMT` option:
+You can also see which output formats a command supports by running
+`hledger CMD -h` and looking for the `-O`/`--output-format=FMT` option,
+
+You can select the output format by using that option:
 ```cli
-$ hledger print -O csv    # print CSV on stdout
+$ hledger print -O csv    # print CSV to standard output
 ```
 
-or by the filename extension of an output file specified with the `-o`/`--output-file=FILE.FMT` option:
+or by choosing a suitable filename extension with the `-o`/`--output-file=FILE.FMT` option:
 ```cli
 $ hledger balancesheet -o foo.csv    # write CSV to foo.csv
 ```
 
-The `-O` option can be combined with `-o` to override the file extension, if needed:
+The `-O` option can be combined with `-o` to override the file extension if needed:
 ```cli
 $ hledger balancesheet -o foo.txt -O csv    # write CSV to foo.txt
 ```
@@ -722,20 +725,53 @@ Here are some notes about the various output formats.
 
 ### Text output
 
-This is the default: human readable, plain text report output, suitable for a terminal.
+This is the default: human readable, plain text report output, suitable for viewing with a monospace font in a terminal.
+If your data contains unicode or wide characters, you'll need a terminal and font that render those correctly.
+(This can be challenging on MS Windows.)
+
+Some reports (`register`, `aregister`) will use the width indicated by the `COLUMNS` environment variable.
+If your shell and terminal are working well, they will keep COLUMNS updated as you resize the window.
+So register reports normally will use the full window width.
+When this isn't working or you want to override it, you can manually set COLUMNS, or use the `-w`/`--width` option.
+
+Balance reports (`balance`, `balancesheet`, `incomestatement`...) use whatever width they need.
+Multi-period multi-currency reports can often be wider than the window. Besides using a pager,
+helpful techniques for this situation include
+`--layout=bare`, `-V`, `cur:`, `--transpose`, `--tree`, `--depth`, `--drop`, switching to html output, etc.
+
+(Help output uses a pager automatically when appropriate, but regular reports do not, currently.)
+
+#### Colour
+
+hledger tries to detect ANSI color and text styling support and use it when appropriate,
+though currently rather minimally: some reports show negative numbers in red,
+and help output uses bold text for emphasis.
+
+You can override this in the usual ways.
+If the `NO_COLOR` environment variable is set, colour will be disabled by default.
+Or you can use the `--color/--colour` option with a `yes`/`always` value,
+or `no`/`never`, to force colour on or off.
+
+#### Box-drawing
+
+By default, hledger draws table borders using ascii characters, to minimise the chance of display problems.
+
+If your terminal and font support box-drawing characters (they probably do),
+you will probably want to use the `--pretty` flag to show prettier tables.
+This is a good flag to add to your hledger config file.
 
 ### HTML output
 
-- HTML output can be styled by an optional `hledger.css` file in the same directory.
+HTML output can be styled by an optional `hledger.css` file in the same directory.
 
-- HTML output will be UTF-8 encoded. If your web browser is showing junk characters,
-  you may need to change its text encoding to UTF-8.
-  Eg in Safari, see View -> Text Encoding and Settings -> Advanced -> Default Encoding.
+HTML output will be UTF-8 encoded. If your web browser is showing junk characters,
+you may need to change its text encoding to UTF-8.
+Eg in Safari, see View -> Text Encoding and Settings -> Advanced -> Default Encoding.
 
 ### CSV / TSV output
 
-- In CSV or TSV output, [digit group marks](#digit-group-marks) (such as thousands separators)
-  are disabled automatically.
+In CSV or TSV output, [digit group marks](#digit-group-marks) (such as thousands separators)
+are disabled automatically.
 
 ### FODS output
 
@@ -813,54 +849,39 @@ option "operating_currency" "USD"
 
 ### SQL output
 
-- This is not yet much used; real-world feedback is welcome.
+SQL output is expected to work at least with SQLite, MySQL and Postgres.
 
-- SQL output is expected to work at least with SQLite, MySQL and Postgres.
+The SQL statements are expected to be executed in the empty database.
+If you already have tables created via SQL output of hledger,
+you would probably want to either clear data from these
+(via `delete` or `truncate` SQL statements) or `drop` the tables completely
+before import; otherwise your postings would be duplicated.
 
-- For SQLite, it will be more useful if you modify the generated `id` field
-  to be a PRIMARY KEY. Eg:
-  ```
-  $ hledger print -O sql | sed 's/id serial/id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL/g' | ...
-  ```
+For SQLite, it is more useful if you modify the generated `id` field
+to be a PRIMARY KEY. Eg:
+```
+$ hledger print -O sql | sed 's/id serial/id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL/g' | ...
+```
 
-- SQL output is structured with the expectations that statements will
-  be executed in the empty database. If you already have tables created
-  via SQL output of hledger, you would probably want to either clear tables
-  of existing data (via `delete` or `truncate` SQL statements) or drop
-  tables completely as otherwise your postings will be duped.
+This is not yet much used; feedback is welcome.
 
 ### JSON output
 
-- This is not yet much used; real-world feedback is welcome.
-
-- Our JSON is rather large and verbose, since it is a faithful
-  representation of hledger's internal data types. To understand the
-  JSON, read the Haskell type definitions, which are mostly in
-  <https://github.com/simonmichael/hledger/blob/master/hledger-lib/Hledger/Data/Types.hs>.
-  [hledger-web's OpenAPI specification][openapi.yaml] may also be relevant.
-
-<!--
-- The JSON output from hledger commands is essentially the same as the
-  JSON served by [hledger-web's JSON API](hledger-web.html#json-api),
-  but pretty printed, using line breaks and indentation.
-  Our pretty printer has the ability to elide data in certain cases -
-  rendering non-strings as if they were strings, or displaying "FOO.."
-  instead of FOO's full details. This should never happen in hledger's
-  JSON output; if you see otherwise, please report as a bug.
--->
-
-- hledger represents quantities as Decimal values storing up to 255
-  significant digits, eg for repeating decimals. Such numbers can
-  arise in practice (from automatically-calculated transaction
-  prices), and would break most JSON consumers. So in JSON, we show
-  quantities as simple Numbers with at most 10 decimal places. We
-  don't limit the number of integer digits, but that part is under
-  your control.
-  We hope this approach will not cause problems in practice; if you
-  find otherwise, please let us know. 
-  (Cf [#1195](https://github.com/simonmichael/hledger/issues/1195))
+Our JSON is rather large and verbose, since it is a faithful representation of hledger's internal data types. 
+To understand its structure, read the Haskell type definitions, which are mostly in
+<https://github.com/simonmichael/hledger/blob/master/hledger-lib/Hledger/Data/Types.hs>.
+[hledger-web's OpenAPI specification][openapi.yaml] may also be relevant.
 
 [openapi.yaml]: https://github.com/simonmichael/hledger/blob/master/hledger-web/config/openapi.yaml
+
+hledger stores numbers with sometimes up to 255 significant digits.
+This is too many digits for most JSON consumers,
+so in JSON output we round numbers to at most 10 decimal places.
+(We don't limit the number of integer digits.)
+If you find this causing problems, please let us know.
+Related: [#1195](https://github.com/simonmichael/hledger/issues/1195)
+
+This is not yet much used; feedback is welcome.
 
 ## Commodity styles
 
@@ -884,23 +905,6 @@ the [commodity directive](#commodity-directive).
 
 In some cases hledger will adjust number formatting to improve their parseability
 (such as adding [trailing decimal marks](#trailing-decimal-marks) when needed).
-
-## Colour
-
-In terminal output, some commands can produce colour when the terminal supports it:
-
-- if the `--color/--colour` option is given a value of `yes` or `always`
-  (or `no` or `never`), colour will (or will not) be used;
-- otherwise, if the `NO_COLOR` environment variable is set, colour will not be used;
-- otherwise, colour will be used if the output (terminal or file) supports it.
-
-## Box-drawing
-
-In terminal (text) output, to minimise the risk of display problems,
-table borders are drawn using only ascii characters by default.
-
-To see tables with prettier unicode box-drawing characters, add the `--pretty` flag.
-This will also show outer borders and inter-column borders.
 
 ## Paging
 
