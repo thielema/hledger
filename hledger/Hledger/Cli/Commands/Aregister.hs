@@ -22,17 +22,26 @@ module Hledger.Cli.Commands.Aregister (
 import Data.Default (def)
 import Data.List (find)
 import Data.Maybe (fromMaybe)
+import Data.Text (Text)
+import Data.Foldable (for_)
+import qualified Data.Map as Map
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
 import qualified Data.Text.Lazy.Builder as TB
-import Lucid as L hiding (value_)
+import Control.Monad (guard)
+import Lucid (toHtml)
+import qualified Lucid as L
 import System.Console.CmdArgs.Explicit (flagNone, flagReq)
 
 import Hledger
-import Hledger.Write.Csv (CSV, CsvRecord, printCSV, printTSV)
+import Hledger.Write.Csv (CSV, printCSV, printTSV)
+import Hledger.Write.Ods (printFods)
+import qualified Hledger.Write.Spreadsheet as Spr
+import qualified Hledger.Write.Html.Lucid as Html
 import Hledger.Cli.CliOptions
 import Hledger.Cli.Utils
 import Text.Tabular.AsciiWide hiding (render)
+import qualified System.IO as IO
 
 aregistermode = hledgerCommandMode
   $(embedFileRelative "Hledger/Cli/Commands/Aregister.txt")
@@ -108,6 +117,10 @@ aregister opts@CliOpts{rawopts_=rawopts,reportspec_=rspec} j = do
            | fmt=="html" = accountTransactionsReportAsHTML opts (_rsQuery rspec') thisacctq
            | fmt=="csv"  = printCSV . accountTransactionsReportAsCsv wd (_rsQuery rspec') thisacctq
            | fmt=="tsv"  = printTSV . accountTransactionsReportAsCsv wd (_rsQuery rspec') thisacctq
+           | fmt=="fods" =
+                printFods IO.localeEncoding . Map.singleton "Aregister" .
+                (,) (Just 1, Nothing) .
+                accountTransactionsReportAsSpreadsheet oneLineNoCostFmt wd (_rsQuery rspec') thisacctq
            | fmt=="json" = toJsonText
            | otherwise   = error' $ unsupportedOutputFormatError fmt  -- PARTIAL:
       where
@@ -116,26 +129,48 @@ aregister opts@CliOpts{rawopts_=rawopts,reportspec_=rspec} j = do
   writeOutputLazyText opts $ render items'
 
 accountTransactionsReportAsCsv :: WhichDate -> Query -> Query -> AccountTransactionsReport -> CSV
-accountTransactionsReportAsCsv wd reportq thisacctq is =
-  ["txnidx","date","code","description","otheraccounts","change","balance"]
-  : map (accountTransactionsReportItemAsCsvRecord wd reportq thisacctq) is
+accountTransactionsReportAsCsv wd reportq thisacctq =
+  Spr.rawTableContent .
+  accountTransactionsReportAsSpreadsheet machineFmt wd reportq thisacctq
 
-accountTransactionsReportItemAsCsvRecord :: WhichDate -> Query -> Query -> AccountTransactionsReportItem -> CsvRecord
-accountTransactionsReportItemAsCsvRecord
-  wd reportq thisacctq
+accountTransactionsReportAsSpreadsheet ::
+  AmountFormat ->
+  WhichDate -> Query -> Query -> AccountTransactionsReport ->
+  [[Spr.Cell Spr.NumLines Text]]
+accountTransactionsReportAsSpreadsheet fmt wd reportq thisacctq is =
+  Spr.addHeaderBorders
+    (map Spr.headerCell
+      ["txnidx","date","code","description","otheraccounts","change","balance"])
+  : map (accountTransactionsReportItemAsRecord fmt True wd reportq thisacctq) is
+
+accountTransactionsReportItemAsRecord ::
+  AmountFormat -> Bool ->
+  WhichDate -> Query -> Query -> AccountTransactionsReportItem ->
+  [Spr.Cell Spr.NumLines Text]
+accountTransactionsReportItemAsRecord
+  fmt internals wd reportq thisacctq
   (t@Transaction{tindex,tcode,tdescription}, _, _issplit, otheracctsstr, change, balance)
-  = [idx,date,tcode,tdescription,otheracctsstr,amt,bal]
+  = (guard internals >> [Spr.integerCell tindex]) ++
+    date :
+    (guard internals >> [cell tcode]) ++
+    [cell tdescription,
+     cell otheracctsstr,
+     amountCell change,
+     amountCell balance]
   where
-    idx  = T.pack $ show tindex
-    date = showDate $ transactionRegisterDate wd reportq thisacctq t
-    amt  = wbToText $ showMixedAmountB machineFmt change
-    bal  = wbToText $ showMixedAmountB machineFmt balance
+    cell = Spr.defaultCell
+    date =
+        (Spr.defaultCell $ showDate $
+         transactionRegisterDate wd reportq thisacctq t)
+            {Spr.cellType = Spr.TypeDate}
+    amountCell amt =
+      wbToText <$> Spr.cellFromMixedAmount fmt (Spr.Class "amount", amt)
 
 -- | Render a register report as a HTML snippet.
 accountTransactionsReportAsHTML :: CliOpts -> Query -> Query -> AccountTransactionsReport -> TL.Text
 accountTransactionsReportAsHTML copts reportq thisacctq items =
   L.renderText $ do
-    L.link_ [L.rel_ "stylesheet", href_ "hledger.css"]
+    L.link_ [L.rel_ "stylesheet", L.href_ "hledger.css"]
     L.table_ $ do
       L.thead_ $ L.tr_ $ do
         L.th_ "date"
@@ -143,18 +178,12 @@ accountTransactionsReportAsHTML copts reportq thisacctq items =
         L.th_ "otheraccounts"
         L.th_ "change"
         L.th_ "balance"
-      L.tbody_ $ mconcat $ map (htmlRow copts reportq thisacctq) items
-
--- | Render one account register report line item as a HTML table row snippet.
-htmlRow :: CliOpts -> Query -> Query -> AccountTransactionsReportItem -> L.Html ()
-htmlRow CliOpts{reportspec_=ReportSpec{_rsReportOpts=ropts}} reportq thisacctq
-    (t@Transaction{tdescription}, _, _issplit, otheracctsstr, amt, bal) =
-    L.tr_ (do (L.td_ . toHtml . show . transactionRegisterDate (whichDate ropts) reportq thisacctq) t
-              (L.td_ . toHtml) tdescription
-              (L.td_ . toHtml) otheracctsstr
-              -- piggy back on the oneLineNoCostFmt display style for now.
-              (L.td_ . toHtml . wbUnpack . showMixedAmountB oneLineNoCostFmt) amt
-              (L.td_ . toHtml . wbUnpack . showMixedAmountB oneLineNoCostFmt) bal)
+      L.tbody_ $ for_ items $
+        Html.formatRow . map (fmap toHtml) .
+        accountTransactionsReportItemAsRecord
+          oneLineNoCostFmt False
+          (whichDate $ _rsReportOpts $ reportspec_ copts)
+          reportq thisacctq
 
 -- | Render a register report as plain text suitable for console output.
 accountTransactionsReportAsText :: CliOpts -> Query -> Query -> AccountTransactionsReport -> TL.Text

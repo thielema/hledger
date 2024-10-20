@@ -121,13 +121,13 @@ postingsReportAsCsv =
 
 postingsReportAsSpreadsheet ::
   AmountFormat -> Maybe Text -> [Text] ->
-  PostingsReport -> [[Spr.Cell Spr.NumLines T.Text]]
-postingsReportAsSpreadsheet fmt base query is =
+  PostingsReport -> [[Spr.Cell Spr.NumLines Text]]
+postingsReportAsSpreadsheet fmt baseUrl query is =
   Spr.addHeaderBorders
     (map Spr.headerCell
       ["txnidx","date","code","description","account","amount","total"])
   :
-  map (postingsReportItemAsRecord fmt base query) is
+  map (postingsReportItemAsRecord fmt baseUrl query) is
 
 {- ToDo:
 link txnidx to journal URL,
@@ -136,17 +136,17 @@ link txnidx to journal URL,
 postingsReportItemAsRecord ::
     (Spr.Lines border) =>
     AmountFormat -> Maybe Text -> [Text] ->
-    PostingsReportItem -> [Spr.Cell border T.Text]
-postingsReportItemAsRecord fmt base query (_, _, _, p, b) =
-    [(cell idx) {Spr.cellType = Spr.TypeInteger},
-     (dateCell base query (paccount p) date) {Spr.cellType = Spr.TypeDate},
+    PostingsReportItem -> [Spr.Cell border Text]
+postingsReportItemAsRecord fmt baseUrl query (_, _, _, p, b) =
+    [idx,
+     (dateCell baseUrl query (paccount p) date) {Spr.cellType = Spr.TypeDate},
      cell code, cell desc,
-     setAccountAnchor base query (paccount p) $ cell acct,
+     setAccountAnchor baseUrl query (paccount p) $ cell acct,
      amountCell (pamount p),
      amountCell b]
   where
     cell = Spr.defaultCell
-    idx  = T.pack . show . maybe 0 tindex $ ptransaction p
+    idx  = Spr.integerCell . maybe 0 tindex $ ptransaction p
     date = postingDate p -- XXX csv should show date2 with --date2
     code = maybe "" tcode $ ptransaction p
     desc = maybe "" tdescription $ ptransaction p
