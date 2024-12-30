@@ -1,4 +1,9 @@
-#!/usr/bin/env runhaskell
+#!/usr/bin/env stack
+{- stack script --resolver nightly-2024-12-19 --compile
+--package process
+--package split
+-}
+--   --verbosity=info
 {-
 Make/update hledger release notes from the latest release's changelogs.
 Run this in the root of the hledger repo, in a release branch.
@@ -16,6 +21,13 @@ It is assumed that all the other changelogs' first section is also for this vers
 and that changelogs and relnotes are non-empty with specific layout and heading formats.
 
 In the end I wrote this in haskell because everything else was harder.
+
+2024-02-08 TODO:
+preserve last release's summary
+fix headings
+unwrap long lines
+merge md-issue-refs
+
 -}
 
 {-# OPTIONS_GHC -Wno-x-partial #-}

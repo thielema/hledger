@@ -34,7 +34,7 @@ import System.Console.CmdArgs.Explicit
 import System.Exit (exitFailure)
 
 import Hledger
-import Hledger.Write.Beancount (accountNameToBeancount, showTransactionBeancount)
+import Hledger.Write.Beancount (accountNameToBeancount, showTransactionBeancount, showBeancountMetadata)
 import Hledger.Write.Csv (CSV, printCSV, printTSV)
 import Hledger.Write.Ods (printFods)
 import Hledger.Write.Html.Lucid (printHtml)
@@ -44,6 +44,8 @@ import Hledger.Cli.Utils
 import Hledger.Cli.Anchor (setAccountAnchor)
 import qualified Lucid
 import qualified System.IO as IO
+import Data.Maybe (isJust, catMaybes, fromMaybe)
+import Hledger.Write.Beancount (commodityToBeancount, tagsToBeancountMetadata)
 
 printmode = hledgerCommandMode
   $(embedFileRelative "Hledger/Cli/Commands/Print.txt")
@@ -134,7 +136,7 @@ printEntries opts@CliOpts{rawopts_=rawopts, reportspec_=rspec} j =
     baseUrl = balance_base_url_ $ _rsReportOpts rspec
     query = querystring_ $ _rsReportOpts rspec
     render | fmt=="txt"       = entriesReportAsText           . styleAmounts styles . map maybeoriginalamounts
-           | fmt=="beancount" = entriesReportAsBeancount      . styleAmounts styles . map maybeoriginalamounts
+           | fmt=="beancount" = entriesReportAsBeancount (jdeclaredaccounttags j) . styleAmounts styles . map maybeoriginalamounts
            | fmt=="csv"       = printCSV . entriesReportAsCsv . styleAmounts styles
            | fmt=="tsv"       = printTSV . entriesReportAsCsv . styleAmounts styles
            | fmt=="json"      = toJsonText                    . styleAmounts styles
@@ -181,23 +183,92 @@ entriesReportAsText = entriesReportAsTextHelper showTransaction
 entriesReportAsTextHelper :: (Transaction -> T.Text) -> EntriesReport -> TL.Text
 entriesReportAsTextHelper showtxn = TB.toLazyText . foldMap (TB.fromText . showtxn)
 
--- In addition to rendering the transactions in (best effort) Beancount format,
--- this generates an account open directive for each account name used
--- (using the earliest transaction date).
-entriesReportAsBeancount :: EntriesReport -> TL.Text
-entriesReportAsBeancount ts =
+-- | This generates Beancount-compatible journal output, transforming/encoding the data
+-- in various ways when necessary (see Beancount.hs). It renders:
+-- account open directives for each account used (on their earliest posting dates),
+-- operating_currency directives (based on currencies used in costs),
+-- and transaction entries.
+-- Transaction and posting tags are converted to metadata lines.
+-- Account tags are not propagated to the open directive, currently.
+entriesReportAsBeancount ::  Map AccountName [Tag] -> EntriesReport -> TL.Text
+entriesReportAsBeancount atags ts =
   -- PERF: gathers and converts all account names, then repeats that work when showing each transaction
-  opendirectives <> "\n" <>
-  entriesReportAsTextHelper showTransactionBeancount ts
+  TL.concat [
+     TL.fromStrict operatingcurrencydirectives
+    ,TL.fromStrict openaccountdirectives
+    ,"\n"
+    ,entriesReportAsTextHelper showTransactionBeancount ts3
+    ]
   where
-    opendirectives
+    -- Remove any virtual postings.
+    ts2 = [t{tpostings=filter isReal $ tpostings t} | t <- ts]
+
+    -- Remove any conversion postings that are redundant with costs.
+    -- It would be easier to remove the costs instead,
+    -- but those are more useful to Beancount than conversion postings.
+    ts3 =
+      [ t{tpostings=filter (not . isredundantconvp) $ tpostings t}
+      | t <- ts2
+      -- XXX But conversion-posting tag is on non-redundant postings too, so how to do it ?
+      -- Assume the simple case of no more than one cost + conversion posting group in each transaction.
+      -- Actually that seems to be required by hledger right now.
+      , let isredundantconvp p =
+              matchesPosting (Tag (toRegex' "conversion-posting") Nothing) p
+              && any (any (isJust.acost) . amounts . pamount) (tpostings t)
+      ]
+
+    -- https://fava.pythonanywhere.com/example-beancount-file/help/beancount_syntax
+    -- https://fava.pythonanywhere.com/example-beancount-file/help/options
+    -- "conversion-currencies
+    -- When set, the currency conversion select dropdown in all charts will show the list of currencies specified in this option.
+    -- By default, Fava lists all operating currencies and those currencies that match ISO 4217 currency codes."
+
+    -- http://furius.ca/beancount/doc/syntax
+    -- http://furius.ca/beancount/doc/options
+    -- "This option may be supplied multiple times ...
+    -- A list of currencies that we single out during reporting and create dedicated columns for ...
+    -- we use this to display these values in table cells without their associated unit strings ...
+    -- This is used to indicate the main currencies that you work with in real life"
+    -- We use: all currencies used in costs.
+    operatingcurrencydirectives
+      | null basecurrencies = ""
+      | otherwise = T.unlines (map (todirective . commodityToBeancount) basecurrencies) <> "\n"
+      where
+        todirective c = "option \"operating_currency\" \"" <> c <> "\""
+        basecurrencies = allcostcurrencies
+          where
+            allcostcurrencies = nubSort $ map acommodity costamounts
+              where
+                costamounts =
+                  map (\c -> case c of
+                              UnitCost  a -> a
+                              TotalCost a -> a
+                              ) $ 
+                  catMaybes $
+                  map acost $
+                  concatMap (amounts . pamount) $
+                  concatMap tpostings
+                  ts3
+
+    -- http://furius.ca/beancount/doc/syntax
+    -- "there exists an “Open” directive that is used to provide the start date of each account. 
+    -- That can be located anywhere in the file, it does not have to appear in the file somewhere before you use an account name.
+    -- You can just start using account names in transactions right away,
+    -- though all account names that receive postings to them will eventually have to have
+    -- a corresponding Open directive with a date that precedes all transactions posted to the account in the input file."
+    openaccountdirectives
       | null ts = ""
-      | otherwise = TL.fromStrict $ T.unlines [
-          firstdate <> " open " <> accountNameToBeancount a
-          | a <- nubSort $ concatMap (map paccount.tpostings) ts
+      | otherwise = T.unlines [
+          T.intercalate "\n" $
+            firstdate <> " open " <> accountNameToBeancount a :
+            mdlines
+          | a <- nubSort $ concatMap (map paccount.tpostings) ts3
+          , let mds      = tagsToBeancountMetadata $ fromMaybe [] $ Map.lookup a atags
+          , let maxwidth = maximum' $ map (T.length . fst) mds
+          , let mdlines  = map (postingIndent . showBeancountMetadata (Just maxwidth)) mds
           ]
         where
-          firstdate = showDate $ minimumDef err $ map tdate ts
+          firstdate = showDate $ minimumDef err $ map tdate ts3
             where err = error' "entriesReportAsBeancount: should not happen"
 
 entriesReportAsSql :: EntriesReport -> TL.Text

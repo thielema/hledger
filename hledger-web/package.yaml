@@ -1,5 +1,5 @@
 name: hledger-web
-version: 1.40.99
+version: 1.41.99
 synopsis: Web user interface for the hledger accounting system
 description: |
   A simple web user interface for the hledger accounting system,
@@ -78,6 +78,8 @@ ghc-options:
 - -Wincomplete-uni-patterns
 
 when:
+- condition: flag(threaded)
+  ghc-options: -threaded -with-rtsopts=-T
 - condition: (flag(dev)) || (flag(library-only))
   cpp-options: -DDEVELOPMENT
 # This causes a warning when uploading to hackage:
@@ -98,7 +100,7 @@ dependencies:
 
 library:
   source-dirs: .
-  cpp-options: -DVERSION="1.40.99"
+  cpp-options: -DVERSION="1.41.99"
   exposed-modules:
   - Hledger.Web
   - Hledger.Web.Main
@@ -107,8 +109,8 @@ library:
   - Hledger.Web.Import
   - Hledger.Web.Test
   dependencies:
-  - hledger-lib >=1.40.99 && <1.41
-  - hledger >=1.40.99 && <1.41
+  - hledger-lib >=1.41.99 && <1.42
+  - hledger >=1.41.99 && <1.42
   - aeson >=1 && <2.3
   - base64
   - blaze-html
@@ -130,7 +132,7 @@ library:
   - http-conduit
   - http-client
   - http-types
-  - megaparsec >=7.0.0 && <9.7
+  - megaparsec >=7.0.0 && <9.8
   - mtl >=2.2.1
   - network
   - safe >=0.3.20
@@ -159,21 +161,19 @@ executables:
   hledger-web:
     source-dirs: app
     main: main.hs
-    cpp-options: -DVERSION="1.40.99"
+    cpp-options: -DVERSION="1.41.99"
     dependencies:
     - hledger-web
     when:
     - condition: flag(library-only)
       buildable: false
-    - condition: flag(threaded)
-      ghc-options: -threaded -with-rtsopts=-T
 
 tests:
   test:
     source-dirs: test
     main: test.hs
     other-modules: []  # prevent double compilation, https://github.com/sol/hpack/issues/188
-    cpp-options: -DVERSION="1.40.99"
+    cpp-options: -DVERSION="1.41.99"
     dependencies:
     - hledger-web
     # - hspec

@@ -1,5 +1,5 @@
 #!/usr/bin/env stack
-{- stack script --resolver nightly-2024-09-26 --compile
+{- stack script --resolver nightly-2024-12-19 --compile
    --extra-include-dirs /Library/Developer/CommandLineTools/SDKs/MacOSX12.1.sdk/usr/include/ffi
    --package base-prelude
    --package directory
@@ -57,7 +57,7 @@ usage =
   let scriptname = "Shake" in replaceRe [re|/Shake|] ('/':scriptname) $
   unlines
     ---------------------------------------79--------------------------------------
-  ["Shake: for heavy project scripting. See also: Justfile"
+  ["Shake: for heavier project scripting. See also Justfile"
   ,"Usage:"
   ,"./Shake.hs [CMD [ARGS]]  run CMD, compiling this script first if needed"
   ,"./Shake    [CMD [ARGS]]  run CMD, using the compiled version of this script"
@@ -66,12 +66,12 @@ usage =
   ,"./Shake setversion [VER] [PKGS] [-c]"
   ,"                         update versions in source files to */.version or VER"
   ,"                         and update */*.cabal files"
-  -- ,"./Shake optdocs [-c]  update options in hledger CLI command docs"
-  -- ,"                      (run after changing command flags)"
-  ,"./Shake cmddocs [-c]     update hledger command help after changing opts/docs"
+  ,"./Shake hledger-install-version"  update some version strs in hledger-install"
+  ,"./Shake cmddocs [-c]     update all hledger's COMMAND.md and COMMAND.txt files,"
+  ,"                         used for --help, manuals etc. (run after changing"
+  ,"                         COMMAND.md or command options or general options)"
   ,"./Shake mandates         update the date shown in some manual formats"
-  ,"./Shake manuals [-c]     update all packages' txt/man/info/web manuals"
-  -- ,"./Shake webmanuals       update just the web manuals"
+  ,"./Shake manuals [-c]     update the packages' embedded info/man/txt manuals"
   ,"./Shake changelogs [-c] [-n/--dry-run]"
   ,"                         update CHANGES.md files, adding new commits & headings"
   ,"./Shake docs [-c]        update all program docs (CLI help, manuals, changelogs)"
@@ -85,8 +85,10 @@ usage =
   ,""
   ,"See comments in Shake.hs for more detailed descriptions."
   ,"Add -c/--commit to have commands commit their changes."
-  ,"Add -V/-VV/-VVV to see more verbose output."
-  ,"Add -B, with nothing immediately after it, to force rebuilding."
+  ,"Add -B (on its own) to force rebuilding."
+  ,"Add -V/-VV/-VVV/-VVVV to see more verbose output."
+  ,"Add --skip-commands to try to avoid running external commands"
+  ,"(not a true dry run; some cmd calls may still run, code may do IO, etc)."
   ]
 -- TODO
 --  ,"./Shake releasebranch      create a new release branch, bump master to next dev version (.99)" 
@@ -285,10 +287,12 @@ main = do
 
             when commit $ commitIfChanged ";cabal: update cabal files" cabalfiles
 
-      -- Update version strings in most "source" files to match what's in PKG/.version.
-      -- If a version number is provided as first argument, save that in PKG/.version files first.
-      -- If one or more subdirectories are provided as arguments, save/update only those.
-      -- Also regenerates .cabal files from package.yaml files.
+      -- setversion [VER] [PKGS] [-c]
+      -- Update version strings in all packages, or just the ones specified.
+      -- If a version number is provided as first argument, save that in .version files first.
+      -- Then update various source files to match what's in their nearby .version file, such as:
+      -- package.yaml files, .cabal files (regenerating from package.yaml), .version.m4 files.
+      -- With -c, also commit the changes.
       -- See also CONTRIBUTING.md > Version numbers.
       phony "setversion" $ do
         let
@@ -303,7 +307,7 @@ main = do
           Just v  -> liftIO $ forM_ specifiedversionfiles $ flip maybeWriteFile (v++"\n")
           Nothing -> return ()
 
-        -- update "source" files depending on .version in the specified packages
+        -- update source files depending on .version in the specified packages
         let dependents = map (</> ".version.m4")  specifiedpkgs
                       ++ map (</> "package.yaml") specifiedpkgs
         need dependents
@@ -311,7 +315,7 @@ main = do
         -- and maybe commit them
         when commit $ do
           let msg = unwords [
-                 ";pkg: bump"
+                 ";pkg: set"
                 ,case dirargs of
                    [] -> "version"
                    ds -> intercalate ", " ds ++ " version"
@@ -322,6 +326,15 @@ main = do
           commitIfChanged msg $ specifiedversionfiles ++ dependents
 
         gencabalfiles
+
+      -- Update some of the version strings in hledger-install/hledger-install.sh. Manual fixup will be needed.
+      -- Not done by setversion since that is used on master, where the production hledger-install is.
+      phony "hledger-install-version" $ do
+        let versionfile = ".version"
+        let out = "hledger-install/hledger-install.sh"
+        version <- ((headDef (error $ "failed to read " <> versionfile) . words) <$>) $ liftIO $ readFile versionfile
+        cmd_ Shell sed "-i -e" ("'s/(^HLEDGER_INSTALL_VERSION)=.*/\\1='`date +%Y%m%d`'/'") out
+        cmd_ Shell sed "-i -e" ("'s/(^HLEDGER(|_LIB|_UI|_WEB)_VERSION)=.*/\\1="++version++"/'") out
 
       -- PKG/.version.m4 <- PKG/.version, just updates the _version_ macro
       "hledger*/.version.m4" %> \out -> do
@@ -402,6 +415,7 @@ main = do
       -- MANUALS
 
       -- Generate the manuals in plain text, nroff, info, and markdown formats.
+      -- NB you should run "Shake cmddocs" before this, it's not automatic (?)
       phony "manuals" $ do
         need $ concat [
                nroffmanuals
@@ -411,7 +425,7 @@ main = do
               ,webmanuals
               ]
         when commit $
-          commitIfChanged ";doc: update manuals" $
+          commitIfChanged ";doc: update embedded manuals" $
             concat [commandmds, packagemandatem4s, nroffmanuals, infomanuals, infodirentries, txtmanuals]  -- infodir
 
       -- Update the dates to show in man pages, to the current month and year.
@@ -594,17 +608,26 @@ main = do
           | pkg <- pkgs
           ]
 
-      -- Regenerate Hledger/Cli/Commands/*.txt, rendering the corresponding .md files as plain text.
-      -- Also updates cmddocs first.
-      -- For commands' --help output.
-      -- NB this assumes the hledger executables are up to date. XXX
+      -- Using the current hledger build, run all commands to update their options help in COMMAND.md,
+      -- then regenerate all the COMMAND.txt from COMMAND.md.
+      -- With -c, also commit any changes in the .md and .txt files.
+      -- The hledger build should up to date when running this. XXX how to check ? need ["build"] is circular
       phony "cmddocs" $ do
-        -- need ["build"]  -- XXX circular dep, how would this work ?
-        liftIO $ putStrLn "please ensure the hledger build is up to date"  -- XXX never printed, why ?
+        liftIO $ putStrLn "please ensure the hledger build is up to date. Running all commands..."
         need commandtxts
-        when commit $ commitIfChanged ";doc: update help" $ commandmds <> commandtxts
+        when commit $ commitIfChanged ";doc: update command docs" $ commandmds <> commandtxts
 
-      -- -- Update each Hledger/Cli/Commands/*.md, replacing the flags block with latest --help output,
+      -- Regenerate Hledger/Cli/Commands/*.txt from the corresponding .md files,
+      -- after first updating the options help within those.
+      commandtxts |%> \out -> do
+        let src = out -<.> "md"
+        liftIO $ putStrLn ("generating " <> out)
+        need [src <.> "new"]  -- 1. depend on phony target that updates the options help in src
+        need [src]            -- 2. depend on the now updated src
+        cmd Shell
+          pandoc fromsrcmd src "--lua-filter" "tools/pandoc-dedent-code-blocks.lua" "-t plain" ">" out
+
+      -- -- Update each Hledger/Cli/Commands/*.md, replacing the ```flags block with latest --help output,
       -- -- or a placeholder if there are no command-specific flags.
       -- -- For hledger manual and also for cmddocs below.
       -- -- NB hledger executables should be up to date, see cmddocs
@@ -612,9 +635,9 @@ main = do
       --   need commandmdsnew
       --   when commit $ commitIfChanged ";doc: update command flag docs" commandmds
 
-      -- hledger/Hledger/Cli/Commands/CMD.md.new: a phony target that updates the flags doc
-      -- within hledger/Hledger/Cli/Commands/CMD.md. Runs "stack run -- hledger CMD -h" to get the latest.
-      -- If that fails, a warning is printed and it carries on, keeping the old flags doc.
+      -- hledger/Hledger/Cli/Commands/CMD.md.new: a phony target that updates the ```flags block
+      -- within hledger/Hledger/Cli/Commands/CMD.md with the output of "stack run -- hledger CMD --help".
+      -- If that fails, a warning is printed and it carries on, keeping the old options help.
       -- NB this needs the hledger build to be up to date, see cmddocs.
       phonys $ \out ->
         if not $ "hledger/Hledger/Cli/Commands/" `isPrefixOf` out && ".md.new" `isSuffixOf` out
@@ -629,7 +652,7 @@ main = do
           let cmdname = map toLower $ takeBaseName src
           do
             let shellcmd = "stack exec -- hledger -h " <> cmdname
-            liftIO $ putStrLn $ "running " <> shellcmd <> " to get options help"
+            -- liftIO $ putStrLn $ "running " <> shellcmd <> " to get options help"
             cmdhelp <- lines . fromStdout <$> (cmd Shell shellcmd :: Action (Stdout String))
             let
               cmdflagshelp = takeWhile (not.null) $ dropWhile (/="Flags:") cmdhelp
@@ -646,143 +669,95 @@ main = do
             --       | otherwise = err
             -- in \(e::C.IOException) -> liftIO $ hPutStrLn stderr $ elide $ show e  -- not used
 
-      commandtxts |%> \out -> do
-        let src = out -<.> "md"
-        liftIO $ putStrLn ("generating " <> out)
-        need [src <.> "new"]  -- 1. update flags doc in src
-        need [src]            -- 2. depend on src
-        cmd Shell
-          pandoc fromsrcmd src "--lua-filter" "tools/pandoc-dedent-code-blocks.lua" "-t plain" ">" out
-
       -- CHANGELOGS
-
-      let
-        -- git log showing short commit hashes
-        gitlog = "git log --abbrev-commit"
-
-        -- git log formats suitable for changelogs/release notes
-        -- %s=subject, %an=author name, %n=newline if needed, %w=width/indent1/indent2, %b=body, %h=hash
-        changelogGitFormat = "--pretty=format:'- %s (%an)%n%w(0,2,2)%b\n'"
-        -- changelogVerboseGitFormat = "--pretty=format:'- %s (%an)%n%w(0,2,2)%b%h' --stat"
-
-        -- Format a git log message, with one of the formats above, as a changelog item
-        changelogCleanupCmd = unwords [
-           sed
-          ,"-e 's/^( )*\\* /\1- /'"        --  ensure bullet lists in descriptions use hyphens not stars
-          ,"-e 's/ \\(Simon Michael\\)//'" --  strip maintainer's author name
-          ,"-e 's/^- (doc: *)?(updated? *)?changelogs?( *updates?)?$//'"  --  strip some variants of "updated changelog"
-          ,"-e 's/^ +\\[ci skip\\] *$//'"  --  strip [ci skip] lines
-          ,"-e 's/^ +$//'"                 --  replace lines containing only spaces with empty lines
-          -- ,"-e 's/\r//'"                   --  strip windows carriage returns (XXX \r untested. IDEA doesn't like a real ^M here)
-          ,"-e '/./,/^$/!d'"               --  replace consecutive newlines with one
-          ]
-
-        -- Things to exclude when doing git log for project-wide changelog.
-        -- git exclude pathspecs, https://git-scm.com/docs/gitglossary.html#gitglossary-aiddefpathspecapathspec
-        projectChangelogExcludeDirs = unwords [
-           ":!hledger-lib"
-          ,":!hledger"
-          ,":!hledger-ui"
-          ,":!hledger-web"
-          ,":!tests"
-          ]
 
       -- update all changelogs with latest commits
       phony "changelogs" $ do
         need changelogs
         when commit $ commitIfChanged ";doc: update changelogs" changelogs
 
-      -- [PKG/]CHANGES.md
-      -- Add any new non-boring commits to the specified changelog, in
-      -- an idempotent way, minimising manual toil, as follows. We look at:
-      --
-      -- - the changelog's topmost markdown heading, which can be a
-      --   dev heading (first word is a git revision like 4fffe6e7) or
-      --   a release heading (first word is a release version & tag
-      --   like 1.18.1, second word is a date like 2020-06-21) or a
-      --   package release heading (hledger-ui-1.18.1).
-      --
-      -- - the package version, in the adjacent .version file, which
-      --   can be a dev version like 1.18.99 (first two digits of last
-      --   part are 97, 98 or 99) or a release version like 1.18.1
-      --   (any other cabal-style version).
-      --
-      -- The old changelog heading is removed if it was a dev heading;
-      -- new commits in PKG not prefixed with semicolon are added;
-      -- and a suitable new heading is added: a release heading if
-      -- the package version looks like a release version, otherwise 
-      -- a dev heading with the current HEAD revision.
-      -- 
-      -- With -n/--dry-run, print new content to stdout instead of
-      -- updating the changelog.
-      --
+      -- [PKG/]CHANGES.md [-n|--dry-run]
+      -- Add any new commit messages to the specified changelog, idempotently.
+      -- Or with -n/--dry-run, just print the new content to stdout.
+      -- Assumptions/requirements:
+      -- 1. All releases nowadays are full releases (including all four packages).
+      -- 2. The changelog's topmost markdown heading text is a release heading like "1.18.1 2020-06-21", or a more recent commit id like "4fffe6e7".
+      -- 3. When a release heading is added to a changelog, a corresponding release tag is also created.
       phonys (\out -> if out `notElem` changelogs
         then Nothing
         else Just $ do
-          tags <- lines . fromStdout <$> (cmd Shell "git tag" :: Action (Stdout String))
+          let
+            -- shell command to run git log showing short commit hashes.
+            -- In 2024 git is showing 9 digits, 1 more than jj - show 8 for easier interop
+            gitlog = "git log --abbrev=8"
+
+            -- a git log format suitable for changelogs/release notes
+            -- %s=subject, %an=author name, %n=newline if needed, %w=width/indent1/indent2, %b=body, %h=hash
+            changelogGitFormat = "--pretty=format:'- %s (%an)%n%w(0,2,2)%b\n'"
+            -- changelogVerboseGitFormat = "--pretty=format:'- %s (%an)%n%w(0,2,2)%b%h' --stat"
+
+            -- shell command to format a git log message with the above format, as a changelog item
+            commitMessageToChangelogItemCmd = unwords [
+              sed
+              ,"-e 's/^( )*\\* /\1- /'"        --  ensure bullet lists in descriptions use hyphens not stars
+              ,"-e 's/ \\(Simon Michael\\)//'" --  strip maintainer's author name
+              ,"-e 's/^- (doc: *)?(updated? *)?changelogs?( *updates?)?$//'"  --  strip some variants of "updated changelog"
+              ,"-e 's/^ +\\[ci skip\\] *$//'"  --  strip [ci skip] lines
+              ,"-e 's/^ +$//'"                 --  replace lines containing only spaces with empty lines
+              -- ,"-e 's/\r//'"                   --  strip windows carriage returns (XXX \r untested. IDEA doesn't like a real ^M here)
+              ,"-e '/./,/^$/!d'"               --  replace consecutive newlines with one
+              ]
+
+            -- Directories to exclude when doing git log for the project changelog.
+            -- https://git-scm.com/docs/gitglossary.html#gitglossary-aiddefpathspecapathspec
+            projectChangelogExcludes = unwords [
+              ":!hledger-lib"
+              ,":!hledger"
+              ,":!hledger-ui"
+              ,":!hledger-web"
+              ,":!tests"
+              ]
+
+            mpkg = if dir=="." then Nothing else Just dir where dir = takeDirectory out
+
+          -- Parse the changelog.
           oldlines <- liftIO $ lines <$> readFileStrictly out
           let
-            dir = takeDirectory out
-            mpkg | dir=="."  = Nothing
-                 | otherwise = Just dir
-            (preamble, oldheading:rest) = span isnotheading oldlines
-              where isnotheading = not . ("#" `isPrefixOf`)
-            -- changelog version: a hash or the last release version of this package (or the project)
-            changelogversion = headDef err $ drop 1 $ words oldheading
+            (preamble, oldheading:rest) = span isnotheading oldlines where isnotheading = not . ("#" `isPrefixOf`)
+            oldversion = headDef err $ drop 1 $ words oldheading
               where err = error $ "could not parse changelog heading: "++oldheading
-            -- prepend the package name if we are in a package (not the top-level project directory)
-            maybePrependPackage s = maybe s (++("-"++s)) mpkg
-            toTag = maybePrependPackage
-            isOldRelease rev = isReleaseVersion rev && toTag rev `elem` tags
-            isNewRelease rev = isReleaseVersion rev && toTag rev `notElem` tags
-            -- git revision corresponding to the changelog version:
-            -- a hash (a3f19c15), package release tag (hledger-ui-1.20), or project release tag (1.20)
-            lastrev
-              | isOldRelease changelogversion = toTag changelogversion  -- package release tag
-              | isNewRelease changelogversion =
-                  trace (out ++ "'s version \""++changelogversion++"\" is not yet tagged, can't list changes")
-                  "HEAD"
-              | otherwise = changelogversion
-                
-          -- interesting commit messages between lastrev and HEAD, cleaned up
-          let
-            interestingpaths = fromMaybe projectChangelogExcludeDirs mpkg
-            -- interestingmessages = "--invert-grep --grep '^;'"  -- ignore commits beginning with ;
-            -- TODO: update for new commit conventions. ; now means skip CI,
-            -- feat:/imp:/fix: means release notes, pkg:/lib: means changelogs, etc.
-            interestingmessages = ""
-          newitems <- fromStdout <$>
-                        (cmd Shell gitlog changelogGitFormat (lastrev++"..") interestingmessages "--" interestingpaths
-                         "|" changelogCleanupCmd :: Action (Stdout String))
 
-          -- git revision of current HEAD
-          headrev <- unwords . words . fromStdout <$>
-                     (cmd Shell gitlog "-1 --pretty=%h -- " interestingpaths :: Action (Stdout String))
-          -- package version: the version number currently configured for this package (or the project)
-          packageversion <-
-            let versionfile = dir </> ".version"
-                err = error $ "could not parse a version in "++versionfile
-            in liftIO $ headDef err . words <$> readFileStrictly versionfile
-          date <- liftIO getCurrentDay
-          let
-            -- the new changelog heading will be a final (dated, versioned) heading if
-            -- the configured package version is a new release version (non-dev & non-tagged)
-            (newrev, newheading)
-              | isNewRelease packageversion = (toTag packageversion, unwords [packageversion, show date])
-              | otherwise                   = (headrev, headrev)
-            newcontent = "# "++newheading++"\n" ++ newitems
-            newchangelog =
-                 unlines preamble
-              ++ newcontent
-              ++ (if isCommitHash changelogversion then "" else oldheading)
-              ++ unlines rest
+          -- Find the latest commit that has been scanned for this changelog, as a commit id or tag name.
+            lastscannedrev
+              | isCommitHash oldversion = oldversion
+              | otherwise = maybe oldversion (++("-"++oldversion)) mpkg
 
-          liftIO $ if
-            | lastrev == newrev -> pure ()  -- putStrLn $ out ++ ": up to date"
-            | dryrun -> putStr $ out ++ ":\n" ++ newcontent
-            | otherwise -> do
-                writeFile out newchangelog
-                putStrLn $ out ++ ": updated to " ++ newrev
+          -- Find the latest commit (HEAD).
+          latestrev <- unwords . words . fromStdout <$> (cmd Shell gitlog "-1 --pretty=%h" :: Action (Stdout String))
+
+          -- If it's newer,
+          when (lastscannedrev /= latestrev) $ do
+
+            -- Find the new commit messages relevant to this changelog, and clean them.
+            let scanpath = fromMaybe projectChangelogExcludes mpkg
+            newitems <- fromStdout <$> (cmd Shell
+              "set -o pipefail;"  -- so git log failure will cause this action to fail
+              gitlog changelogGitFormat (lastscannedrev++"..") "--" scanpath
+              "|" commitMessageToChangelogItemCmd
+              :: Action (Stdout String))
+
+            -- Add the new heading and change items to the changelog, or print them.
+            let newcontent = "# " ++ latestrev ++ "\n" ++ newitems
+            liftIO $ if dryrun
+              then putStr $ out ++ ":\n" ++ newcontent
+              else do
+                writeFile out $ concat [
+                  unlines preamble
+                  ,newcontent
+                  ,if isCommitHash oldversion then "" else oldheading
+                  ,unlines rest
+                  ]
+                putStrLn (out ++ ": updated to " ++ latestrev)
 
           )
 
@@ -797,34 +772,28 @@ main = do
       phony "site" $ do
         need [
            "webmanuals"
-          ,"orgfiles"
           ]
         cmd_ "make -C site build"
 
-      phony "orgfiles" $
-        need [
-           -- "doc/BACKLOG.md"
-          ]
-
-      -- These org files are converted to markdown for the website.
-      [ -- "doc/BACKLOG.md"
-       ] |%> \out -> do
-        let src = out -<.> "org"
-        need [src]
-        -- replace the generated top heading with our own so we can insert the TOC after it
-        let heading = dropExtension out
-        mdlines <- drop 1 . lines . fromStdout <$> (cmd Shell pandoc fromorg towebmd src :: Action (Stdout String))
-        liftIO $ writeFile out $ unlines $ [
-           "<!-- " ++ "Generated by \"Shake " ++ out ++ " from " ++ src ++ " -->"
-          ,""
-          ,"# " ++ heading
-          ,""
-          ,"<div class=\"pagetoc\">"
-          ,""
-          ,"<!-- toc -->"
-          ,"</div>"
-          ,""
-          ] ++ mdlines
+      -- Markdown generated from org files, for the website.
+      -- [ -- "doc/BACKLOG.md"
+      --  ] |%> \out -> do
+      --   let src = out -<.> "org"
+      --   need [src]
+      --   -- replace the generated top heading with our own so we can insert the TOC after it
+      --   let heading = dropExtension out
+      --   mdlines <- drop 1 . lines . fromStdout <$> (cmd Shell pandoc fromorg towebmd src :: Action (Stdout String))
+      --   liftIO $ writeFile out $ unlines $ [
+      --      "<!-- " ++ "Generated by \"Shake " ++ out ++ " from " ++ src ++ " -->"
+      --     ,""
+      --     ,"# " ++ heading
+      --     ,""
+      --     ,"<div class=\"pagetoc\">"
+      --     ,""
+      --     ,"<!-- toc -->"
+      --     ,"</div>"
+      --     ,""
+      --     ] ++ mdlines
 
 -- XXX try to style backlog items as unnumbered or nested-numbered list items
 {-
@@ -880,7 +849,7 @@ commitIfChanged msg files = do
   diffs <- (/=ExitSuccess) . fromExit <$> cmd Shell "git diff --no-ext-diff --quiet --exit-code --" files
   if diffs
   then cmd Shell ("git commit -m '"++msg++"' --") files
-  else liftIO $ putStrLn $ "nothing to commit (\"" ++ msg ++ "\")"
+  else liftIO $ putStrLn $ "nothing to commit for \"" ++ msg ++ "\""
 
 -- Convert numbered man page names to manual names.
 -- hledger.1 -> hledger, hledger_journal.5 -> hledger_journal

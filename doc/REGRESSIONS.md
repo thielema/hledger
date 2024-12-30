@@ -11,34 +11,41 @@ A regression is "something that used to work, that broke", or "an unintended not
 in a released version of hledger.
 
 We don't like regressions. We want to detect them quickly, repair them quickly, and reduce their frequency.
+You can help by finding them, or fixing them! 
 
-## Regression bounty
+## Regression finder bounty
 
-You can help!
-[Since 2021-06-14](https://github.com/simonmichael/hledger/issues/1570) we have offered a $100 bounty for each new regression reported in hledger releases.
-Since 2024-01-01, the bounty is split: $50 to the finder and $50 to the fixer (can be the same person, can't be the breaker).
+For new regression reports submitted to the bug tracker since 2024-01-01 (affecting any past release), we currently offer a $50 bounty
+([original announcement](https://github.com/simonmichael/hledger/issues/1570)).
+If you don't want the bounty, you can absolutely choose to re-donate it back to the project treasury.
+But consider accepting it - it's good for the project!
+Just do respond within 7 days after the bounty is confirmed, otherwise it will become an automatic project donation.
 
-To claim the bounty:
+## Regression fixer bounty
 
-1. Discover a new regression yourself (and don't be the one who caused it)
-2. Report it in the [hledger bug tracker](http://bugs.hledger.org)
-3. Wait for the issue manager ([SM](https://joyful.com)) confirm it with the `regression` label
-4. And/or, fix a regression yourself.
-5. Send an expense reimbursement request to our Open Collective. 
-   Be aware this might reveal your real name, on opencollective.com and here on hledger.org.
-   Here's the suggested procedure for fastest processing:
-   - click [Submit Expense](https://opencollective.com/hledger/expenses/new)  (if you are logged in, it will be under the ACTIONS menu) 
-   - choose Invoice
-   - choose a Payout method; click Next
-   - Expense title: "Regression finder bounty for #NNNN" (or "fixer" or "finder & fixer")
-   - Description: "Found ISSUEURL, WORKDATE(S)" (or "Fixed ...")
-   - Date: today's date
-   - Amount: USD 50 (or 100 if you found and fixed).
-     Or if you choose to receive another currency, convert from USD with that day's conversion rate, and mention the rate in Description.
+For regression issues fixed, we currently offer a separate $50 bounty.
+If you find and fix the regression, you get both bounties. 
+(If you caused the regression, we appreciate you fixing it but you don't get the bounties - sorry!)
+
+## How to claim the bounty
+
+1. Discover a new regression, which you did not cause, and report it in the [hledger bug tracker](http://bugs.hledger.org).
+   And/or, fix an open issue which has the `regression` label.
+2. Wait for confirmation from the issue manager ([SM](https://joyful.com)).
+3. Send an expense reimbursement request to [hledger's open collective](https://opencollective.com/hledger).
+   Note this might reveal your real name.
+   Here's the procedure:
+   - at hledger's open collective, click [Submit Expense](https://opencollective.com/hledger/expenses/new).  (If you are logged in, this will be under the ACTIONS menu.)
+   - choose **Invoice**; choose a Payout method; click Next
+   - Expense title: **Regression (finder / fixer / finder & fixer) bounty for #NNNN**
+   - Description: **(Found / Fixed) ISSUEURL, WORKDATE(S)**
+   - Date: **today's date**
+   - Amount: **USD 50** (or **100** if you found and fixed).
+     Or convert to another currency with today's rate (and mention that rate in Description).
    - Next, Submit Expense
-5. Announce on the issue page or in chat that you've submitted (to help ensure it is not overlooked)
-6. Wait for the finance manager (SM) to approve it. This should not take more than a day or two.
-7. Then wait for Open Collective to pay it. Payouts happen twice a week.
+5. Wait for the finance manager (SM) to get the email notification and approve it. This should not take more than a day or two.
+   (For fastest response, mention on the issue page or in chat that you've submitted.)
+6. Wait for Open Collective to pay it. This should happen within a week (payouts happen twice a week).
 
 ## Regressions reported
 
@@ -93,6 +100,8 @@ To claim the bounty:
 [#2225]: https://github.com/simonmichael/hledger/issues/2225
 [#2227]: https://github.com/simonmichael/hledger/issues/2227
 [#2254]: https://github.com/simonmichael/hledger/issues/2254
+[#2284]: https://github.com/simonmichael/hledger/issues/2284
+[#2302]: https://github.com/simonmichael/hledger/issues/2302
 
 <!-- 
 This table keeps evolving. Bold things are unresolved. The flow is this:
@@ -120,6 +129,8 @@ This table keeps evolving. Bold things are unresolved. The flow is this:
 | [#1526]                  | lestephane      N/A                                                              | N/A
 | [#1527]                  | lestephane      N/A                                                              | N/A
 | [#1656]                  | [Stephen Morgan](https://opencollective.com/hledger/expenses/48246)              | N/A
+| [#2284]                  | [lakshayg](https://opencollective.com/hledger/expenses/227577)                   | GLaknovik donated
+| [#2302]                  | [lowercasename](https://opencollective.com/hledger/expenses/232210)              | 
 | **1.22** 2021-07-03      | ---                                                                              | ---
 | [#1597]                  | [Simon Michael](https://opencollective.com/hledger/expenses/44939)               | N/A
 | [#1607]                  | [Simon Michael](https://opencollective.com/hledger/expenses/45547)               | N/A
@@ -159,10 +170,10 @@ This table keeps evolving. Bold things are unresolved. The flow is this:
 | [#2127]                  | [Rajeev N](https://opencollective.com/hledger/expenses/177761)                   | N/A
 | [#2130]                  | Simon Michael   N/A                                                              | N/A
 | [#2134]                  | pepe_pecas donated                                                               | N/A
-| [#2156]                  | **ishmaelavila 2024-01-18**                                                      | [Simon Michael](https://opencollective.com/hledger/expenses/223926)
+| [#2156]                  | ishmaelavila 2024-01-18 donated*                                                 | [Simon Michael](https://opencollective.com/hledger/expenses/223926)
 | [#2254]                  | akanshaG42 donated                                                               | [Simon Michael](https://opencollective.com/hledger/expenses/223926)
 | **1.33** 2024-04-18      | ---                                                                              | ---
-| [#2227]                  | **[Henning Thielemann](https://opencollective.com/hledger/expenses/224252)**     | **[Henning Thielemann](https://opencollective.com/hledger/expenses/224252)**
+| [#2227]                  | [Henning Thielemann](https://opencollective.com/hledger/expenses/224252)         | [Henning Thielemann](https://opencollective.com/hledger/expenses/224252)
 | **1.34** 2024-06-01      | ---                                                                              | ---
 | **1.40** 2024-09-09      | ---                                                                              | ---
-| [#2225]                  | Bas van Dijk donated                                                             | **[Henning Thielemann](https://opencollective.com/hledger/expenses/224252)**
+| [#2225]                  | Bas van Dijk donated                                                             | [Henning Thielemann](https://opencollective.com/hledger/expenses/224252)

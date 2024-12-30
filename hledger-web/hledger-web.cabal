@@ -5,7 +5,7 @@ cabal-version: 1.12
 -- see: https://github.com/sol/hpack
 
 name:           hledger-web
-version:        1.40.99
+version:        1.41.99
 synopsis:       Web user interface for the hledger accounting system
 description:    A simple web user interface for the hledger accounting system,
                 providing a more modern UI than the command-line or terminal interfaces.
@@ -156,7 +156,7 @@ library
   hs-source-dirs:
       ./
   ghc-options: -Wall -Wredundant-constraints -Wincomplete-record-updates -Wincomplete-uni-patterns
-  cpp-options: -DVERSION="1.40.99"
+  cpp-options: -DVERSION="1.41.99"
   build-depends:
       Decimal >=0.5.1
     , aeson >=1 && <2.3
@@ -178,13 +178,13 @@ library
     , filepath
     , githash >=0.1.6.2
     , hjsmin
-    , hledger >=1.40.99 && <1.41
-    , hledger-lib >=1.40.99 && <1.41
+    , hledger >=1.41.99 && <1.42
+    , hledger-lib >=1.41.99 && <1.42
     , hspec
     , http-client
     , http-conduit
     , http-types
-    , megaparsec >=7.0.0 && <9.7
+    , megaparsec >=7.0.0 && <9.8
     , mtl >=2.2.1
     , network
     , safe >=0.3.20
@@ -208,6 +208,8 @@ library
     , yesod-static >=1.4 && <1.7
     , yesod-test
   default-language: Haskell2010
+  if flag(threaded)
+    ghc-options: -threaded -with-rtsopts=-T
   if (flag(dev)) || (flag(library-only))
     cpp-options: -DDEVELOPMENT
   if flag(dev)
@@ -222,12 +224,14 @@ executable hledger-web
   hs-source-dirs:
       app
   ghc-options: -Wall -Wredundant-constraints -Wincomplete-record-updates -Wincomplete-uni-patterns
-  cpp-options: -DVERSION="1.40.99"
+  cpp-options: -DVERSION="1.41.99"
   build-depends:
       base >=4.14 && <4.21
     , base-compat >=0.14.0
     , hledger-web
   default-language: Haskell2010
+  if flag(threaded)
+    ghc-options: -threaded -with-rtsopts=-T
   if (flag(dev)) || (flag(library-only))
     cpp-options: -DDEVELOPMENT
   if flag(dev)
@@ -236,8 +240,6 @@ executable hledger-web
     cpp-options: -DDEBUG
   if flag(library-only)
     buildable: False
-  if flag(threaded)
-    ghc-options: -threaded -with-rtsopts=-T
 
 test-suite test
   type: exitcode-stdio-1.0
@@ -245,12 +247,14 @@ test-suite test
   hs-source-dirs:
       test
   ghc-options: -Wall -Wredundant-constraints -Wincomplete-record-updates -Wincomplete-uni-patterns
-  cpp-options: -DVERSION="1.40.99"
+  cpp-options: -DVERSION="1.41.99"
   build-depends:
       base >=4.14 && <4.21
     , base-compat >=0.14.0
     , hledger-web
   default-language: Haskell2010
+  if flag(threaded)
+    ghc-options: -threaded -with-rtsopts=-T
   if (flag(dev)) || (flag(library-only))
     cpp-options: -DDEVELOPMENT
   if flag(dev)

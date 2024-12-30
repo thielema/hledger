@@ -52,7 +52,7 @@ aregistermode = hledgerCommandMode
   ,flagNone ["cumulative"] (setboolopt "cumulative")
      "show running total from report start date"
   ,flagNone ["historical","H"] (setboolopt "historical")
-     "show historical running total/balance (includes postings before report start date) (default)\n "
+     "show historical running total/balance (includes postings before report start date) (default)"
   -- ,flagNone ["average","A"] (setboolopt "average")
   --    "show running average of posting amounts instead of total (implies --empty)"
   -- ,flagNone ["related","r"] (setboolopt "related") "show postings' siblings instead"
@@ -98,7 +98,7 @@ aregister opts@CliOpts{rawopts_=rawopts,reportspec_=rspec} j = do
     thisacctq = Acct $ (if inclusive then accountNameToAccountRegex else accountNameToAccountOnlyRegex) acct
     ropts' = (_rsReportOpts rspec) {
         -- ignore any depth limit, as in postingsReport; allows register's total to match balance reports (cf #1468)
-        depth_=Nothing
+        depth_=DepthSpec Nothing []
       , balanceaccum_ =
           case balanceaccum_ $ _rsReportOpts rspec of
             PerPeriod -> Historical

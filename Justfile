@@ -54,7 +54,8 @@ set export := true
 
 # and/or: -q --bell --stop-timeout=1
 
-WATCHEXEC := 'watchexec --timings'
+# The --wrap-process change is needed for watchexec 2.1.2 on mac, https://github.com/watchexec/watchexec/issues/864
+WATCHEXEC := 'watchexec --wrap-process=session'
 
 # grep-like rg
 #RG_ := 'rg --sort=path --no-heading -i'
@@ -62,12 +63,18 @@ WATCHEXEC := 'watchexec --timings'
 # just := "just -f " + justfile()
 # Use this justfile from within its directory, otherwise we must write {{ just }} everywhere.
 
+#[group('HELPERS')]  # XXX too noisy
 # list this justfile's recipes, optionally filtered by REGEX
-@help *REGEX:
-    if [[ '{{ REGEX }}' =~ '' ]]; then just -ul; else just -ul | rg -i '{{ REGEX }}'; true; fi
+help *REGEX:
+    #!/usr/bin/env bash
+    if [[ '{{ REGEX }}' == '' ]]
+    then just -ul --color=always | sed -E 's/(^ +[A-Z_-]+ )/\n\1/'; echo
+    else just -ul --color=always | rg -i '{{ REGEX }}'; true
+    fi
 
 alias h := help
 
+#[group('HELPERS')]
 # check this justfile for errors and non-standard format
 @check:
     just --fmt --unstable --check
@@ -488,10 +495,10 @@ SHELLTEST := 'COLUMNS=80 ' + STACK + ' exec -- shelltest --execdir --exclude=/_ 
 
 #  --hide-successes
 
-# build hledger quickly and run functional tests, with any shelltest OPTS (requires mktestaddons)
-@functest *OPTS:
-    $STACK build hledger
-    time (({{ SHELLTEST }} {{ if OPTS == '' { '' } else { OPTS } }} \
+# build hledger warning-free and run functional tests, with any shelltest OPTS (requires mktestaddons)
+@functest *STOPTS:
+    $STACK build --ghc-options=-Werror hledger
+    time (({{ SHELLTEST }} {{ if STOPTS == '' { '' } else { STOPTS } }} \
         hledger/test/ bin/ \
         -x ledger-compat/ledger-baseline -x ledger-compat/ledger-regress -x ledger-compat/ledger-extra \
         && echo $@ PASSED) || (echo $@ FAILED; false))
@@ -574,12 +581,6 @@ INSTALLING:
     $STACK install --local-bin-path bin --flag '*:debug' {{ STACKARGS }}
     for e in hledger hledger-ui hledger-web ; do mv bin/$e bin/$e-dbg; echo "bin/$e-dbg"; done
 
-# # make must be GNU Make 4.3+
-# .PHONY: shellcompletions
-# # update shell completions in hledger package
-# shellcompletions:
-#     make -C hledger/shell-completion/ clean-all all
-
 # On gnu/linux: can't interpolate GTAR here for some reason, and need the shebang line.
 # linux / mac only for now, does not handle the windows zip file.
 # download github release VER binaries for OS (linux, mac) and ARCH (x64, arm64) to bin/old/hledger*-VER
@@ -612,11 +613,6 @@ symlink-web-dirs:
     ln -sf hledger-web/messages
     ln -sf hledger-web/static
     ln -sf hledger-web/templates
-
-# update shell completions in hledger package
-shell-completions:
-    make -C hledger/shell-completion/ clean-all all
-
 
 # ** Benchmarking ------------------------------------------------------------
 BENCHMARKING:
@@ -809,6 +805,38 @@ quickprof CMD: #hledgerprof #samplejournals
 # ** Documenting ------------------------------------------------------------
 DOCUMENTING:
 
+# Add latest commit messages to the changelogs. (Runs ./Shake changelogs [OPTS])
+changelogs *OPTS:
+    ./Shake changelogs {{ OPTS }}
+
+# Drop any uncommitted changes to the project and package changelogs.
+changelogs-reset:
+    git checkout CHANGES.md */CHANGES.md
+
+# Set changelog headings to the specified commit, or HEAD. Run on release branch.
+changelogs-catchup *COMMIT:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    just _on-release-branch
+    C={{ if COMMIT == '' { `git log -1 --pretty=%h --abbrev=8` } else { COMMIT } }}
+    for p in $PACKAGES; do \
+      sed -i "0,/^# /s/^# .*$/# $C/" $p/CHANGES.md; \
+    done
+    sed -i "0,/^# /s/^# .*$/# $C/" CHANGES.md
+    echo "Changelog headings have been set to $C"
+
+# Set changelog headings for a full release today. Run on release branch.
+changelogs-finalise:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    just _on-release-branch
+    date=`gdate -I`
+    for p in $PACKAGES; do \
+      sed -i "0,/^# /s/^# .*$/# $date `cat $p/.version`/" $p/CHANGES.md; \
+    done
+    sed -i "0,/^# /s/^# .*$/# $date `cat .version`/" CHANGES.md
+    git commit -m ";doc: finalise changelogs for `cat .version` on $date" CHANGES.md */CHANGES.md
+
 # see also Shake.hs
 # http://www.haskell.org/haddock/doc/html/invoking.html
 
@@ -832,7 +860,13 @@ LOCALSITEURL := 'http://localhost:3000/index.html'
 # open a browser on the website (in ./site) and rerender when docs or web pages change
 @site-watch: #Shake
     (printf "\nbrowser will open in {{ BROWSEDELAY }}s (adjust BROWSE if needed)...\n\n"; sleep $BROWSEDELAY; $BROWSE "$LOCALSITEURL" ) &
-    $WATCHEXEC --print-events -e md,m4 -i hledger.md -i hledger-ui.md -i hledger-web.md -r './Shake webmanuals && ./Shake orgfiles && make -sC site serve'
+    $WATCHEXEC --no-vcs-ignore -e md,m4 -i hledger.md -i hledger-ui.md -i hledger-web.md -r './Shake webmanuals && make -sC site serve'
+# --no-vcs-ignore to include site/src/*.md
+
+# In the site repo, commit a snapshot of the manuals with this version number.
+@site-manuals-snapshot VER:
+    make -C site snapshot-{{ VER }}
+    echo "{{ VER }} manuals created. Please add the new version to site.js, Makefile, and hledger.org.caddy."
 
 STACKHADDOCK := 'time ' + STACK + ' --verbosity=error haddock --fast --no-keep-going \
     --only-locals --no-haddock-deps --no-haddock-hyperlink-source \
@@ -925,6 +959,31 @@ unreleased *CHANGELOG:
 pushfaq:
     (cd ~/src/hledger/site; git commit -m 'faq' src/faq.md; git push)
 
+# Show diffs between upstream hledger tldr pages and the local copies in this repo.
+tldr-diff:
+    # XXX JUSTFILEDIR
+    diff doc/tldr/upstream doc/tldr | grep hledger
+
+# Save a copy of the full jj log showing all commits and branches.
+log-save:
+    jj log -r:: >doc/log.txt
+    jj log -r:: --color=always >doc/log.color.txt
+
+# log-headtail [y] - show the start and end of the saved log, optionally in color.
+log-headtail *COLOR:
+    #/usr/bin/env osh
+    set -euo pipefail
+    LOG=doc/log{{ if COLOR == 'y' { ".color" } else { "" } }}.txt; \
+    head $LOG; echo ...; tail $LOG
+
+# Upload a copy of the log to the website, on the side since it's large.
+log-push:
+    scp -v doc/log*.txt 173.255.213.235:/opt/hledger/site/out
+
+# Update the short version of the hledger script example (by removing docs).
+bin-short:
+    awk '/^----/ { b=!b; next } !b' bin/hledger-script-example.hs | rg -v '^ *-- \w' > bin/hledger-script-example-short.hs
+
 # ** News ------------------------------------------------------------
 NEWS:
 
@@ -952,7 +1011,7 @@ twih:  # *DATE:
     #!/usr/bin/env osh
     #BEG=`just _dateorsecondlatestfriday  $DATE`
     END=`just _todayorlatestfriday $DATE`
-    cat <<EOS
+    cat <<EOS:  # the colon helps the vscode just highlighter
     == TWIH notes: ========================================
 
     last release: `just rel`
@@ -968,8 +1027,8 @@ twih:  # *DATE:
 
     == TWIH draft (in clipboard) : ========================
 
-    EOS
-    (cat <<EOS
+    EOS:
+    (cat <<EOS:
     ---
 
     ## This Week In Hledger $END
@@ -989,7 +1048,7 @@ twih:  # *DATE:
     <https://hledger.org/news.html#this-week-in-hledger-$END>
 
     
-    EOS
+    EOS:
     ) | tee /dev/tty | pbcopy
 
 GITSHORTFMT := "--format='%ad %s' --date=short"
@@ -1010,7 +1069,7 @@ commitlog *DATE:
     git -C ../plaintextaccounting.org log {{ GITSHORTFMT }} --since $BEG --until $END --reverse | sed -E -e 's/ ;/ /'
     echo
 
-WORKLOG := "../../notes/CLOUD/hledger log.md"
+WORKLOG := "../../notes/CLOUD/hledger.md"
 
 # Show dates logged in hledger work log.
 @worklogdates:
@@ -1099,30 +1158,30 @@ bloglog:
 # ** Releasing ------------------------------------------------------------
 RELEASING:
 
-# Prepare to release today, creating/switching to release branch and doing routine updates - versions, dates, manuals, command helps
-relprep VER:
+# Create or switch to this release branch, and set the version string in various places.
+relbranch VER:
     #!/usr/bin/env bash
     set -euo pipefail
     [[ -z {{ VER }} ]] && usage
     BRANCH=$(just _versionReleaseBranch {{ VER }})
-    COMMIT="-c"
-    echo "Switching to $BRANCH, auto-creating it if needed..."
+    echo "Switching to $BRANCH, auto-creating it if needed"
     just _gitSwitchAutoCreate "$BRANCH"
-    echo "Bumping all version strings to {{ VER }} ..."
-    ./Shake setversion {{ VER }} $COMMIT
-    echo "Updating all command help texts for embedding..."
-    ./Shake cmddocs $COMMIT
-    echo "Updating all dates in man pages..."
-    ./Shake mandates
-    echo "Generating all the manuals in all formats...."
-    ./Shake manuals $COMMIT
-    # echo "Updating CHANGES.md files with latest commits..."
-    # ./Shake changelogs $COMMIT
+    echo "Setting {{ VER }} in package.yamls and .version.m4 macros"
+    ./Shake setversion {{ VER }} -c
+# Too much at once, allow smaller steps.
+#    echo "Updating all command help texts for embedding..."
+#    ./Shake cmddocs -c
+#    echo "Updating all dates in man pages..."
+#    ./Shake mandates
+#    echo "Generating all the manuals in all formats...."
+#    ./Shake manuals -c
+#    # echo "Updating CHANGES.md files with latest commits..."
+#    # ./Shake changelogs $COMMIT
 
 # Push the current branch to github to generate release binaries.
 @relbin:
-    # assumes the github remote is named "github"
-    git push -f github HEAD:binaries
+    # assumes the github remote is named "origin"
+    git push -f origin HEAD:binaries
 
 # Show last release date (of hledger package).
 @reldate:
@@ -1371,19 +1430,80 @@ sccv:
 # list-commits: $(call def-help,list-commits, list all commits chronologically and numbered)
 #     @git log --format='%ad %h %s (%an)' --date=short --reverse | cat -n
 
-# Make git release tags for the hledger packages and project, assuming a complete single-version release.
-@reltag:
-	for p in $PACKAGES; do just reltagpkg $p; done
-	git tag -fs `cat .version` -m "Release `cat .version`, https://hledger.org/relnotes.html#hledger-`cat .version | sed -e 's/\./-/g'`"
+# update shell completions in hledger package
+@completions:
+    make -C hledger/shell-completion/
+    echo "now please commit any changes in hledger/shell-completion/"
 
-# Make a git release tag for the given hledger package.
-@reltagpkg PKG:
-	git tag -fs $PKG-`cat $PKG/.version` -m "Release $PKG-`cat $PKG/.version`"
+# Check that we're on a release branch. (Hopefully the latest.)
+_on-release-branch:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    BRANCH=$(git branch --show-current)
+    if [[ ! $BRANCH =~ ^[0-9.]*-branch ]]; then
+        echo "You are currently on $BRANCH branch. Please switch to the latest release branch."
+        exit 1
+    fi
 
-# After a major release, also tag master to indicate start of release cycle and influence git describe and dev builds' --version output.
+# Check that we're on the master branch.
+_on-master-branch:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    BRANCH=$(git branch --show-current)
+    if [[ ! $BRANCH =~ master ]]; then
+        echo "You are currently on $BRANCH branch. Please switch to the master branch."
+        exit 1
+    fi
+
+# Make draft release notes from changelogs. Run on release branch.
+@relnotes:
+    just _on-release-branch
+    tools/relnotes.hs
+
+# Generate github release notes for the current release, on stdout and in clipboard. Run on release branch.
+@ghrelnotes:
+    just _on-release-branch
+    doc/ghrelnotes `cat .version` | tee pbcopy
+    # echo "Github release notes for `cat .version` copied to clipboard"
+    # echo "Paste into release created by tags push"
+    # echo "Or if that failed, create it manually: https://github.com/simonmichael/hledger/releases/new"
+
+# Generate github release notes and update the release on github with the latest text. Run on release branch.
+@ghrelnotes-publish:
+    just ghrelnotes | gh release edit -F- `cat .version`
+
+# Make git tags for a full release today. Run on release branch.
+reltags:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    just _on-release-branch
+    for p in $PACKAGES; do \
+      git tag --force --sign $p-`cat $p/.version` -m "Release $p-`cat $p/.version`"; \
+    done
+    git tag --force --sign `cat .version` -m "Release `cat .version`"
+    echo "Release has been tagged!"
+
+# Push the 5 release tags for the specified release version.
+reltags-push VER:
+    git push origin {{ VER }} hledger-{{ VER }} hledger-lib-{{ VER }} hledger-ui-{{ VER }} hledger-web-{{ VER }}
+
+# List git tags approximately most recent first (grouped by package). The available fields vary over time.
+tags:
+    git tag -l --sort=-tag --format='%(refname:short) taggerdate:%(taggerdate:iso8601) committerdate:%(committerdate:iso8601)}'
+
+# Tag the new dev cycle start and update version strings/manuals. Run on master.
+@devtag VER:
+    set -euo pipefail
+    just _on-master-branch
+    git tag --force --sign {{ VER }} -m 'start of {{ VER }} dev cycle'
+    ./Shake setversion {{ VER }} -c
+    ./Shake mandates
+    ./Shake manuals -c
+    echo "master's tag, version strings and manuals have been updated to {{ VER }}."
+
 # XXX Run this only after .version has been updated to NEWVER
 # @reltagmaster:
-# 	git tag -fs `cat .version`.99 master -m "start of next release cycle"
+#   git tag -fs `cat .version`.99 master -m "start of next release cycle"
 
 # Upload all packages to hackage (run from release branch).
 @hackageupload:
@@ -1392,6 +1512,16 @@ sccv:
 
 # ** Misc ------------------------------------------------------------
 MISC:
+
+# show recent branches summary with jj
+@branches:
+    echo "Recent branches:"
+    bash -ic 'jjb | head -20'
+
+# show recent branches detail with jj
+@branchesv:
+    echo "Recent branches (commits):"
+    jj log -n 40 -r 'log_default ~ @'
 
 # push to github CI, wait for tests to pass, refreshing every INTERVAL (default:10s), then push to master.
 @push *INTERVAL:

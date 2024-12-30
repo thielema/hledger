@@ -33,17 +33,20 @@ module Hledger.Data.Types (
 where
 
 import GHC.Generics (Generic)
+import Data.Bifunctor (first)
 import Data.Decimal (Decimal, DecimalRaw(..))
 import Data.Default (Default(..))
 import Data.Functor (($>))
-import Data.List (intercalate)
+import Data.List (intercalate, sortBy)
 --XXX https://hackage.haskell.org/package/containers/docs/Data-Map.html
 --Note: You should use Data.Map.Strict instead of this module if:
 --You will eventually need all the values stored.
 --The stored values don't represent large virtual data structures to be lazily computed.
 import qualified Data.Map as M
 import Data.Ord (comparing)
+import Data.Semigroup (Min(..))
 import Data.Text (Text)
+import qualified Data.Text as T
 import Data.Time.Calendar (Day)
 import Data.Time.Clock.POSIX (POSIXTime)
 import Data.Time.LocalTime (LocalTime)
@@ -153,6 +156,19 @@ instance Default Interval where def = NoInterval
 type Payee = Text
 
 type AccountName = Text
+
+-- A specification indicating how to depth-limit
+data DepthSpec = DepthSpec {
+  dsFlatDepth    :: Maybe Int,
+  dsRegexpDepths :: [(Regexp, Int)]
+  } deriving (Eq,Show)
+
+-- Semigroup instance consider all regular expressions, but take the minimum of the simple flat depths
+instance Semigroup DepthSpec where
+    DepthSpec d1 l1 <> DepthSpec d2 l2 = DepthSpec (getMin <$> (Min <$> d1) <> (Min <$> d2)) (l1 ++ l2)
+
+instance Monoid DepthSpec where
+    mempty = DepthSpec Nothing []
 
 data AccountType =
     Asset
@@ -390,7 +406,31 @@ data PostingType = RegularPosting | VirtualPosting | BalancedVirtualPosting
 type TagName = Text
 type TagValue = Text
 type Tag = (TagName, TagValue)  -- ^ A tag name and (possibly empty) value.
+type HiddenTag = Tag            -- ^ A tag whose name begins with _.
 type DateTag = (TagName, Day)
+
+-- | Add the _ prefix to a normal visible tag's name, making it a hidden tag.
+toHiddenTag :: Tag -> HiddenTag
+toHiddenTag = first toHiddenTagName
+
+-- | Drop the _ prefix from a hidden tag's name, making it a normal visible tag.
+toVisibleTag :: HiddenTag -> Tag
+toVisibleTag = first toVisibleTagName
+
+-- | Does this tag name begin with the hidden tag prefix (_) ?
+isHiddenTagName :: TagName -> Bool
+isHiddenTagName t =
+  case T.uncons t of
+    Just ('_',_) -> True
+    _ -> False
+
+-- | Add the _ prefix to a normal visible tag's name, making it a hidden tag.
+toHiddenTagName :: TagName -> TagName
+toHiddenTagName = T.cons '_'
+
+-- | Drop the _ prefix from a hidden tag's name, making it a normal visible tag.
+toVisibleTagName :: TagName -> TagName
+toVisibleTagName = T.drop 1
 
 -- | The status of a transaction or posting, recorded with a status mark
 -- (nothing, !, or *). What these mean is ultimately user defined.
@@ -566,6 +606,9 @@ data MarketPrice = MarketPrice {
   ,mpto   :: CommoditySymbol    -- ^ The commodity being converted to.
   ,mprate :: Quantity           -- ^ One unit of the "from" commodity is worth this quantity of the "to" commodity.
   } deriving (Eq,Ord,Generic, Show)
+
+showMarketPrice MarketPrice{..} = unwords [show mpdate, T.unpack mpfrom <> ">" <> T.unpack mpto, show mprate]
+showMarketPrices = intercalate "\n" . map ((' ':).showMarketPrice) . sortBy (comparing mpdate)
 
 -- additional valuation-related types in Valuation.hs
 

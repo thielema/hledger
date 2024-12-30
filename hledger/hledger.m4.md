@@ -49,11 +49,11 @@ hledger usually _inputfiles_
 
 Here is a small journal file describing one transaction:
 
-_journal_({{
+```journal
 2015-10-16 bought food
   expenses:food          $10
   assets:cash
-}})
+```
 
 Transactions are dated movements of money (etc.) between two or more *accounts*:
 bank accounts, your wallet, revenue/expense categories, people, etc.
@@ -762,6 +762,8 @@ with a `y`/`yes` or `n`/`no` value to force it on or off.
 
 In unix-like environments, when displaying large output (in any output format) in the terminal,
 hledger tries to use a pager when appropriate.
+(You can disable this with the `--pager=no` option, perhaps in your config file.)
+
 The pager shows one page of text at a time, and lets you scroll around to see more.
 While it is active, usually `SPACE` shows the next page, `h` shows help, and `q` quits.
 The home/end/page up/page down/cursor keys, and mouse scrolling, may also work.
@@ -828,52 +830,74 @@ using various utilities like `libreoffice --headless` or
 ### Beancount output
 
 This is [Beancount's journal format][beancount journal].
-You can use this to export your hledger data to [Beancount],
-perhaps to query it with [Beancount Query Language] or with the [Fava] web app.
-hledger will try to adjust your data to suit Beancount.
-If you plan to export often, you may want to follow Beancount's conventions in your hledger data,
-to ease conversion. Eg use Beancount-friendly account names, currency codes instead of currency symbols,
-and avoid virtual postings, redundant cost notation, etc.
-Here are more details
-(see also "hledger and Beancount" <https://hledger.org/beancount.html>).
+You can use this to export your hledger data to [Beancount], eg to use the [Fava] web app.
+
+hledger will try to adjust your data to suit Beancount, automatically.
+Be cautious and check the conversion until you are confident it is good.
+If you plan to export to Beancount often, you may want to follow its [conventions], for a cleaner conversion:
+
+- use Beancount-friendly account names
+- use currency codes instead of currency symbols
+- use cost notation instead of equity conversion postings
+- avoid virtual postings
+
+[conventions]: https://plaintextaccounting.org/#other-features
+
+There is one big adjustment you must handle yourself:
+for Beancount, the top level account names must be `Assets`, `Liabilities`, `Equity`, `Income`, and/or `Expenses`.
+You can use [account aliases](#alias-directive) to rewrite your account names temporarily, if needed,
+as in this [hledger2beancount.conf](https://github.com/simonmichael/hledger/blob/master/examples/hledger2beancount.conf) config file.
+<!-- (see also "hledger and Beancount" <https://hledger.org/beancount.html>). -->
+
+2024-12-20: Some more things not yet handled for you:
+
+- P directives are not converted automatically - convert those yourself
+- Balance assignments are not converted (Beancount doesnt support them) - replace those with explicit amounts
 
 #### Beancount account names
 
-hledger will adjust your account names when needed, to make valid
-[Beancount account names](https://beancount.github.io/docs/beancount_language_syntax.html#accounts)
-(capitalising, replacing spaces with `-`, replacing other unsupported characters with `C<HEXBYTES>`,
-and prepending `A` to account name parts which don't begin with a letter or digit).
-However, you must ensure that all top level account names are one of the five required by Beancount:
-`Assets`, `Liabilities`, `Equity`, `Income`, or `Expenses`.
-If yours are named differently, you can use [account aliases](#alias-directive),
-usually in the form of `--alias` options, possibly stored in a [config file](#config-file).
-(An example: [hledger2beancount.conf](https://github.com/simonmichael/hledger/blob/master/examples/hledger2beancount.conf))
+Aside from the top-level names, hledger will adjust your account names to make valid
+[Beancount account names](https://beancount.github.io/docs/beancount_language_syntax.html#accounts),
+by capitalising each part, replacing spaces with `-`, replacing other unsupported characters with `C<HEXBYTES>`,
+prepending `A` to account name parts which don't begin with a letter or digit,
+and appending `:A` to account names which have only one part.
 
 #### Beancount commodity names
 
-hledger will adjust commodity names when needed, to make valid
+hledger will adjust your commodity names to make valid
 [Beancount commodity/currency names](https://beancount.github.io/docs/beancount_language_syntax.html#commodities-currencies),
-(which must be 2-24 uppercase letters, digits, or `'`, `.`, `_`, `-`, beginning with a letter and ending with a letter or digit).
+which must be 2-24 uppercase letters, digits, or `'`, `.`, `_`, `-`, beginning with a letter and ending with a letter or digit.
 hledger will convert known currency symbols to [ISO 4217 currency codes](https://en.wikipedia.org/wiki/ISO_4217#Active_codes),
 capitalise letters, replace spaces with `-`, replace other unsupported characters with `C<HEXBYTES>`,
-and prepend/append a "C" when needed.
+and prepend or append `C` if needed.
 
 #### Beancount virtual postings
 
-Beancount doesn't allow [unbalanced/virtual postings](#virtual-postings),
-so you will need to comment those,
-or use `--real` to exclude transactions that use them.
-(If you have transactions which are a mixture of balanced and unbalanced postings, you'll have to do something more.)
+Beancount doesn't allow [virtual postings](#virtual-postings); if you have any, they will be omitted from beancount output.
+
+#### Beancount metadata
+
+hledger tags will be converted to [Beancount metadata](https://beancount.github.io/docs/beancount_language_syntax.html#metadata-1)
+(except for tags whose name begins with `_`).
+Metadata names will be adjusted to be Beancount-compatible: beginning with a lowercase letter,
+at least two characters long, and with unsupported characters encoded.
+Metadata values will use Beancount's string type.
+
+In hledger, objects can have the same tag repeated with multiple values.
+Eg an `assets:cash` account might have both `type:Asset` and `type:Cash` tags.
+For Beancount these will be combined into one, with the values combined, comma separated. Eg: `type: "Asset, Cash"`.
 
 #### Beancount costs
 
-Beancount doesn't allow [redundant cost notation](https://hledger.org/hledger.html#combining-costs-and-equity-conversion-postings)
-as hledger does. If you have entries like this, you will need to comment out either the costs or the equity postings.
+Beancount doesn't allow [redundant costs and conversion postings](https://hledger.org/hledger.html#combining-costs-and-equity-conversion-postings) as hledger does.
+If you have any of these, the conversion postings will be omitted.
+Currently we support at most one cost + conversion postings group per transaction.
 
 #### Beancount operating currency
 
-Declaring an operating currency improves Beancount and Fava reports.
-You can do this manually by adding a line like this to the beancount journal:
+Declaring an operating currency (or several) improves Beancount and Fava reports.
+Currently hledger will declare each currency used in cost amounts as an operating currency.
+If needed, replace these with your own declaration, like
 ```beancount
 option "operating_currency" "USD"
 ```
@@ -1752,6 +1776,11 @@ In hledger you can make "**subaccount-inclusive balance assertions**" by adding 
   assets            $0 ==* $20  ; assets + subaccounts contains $20 and nothing else
 ```
 
+### Assertions and status
+
+Balance assertions always consider postings of all [statuses](#status) (unmarked, pending, or cleared);
+they are not affected by the `-U`/`--unmarked` / `-P`/`--pending` / `-C`/`--cleared` flags or the `status:` query.
+
 ### Assertions and virtual postings
 
 Balance assertions always consider both real and [virtual](#virtual-postings) postings;
@@ -1826,112 +1855,94 @@ the directives' placement might be important - see [`commodity` directive](#comm
 
 ## Tags
 
-<!-- same section name as Commands > tags, if reordering these update all #tags[-1] links -->
+<!-- Note: same section name as Commands > tags; that one will have anchor #tags-1. If reordering these, update all #tags[-1] links. -->
 
-Tags are a way to add extra labels or data fields to transactions, postings, or accounts,
-which you can then [search](#queries) or [pivot](#pivoting) on.
+Tags are a way to add extra labels or data fields to transactions, postings, or accounts.
+They are usually a word or hyphenated word, immediately followed by a full colon,
+written within the [comment](#account-comments) of a transaction, a posting, or an `account` directive.
+(Yes, storing data in comments is slightly weird!)
 
-A tag is a word, optionally hyphenated, immediately followed by a full colon,
-in the [comment](#account-comments) of a transaction, a posting, or an account directive.
-Eg: `2024-01-01 a transaction   ; foo:`
-Note this is an exception to the usual rule that things in comments are ignored.
+You can write each tag on its own comment line, or multiple tags on one line, separated by commas.
+Tags can also have a value, which is any text after the colon until the next comma or end of line, excluding surrounding whitespace.
+(hledger tag values can't contain commas.)
+If the same tag name appears multiple times in a comment, each name:value pair is preserved.
 
-You can write multiple tags on one line, separated by comma.
-Or you can write each tag on its own comment line (no comma needed in this case).
-
-For example, here are five different tags: 
-one on the `assets:checking` account, two on the transaction, and two on the `expenses:food` posting:
+An example: in this journal there are six tags, one of them with a value:
 
 ```journal
 account assets:checking         ; accounttag:
+account expenses:food
 
-2017/1/16 bought groceries      ; transactiontag-1:
-    ; transactiontag-2:
+2017/1/16 bought groceries      ; transactiontag:
+    ; transactiontag2:
     assets:checking        $-1
-    expenses:food           $1  ; postingtag:, another-posting-tag:
+     ; posting-tag-1:, (belongs to the posting above)
+    expenses:food           $1  ; posting-tag-2:, posting-tag-3: with a value
 ```
 
-Postings also inherit tags from their transaction and their account.
-And transactions also acquire tags from their postings (and postings' accounts).
-So in the example above, the expenses posting effectively has all five tags
-(by inheriting from the account and transaction), 
-and the transaction also has all five tags (by acquiring from the expenses posting).
+### Querying with tags
+
+Tags are most often used to select a subset of data; you can match tagged things by tag name and or tag value with a `tag:` query.
+(See [queries](#queries) below.)
+ 
+When querying for tag names or values, note that postings inherit tags from their transaction and from their account,
+and transactions acquire tags from their postings. So in the example above,
+- the assets:checking posting effectively has four tags (one of its own, one from the account, two from the transaction)
+- the expenses:food posting effectively has four tags (two of its own, two from the transaction)
+- the transaction effectively has all six tags (two of its own, and two from each posting)
+
+### Displaying tags
+
+You can use the [`tags` command](#tags-1) to list tag names or values.
+
+The [`print` command](#print) also shows tags.
+
+You can use [--pivot](#pivoting) to display tag values in other reports, in various ways (eg appended to account names, like pseudo subaccounts).
+
+### When to use tags ?
+
+Tags provide more dimensions of categorisation, complementing accounts and transaction descriptions.
+When to use each of these is somewhat a matter of taste.
+Accounts have the most built-in support, and regex queries on descriptions are also quite powerful. So you may not need tags at all.
+But if you want to track multiple cross-cutting categories, they can be a good fit.
+For example, you could tag trip-related transactions with `trip: YEAR:PLACE`, without disturbing your usual account categories.
 
 ### Tag names
 
-Most non-whitespace characters are allowed in tag names. Eg `😀:` is a valid tag.
+What is allowed in a tag name ? Currently, most non-whitespace characters. Eg `😀:` is a valid tag.
 
-You can list the tag names used in your journal with the [tags](#tags) command:\
-`hledger tags [NAMEREGEX]`
+For extra error checking, you can declare valid tag names with the [`tag` directive](#tag-directive),
+and then enforce these with the [`check` command](#check).
 
-In commands which use a [query](#queries), you can match by tag name. Eg:\
-`hledger print tag:NAMEREGEX`
-
-You can declare valid tag names with the [tag directive](#tag-directive) and then check them with the [check](#check) command.
+But note that tags are detected quite loosely at present, sometimes where you didn't intend them.
+Eg `; see https://foo.com` contains a `https` tag with value `//foo.com`.
 
 ### Special tags
 
-Some tag names have special significance to hledger.
-There's not much harm in using them yourself, but some could produce an error message, particularly the `date:` and `type:` tags.
-They are explained elsewhere, but here is a quick list for reference:
-
+Some tag names have special significance to hledger. They are explained elsewhere, but here's a quick reference:
 <!-- keep synced with JournalChecks.hs -->
-Tags you can set to influence hledger's behaviour:
 ```
+ type                   -- declares an account's type
  date                   -- overrides a posting's date
  date2                  -- overrides a posting's secondary date
- type                   -- declares an account's type
-```
-
-Tags hledger adds to indicate generated data:
-```
- t                      -- appears on postings generated by timedot letters
  assert                 -- appears on txns generated by close --assert
  retain                 -- appears on txns generated by close --retain
  start                  -- appears on txns generated by close --migrate/--close/--open/--assign
- generated-transaction  -- appears on generated periodic txns (with --verbose-tags)
- generated-posting      -- appears on generated auto postings (with --verbose-tags)
- modified               -- appears on txns which have had auto postings added (with --verbose-tags)
+ t                      -- appears on postings generated from timedot letters
+
+ generated-transaction  -- appears on txns generated by a periodic rule
+ modified-transaction   -- appears on txns which have had auto postings added
+ generated-posting      -- appears on generated postings
+ cost-posting           -- appears on postings which have (or could have) a cost,
+                           and which have equivalent conversion postings in the transaction
+ conversion-posting     -- appears on postings which are to a V/Conversion account
+                           and which have an equivalent cost posting in the transaction
 ```
 
-These similar tags are also provided; they are not displayed, but can be relied on for querying:
-```
- _generated-transaction -- exists on generated periodic txns (always)
- _generated-posting     -- exists on generated auto postings (always)
- _modified              -- exists on txns which have had auto postings added (always)
-```
+The second group above (generated-transaction, etc.) are normally hidden, with a `_` prefix added.
+This means `print` doesn't show them by default; but you can still use them in queries.
+You can add the `--verbose-tags` flag to make them visible, which can be useful for troubleshooting.
 
-The following non-displayed tags are used internally by hledger,
-(1) to ignore redundant costs when balancing transactions,
-(2) when using --infer-costs, and
-(3) when using --infer-equity.
-Essentially they mark postings with costs which have corresponding equity conversion postings, and vice-versa.
-They are queryable, but you should not rely on them for your reports:
-```
- _conversion-matched    -- marks "matched conversion postings", which are to a V/Conversion account
-                           and have a nearby equivalent costful or potentially costful posting
- _cost-matched          -- marks "matched cost postings", which have or could have a cost
-                           that's equivalent to nearby conversion postings
-```
-
-### Tag values
-
-Tags can have a value, which is any text after the colon up until a comma or end of line, with surrounding whitespace removed.
-Ending at comma allows us to write multiple tags on one line, but also means that tag values can not contain commas.
-
-Eg in the following posting, the three tags' values are "value 1", "value 2", and "" (empty) respectively:
-```journal
-    expenses:food   $10    ; foo, tag1: value 1 , tag2:value 2, bar tag3: , baz
-```
-
-Multiple tags with the same name are additive rather than overriding:
-when the same tag name is seen again with a new value, the new name:value pair is added to the tags.
-It is not possible to override a previous tag's value or remove a tag.
-
-You can list all the values used for a particular tag in the journal with\
-`hledger tags TAGNAME --values`
-
-You can match on tag values with a query like `tag:NAMEREGEX=VALUEREGEX`
 
 ## Directives
 
@@ -2380,7 +2391,7 @@ If you are using account aliases and the [`type:` query](#queries) is not matchi
 try troubleshooting with the accounts command, eg something like:
 
 ```cli
-$ hledger accounts --alias assets=bassetts type:a
+$ hledger accounts --types -1 --alias assets=bassetts
 ```
 
 ## `commodity` directive
@@ -3669,44 +3680,46 @@ if ,,,,
 
 ## Matchers
 
-There are two kinds:
+There are two kinds of matcher:
 
-1. A record matcher is a word or single-line text fragment or regular expression (`REGEX`), 
+1. A whole record matcher is simplest: it is just a word, single-line text fragment, or other regular expression,
    which hledger will try to match case-insensitively anywhere within the CSV record.\
-   Eg: `whole foods`
+  Eg: `whole foods`.
 
-2. A field matcher is preceded with a percent sign and [CSV field name](#field-names) (`%CSVFIELD REGEX`).
-   hledger will try to match these just within the named CSV field.\
-   Eg: `%date 2023`
+2. A field matcher has a percent-prefixed CSV field number or name before the pattern.\
+   Eg: `%3 whole foods` or `%description whole foods`.\
+   hledger will try to match the pattern just within the named CSV field.
 
-The regular expression is (as usual in hledger) a POSIX extended regular expression,
-that also supports GNU word boundaries (`\b`, `\B`, `\<`, `\>`),
-and nothing else.
-If you have trouble, see "Regular expressions" in the hledger manual (<https://hledger.org/hledger.html#regular-expressions>).
+When using these, there's two things to be aware of:
 
-### What matchers match
+1. Whole record matchers don't see the exact original record;
+   they see a reconstruction of it, in which values are comma-separated,
+   and quotes enclosing values and whitespace outside those quotes are removed.\
+   Eg when reading an SSV record like:   `2023-01-01 ; "Acme, Inc. " ;  1,000`\
+   the whole record matcher sees instead: `2023-01-01,Acme, Inc. ,1,000`
 
-With record matchers, it's important to know that the record matched is not the original CSV record, but a modified one:
-separators will be converted to commas, and enclosing double quotes (but not enclosing whitespace) are removed.
-So for example, when reading an SSV file, if the original record was:
-```ssv
-2023-01-01; "Acme, Inc.";  1,000
-```
-the regex would see, and try to match, this modified record text:
-```
-2023-01-01,Acme, Inc.,  1,000
-```
+2. Field matchers expect either a CSV field number, or a [CSV field name](#field-names) declared with [`fields`](#fields-list).
+   (Don't use a hledger field name here, unless it is also a CSV field name.)
+   A non-CSV field name will cause the matcher to match against `""` (the empty string),
+   and does not raise an error, allowing easier reuse of common rules with different CSV files.
 
-### Combining matchers
+You can also prefix a matcher with `!` (and optional space) to negate it.
+Eg `! whole foods`, `! %3 whole foods`, `!%description whole foods` will match if "whole foods" is NOT present.
+*Added in 1.32.*
 
-When an if block has multiple matchers, they are combined as follows:
+The pattern is, as usual in hledger, a POSIX extended regular expression
+that also supports GNU word boundaries (`\b`, `\B`, `\<`, `\>`) and nothing else.
+If you have trouble with it, see "Regular expressions" in the hledger manual (<https://hledger.org/hledger.html#regular-expressions>).
 
-- By default they are OR'd (any of them can match)
-- When a matcher is preceded by ampersand (`&`, at the start of the line) it will be AND'ed with the previous matcher (all in the AND'ed group must match)
-- *Added in 1.32* When a matcher is preceded by an exclamation mark (`!`), it is negated (it must not match).
+### Multiple matchers
 
-Note [currently](https://github.com/simonmichael/hledger/pull/2088#issuecomment-1844200398) there is a limitation:
-you can't use both `&` and `!` on the same line (you can't AND a negated matcher).
+When an if block has multiple matchers, each on its own line,
+
+- By default they are OR'd (any of them can match).
+- Matcher lines beginning with `&` (and optional space) are AND'ed with the matcher above (all in the AND'ed group must match).
+
+*(Since 1.41:)*
+You can use a negated `!` matcher on a `&` line, meaning AND NOT.
 
 ### Match groups
 
@@ -5112,7 +5125,37 @@ Examples:
 With the `--depth NUM` option (short form: `-NUM`), 
 reports will show accounts only to the specified depth, hiding deeper subaccounts.
 Use this when you want a summary with less detail.
-This flag has the same effect as a `depth:` query argument: `depth:2`, `--depth=2` or `-2` are equivalent.
+This flag has the same effect as a `depth:` query argument: `depth:2`,
+`--depth=2` or `-2` are equivalent.
+
+In place of a single number which limits the depth for all accounts, you can
+also provide separate depth limits for different accounts using regular
+expressions *(since 1.41)*.
+
+For example, `--depth assets=2` (or, equivalently: `depth:assets=2`)
+will collapse accounts matching the regular expression `assets` to depth 2.
+So `assets:bank:savings` would be collapsed to `assets:bank`, while
+`liabilities:bank:credit card` would not be affected.
+This can be combined with a flat depth to collapse other accounts not matching
+the regular expression, so `--depth assets=2 --depth 1` would collapse
+`assets:bank:savings` to `assets:bank` and `liabilities:bank:credit card` to
+`liabilities`.
+
+You can supply multiple depth arguments and they will all be applied, so
+`--depth assets=2 --depth liabilities=3 --depth 1` would collapse:
+
+- accounts matching `assets` to depth 2,
+- accounts matching `liabilities` to depth 3,
+- all other accounts to depth 1.
+
+If an account is matched by more than one regular expression depth argument
+then the more specific one will used.
+For example, if `--depth assets=1 --depth assets:bank:savings=2` is provided,
+then `assets:bank:savings` will be collapsed to depth 2 rather than depth 1.
+This is because `assets:bank:savings` matches at level 3 in the account name,
+while `assets` matches at level 1.
+The same would be true with the argument `--depth assets=1 --depth savings=2`.
+
 
 # Queries
 
@@ -5166,66 +5209,86 @@ Multiple query terms can be provided to build up a more complex query.
 ## Query types
 
 Here are the types of query term available.
-Remember these can also be prefixed with **`not:`** to convert them into a negative match.
 
-**`acct:REGEX`** or **`REGEX`**\
-Match account names containing this case insensitive [regular expression]. 
+### acct: query
+**`acct:REGEX`**, or just **`REGEX`**\
+Match account names containing this case insensitive [regular expression].\
 This is the default query type, so we usually don't bother writing the "acct:" prefix.
 
-**`amt:N, amt:<N, amt:<=N, amt:>N, amt:>=N`**\
+### amt: query
+**`amt:N, amt:'<N', amt:'<=N', amt:'>N', amt:'>=N'`**\
 Match postings with a single-commodity amount equal to, less than, or greater than N.
 (Postings with multi-commodity amounts are not tested and will always match.)
 The comparison has two modes: 
 if N is preceded by a + or - sign (or is 0), the two signed numbers are compared. 
 Otherwise, the absolute magnitudes are compared, ignoring sign.
+`amt:` needs quotes to hide the less than/greater than sign from the command line shell.
 
+### code: query
 **`code:REGEX`**\
 Match by transaction code (eg check number).
 
+### cur: query
 **`cur:REGEX`**\
-Match postings or transactions including any amounts whose
-currency/commodity symbol is fully matched by REGEX. (For a partial
-match, use `.*REGEX.*`). 
+Match postings or transactions including any amounts whose currency/commodity symbol is fully matched by REGEX.
+(Contrary to hledger's usual infix matching. To do infix matching, write `.*REGEX.*`.) 
 Note, to match [special characters](#special-characters) which are regex-significant, you need to escape them with `\`.
-And for characters which are significant to your shell you may need one more level of escaping. 
-So eg to match the dollar sign:\
-`hledger print cur:\\$`.
+And for characters which are significant to your shell you will usually need one more level of escaping.
+Eg to match the dollar sign: `cur:\\$` or `cur:'\$'`
 
+### desc: query
 **`desc:REGEX`**\
 Match transaction descriptions.
 
+### date: query
 **`date:PERIODEXPR`**\
-Match dates (or with the `--date2` flag, [secondary dates](#secondary-dates))
-within the specified period.
+Match dates (or with the `--date2` flag, [secondary dates](#secondary-dates)) within the specified period.
 PERIODEXPR is a [period expression](#period-expressions) with no report interval.
 Examples:\
 `date:2016`, `date:thismonth`, `date:2/1-2/15`, `date:2021-07-27..nextquarter`.
 
-
+### date2: query
 **`date2:PERIODEXPR`**\
-Match secondary dates within the specified period (independent of the `--date2` flag).
+If you use secondary dates: this matches secondary dates within the specified period.
+It is not affected by the `--date2` flag.
 
-**`depth:N`**\
-Match (or display, depending on command) accounts at or above this depth.
+### depth: query
+**`depth:[REGEXP=]N`**\
+Match (or display, depending on command) accounts at or above this depth,
+optionally only for accounts matching a provided regular expression.
+See [Depth](#depth) for detailed rules.
 
-**`expr:"TERM AND NOT (TERM OR TERM)"`** (eg)\
-Match with a boolean combination of queries (which must be enclosed in quotes).
-See [Combining query terms](#combining-query-terms) below.
+### expr: query
+**`expr:'QUERYEXPR'`**\
+`expr` lets you write more complicated query expressions with AND, OR, NOT, and parentheses.\
+Eg: `expr:'date:lastmonth and not (food or rent)'`\
+The expression should be enclosed in quotes. See [Combining query terms](#combining-query-terms) below.
 
+### not: query
+**`not:QUERYTERM`**\
+You can prepend **`not:`** to any other query term to negate the match.\
+Eg: `not:equity`, `not:desc:apple`\
+(Also, a trick: `not:not:...` can sometimes solve query problems conveniently..)
+
+### note: query
 **`note:REGEX`**\
 Match transaction [notes](#payee-and-note)
 (the part of the description right of `|`, or the whole description if there's no `|`).
 
+### payee: query
 **`payee:REGEX`**\
 Match transaction [payee/payer names](#payee-and-note)
 (the part of the description left of `|`, or the whole description if there's no `|`).
 
+### real: query
 **`real:, real:0`**\
 Match real or virtual postings respectively.
 
+### status: query
 **`status:, status:!, status:*`**\
 Match unmarked, pending, or cleared transactions respectively.
 
+### type: query
 **`type:TYPECODES`**\
 Match by account type (see [Declaring accounts > Account types](#account-types)).
 `TYPECODES` is one or more of the single-letter account type codes
@@ -5234,19 +5297,17 @@ Note `type:A` and `type:E` will also match their respective subtypes `C` (Cash) 
 Certain kinds of account alias can disrupt account types, see 
 [Rewriting accounts > Aliases and account types](#aliases-and-account-types).
 
-**`tag:REGEX[=REGEX]`**\
-Match by tag name, and optionally also by tag value.
-(To match only by value, use `tag:.=REGEX`.)
+### tag: query
+**`tag:NAMEREGEX[=VALREGEX]`**\
+Match by tag name, and optionally also by tag value. Note:
 
-When querying by tag, note that:
-
-- Accounts also inherit the tags of their parent accounts
-- Postings also inherit the tags of their account and their transaction 
+- Both regular expressions do infix matching.
+  If you need a complete match, use `^` and `$`.\
+  Eg: `tag:'^fullname$'`, `tag:'^fullname$=^fullvalue$`
+- To match values, ignoring names, do `tag:.=VALREGEX`
+- Accounts also inherit the tags of their parent accounts.
+- Postings also inherit the tags of their account and their transaction .
 - Transactions also acquire the tags of their postings.
-
-(**`inacct:ACCTNAME`**\
-A special query term used automatically in hledger-web only:
-tells hledger-web to show the transaction register for an account.)
 
 ## Combining query terms
 
@@ -6473,6 +6534,8 @@ or try running these commands in a powershell window
 > MKDIR finance
 > SETX LEDGER_FILE "C:\Users\USERNAME\finance\2023.journal"
 ```
+When correctly configured, in a new terminal window `$env:LEDGER_FILE` will show the file path,
+and so will `hledger files`.
 
 # Setting opening balances
 
@@ -6822,6 +6885,7 @@ and/or open a new terminal window.
 - `LEDGER_FILE` should be a real environment variable, not just a shell variable.
   Eg on unix, the command `env | grep LEDGER_FILE` should show it.
   You may need to use `export` (see <https://stackoverflow.com/a/7411509>).
+  On Windows, `$env:LEDGER_FILE` should show it.
 - You may need to force your shell to see the new configuration.
   A simple way is to close your terminal window and open a new one.
 

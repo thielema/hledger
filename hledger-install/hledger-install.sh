@@ -3,34 +3,34 @@
 # This was based on get-stack.sh which was copyright (c) 2015-2017, Stack contributors.
 
 # This install script's version.
-HLEDGER_INSTALL_VERSION=20240912
+HLEDGER_INSTALL_VERSION=20241212
 
 # Package versions to be installed by this install script.
 # Keep synced with the tools above.
 # When changing remember to also bump HLEDGER_INSTALL_VERSION.
 # Official:
-HLEDGER_LIB_VERSION=1.40
-HLEDGER_VERSION=1.40
-HLEDGER_UI_VERSION=1.40
-HLEDGER_WEB_VERSION=1.40
+HLEDGER_LIB_VERSION=1.41
+HLEDGER_VERSION=1.41
+HLEDGER_UI_VERSION=1.41
+HLEDGER_WEB_VERSION=1.41
 # Third-party:
 HLEDGER_IADD_VERSION=1.3.21
 HLEDGER_INTEREST_VERSION=1.6.6
 HLEDGER_EDIT_VERSION=1.14.0
 HLEDGER_PLOT_VERSION=1.14.0
 HLEDGER_LOTS_VERSION=0.4.2
-PRICEHIST_VERSION=1.4.9
+PRICEHIST_VERSION=1.4.12
 
 # stackage snapshot to use when installing with stack.
 # You can try specifying a different stackage version here, or
 # commenting out this line to use your current global resolver,
 # to avoid unnecessary building.
-STACKAGE_SNAPSHOT=nightly-2024-09-04
+STACKAGE_SNAPSHOT=lts-23
 
 # If nny required haskell dependencies aren't in the above stackage snapshot,
 # list them here in this format: "PKG1-VER1 PKG2-VER2.."
 # (one line, don't break interpolation in commands below).
-STACK_EXTRA_DEPS="brick-2.4"
+STACK_EXTRA_DEPS="base-compat-0.14.0"
 
 # Tools to be installed by this install script, official tools first.
 # Keep synced with the package versions below.
@@ -856,7 +856,7 @@ cmd_location() {
 # Get the given command's version, ie the first number in the first line of its --version output,
 # or empty string if there's a problem.
 cmd_version() {
-  (command "$1" --version 2>/dev/null | head -n1 | grep -E '[0-9]' | $SED -e 's/[^0-9]*([0-9][0-9.]*).*/\1/') || ""
+  (command "$1" --version 2>/dev/null | head -n1 | grep -E '[0-9]' | $SED -e 's/[^0-9]*([0-9][0-9.]*).*/\1/') || echo ""
 }
 
 # Check whether the given command exists with given version
@@ -898,11 +898,24 @@ quietly_run() {
 try_install() {
   cd  # ensure we install at user level, not in some project's stack/cabal setup
   if has_cmd stack ; then
-    try_info stack install --install-ghc --resolver $STACKAGE_SNAPSHOT "$@" --verbosity="$STACK_VERBOSITY" || echo "Failed to install $@"
+    try_info stack install --install-ghc --resolver $STACKAGE_SNAPSHOT "$@" --verbosity="$STACK_VERBOSITY" || (echo "Failed to install $@"; false)
   elif has_cmd cabal ; then
-    try_info cabal install "$@" --verbose="$CABAL_VERBOSITY" || echo "Failed to install $@"
+    try_info cabal install "$@" --verbose="$CABAL_VERBOSITY" || (echo "Failed to install $@"; false)
   else
-    echo "Failed to install $@"
+    echo "Failed to install $@"; false
+  fi
+}
+
+# Like the above but try harder, ignoring dependency bounds. Could potentially try to install something very old.
+try_install_ignore_bounds() {
+  cd  # ensure we install at user level, not in some project's stack/cabal setup
+  echo "Trying without dependency bounds"
+  if has_cmd stack ; then
+    try_info stack install --allow-newer --install-ghc --resolver $STACKAGE_SNAPSHOT "$@" --verbosity="$STACK_VERBOSITY" || (echo "Failed to install $@"; false)
+  elif has_cmd cabal ; then
+    try_info cabal install --allow-newer "$@" --verbose="$CABAL_VERBOSITY" || (echo "Failed to install $@"; false)
+  else
+    echo "Failed to install $@"; false
   fi
 }
 
@@ -913,7 +926,7 @@ try_install_py() {
   if has_cmd pip ; then
     try_info pip install --disable-pip-version-check -U "$@" $PIP_VERBOSITY
   else
-    echo "Failed to install $@"
+    echo "Failed to install $@"; false
   fi
 }
 
@@ -1054,6 +1067,8 @@ if [[ $(cmpver "$(cmd_version hledger 2>/dev/null)" $HLEDGER_VERSION) = 2 ]]; th
   echo Installing hledger
   try_install hledger-$HLEDGER_VERSION hledger-lib-$HLEDGER_LIB_VERSION $STACK_EXTRA_DEPS
   echo
+else
+  echo hledger is up to date
 fi
 
 if [[ $(cmpver "$(cmd_version hledger-ui 2>/dev/null)" $HLEDGER_UI_VERSION) = 2 ]]; then
@@ -1061,21 +1076,26 @@ if [[ $(cmpver "$(cmd_version hledger-ui 2>/dev/null)" $HLEDGER_UI_VERSION) = 2 
   try_install hledger-ui-$HLEDGER_UI_VERSION hledger-$HLEDGER_VERSION hledger-lib-$HLEDGER_LIB_VERSION $STACK_EXTRA_DEPS \
     # brick-X.Y   # when hledger-iadd requires a special brick, use the same here to reduce rebuilding
   echo
+else
+  echo hledger-ui is up to date
 fi
 
 if [[ $(cmpver "$(cmd_version hledger-web 2>/dev/null)" $HLEDGER_WEB_VERSION) = 2 ]]; then
   echo Installing hledger-web
   try_install hledger-web-$HLEDGER_WEB_VERSION hledger-$HLEDGER_VERSION hledger-lib-$HLEDGER_LIB_VERSION $STACK_EXTRA_DEPS
   echo
+else
+  echo hledger-web is up to date
 fi
 
 # Third-party addons.
-# We might have to build these with an older version of hledger,
-# if they have not been updated yet.
+# These often won't build with new hledger right away just because of tight bounds,
+# so we'll also try building without bounds. Perhaps a little risky.
 
 if [[ $(cmpver "$(cmd_version hledger-iadd 2>/dev/null)" $HLEDGER_IADD_VERSION) = 2 ]]; then
   echo Installing hledger-iadd
-  try_install hledger-iadd-$HLEDGER_IADD_VERSION hledger-lib-$HLEDGER_LIB_VERSION $STACK_EXTRA_DEPS
+  try_install hledger-iadd-$HLEDGER_IADD_VERSION hledger-lib-$HLEDGER_LIB_VERSION $STACK_EXTRA_DEPS \
+  || try_install_ignore_bounds hledger-iadd-$HLEDGER_IADD_VERSION hledger-lib-$HLEDGER_LIB_VERSION $STACK_EXTRA_DEPS
   echo
 else
   echo hledger-iadd is up to date
@@ -1083,7 +1103,8 @@ fi
 
 if [[ $(cmpver "$(cmd_version hledger-interest 2>/dev/null)" $HLEDGER_INTEREST_VERSION) = 2 ]]; then
   echo Installing hledger-interest
-  try_install hledger-interest-$HLEDGER_INTEREST_VERSION hledger-lib-$HLEDGER_LIB_VERSION $STACK_EXTRA_DEPS
+  try_install hledger-interest-$HLEDGER_INTEREST_VERSION hledger-lib-$HLEDGER_LIB_VERSION $STACK_EXTRA_DEPS \
+  || try_install_ignore_bounds hledger-interest-$HLEDGER_INTEREST_VERSION hledger-lib-$HLEDGER_LIB_VERSION $STACK_EXTRA_DEPS
   echo
 else
   echo hledger-interest is up to date

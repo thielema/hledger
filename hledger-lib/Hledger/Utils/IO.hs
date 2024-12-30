@@ -19,6 +19,7 @@ module Hledger.Utils.IO (
   -- * Errors
   error',
   usageError,
+  warn,
 
   -- * Time
   getCurrentLocalTime,
@@ -82,6 +83,7 @@ module Hledger.Utils.IO (
   brightCyan',
   brightWhite',
   rgb',
+  sgrresetall,
 
   -- ** Generic
 
@@ -121,6 +123,7 @@ import qualified Data.Text.Lazy.Builder as TB
 import           Data.Time.Clock (getCurrentTime)
 import           Data.Time.LocalTime (LocalTime, ZonedTime, getCurrentTimeZone, utcToLocalTime, utcToZonedTime)
 import           Data.Word (Word16)
+import           Debug.Trace (trace)
 import           Foreign.C.Error (Errno(..), ePIPE)
 import           GHC.IO.Exception (IOException(..), IOErrorType (ResourceVanished))
 import           Language.Haskell.TH.Syntax (Q, Exp)
@@ -184,15 +187,39 @@ pprint' = pPrintOpt NoCheckColorTty prettyoptsNoColor
 
 -- Errors
 
--- | Simpler alias for errorWithoutStackTrace
+-- | Call errorWithoutStackTrace, prepending a "Error:" label.
+-- Also do some ANSI styling of the first line when allowed (using unsafe IO).
 error' :: String -> a
-error' = errorWithoutStackTrace . ("Error: " <>)
+error' =
+  if useColorOnStderrUnsafe
+  then  -- color the program name as well
+    unsafePerformIO $ do
+      putStr fmt
+      return $ errorWithoutStackTrace . modifyFirstLine ((<>sgrresetall) . (label<>))
+  else
+    errorWithoutStackTrace . modifyFirstLine (label<>)
+  where
+    label = "Error: "
+    fmt = sgrbrightred <> sgrbold
 
--- | A version of errorWithoutStackTrace that adds a usage hint.
+-- | Like error', but add a hint about using -h.
 usageError :: String -> a
 usageError = error' . (++ " (use -h to see usage)")
 
+-- | Show a message, with "Warning:" label, on stderr before returning the given value.
+-- Also do some ANSI styling of the first line when we detect that's supported (using unsafe IO).
+-- Currently we use this very sparingly in hledger; we prefer to either quietly work,
+-- or loudly raise an error. (Varying output can make scripting harder.)
+warn :: String -> a -> a
+warn msg = trace (modifyFirstLine f (label <> msg))
+  where
+    label = "Warning: "
+    f = if useColorOnStderrUnsafe then ((<>sgrresetall).(fmt<>)) else id
+      where
+        fmt = sgrbrightyellow <> sgrbold
 
+-- Transform a string's first line.
+modifyFirstLine f s = unlines $ map f l <> ls where (l,ls) = splitAt 1 $ lines s  -- total
 
 -- Time
 
@@ -545,6 +572,8 @@ sgrbold          = setSGRCode [SetConsoleIntensity BoldIntensity]
 sgrfaint         = setSGRCode [SetConsoleIntensity FaintIntensity]
 sgrnormal        = setSGRCode [SetConsoleIntensity NormalIntensity]
 sgrresetfg       = setSGRCode [SetDefaultColor Foreground]
+sgrresetbg       = setSGRCode [SetDefaultColor Background]
+sgrresetall      = sgrresetfg <> sgrresetbg <> sgrnormal
 sgrblack         = setSGRCode [SetColor Foreground Dull Black]
 sgrred           = setSGRCode [SetColor Foreground Dull Red]
 sgrgreen         = setSGRCode [SetColor Foreground Dull Green]

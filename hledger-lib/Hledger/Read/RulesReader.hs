@@ -308,8 +308,13 @@ type MatchGroupReference = Text
 -- | A strptime date parsing pattern, as supported by Data.Time.Format.
 type DateFormat       = Text
 
--- | A prefix for a matcher test, either & or none (implicit or).
-data MatcherPrefix = And | Not | None
+-- | A representation of a matcher's prefix, which indicates how it should be
+-- interpreted or combined with other matchers.
+data MatcherPrefix =
+    Or      -- ^ no prefix
+  | And     -- ^ &
+  | Not     -- ^ !
+  | AndNot  -- ^ & !
   deriving (Show, Eq)
 
 -- | A single test for matching a CSV record, in one way or another.
@@ -317,6 +322,14 @@ data Matcher =
     RecordMatcher MatcherPrefix Regexp                          -- ^ match if this regexp matches the overall CSV record
   | FieldMatcher MatcherPrefix CsvFieldReference Regexp         -- ^ match if this regexp matches the referenced CSV field's value
   deriving (Show, Eq)
+
+matcherPrefix :: Matcher -> MatcherPrefix
+matcherPrefix (RecordMatcher prefix _) = prefix
+matcherPrefix (FieldMatcher prefix _ _) = prefix
+
+matcherSetPrefix :: MatcherPrefix -> Matcher -> Matcher
+matcherSetPrefix p (RecordMatcher _ r)  = RecordMatcher p r
+matcherSetPrefix p (FieldMatcher _ f r) = FieldMatcher p f r
 
 -- | A conditional block: a set of CSV record matchers, and a sequence
 -- of rules which will be enabled only if one or more of the matchers
@@ -635,6 +648,9 @@ conditionaltablep = do
       
 
 -- A single matcher, on one line.
+-- This tries to parse first as a field matcher, then if that fails, as a whole-record matcher;
+-- the goal was to not break legacy whole-record patterns that happened to look a bit like a field matcher
+-- (eg, beginning with %, possibly preceded by & or !), or at least not to raise an error.
 matcherp' :: CsvRulesParser () -> CsvRulesParser Matcher
 matcherp' end = try (fieldmatcherp end) <|> recordmatcherp end
 
@@ -679,13 +695,18 @@ fieldmatcherp end = do
 matcherprefixp :: CsvRulesParser MatcherPrefix
 matcherprefixp = do
   lift $ dbgparse 8 "trying matcherprefixp"
-  (char '&' >> lift skipNonNewlineSpaces >> return And) <|> (char '!' >> lift skipNonNewlineSpaces >> return Not) <|> return None
+  (do
+    char '&' >> lift skipNonNewlineSpaces
+    fromMaybe And <$> optional (char '!' >> lift skipNonNewlineSpaces >> return AndNot))
+  <|> (char '!' >> lift skipNonNewlineSpaces >> return Not)
+  <|> return Or
 
 csvfieldreferencep :: CsvRulesParser CsvFieldReference
 csvfieldreferencep = do
   lift $ dbgparse 8 "trying csvfieldreferencep"
   char '%'
   T.cons '%' . textQuoteIfNeeded <$> fieldnamep
+    -- XXX this parses any generic field name, which may not actually be a valid CSV field name [#2289]
 
 -- A single regular expression
 regexp :: CsvRulesParser () -> CsvRulesParser Regexp
@@ -740,7 +761,7 @@ lastCBAssignmentTemplate f = snd . last . filter ((==f).fst) . cbAssignments
 
 maybeNegate :: MatcherPrefix -> Bool -> Bool
 maybeNegate Not origbool = not origbool
-maybeNegate _ origbool = origbool
+maybeNegate _   origbool = origbool
 
 -- | Given the conversion rules, a CSV record and a hledger field name, find
 -- either the last applicable `ConditionalBlock`, or the final value template
@@ -770,24 +791,28 @@ getEffectiveAssignment rules record f = lastMay assignments
 isBlockActive :: CsvRules -> CsvRecord -> ConditionalBlock -> Bool
 isBlockActive rules record CB{..} = any (all matcherMatches) $ groupedMatchers cbMatchers
   where
-    -- does this individual matcher match the current csv record ?
+    -- Does this individual matcher match the current csv record ?
+    -- A matcher's target can be a specific CSV field, or the "whole record".
+    --
+    -- In the former case, note that the field reference must be either numeric or
+    -- a csv field name declared by a `fields` rule; anything else will emit a warning to stderr
+    -- (to reduce confusion when a hledger field name doesn't work; not an error, to avoid breaking legacy rules; see #2289).
+    --
+    -- In the latter case, the matched value will be a synthetic CSV record.
+    -- Note this will not necessarily be the same as the original CSV record:
+    -- the field separator will be comma, and quotes enclosing field values,
+    -- and any whitespace outside those quotes, will be removed.
+    -- (This means that a field containing a comma will now look like two fields.)
+    --
     matcherMatches :: Matcher -> Bool
-    matcherMatches (RecordMatcher prefix pat) = maybeNegate prefix origbool
-      where
-        pat' = dbg7 "regex" pat
-        -- A synthetic whole CSV record to match against. Note, this can be
-        -- different from the original CSV data:
-        -- - any whitespace surrounding field values is preserved
-        -- - any quotes enclosing field values are removed
-        -- - and the field separator is always comma
-        -- which means that a field containing a comma will look like two fields.
-        wholecsvline = dbg7 "wholecsvline" $ T.intercalate "," record
-        origbool = regexMatchText pat' wholecsvline
-    matcherMatches (FieldMatcher prefix csvfieldref pat) = maybeNegate prefix origbool
-      where
-        -- the value of the referenced CSV field to match against.
-        csvfieldvalue = dbg7 "csvfieldvalue" $ replaceCsvFieldReference rules record csvfieldref
-        origbool = regexMatchText pat csvfieldvalue
+    matcherMatches = \case
+      RecordMatcher prefix             pat -> maybeNegate prefix $ match pat $ T.intercalate "," record
+      FieldMatcher  prefix csvfieldref pat -> maybeNegate prefix $ match pat $
+        fromMaybe "" $ replaceCsvFieldReference rules record csvfieldref
+        -- (warn msg "") where msg = "if "<>T.unpack csvfieldref<>": this should be a name declared with 'fields', or %NUM"
+        --  #2289: we'd like to warn the user when an unknown CSV field is being referenced,
+        --  but it's useful to ignore it for easier reuse of rules files.
+      where match p v = regexMatchText (dbg7 "regex" p) (dbg7 "value" v)
 
     -- | Group matchers into associative pairs based on prefix, e.g.:
     --   A
@@ -796,14 +821,13 @@ isBlockActive rules record CB{..} = any (all matcherMatches) $ groupedMatchers c
     --   D
     --   & E
     --   => [[A, B], [C], [D, E]]
+    --  & ! M (and not M) are converted to ! M (not M) within the and groups.
     groupedMatchers :: [Matcher] -> [[Matcher]]
     groupedMatchers [] = []
-    groupedMatchers (x:xs) = (x:ys) : groupedMatchers zs
+    groupedMatchers (m:ms) = (m:ands) : groupedMatchers rest
       where
-        (ys, zs) = span (\y -> matcherPrefix y == And) xs
-        matcherPrefix :: Matcher -> MatcherPrefix
-        matcherPrefix (RecordMatcher prefix _) = prefix
-        matcherPrefix (FieldMatcher prefix _ _) = prefix
+        (andandnots, rest) = span (\a -> matcherPrefix a `elem` [And, AndNot]) ms
+        ands = [matcherSetPrefix p a | a <- andandnots, let p = if matcherPrefix a == AndNot then Not else And]
 
 -- | Render a field assignment's template, possibly interpolating referenced
 -- CSV field values or match groups. Outer whitespace is removed from interpolated values.
@@ -813,7 +837,7 @@ renderTemplate rules record t =
     (many
       (   literaltextp
       <|> (matchrefp <&> replaceRegexGroupReference rules record)
-      <|> (fieldrefp <&> replaceCsvFieldReference   rules record)
+      <|> (fieldrefp <&> replaceCsvFieldReference   rules record <&> fromMaybe "")
       )
     )
     t
@@ -846,20 +870,18 @@ regexMatchValue rules record sgroup = let
   in atMay matchgroups group
 
 getMatchGroups :: CsvRules -> CsvRecord -> Matcher -> [Text]
-getMatchGroups _ record (RecordMatcher _ regex)  = let
-  txt = T.intercalate "," record -- see caveats of wholecsvline, in `isBlockActive`
-  in regexMatchTextGroups regex txt
-getMatchGroups rules record (FieldMatcher _ fieldref regex) = let
-  txt = replaceCsvFieldReference rules record fieldref
-  in regexMatchTextGroups regex txt
+getMatchGroups _ record (RecordMatcher _ regex) =
+  regexMatchTextGroups regex $ T.intercalate "," record -- see caveats in matcherMatches
+getMatchGroups rules record (FieldMatcher _ fieldref regex) =
+  regexMatchTextGroups regex $ fromMaybe "" $ replaceCsvFieldReference rules record fieldref
 
 -- | Replace something that looks like a reference to a csv field ("%date" or "%1)
 -- with that field's value. If it doesn't look like a field reference, or if we
--- can't find such a field, replace it with the empty string.
-replaceCsvFieldReference :: CsvRules -> CsvRecord -> CsvFieldReference -> Text
+-- can't find a csv field with that name, return nothing.
+replaceCsvFieldReference :: CsvRules -> CsvRecord -> CsvFieldReference -> Maybe Text
 replaceCsvFieldReference rules record s = case T.uncons s of
-    Just ('%', fieldname) -> fromMaybe "" $ csvFieldValue rules record fieldname
-    _                     -> s
+    Just ('%', fieldname) -> csvFieldValue rules record fieldname
+    _                     -> Nothing
 
 -- | Get the (whitespace-stripped) value of a CSV field, identified by its name or
 -- column number, ("date" or "1"), from the given CSV record, if such a field exists.
@@ -1509,12 +1531,12 @@ tests_RulesReader = testGroup "RulesReader" [
 
     ,testCase "assignment with empty value" $
       parseWithState' defrules rulesp "account1 \nif foo\n  account2 foo\n" @?=
-        (Right (mkrules $ defrules{rassignments = [("account1","")], rconditionalblocks = [CB{cbMatchers=[RecordMatcher None (toRegex' "foo")],cbAssignments=[("account2","foo")]}]}))
+        (Right (mkrules $ defrules{rassignments = [("account1","")], rconditionalblocks = [CB{cbMatchers=[RecordMatcher Or (toRegex' "foo")],cbAssignments=[("account2","foo")]}]}))
    ]
   ,testGroup "conditionalblockp" [
     testCase "space after conditional" $
       parseWithState' defrules conditionalblockp "if a\n account2 b\n \n" @?=
-        (Right $ CB{cbMatchers=[RecordMatcher None $ toRegexCI' "a"],cbAssignments=[("account2","b")]})
+        (Right $ CB{cbMatchers=[RecordMatcher Or $ toRegexCI' "a"],cbAssignments=[("account2","b")]})
   ],
 
   testGroup "csvfieldreferencep" [
@@ -1526,16 +1548,16 @@ tests_RulesReader = testGroup "RulesReader" [
   ,testGroup "matcherp" [
 
     testCase "recordmatcherp" $
-      parseWithState' defrules matcherp "A A\n" @?= (Right $ RecordMatcher None $ toRegexCI' "A A")
+      parseWithState' defrules matcherp "A A\n" @?= (Right $ RecordMatcher Or $ toRegexCI' "A A")
 
    ,testCase "recordmatcherp.starts-with-&" $
       parseWithState' defrules matcherp "& A A\n" @?= (Right $ RecordMatcher And $ toRegexCI' "A A")
 
    ,testCase "fieldmatcherp.starts-with-%" $
-      parseWithState' defrules matcherp "description A A\n" @?= (Right $ RecordMatcher None $ toRegexCI' "description A A")
+      parseWithState' defrules matcherp "description A A\n" @?= (Right $ RecordMatcher Or $ toRegexCI' "description A A")
 
    ,testCase "fieldmatcherp" $
-      parseWithState' defrules matcherp "%description A A\n" @?= (Right $ FieldMatcher None "%description" $ toRegexCI' "A A")
+      parseWithState' defrules matcherp "%description A A\n" @?= (Right $ FieldMatcher Or "%description" $ toRegexCI' "A A")
 
    ,testCase "fieldmatcherp.starts-with-&" $
       parseWithState' defrules matcherp "& %description A A\n" @?= (Right $ FieldMatcher And "%description" $ toRegexCI' "A A")
@@ -1550,7 +1572,7 @@ tests_RulesReader = testGroup "RulesReader" [
 
     in testCase "toplevel" $ hledgerField rules ["a","b"] "date" @?= (Just "%csvdate")
 
-   ,let rules = mkrules $ defrules{rcsvfieldindexes=[("csvdate",1)], rconditionalblocks=[CB [FieldMatcher None "%csvdate" $ toRegex' "a"] [("date","%csvdate")]]}
+   ,let rules = mkrules $ defrules{rcsvfieldindexes=[("csvdate",1)], rconditionalblocks=[CB [FieldMatcher Or "%csvdate" $ toRegex' "a"] [("date","%csvdate")]]}
     in testCase "conditional" $ hledgerField rules ["a","b"] "date" @?= (Just "%csvdate")
 
    ,let rules = mkrules $ defrules{rcsvfieldindexes=[("csvdate",1)], rconditionalblocks=[CB [FieldMatcher Not "%csvdate" $ toRegex' "a"] [("date","%csvdate")]]}
@@ -1559,16 +1581,16 @@ tests_RulesReader = testGroup "RulesReader" [
    ,let rules = mkrules $ defrules{rcsvfieldindexes=[("csvdate",1)], rconditionalblocks=[CB [FieldMatcher Not "%csvdate" $ toRegex' "b"] [("date","%csvdate")]]}
     in testCase "negated-conditional-true" $ hledgerField rules ["a","b"] "date" @?= (Just "%csvdate")
 
-   ,let rules = mkrules $ defrules{rcsvfieldindexes=[("csvdate",1),("description",2)], rconditionalblocks=[CB [FieldMatcher None "%csvdate" $ toRegex' "a", FieldMatcher None "%description" $ toRegex' "b"] [("date","%csvdate")]]}
+   ,let rules = mkrules $ defrules{rcsvfieldindexes=[("csvdate",1),("description",2)], rconditionalblocks=[CB [FieldMatcher Or "%csvdate" $ toRegex' "a", FieldMatcher Or "%description" $ toRegex' "b"] [("date","%csvdate")]]}
     in testCase "conditional-with-or-a" $ hledgerField rules ["a"] "date" @?= (Just "%csvdate")
 
-   ,let rules = mkrules $ defrules{rcsvfieldindexes=[("csvdate",1),("description",2)], rconditionalblocks=[CB [FieldMatcher None "%csvdate" $ toRegex' "a", FieldMatcher None "%description" $ toRegex' "b"] [("date","%csvdate")]]}
+   ,let rules = mkrules $ defrules{rcsvfieldindexes=[("csvdate",1),("description",2)], rconditionalblocks=[CB [FieldMatcher Or "%csvdate" $ toRegex' "a", FieldMatcher Or "%description" $ toRegex' "b"] [("date","%csvdate")]]}
     in testCase "conditional-with-or-b" $ hledgerField rules ["_", "b"] "date" @?= (Just "%csvdate")
 
-   ,let rules = mkrules $ defrules{rcsvfieldindexes=[("csvdate",1),("description",2)], rconditionalblocks=[CB [FieldMatcher None "%csvdate" $ toRegex' "a", FieldMatcher And "%description" $ toRegex' "b"] [("date","%csvdate")]]}
+   ,let rules = mkrules $ defrules{rcsvfieldindexes=[("csvdate",1),("description",2)], rconditionalblocks=[CB [FieldMatcher Or "%csvdate" $ toRegex' "a", FieldMatcher And "%description" $ toRegex' "b"] [("date","%csvdate")]]}
     in testCase "conditional.with-and" $ hledgerField rules ["a", "b"] "date" @?= (Just "%csvdate")
 
-   ,let rules = mkrules $ defrules{rcsvfieldindexes=[("csvdate",1),("description",2)], rconditionalblocks=[CB [FieldMatcher None "%csvdate" $ toRegex' "a", FieldMatcher And "%description" $ toRegex' "b", FieldMatcher None "%description" $ toRegex' "c"] [("date","%csvdate")]]}
+   ,let rules = mkrules $ defrules{rcsvfieldindexes=[("csvdate",1),("description",2)], rconditionalblocks=[CB [FieldMatcher Or "%csvdate" $ toRegex' "a", FieldMatcher And "%description" $ toRegex' "b", FieldMatcher Or "%description" $ toRegex' "c"] [("date","%csvdate")]]}
     in testCase "conditional.with-and-or" $ hledgerField rules ["_", "c"] "date" @?= (Just "%csvdate")
 
    ]
@@ -1579,9 +1601,9 @@ tests_RulesReader = testGroup "RulesReader" [
           { rcsvfieldindexes=[ ("date",1), ("description",2) ]
           , rassignments=[ ("account2","equity"), ("amount1","1") ]
           -- ConditionalBlocks here are in reverse order: mkrules reverses the list
-          , rconditionalblocks=[ CB { cbMatchers=[FieldMatcher None "%description" (toRegex' "PREFIX (.*) - (.*)")] 
+          , rconditionalblocks=[ CB { cbMatchers=[FieldMatcher Or "%description" (toRegex' "PREFIX (.*) - (.*)")]
                                     , cbAssignments=[("account1","account:\\1:\\2")] }
-                               , CB { cbMatchers=[FieldMatcher None "%description" (toRegex' "PREFIX (.*)")]
+                               , CB { cbMatchers=[FieldMatcher Or "%description" (toRegex' "PREFIX (.*)")]
                                     , cbAssignments=[("account1","account:\\1"), ("comment1","\\1")] }
                                ]
           }
