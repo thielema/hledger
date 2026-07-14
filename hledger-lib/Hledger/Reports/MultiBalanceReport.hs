@@ -334,13 +334,16 @@ markAccountBoring ReportSpec{_rsQuery=query,_rsReportOpts=ropts}
         qdepth = fromMaybe maxBound . getAccountNameClippedDepth depthspec $ aname acct
         balance = maybeStripPrices . case accountlistmode_ ropts of
             ALTree | d == qdepth -> bdincludingsubs
-            _                    -> bdexcludingsubs
+            _ ->
+                if include_parent_ ropts
+                  then bdincludingsubs
+                  else bdexcludingsubs
 
     -- Accounts which don't have enough interesting subaccounts
     isBoringParent :: Account a -> Bool
     isBoringParent acct = case accountlistmode_ ropts of
         ALTree -> notEnoughSubs || droppedAccount
-        ALFlat -> True
+        ALFlat -> not $ include_parent_ ropts
       where
         notEnoughSubs = length interestingSubs < minimumSubs
         droppedAccount = accountNameLevel (aname acct) <= drop_ ropts

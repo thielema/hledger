@@ -148,6 +148,7 @@ data ReportOpts = ReportOpts {
     ,date2_            :: Bool
     ,empty_            :: Bool
     ,no_elide_         :: Bool
+    ,include_parent_   :: Bool
     ,full_path_        :: Bool
     ,real_             :: Bool
     ,format_           :: StringFormat
@@ -218,6 +219,7 @@ defreportopts = ReportOpts
     , date2_            = False
     , empty_            = False
     , no_elide_         = False
+    , include_parent_   = False
     , full_path_        = False
     , real_             = False
     , format_           = def
@@ -293,6 +295,7 @@ rawOptsToReportOpts d usecoloronstdout rawopts =
           ,date2_            = boolopt "date2" rawopts
           ,empty_            = boolopt "empty" rawopts
           ,no_elide_         = boolopt "no-elide" rawopts
+          ,include_parent_   = boolopt "include-parent" rawopts
           ,full_path_        = boolopt "full-path" rawopts
           ,real_             = boolopt "real" rawopts
           ,format_           = format
