@@ -85,7 +85,7 @@ to avoid interfering with branch switching; RELEASING.md should be updated from 
 
 ### Phase 2: prepare the release branch
 
-1. **main: create/update release branch:** `just relbranch VER` (for 1.99.x preview releases, create branch manually)
+1. **main: create/update release branch:** `just relbranch VER` (also works for A.99.N preview releases, creating VER-branch)
    - if a GHC version the release branch needs isn't installed locally, avoid installing it if possible - save a copy
      of main's `stack.yaml` (e.g. as `stackmain.yaml`), then use `-w stackmain.yaml` with stack commands, or
      temporarily replace the release branch's `stack.yaml` for tools like Shake that don't take `-w`. Always restore
@@ -112,16 +112,15 @@ Everything before this phase is revisable (nothing shared beyond scratch CI bran
    gets more commits before tags are pushed.
 1. **(non-preview release) rel: publish on hackage:** `just hackageupload` ⚠ (no unpublish - confirm before running the
    actual upload, distinct from the earlier reversible build/upload steps)
-1. **push to github:** push site repo, push VER-branch, `just reltags-push VER`, push main ⚠
+1. **push to github:** push site repo, push VER-branch, `just reltags-push`, push main ⚠
 1. **publish on github:** manually make new github release (latest or prerelease) from VER tag; `just ghrel-notes`;
    `just ghbin-download ghrel-upload` (re-upload via `--clobber` is safe/reversible; drafting the release is fine,
    but making it public/published is ⚠ - confirm first)
    - create it as a *non-draft* release, named after the tag (as usual): a draft has no stable url, which
      `just ghrel-notes` and `ghrel-upload` need. So the release goes public before its notes/binaries are
      attached - keep this window short.
-   - `ghbin-download` takes the *latest* run of each binaries workflow; check those runs are the ones built
-     from the tagged commit (`just _ghrun-id binaries-linux-x64` etc), especially if anything was pushed
-     to the `binaries` branch since.
+   - `ghbin-download` takes the *latest* run of each binaries workflow, and refuses to download runs
+     not built from the release tag's commit (eg if something was pushed to the `binaries` branch since).
    - a good final check before uploading: unpack the archive for your own platform and run
      `./hledger --version` etc - it should show `VER-gHASH` matching the release tag's commit.
      (Use `--conf=/dev/null` if your personal config uses newer syntax than the release understands.)
@@ -241,7 +240,7 @@ Last updated: 2026-09
         `curl -sI https://hledger.org/hledger.html | grep location`
   - release branch pushed to github  
   - release tags pushed to github  
-      `just reltags-push VER`
+      `just reltags-push`
   - github draft release with release binaries attached  
       <https://github.com/plaintextaccounting/hledger/releases/new> *(XXX safari may not show new tag, may need brave)*  
       `just ghrel-notes` (in release branch)  
