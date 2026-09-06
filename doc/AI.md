@@ -226,6 +226,7 @@ Other contributors' usage estimates can be added here too.
 - Martin Fowler: <https://martinfowler.com/fragments/2026-04-02.html>
 - <https://news.ycombinator.com/item?id=47648828> Eight years of wanting, three months of building with AI
 - Raffael Schneider: <https://raskell.io/articles/looking-back-on-2025>
+- Bryan Cantrill: <https://bcantrill.dtrace.org/2026/09/05/the-revolt-of-the-reader/> on AI-assisted writing
 
 ### Policies
 - [Pope Leo XIV: Magnifica Humanitas: On Safeguarding The Human Person In The Time Of Artificial Intelligence](https://www.vatican.va/content/leo-xiv/en/encyclicals/documents/20260515-magnifica-humanitas.html)
@@ -237,6 +238,7 @@ Other contributors' usage estimates can be added here too.
 - <https://blog.rust-lang.org/inside-rust/2026/08/05/rust-langrust-is-adopting-an-llm-policy> ([discussion](https://news.ycombinator.com/item?id=49179039))
 - <https://dbushell.com/ai/> ([discussion](https://news.ycombinator.com/item?id=49537900))
 - <https://www.visidata.org/blog/2026/ai/#self-assessed-ai-level-for-contributions>
+- <https://rfd.shared.oxide.computer/rfd/0576>
 
 ### Research
 - [AI 2027](https://ai-2027.com), [AI 2040](https://ai-2040.com)
