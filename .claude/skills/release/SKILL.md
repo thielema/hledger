@@ -7,7 +7,9 @@ description: Drive an hledger release (major, bugfix, or preview) using doc/RELE
 
 This skill describes *how* to drive a release, not the release steps themselves - those live in
 `doc/RELEASING.md` (and possibly a maintainer's working copy `doc/.RELEASING.md`, ahead of it during
-an in-progress release) under "Release script" (short/operational list) and "Release checklist" (details, gotchas, "How to.." recipes, may be out of date). Always read the current version of that file at the start of a
+an in-progress release) under "Release script" (the canonical step sequence, grouped into phases) and
+"Release artifacts reference" (supporting details, gotchas, "How to.." recipes; the script wins on any
+conflict). Always read the current version of that file at the start of a
 release rather than relying on memory of a past one - it gets updated after each release with lessons
 learned, and step order/branch placement has changed between releases.
 

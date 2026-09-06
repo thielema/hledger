@@ -57,24 +57,23 @@ Release readiness and the release process go from the bottom of this diagram to 
 <!-- source: RELEASING.canvas (Obsidian) -->
 
 ## Release script
-Last updated: 2026-08\
-Same steps as Release script (2026H1), reordered and annotated with lessons from the 1.52.2 release.
-For extra how-to's not covered here, see the "How to.." and "Tips" sections below - but not the numbered
-waypoint list in the Release checklist section itself, which predates this script (last updated 2025-11)
-and may conflict with it on step order/commands.\
+Last updated: 2026-09\
+This is the canonical step sequence for making a release, annotated with lessons from past releases.
+For extra how-to's not covered here, see the "How to.." and "Tips" sections below.\
 Key: main: = in hledger repo main branch, rel: = in hledger repo release branch, site: = in site repo,
 (CONDITION) ... = when CONDITION is true, `CMD` = suggested relevant command.\
 Steps marked ⚠ push/upload/publish/announce to somewhere shared and are hard or impossible to undo -
 always get explicit go-ahead for that specific step, even mid-release, even if earlier steps were approved.
 Steps without ⚠ are safe to just do once they're clearly next.\
 The actual commands referred to above live in `Justfile`, `Shake.hs`, `tools/`.
-This file (`doc/.RELEASING.md`) is the maintainer's working copy of `doc/RELEASING.md`, edited live during
-a release to avoid interfering with branch switching; it may be temporarily ahead of `doc/RELEASING.md`,
-which should be updated from it after the release.
+During a release, this file may be copied to `doc/.RELEASING.md` (untracked) and edited live there,
+to avoid interfering with branch switching; RELEASING.md should be updated from it after the release.
 
 0. **before any step: confirm the current branch** (`git branch --show-current`) matches that step's `main:`/`rel:`/`site:` label.
    The branch can change between your checks (e.g. the maintainer switching branches outside your tool calls),
    so re-check rather than trusting an earlier check.
+
+### Phase 1: prepare main
 
 1. **main: finish fixes/features/docs/issues/prs**
 1. **main: begin/fix release builds:** `just ghbin oldest`
@@ -82,6 +81,9 @@ which should be updated from it after the release.
 1. **main: update command docs and manuals ?** `just manuals`
 1. **(major release) main: update website manuals:** `just manuals-site`
 1. **(major release) main: update website scripts/redirects:** update `site/Makefile`, `site/js/site.js`, `site/hledger.org.caddy`
+
+### Phase 2: prepare the release branch
+
 1. **main: create/update release branch:** `just relbranch VER` (for 1.99.x preview releases, create branch manually)
    - if a GHC version the release branch needs isn't installed locally, avoid installing it if possible - save a copy
      of main's `stack.yaml` (e.g. as `stackmain.yaml`), then use `-w stackmain.yaml` with stack commands, or
@@ -100,6 +102,11 @@ which should be updated from it after the release.
    release branch, before the cherry-pick below, not on main (main's copies of ghrelnotes/ghtestbinnotes.md describe
    the *next preview* line and are unrelated to the release branch's version).
 1. **main: cherry-pick changelogs, relnotes, announcement, other relevant updates from relbranch** `jjui -r ::`
+
+### Phase 3: tag and publish ⚠
+
+Everything before this phase is revisable (nothing shared beyond scratch CI branches); this phase contains the one-way doors.
+
 1. **rel: make release tags:** (once binaries are all built) `just reltags` - safe to re-run/move if the release branch
    gets more commits before tags are pushed.
 1. **(non-preview release) rel: publish on hackage:** `just hackageupload` ⚠ (no unpublish - confirm before running the
@@ -117,6 +124,9 @@ which should be updated from it after the release.
    - a good final check before uploading: unpack the archive for your own platform and run
      `./hledger --version` etc - it should show `VER-gHASH` matching the release tag's commit.
      (Use `--conf=/dev/null` if your personal config uses newer syntax than the release understands.)
+
+### Phase 4: aftermath and announce
+
 1. **(major release) main: activate website scripts/redirects:** `just site-restart`
 1. **(major release) main: update dev version:** `just devver`
 1. **main: update manuals:** `just manuals`
@@ -133,49 +143,20 @@ which should be updated from it after the release.
      helps for as long as the PR/issue contains materially more detail than the advisory does.
 
 
-## Release script (2026H1)
-Short version, based on the checklist below.
-Last updated: 2026-06\
-Key: main: = in hledger repo main branch, rel: = hledger repo release branch, site: = site repo.
+## Release artifacts reference
 
-1. **main: finish fixes/features/docs/issues/prs**
-1. **main: begin/fix release builds:** `j ghbin oldest`
-1. **main: update general flags help:** build hledger, copy general flags help from `stack exec -- hledger -h` to common.m4
-1. **main: update command docs and manuals ?** `j manuals`
-1. **(major release) main: update website manuals:** `j manuals-site`
-1. **(major release) main: update website scripts/redirects:** update `site/Makefile`, `site/js/site.js`, `site/hledger.org.caddy`
-1. **main: create/update release branch:** `j relbranch VER` (for 1.99.x preview releases, create branch manually)
-1. **(minor release) rel: cherry-pick new changes from main**
-1. **rel: update command docs and manuals:** `j manuals`
-1. **rel: update changelogs:** `j changelogs`; edit; `j changelogs-finalise`
-1. **rel: update relnotes:** `j relnotes`; edit (add summary); commit
-1. **rel: update announcements:** edit `doc/ANNOUNCE`
-1. **rel: make release builds:** `j ghbin`
-1. **rel: update install docs:** edit `doc/ghrelnotes`, `doc/ghtestbinnotes.md`, `site/src/install.md`
-1. **main: cherry-pick changelogs, relnotes, announcement, other relevant updates from relbranch** `jjui -r ::`
-1. **rel: make release tags:** (once binaries are all built) `j reltags`
-1. **(non-preview release) rel: publish on hackage:** `j hackageupload`
-1. **push to github:** push site repo, push VER-branch, `j reltags-push VER`, push main
-1. **publish on github:** manually make new github release (latest or prerelease) from VER tag; `j ghrel-notes`; `j ghbin-download ghrel-upload`
-1. **(major release) main: activate website scripts/redirects:** `j site-restart`
-1. **(major release) main: update dev version:** `j devver`
-1. **main: update manuals:** `j manuals`
-1. **main: update changelogs:** `j changelogs`; edit
-1. **announce to matrix, irc, mail list, mastodon, forum, pta.o**
-
-
-## Release checklist
-
-This is a detailed expansion of the release artifacts / value chain diagram above, 
-listing waypoints, required artifacts, and related commands.
-Last updated: 2025-11
+A detailed expansion of the release artifacts / value chain diagram above,
+listing required artifacts, related commands, and gotchas.
+This is reference material supporting the Release script above, not a step sequence -
+if it conflicts with the script on step order or commands, the script wins.
+Last updated: 2026-09
 
 <!-- Trailing double spaces are used for line breaks -->
 
-- **0. general**
+- **general**
   - when browser (Safari) refuses to show new content, use another
 
-- **1. product**
+- **product**
   - blocking defects resolved
   - desired improvements landed and stabilised
   - building and passing tests with current ghcs, deps, and stackage snapshots
@@ -183,7 +164,7 @@ Last updated: 2025-11
         `just ghbin` (or push to github `binaries[-*]` branch)  
         `just oldest` (or push to github `oldest` branch)
 
-- **2. product docs and metadata**
+- **product docs and metadata**
   - release branch
   - version strings (in **/.version, */.version.m4, */package.yaml)
   - cabal files x 4 (hledger*/hledger*.cabal)  
@@ -216,7 +197,7 @@ Last updated: 2025-11
         add author github nicks  
         `just changelogs-finalise`  
 
-- **3. release docs and artifacts**
+- **release docs and artifacts**
   - draft binaries building started  
       `just ghbin`
   - hledger.org html manuals x 3 (site/src/MAJORVER/\*.md) (major release only)  
@@ -238,7 +219,7 @@ Last updated: 2025-11
       wait for all to succeed
   - Install page (site/src/install.md) --version examples match release binaries
 
-- **4. published**
+- **published**
   - relevant release branch work cherry-picked to main branch  
       changelogs,
       relnotes,
@@ -283,7 +264,7 @@ Last updated: 2025-11
     - mastodon
     - pta forum
 
-- **5. cleanup and support**
+- **cleanup and support**
   - review/polish/sync changelogs & relnotes
   - new version, man dates, dev tag in main (major version only)  
     `j devtag-push`
