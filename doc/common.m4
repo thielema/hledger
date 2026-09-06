@@ -61,7 +61,7 @@ m4_dnl
 m4_dnl
 m4_dnl A copy of the general options help shown by `hledger --help`. Used in the three manuals.
 m4_dnl To make changes: update the flag definitions at top of CliOptions.hs,
-m4_dnl build hledger, and manually copy most of that build's --help output to here. '
+m4_dnl then run `just generaloptionshelp` to regenerate this from the build's --help output. '
 m4_dnl Do this always before release, and more often if needed to update
 m4_dnl the manual within dev builds and at https://hledger.org/dev/hledger.html#options.
 m4_dnl
@@ -154,14 +154,15 @@ General output flags (affecting some commands):
                             'dates':   exact dates/date ranges always
 
 General help flags:
-  -h --help                 show command line help
-     --tldr                 show command examples with tldr
-     --info                 show the manual with info
-     --man                  show the manual with man
+  -?                        show the hledger quick reference
+  -h --help                 show this command's usage help
+     --info                 show this command's manual with info
+     --man                  show this command's manual with man
+     --webman               show this command's manual on the web
+     --examples             show examples for this command
      --version              show version information
      --debug=[1-9]          show this much debug output (default: 1)
      --pager=YN             use a pager when needed ? y/yes (default) or n/no
      --color=YNA --colour   use ANSI color ? y/yes, n/no, or auto (default)
-
 ```
 }} )m4_dnl '
