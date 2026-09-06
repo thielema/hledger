@@ -1080,6 +1080,36 @@ ghbin-download:
     zip -j hledger-windows-x64.zip hledger-windows-x64/*
     rm -rf hledger-*64
 
+# Create or update a draft github release for the current version, with release notes
+# and verified binaries attached. Safe to re-run. Run on release branch, after reltags-push.
+ghrel:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    just _on-release-branch
+    VER=$(just ver)
+    if gh release view "$VER" >/dev/null 2>&1; then
+      echo "Updating github release $VER's notes"
+      doc/ghrelnotes "$VER" | gh release edit "$VER" -F-
+    else
+      PRERELEASE=$([[ $(just _versionIsPreview "$VER") == y ]] && echo --prerelease || true)
+      echo "Creating draft github release $VER"
+      doc/ghrelnotes "$VER" | gh release create "$VER" --draft --verify-tag $PRERELEASE --title "$VER" -F-
+    fi
+    just ghbin-download
+    just ghrel-upload
+    echo "Draft release $VER is ready. Review it (just ghrel-open), then make it public with: just ghrel-publish"
+
+# Publish the current version's draft github release, making it visible to the world. ⚠
+ghrel-publish:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    just _on-release-branch
+    VER=$(just ver)
+    gh release view "$VER"
+    read -p "Publish github release $VER, for all the world to see ? Enter to proceed, ctrl-c to cancel: "
+    gh release edit "$VER" --draft=false
+    gh release view "$VER" --json url --jq .url
+
 # Browse the latest github release.
 @ghrel-open:
     gh release view -w
@@ -1095,7 +1125,9 @@ ghrel-upload:
     set -euo pipefail
     just _on-release-branch
     VER=$(just ver)
-    read -p "Warning! uploading binaries to release $VER, are you sure ? Enter to proceed: "
+    if [[ $(gh release view "$VER" --json isDraft --jq .isDraft) != true ]]; then
+      read -p "Warning! uploading binaries to the published release $VER, are you sure ? Enter to proceed: "
+    fi
     gh release upload --clobber "$VER" tmp/hledger-linux-x64.tar.gz
     gh release upload --clobber "$VER" tmp/hledger-mac-arm64.tar.gz
     gh release upload --clobber "$VER" tmp/hledger-mac-x64.tar.gz

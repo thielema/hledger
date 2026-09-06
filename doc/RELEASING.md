@@ -115,17 +115,13 @@ Everything before this phase is revisable (nothing shared beyond scratch CI bran
 1. **(non-preview release) rel: publish on hackage:** `just hackageupload` ⚠ (no unpublish - confirm before running the
    actual upload, distinct from the earlier reversible build/upload steps)
 1. **push to github:** push site repo, push VER-branch, `just reltags-push`, push main ⚠
-1. **publish on github:** manually make new github release (latest or prerelease) from VER tag; `just ghrel-notes`;
-   `just ghbin-download ghrel-upload` (re-upload via `--clobber` is safe/reversible; drafting the release is fine,
-   but making it public/published is ⚠ - confirm first)
-   - create it as a *non-draft* release, named after the tag (as usual): a draft has no stable url, which
-     `just ghrel-notes` and `ghrel-upload` need. So the release goes public before its notes/binaries are
-     attached - keep this window short.
-   - `ghbin-download` takes the *latest* run of each binaries workflow, and refuses to download runs
-     not built from the release tag's commit (eg if something was pushed to the `binaries` branch since).
-   - a good final check before uploading: unpack the archive for your own platform and run
+1. **publish on github:** `just ghrel` (creates/updates a *draft* github release from the VER tag, with release
+   notes and verified binaries attached; safe to re-run); review it (`just ghrel-open`); then `just ghrel-publish` ⚠
+   - `ghrel` downloads from the *latest* run of each binaries workflow, refusing runs not built from the
+     release tag's commit (eg if something was pushed to the `binaries` branch since).
+   - a good final check before publishing: unpack the archive for your own platform and run
      `./hledger --version` etc - it should show `VER-gHASH` matching the release tag's commit.
-     (Use `--conf=/dev/null` if your personal config uses newer syntax than the release understands.)
+     (Use `--no-conf` if your personal config uses newer syntax than the release understands.)
 
 ### Phase 4: aftermath and announce
 
@@ -243,15 +239,13 @@ Last updated: 2026-09
   - release branch pushed to github  
   - release tags pushed to github  
       `just reltags-push`
-  - github draft release with release binaries attached  
-      <https://github.com/plaintextaccounting/hledger/releases/new> *(XXX safari may not show new tag, may need brave)*  
-      `just ghrel-notes` (in release branch)  
-      `just ghbin-download` <!-- (or if throttled: `just ghbin-open`, download to tmp/, unzip the unix ones) -->  
-      `just ghrel-bin-upload VER`  
+  - github draft release with release notes and binaries attached  
+      `just ghrel` (in release branch)  
+      <!-- (if downloads are throttled: `just ghbin-open`, download to tmp/, unzip the unix ones) -->  
   - github release published  
       decide if release should be immutable (artifacts attached, all correct ?) then adjust repo settings  
       review,
-      publish
+      `just ghrel-publish`
   - github nightly release updated *(XXX nightly release deleted, needs reviving)*  
       in main, update changes link in doc/ghnightlynotes.md
       `just nightlyrel-notes`  
