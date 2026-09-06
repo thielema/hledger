@@ -1050,10 +1050,10 @@ reltags-push:
     for p in $PACKAGES; do TAGS="$TAGS $p-`cat $p/.version`"; done
     git push origin $TAGS
 
-# XXX
-# Release binaries are downloaded to local machine, repacked, and uploaded to GH release.
-# Nightly binaries are copied from their last runs by a workflow on GH.
-# Why the difference, is special repacking needed, for release only ?
+# The github release is normally assembled by the release.yml workflow (via just ghrel),
+# entirely on github's servers. ghbin-download and ghrel-upload below support ghrel-local,
+# the older flow which routes the binaries through the local machine; kept as a fallback
+# for release branches that don't have release.yml.
 
 # Download new binaries from the latest runs of the platform binaries workflows, and recompress them.
 # If a release tag matching ./.version exists, each run is checked to be built from that tag's commit.
@@ -1080,9 +1080,27 @@ ghbin-download:
     zip -j hledger-windows-x64.zip hledger-windows-x64/*
     rm -rf hledger-*64
 
-# Create or update a draft github release for the current version, with release notes
-# and verified binaries attached. Safe to re-run. Run on release branch, after reltags-push.
+# Create or update a draft github release for the current version, with release notes and
+# binaries attached, using the release.yml workflow - the binaries stay on github's servers.
+# Run on release branch, after reltags-push, once the binaries-* workflows have succeeded
+# for the tagged commit. Safe to re-run.
 ghrel:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    just _on-release-branch
+    VER=$(just ver)
+    BRANCH=$(git branch --show-current)
+    gh workflow run release.yml --ref "$BRANCH" -f version="$VER"
+    echo "Waiting for the release workflow to start.."
+    sleep 5
+    RUN=$(gh run list --workflow release.yml -b "$BRANCH" --json databaseId --jq '.[0].databaseId')
+    gh run watch "$RUN" --exit-status
+    echo "Draft release $VER is ready. Review it (just ghrel-open), then make it public with: just ghrel-publish"
+
+# Like ghrel, but assembling the release locally: create/update the draft release,
+# then download the binaries (ghbin-download) and upload them to it (ghrel-upload).
+# A fallback for release branches that don't have the release.yml workflow.
+ghrel-local:
     #!/usr/bin/env bash
     set -euo pipefail
     just _on-release-branch

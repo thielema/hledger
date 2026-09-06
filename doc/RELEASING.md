@@ -115,11 +115,13 @@ Everything before this phase is revisable (nothing shared beyond scratch CI bran
 1. **(non-preview release) rel: publish on hackage:** `just hackageupload` ⚠ (no unpublish - confirm before running the
    actual upload, distinct from the earlier reversible build/upload steps)
 1. **push to github:** push site repo, push VER-branch, `just reltags-push`, push main ⚠
-1. **publish on github:** `just ghrel` (creates/updates a *draft* github release from the VER tag, with release
-   notes and verified binaries attached; safe to re-run); review it (`just ghrel-open`); then `just ghrel-publish` ⚠
-   - `ghrel` downloads from the *latest* run of each binaries workflow, refusing runs not built from the
-     release tag's commit (eg if something was pushed to the `binaries` branch since).
-   - a good final check before publishing: unpack the archive for your own platform and run
+1. **publish on github:** `just ghrel` (runs the release workflow on github, creating/updating a *draft*
+   github release with release notes and the binaries built from the tagged commit - the binaries stay on
+   github's servers; safe to re-run); review it (`just ghrel-open`); then `just ghrel-publish` ⚠
+   - the workflow selects each binaries-* workflow's run for the release tag's commit, and fails if there's
+     no successful one (eg if the binaries were built from a different commit - rerun `just ghbin` on the tag).
+   - on older release branches without the release.yml workflow, use `just ghrel-local` instead.
+   - a good final check before publishing: download and unpack the archive for your own platform and run
      `./hledger --version` etc - it should show `VER-gHASH` matching the release tag's commit.
      (Use `--no-conf` if your personal config uses newer syntax than the release understands.)
 
