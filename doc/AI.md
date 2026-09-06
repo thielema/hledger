@@ -256,4 +256,5 @@ and so many more.
 ### Tools
 - <https://ccusage.com>
 - <https://github.com/ratherlegit/environmental-impact-tracker>
+- <https://www.pangram.com>
 
