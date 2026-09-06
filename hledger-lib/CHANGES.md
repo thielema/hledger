@@ -17,14 +17,7 @@ API/developer-ish changes in hledger-lib.
 For user-visible changes, see the hledger package changelog.
 
 
-# d4e0c16a
-
-- `Write.Spreadsheet`'s `Cell` has a new `cellParts` field, holding a multi-commodity amount's individual amounts for writers (eg HTML) that want to style each one separately; other writers can ignore it and use `cellContent` as before. `Data.Amount` has a new `showMixedAmountOneLinePartsB`, like `showMixedAmountOneLineB` but returning the amounts individually rather than joined.
-
-
-
-
-
+# 955f7774
 
 Breaking changes
 
@@ -44,6 +37,19 @@ Improvements
 
 - `Hledger.Data.Errors.decorateExcerpt` is now exported, and there's a
   new `wordsmay`, a total variant of `words'`.
+
+- `Write.Spreadsheet`'s `Cell` has a new `cellParts` field, holding a
+  multi-commodity amount's individual amounts for writers (eg HTML)
+  that want to style each one separately; other writers can ignore it
+  and use `cellContent` as before. `Data.Amount` has a new
+  `showMixedAmountOneLinePartsB`, like `showMixedAmountOneLineB` but
+  returning the amounts individually rather than joined.
+
+- `Hledger.Data.Journal` has a new `journalBaseCurrency` helper,
+  returning a journal's apparent base currency (used by the `stats`
+  command).
+
+- The aeson version bound has been relaxed to `>=1 && <2.4`.
 
 
 # 1.52.2 2026-08-24

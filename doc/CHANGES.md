@@ -20,7 +20,11 @@ General changes in the hledger project.
 For package-specific changes, see the hledger package changelogs.
 
 
-# d4e0c16a
+# 955f7774
+
+- The hledger repo has moved to the plaintextaccounting github
+  organisation: <https://github.com/plaintextaccounting/hledger>. Old
+  links redirect. [#2681]
 
 ## Docs
 
@@ -30,8 +34,10 @@ For package-specific changes, see the hledger package changelogs.
 - ai.journal: switch to simpler t/kt/Mt output-token units; import June/July usage; other edits
 - AI: various edits and clarifications (extra usage notes, policy reference links)
 - ANNOUNCE: edits
+- CONTRIBUTING: added a developer quick start; fixed test and benchmark links [#2528]
 - CREDITS, .mailmap: various edits (headings, alignment, stats table; consolidated Alex Chen's commits; tidied committer names)
 - DECISIONS: updates
+- DEVFAQ, DEVWORKFLOWS, TESTS and other dev docs: updated for current tools, scripts and test suites; removed dead links; DEVFAQ now defers to install.md for build instructions [#2528]
 - examples/lots: merge and refresh the roi-vs-holdings comparison notes; cross-reference lots.journal and irr.journal
 - FUNDING: updated links
 - ghrelnotes: note the updated Windows binary; fix the eget command
@@ -39,9 +45,11 @@ For package-specific changes, see the hledger package changelogs.
 - html: document builtin styling in the manual; sample hledger.css now demonstrates customising it
 - PULLREQUESTS, pull request template: many edits; link to the AI policy; first-time contributors' PRs may no longer use AI tools
 - REGRESSIONS: discontinue the regression bounties; other edits
+- release notes: fixed and simplified the binary install instructions - the mac/linux install command was discarding its download [#2707], and the windows command now installs to a directory that can be on PATH; also noted what the install command needs, and updated the eget repo path
 - relnotes/changelog: AI usage section edits; fix a link
 - RELEASING: edit
 - RELEASING: note that changelogs should group new entries by topic
+- RELEASING: consolidated to a single release script, grouped into four phases, with the point of no return made explicit
 - RULES: new doc gathering repo policies, old and new, in one place
 - SPEC-holdings: record decisions (future-dated postings stay included by default; XIRR's final cashflow is the displayed Value at the report date)
 - SPEC-lots: add a roadmap section for future work (per-account lot-tracking opt-out, tax boundary declarations, AVERAGE vs transfers, non-local-method coherence checks)
@@ -49,9 +57,13 @@ For package-specific changes, see the hledger package changelogs.
 ## Tools/infrastructure
 
 - skills: add release skill for assisting hledger releases
-- .gitignore, .ignore: stop tracking site/ under git entirely, but keep site/src/*.md visible to ripgrep/VS Code search via a new .ignore file
+- .gitignore, .ignore: stop tracking site/ under git entirely, but keep site/src/*.md (and the old manuals) visible to ripgrep/VS Code search via a new .ignore file
 - CI: binaries-mac-arm64-hx, an experimental workflow using the hx build tool (an alternative to stack/cabal, for easier reproducible builds); cache the official cabal binary; build with -O1
 - CI: bump most third-party actions to their latest major version; binaries-mac-arm64 bumped to macos-26-arm64; binaries-mac-x64 lists dependency versions like the others
+- CI: the addon functional tests now run again (they had been accidentally excluded since 2017)
+- CI: the hledger-web browser tests now run on pull requests, as a non-blocking check
+- hledger-web: added an on-demand Playwright browser test suite covering the web UI's client-side behaviour, runnable with `just browsertest`
+- Release automation improved: `just ghrel` now assembles the github release on github (no local round trip for binaries) and creates it as a draft, with `just ghrel-publish` making it public after review; `just installpage` automates Install page version bumps; `just generaloptionshelp` automates updating the general options help in the manuals; and the relbranch, reltags-push and ghbin-download recipes are more robust
 - Justfile: various `just ai-*` AI-usage-reporting recipe tweaks; `just holdings-*` recipes for trying the holdings command against hledger/beancount/rledger example data; `just installrel`, `just contribs*` fixes; gitignore .hx; experimental hx build tool config
 - Shake: changelogs: capitalise multi-line items' first lines and give them a trailing period, so they read as complete sentences; single-line items are left as written
 - skills: add binary-badges skill, checking/refreshing the version badges in site/src/install.md; fix its red badge colour to match repology's hex
@@ -61,6 +73,9 @@ For package-specific changes, see the hledger package changelogs.
 
 
 [#2410]: https://github.com/simonmichael/hledger/issues/2410
+[#2528]: https://github.com/plaintextaccounting/hledger/issues/2528
+[#2681]: https://github.com/plaintextaccounting/hledger/issues/2681
+[#2707]: https://github.com/plaintextaccounting/hledger/issues/2707
 
 # 1.52.2 2026-08-24
 

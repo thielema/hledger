@@ -10,7 +10,7 @@
 User-visible changes in the hledger command line tool and library.
 
 
-# f0229d4b
+# 955f7774
 
 ## Breaking changes
 
@@ -25,6 +25,15 @@ User-visible changes in the hledger command line tool and library.
 - `stats`'s `-1` flag has been renamed to `--oneline`, consistent with `print --oneline` (and git's `log --oneline`).
 
 - The `demo` command, which played asciinema recordings, has been removed.
+
+- `any:` and `all:` queries now also work in posting-oriented reports
+  (register, balance, aregister); previously they had an effect only in
+  transaction-oriented commands like print, degrading to a plain AND
+  elsewhere. A posting can now be selected because of its siblings: eg
+  `hledger balance expenses any:cash` shows expenses which were paid
+  with cash, which previously required a two-command pipeline.
+  aregister with these queries now behaves differently, and more
+  consistently, showing the same transactions as print would.
 
 ## Config files
 
@@ -55,6 +64,23 @@ User-visible changes in the hledger command line tool and library.
 
 - Abbreviating `print`'s `--locations` flag as `--loc` now works as expected.
 
+- Arguments are now passed to addon commands as an argv list rather
+  than a shell command line, so empty arguments, apostrophes and other
+  special characters now reach the addon intact. (Kevin F. Konrad,
+  [#2696]) Where a shell command line is still used (addons run from
+  `run`/`repl`, and `!` shell aliases), quoting of apostrophes and
+  empty arguments has been fixed. (Arthur Cinader)
+
+- `--` handling with addon commands is improved (Kevin F. Konrad,
+  [#2696]): hledger's own options written after `--` are no longer
+  stripped from addon arguments; only the first `--` is consumed, so
+  later ones reach the addon; and a `--` written in a config file
+  section or command alias now works like one on the command line,
+  making the documented `-- -n` escape hatch reachable from those too.
+  Also, flags requiring a value are now checked only against the
+  running command's flags, so a flag belonging to some other command is
+  no longer wrongly rejected with "needs a value".
+
 ## Help & docs
 
 - `help` has been reorganised and is now an entry point for all hledger docs.
@@ -78,11 +104,47 @@ User-visible changes in the hledger command line tool and library.
 
 - `help` now has `h` as its official alias.
 
+- The commands list can now be limited to particular categories of
+  command with `help commands --builtins`, `--addons` or `--aliases`;
+  the flags can be combined. (`--builtin` has been renamed to
+  `--builtins`, but still works as a unique prefix.)
+
 ## Data entry
 
 - Numbers can now also use `_` or `'` as digit group marks. (Kevin F. Konrad, [#273], [#1489])
 
 - `add` no longer offers default amounts with ambiguous digit group marks (eg instead of `-1.000` it will ofer `-1.000,`, avoiding misparsing. [#2656]
+
+## Data import
+
+- In CSV data, characters which journal format can't represent are now
+  replaced, with a warning: a semicolon in a description is replaced
+  with `.,` (it would otherwise start a comment when read back,
+  truncating the description), and a right parenthesis in a
+  transaction code is replaced with `]` (it would otherwise end the
+  code early). [#2413]
+
+- CSV rules files' `include` directives are handled more robustly
+  [#2537]: include cycles, and unreadable included files, are now
+  reported with a proper error message showing the include directive's
+  location; errors in included files are reported at the right file
+  and line (previously they were reported against the top-level file);
+  included files now handle BOMs and CRLF line endings like the
+  top-level file; and whitespace around the included file path is
+  ignored.
+
+- A CSV rules file's data-generating command (`source | cmd`) failing
+  no longer aborts the whole run; instead it warns and continues, as
+  if no data was found. So when `import` processes several rules
+  files, one flaky external source won't block the rest. Data-cleaning
+  commands (`source PATTERN | cmd`) still fail hard, since they
+  operate on a file that was actually found.
+
+- `import --dry-run` no longer wrongly archives data files when the
+  flag is given in abbreviated form (eg `--dr`). Also, the reader's
+  import-specific behaviour (preferring the oldest file matched by a
+  source glob, honouring the archive rule) now applies only to the
+  import command's own reading of its data files.
 
 - `import` with `archive` enabled, if there are multiple downloaded copies of the source file,  now properly deletes processed files and always makes progress. (Previously it could stall, reprocessing the oldest file each time.)
 
@@ -107,6 +169,8 @@ Lot tracking has been reworked extensively since 1.99.3. In summary:
 - `close` no longer generates a spurious zero posting for some emptied accounts, and `close --lots` output is more readable (lot subaccount balances no longer show redundant costs).
 
 - A new `holdings` report shows your lot-tracked investment holdings, per account and commodity or per lot, with units, cost basis, current price and market value, portfolio weight, unrealised and realised gains, and XIRR annualised return.
+
+- `holdings` now values each lot in its own cost commodity, so Value, Weight, unrealised gain and XIRR no longer change or disappear when lots with different cost commodities are grouped into rows (by `--depth`, `--pivot`, tree mode etc). A row aggregating lots with different value commodities shows multiple amounts, like the Cost column; `-X COMM` gives a single-currency view as before.
 
 ## REPL & run
 
@@ -142,14 +206,71 @@ The `repl` and `run` commands have been improved since 1.99.3. In summary:
 
 - `setup` no longer reports unused commodity aliases as undeclared commodities; it's now consistent with `check commodities`.
 
+- `balance --budget` reports no longer lose their goals when the query
+  includes terms describing transactions or postings, such as
+  `status:`, `desc:` or `--cleared` [#2545]. Budget goal transactions
+  are generated, with synthetic status, code and description, so such
+  terms matched no goals at all and the goal and performance
+  percentage columns silently vanished. Now only the terms that
+  meaningfully select goals (account, account type, depth, date,
+  commodity) are applied to them; eg `bal --budget --cleared` compares
+  cleared spending against the full goals.
+
+- `-X`/`--value` with a commodity to which no conversion price can be
+  found now prints a warning, instead of silently having no effect. An
+  equivalent commodity symbol is suggested if one is known (eg `$` for
+  `USD`).
+
+- Report titles in HTML output are improved: `balance` now shows the
+  same default heading as its text output (for multi-period and budget
+  reports), `register`, `aregister` and `holdings` now show a title
+  too, and in all of these `--title=TEXT` replaces it and `--title=`
+  suppresses it. Also, the title is now a `<h3 class="report-title">`
+  element placed before the table, making it easier to style.
+
+- In `print`'s csv/tsv/html/fods/sql output, the debit column now
+  appears before the credit column, following convention.
+
+- In `aregister`'s csv/tsv/html output, the "change" column has been
+  renamed to "amount", matching `print`'s output and making it easier
+  to re-import with csv rules.
+
+- HTML output now has newlines between elements, making it easier for
+  humans to read and troubleshoot; rendering in browsers is unchanged.
+  [#2326]
+
 - HTML output now prevents wrapping within dates and individual commodity amounts, by default. Each amount is wrapped in a `span` with an "amount" class, date cells are marked with a "date" class. `aregister` gets the same builtin table styles as the other reports. A `hledger.css` file now overrides the builtin styles (previously the builtin styles took precedence), and an example `hledger.css` file  provided in the repo.
+
+## Other
+
+- `rewrite`'s `--diff` output can now be applied by `patch` or `git
+  apply` [#2548]. Previously its hunks contained no context lines, so
+  they were rejected. Now each source file is diffed as a whole, with
+  the standard three lines of context. And changed transactions which
+  have no journal entry to patch (ones read from CSV or timeclock
+  data, or generated by a periodic rule) are now left out of the diff
+  and reported on stderr, instead of producing bogus or destructive
+  hunks.
+
+- `stats` now shows the base currency's symbol as used in the journal,
+  with the guessed ISO 4217 code alongside when that differs (eg `$
+  (USD)`). Previously it showed only the code, which looked like a
+  journal commodity but wasn't usable in queries or `-X`.
+
+- The aeson version bound has been relaxed to `>=1 && <2.4`, easing
+  installation while the ecosystem catches up. (hledger's own stack
+  and cabal configs still select aeson 2.3, avoiding HSEC-2026-0007.)
 
 ## Docs
 
+- aregister: noted that transactions with multiple currencies may occupy more than one line
 - balance, help: minor updates
+- balance: html and fods output are not multi-period-only; they have been supported since 1.40
+- Boolean queries: simplified and clarified
 - check: move the basis check note to the end
 - commodity/Directives: clarify commodity and `D` directive scopes [#2665]
 - decimal marks: clarify commodity/decimal-mark directive scope leakage [#2664]; simplify Trailing decimal marks
+- Directives: fixed a link to the Ledger page
 - First lots example: improved
 - fixed some stray junk characters in the manual
 - help flags: clarified `-i`/`-m`/`-w` vs `--info`/`--man`/`--webman`; reduced line wrapping in 80-column terminals; misc edits
@@ -157,7 +278,9 @@ The `repl` and `run` commands have been improved since 1.99.3. In summary:
 - lots: documented the consequences of changing the cost basis method, and two ways to make a change apply only going forward
 - lots: documented how to record a transfer that received more than was sent
 - PART 5's sections promoted to markdown-level-1 headings, consistent with the manual's other PARTs
+- Period expressions: fixed outdated date adjustment info [#2714]
 - quickref: consistent checks ordering
+- rewrite: noted that --diff re-renders the transactions it changes, and that --layout can be set to minimise the diff
 - roi vs holdings: added comparison examples and interop advice (see also Examples)
 - Two-space delimiter: rewritten
 
@@ -170,14 +293,22 @@ The `repl` and `run` commands have been improved since 1.99.3. In summary:
 
 ## Scripts/addons
 
+- `bin/check-fancyassertions` now checks assertions in date order, avoiding spurious failures with journals recorded out of chronological order. [#1742]
 - `bin/hledger-bar` now allows its flags to appear anywhere among the arguments, and sets scale with a new `-s` option.
 - `bin/getprices` now has a small delay between requests, reducing failures with some providers.
 
 
 [#273]: https://github.com/plaintextaccounting/hledger/issues/273
 [#1489]: https://github.com/plaintextaccounting/hledger/issues/1489
+[#1742]: https://github.com/plaintextaccounting/hledger/issues/1742
 [#1941]: https://github.com/plaintextaccounting/hledger/issues/1941
+[#2326]: https://github.com/plaintextaccounting/hledger/issues/2326
+[#2413]: https://github.com/plaintextaccounting/hledger/issues/2413
 [#2429]: https://github.com/plaintextaccounting/hledger/issues/2429
+[#2537]: https://github.com/plaintextaccounting/hledger/issues/2537
+[#2539]: https://github.com/plaintextaccounting/hledger/issues/2539
+[#2545]: https://github.com/plaintextaccounting/hledger/issues/2545
+[#2548]: https://github.com/plaintextaccounting/hledger/issues/2548
 [#2656]: https://github.com/plaintextaccounting/hledger/issues/2656
 [#2659]: https://github.com/plaintextaccounting/hledger/issues/2659
 [#2661]: https://github.com/plaintextaccounting/hledger/issues/2661
@@ -190,6 +321,8 @@ The `repl` and `run` commands have been improved since 1.99.3. In summary:
 [#2690]: https://github.com/plaintextaccounting/hledger/issues/2690
 [#2692]: https://github.com/plaintextaccounting/hledger/issues/2692
 [#2693]: https://github.com/plaintextaccounting/hledger/issues/2693
+[#2696]: https://github.com/plaintextaccounting/hledger/issues/2696
+[#2714]: https://github.com/plaintextaccounting/hledger/issues/2714
 
 # 1.52.2 2026-08-24
 

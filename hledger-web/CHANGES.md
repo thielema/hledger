@@ -23,7 +23,7 @@ User-visible changes in hledger-web.
 See also the hledger changelog.
 
 
-# f0229d4b
+# 955f7774
 
 Fixes
 
@@ -46,14 +46,18 @@ Fixes
   expose system files readable by the hledger-web server.  ([#2704],
   advisory GHSA-vq7r-8w52-jv84)
 
+- The upload form now shows the name of the chosen file. It never did
+  before, because of an escaping bug that disabled its handler.
+  (Arthur Cinader)
+
 Improvements
 
 - Keep the account sidebar's scroll position when switching accounts
   [#2679] (Arthur Cinader).  The sidebar and the main content now
   scroll independently (on wider screens), so you don't lose your
   place when clicking an account - the account stays exactly where it
-  was.  doesn't scroll. And, the sidebar's scroll position is
-  remembered across navigations.
+  was. And, the sidebar's scroll position is remembered across
+  navigations.
 
 - --port 0 lets the OS choose a free port [#2559] (Arthur Cinader).
   The chosen port is reported in the startup message and used in the
@@ -61,6 +65,42 @@ Improvements
   and --serve-api.
 
 - Add the -? and --webman flags; rename --tldr to --examples (see hledger changelog).
+
+- The web UI's javascript has been modernised, replacing five vendored
+  libraries with standard browser features (Arthur Cinader):
+  autocomplete suggestions now use a native `<datalist>`; the button
+  beside the date field opens the browser's own date picker (typed
+  smart dates like "today" still work); and keyboard shortcuts,
+  sidebar state and transaction-link highlighting are handled by small
+  standard code. Two dead third-party script tags (html5shiv, chrome
+  frame) are gone, so nothing is loaded from a third party now. jquery
+  and the flot library remain, for the register chart. Also,
+  browser-drawn widgets like the suggestion list and date picker now
+  stay light when the OS is in dark mode.
+
+- The add and help dialogs now use the native `<dialog>` element
+  instead of bootstrap modals, so bootstrap.js is no longer loaded
+  (Arthur Cinader). They keep the familiar look - rounded corners,
+  shadow, dimmed backdrop - and open near the top of the window as
+  before.
+
+- hledger-web now sends the `X-Frame-Options: SAMEORIGIN` and
+  `X-Content-Type-Options: nosniff` security headers on every
+  response, so other sites can't frame its pages for clickjacking, and
+  browsers won't second-guess content types. (Arthur Cinader)
+
+- The yesod-static and hjsmin dependencies have been dropped;
+  hledger-web now serves its static files itself, using wai-app-static
+  and file-embed. (yesod-static doesn't currently build with crypton
+  1.1+, which has kept it, and hledger-web, out of stackage nightly.)
+  Static file urls no longer include an `?etag=...` cache buster;
+  instead the files are served with an ETag header, and conditional
+  requests are answered with 304 Not Modified.
+
+- The aeson lower bound has been relaxed from 2.3 to 2.2.5.1, the
+  oldest version not vulnerable to the HSEC-2026-0007 denial of
+  service, easing installation while the ecosystem catches up with
+  newer aeson.
 
 [#2559]: https://github.com/plaintextaccounting/hledger/issues/2559
 [#2679]: https://github.com/plaintextaccounting/hledger/issues/2679
