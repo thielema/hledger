@@ -995,6 +995,10 @@ relbranch VER:
     make -C hledger/shell-completion/
     echo "now please commit any changes in hledger/shell-completion/"
 
+# Update the release version on the hledger.org Install page (site/src/install.md). NEWVER defaults to ./.version.
+installpage *NEWVER:
+    tools/installpage {{ NEWVER }}
+
 # Make draft release notes from changelogs. Run on release branch. Run just tools first.
 @relnotes:
     just _on-release-branch

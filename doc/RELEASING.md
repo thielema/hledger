@@ -5,8 +5,9 @@ Notes for hledger release managers and maintainers.
 ## Goals
 
 **2026**
+- [ ] AI policy
+- [ ] lot tracking
 - [ ] hledger 2.0
-- [ ] clarify AI policy
 
 **2025**
 - [x] Make releasing easier
@@ -99,9 +100,10 @@ to avoid interfering with branch switching; RELEASING.md should be updated from 
      "Uses PKG X.Y.Z" for them; not a problem for downstream packagers.
 1. **rel: update announcements:** edit `doc/ANNOUNCE`
 1. **rel: make release builds:** `just ghbin`
-1. **rel: update install docs:** edit `doc/ghrelnotes`, `doc/ghtestbinnotes.md`, `site/src/install.md` - do this on the
-   release branch, before the cherry-pick below, not on main (main's copies of ghrelnotes/ghtestbinnotes.md describe
-   the *next preview* line and are unrelated to the release branch's version).
+1. **rel: update install docs:** `just installpage`; edit `doc/ghrelnotes`, `doc/ghtestbinnotes.md`, and finish
+   `site/src/install.md` by hand ("Update the Install page" below) - do this on the release branch, before the
+   cherry-pick below, not on main (main's copies of ghrelnotes/ghtestbinnotes.md describe the *next preview* line
+   and are unrelated to the release branch's version).
 1. **main: cherry-pick changelogs, relnotes, announcement, other relevant updates from relbranch** `jjui -r ::`
 
 ### Phase 3: tag and publish ⚠
@@ -313,15 +315,11 @@ More procedure notes.
 - `stack exec -- hledger help | tail`, check version, month matches release
 
 ### Update the Install page
-In site repo:
-- update `install.md`
-  - query-replace OLD -> NEW in 
-    - "current hledger release"
-    - CI binaries badges/links, including linux-static-arm32v7 if built
-    - "building from source"
-    - stack install command
-    - cabal install command
-  - query-replace OLD-brightgreen -> OLD-red
+- `just installpage [NEWVER]` updates the mechanical version references in `site/src/install.md`
+  (the current release line, release binaries badge/link, git checkout examples),
+  marks still-outdated packaged-version badges red,
+  and lists any remaining old-version occurrences for review.
+- then by hand:
   - only after release binaries are built (preferably after release is published):
     update --version outputs (version, hash, date, but not platform)
   - final output line from `hledger test` (run local build and in terminal for normal speed)
