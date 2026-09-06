@@ -737,6 +737,11 @@ manuals:
 manuals-site: manuals
     make -C site snapshot-$(just majorver)
 
+# Update the general options help shown in the manuals (doc/common.m4) from hledger's --help output.
+generaloptionshelp:
+    $STACK build hledger
+    tools/generaloptionshelp
+
 # Add latest commit messages to the changelogs. (Runs ./Shake changelogs [OPTS])
 changelogs *OPTS:
     ./Shake changelogs {{ OPTS }}

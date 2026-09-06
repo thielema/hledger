@@ -5,7 +5,8 @@ Notes for hledger release managers and maintainers.
 ## Goals
 
 **2026**
-- [ ] ?
+- [ ] hledger 2.0
+- [ ] clarify AI policy
 
 **2025**
 - [x] Make releasing easier
@@ -77,7 +78,7 @@ to avoid interfering with branch switching; RELEASING.md should be updated from 
 
 1. **main: finish fixes/features/docs/issues/prs**
 1. **main: begin/fix release builds:** `just ghbin oldest`
-1. **main: update general flags help:** build hledger, copy general flags help from `stack exec -- hledger -h` to common.m4
+1. **main: update general flags help:** `just generaloptionshelp` (updates doc/common.m4 from the build's --help output; review the diff)
 1. **main: update command docs and manuals ?** `just manuals`
 1. **(major release) main: update website manuals:** `just manuals-site`
 1. **(major release) main: update website scripts/redirects:** update `site/Makefile`, `site/js/site.js`, `site/hledger.org.caddy`
@@ -174,7 +175,8 @@ Last updated: 2026-09
         `stack build`  
         `./Shake cmddocs -c`
   - embedded manuals x 3
-    - generaloptions macro (in doc/common.m4)
+    - generaloptions macro (in doc/common.m4)  
+          `just generaloptionshelp`
     - tool specific options in manuals (hledger*/hledger*.m4.md > # Options)
     - man page dates (*/.date.m4)
     - man  (hledger*/hledger*.1)
