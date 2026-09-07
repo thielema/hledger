@@ -59,8 +59,7 @@ module Hledger.Query (
   -- * matching things with queries
   matchesTransaction,
   matchesTransactionExtra,
-  matchesDescription,
-  matchesPayeeWIP,
+  matchesPayee,
   matchesPosting,
   matchesPostingExtra,
   matchesAccount,
@@ -1069,26 +1068,19 @@ matchesTransactionExtra atype (AllPostings qs) t = all1 (\p -> all (\q -> matche
 matchesTransactionExtra atype q@(Type _) t = any (matchesPostingExtra atype q) $ tpostings t
 matchesTransactionExtra _ q t = matchesTransaction q t
 
--- | Does the query match this transaction description ?
--- Non-desc: query terms are ignored (this might disrupt some boolean queries).
-matchesDescription :: Query -> Text -> Bool
-matchesDescription (Not q) d          = not $ q `matchesDescription` d
-matchesDescription (Any) _            = True
-matchesDescription (None) _           = False
-matchesDescription (Or qs) d          = any (`matchesDescription` d) $ filter queryIsDesc qs
-matchesDescription (And qs) d         = all (`matchesDescription` d) $ filter queryIsDesc qs
-matchesDescription (AnyPosting  qs) d = all (`matchesDescription` d) $ filter queryIsDesc qs
-matchesDescription (AllPostings qs) d = all1 (`matchesDescription` d) $ filter queryIsDesc qs
-matchesDescription (Code _) _         = False
-matchesDescription (Desc r) d         = regexMatchText r d
-matchesDescription _ _                = False
-
--- | Does the query match this transaction payee ?
--- Tests desc: (and payee: ?) terms, any other terms are ignored.
--- XXX Currently an alias for matchDescription. I'm not sure if more is needed,
--- There's some shenanigan with payee: and "payeeTag" to figure out.
-matchesPayeeWIP :: Query -> Payee -> Bool
-matchesPayeeWIP = matchesDescription
+-- | Does the query match this payee ?
+-- Only payee: terms can match; any other term (a desc:, date:, acct: etc.)
+-- fails to match, since a payee on its own has no such properties.
+matchesPayee :: Query -> Payee -> Bool
+matchesPayee (Not q) p          = not $ q `matchesPayee` p
+matchesPayee (Any) _            = True
+matchesPayee (None) _           = False
+matchesPayee (Or qs) p          = any (`matchesPayee` p) qs
+matchesPayee (And qs) p         = all (`matchesPayee` p) qs
+matchesPayee (AnyPosting  qs) p = all (`matchesPayee` p) qs
+matchesPayee (AllPostings qs) p = all1 (`matchesPayee` p) qs
+matchesPayee (Tag n (Just v)) p | reString n == "payee" = regexMatchText v p  -- handles payee: and tag:payee= queries
+matchesPayee _ _                = False
 
 -- | Do this name regex and optional value regex match the name and value of any of these tags ?
 patternsMatchTags :: Regexp -> Maybe Regexp -> [Tag] -> Bool

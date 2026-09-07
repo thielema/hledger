@@ -42,14 +42,16 @@ payees :: CliOpts -> Journal -> IO ()
 payees opts@CliOpts{rawopts_=rawopts, reportspec_=ReportSpec{_rsQuery=query, _rsReportOpts=ropts}} j = do
   printTitle ropts
   let
-    -- XXX matchesPayeeWIP is currently an alias for matchesDescription, not sure if it matters
     matchedused       = dbg5 "matchedused"       $ nubSort $ map transactionPayee $ filter (matchesTransaction query) $ jtxns j
-    matcheddeclared   = dbg5 "matcheddeclared"   $ nubSort $ filter (matchesPayeeWIP query) $ journalPayeesDeclared j
-    matchedunused     = dbg5 "matchedunused"     $ nubSort $ matcheddeclared \\ matchedused
-    matchedundeclared = dbg5 "matchedundeclared" $ nubSort $ matchedused     \\ matcheddeclared
+    matcheddeclared   = dbg5 "matcheddeclared"   $ nubSort $ filter (matchesPayee query) $ journalPayeesDeclared j
+    -- unused/undeclared subtract the full used/declared sets, not the query-filtered ones,
+    -- so that eg a date: query can't make a declared payee look undeclared.
+    matchedunused     = dbg5 "matchedunused"     $ nubSort $ matcheddeclared \\ allused
+    matchedundeclared = dbg5 "matchedundeclared" $ nubSort $ matchedused     \\ alldeclared
     matchedall        = dbg5 "matchedall"        $ nubSort $ matcheddeclared ++ matchedused
-    found             = dbg5 "found"             $ findMatchedByArgument rawopts "payee" all'
-      where all' = nubSort $ map transactionPayee (jtxns j) <> journalPayeesDeclared j
+    found             = dbg5 "found"             $ findMatchedByArgument rawopts "payee" $ nubSort $ allused <> alldeclared
+    allused           = map transactionPayee $ jtxns j
+    alldeclared       = journalPayeesDeclared j
   mapM_ T.putStrLn $ case declarablesSelectorFromOpts opts of
     Nothing         -> matchedall
     Just Used       -> matchedused
