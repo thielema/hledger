@@ -5,17 +5,8 @@
 | |_| | |
  \__,_|_|
 
-Breaking changes
-
-Fixes
-
-Features
-
-Improvements
-
-Docs
-
-API
+Section headings: "Breaking changes" first if any; then topic headings,
+or a suitable generic heading (eg Fixes, Improvements), as needed.
 
 -->
 

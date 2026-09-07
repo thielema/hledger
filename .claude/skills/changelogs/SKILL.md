@@ -12,7 +12,7 @@ and inserts them below that heading (and then replaces that heading with the lat
 The drafts come partly pre-cleaned:
 - items for routine bookkeeping commits (changelog updates, regenerated cabal files, etc) are dropped
 - "AI usage:" trailer lines are stripped (AI usage is reported separately, by `just ai-commits`)
-- in package changelogs, items are pre-grouped under the standard section headings, guessed from their category prefixes; unrecognised items are left ungrouped at the top
+- in package changelogs, breaking changes (a "!" in the commit's category prefix) are moved to the top under a "Breaking changes" heading, with the rest under "Other changes"
 - items that may duplicate an already-announced change are flagged with a "DUPLICATE?" or "CHERRYPICK?" note line.
 
 If drafting fails with "resume point ... is not an ancestor of HEAD", the heading's commit
@@ -27,7 +27,6 @@ Here is how to polish a draft changelog. By default, you should
 
 ### Polish phase 1: cleanup
 - focus on the new release changelog, which is all the items between the first two level 1 markdown headings. These are the draft entries to be polished. No changes should be made elsewhere.
-- each changelog has section headings in a html comment at the top (under the large figlet-generated title). These headings should be present at the bottom of the new release changelog; the draft provides most of them pre-grouped, but verify and adjust the grouping.
 - items towards the bottom of the new release changelog may have already been polished. These should be kept mostly as they are. For the rest,
 - remove the semicolon prefix from change items.
 - remove routine/boring/non-user-visible change items. But first, show them as a grouped and numbered list and ask for confirmation. Also save this list as a temp file for later review.
@@ -40,16 +39,13 @@ Here is how to polish a draft changelog. By default, you should
 - items backported from another branch may note their origin, eg "(Cherry picked from an AI-assisted change in hledger 2.x.)"
 - items that mention "cli:" are user-visible CLI changes shared by all hledger tools (hledger, hledger-ui, hledger-web), and should be kept in each package's changelog.
 - otherwise, package-specific items belong in exactly one changelog (eg web items only in hledger-web/CHANGES.md, not also in doc/).
-- changes which are visible only to API users should be kept, grouped in the "API" section.
-- group the "doc:" changes in the "Docs" section. Doc changes can be listed compactly with no blank line between items, and sorted.
-- group other items in the most appropriate section. Eg "feat:" in Features, "fix:" in Fixes, "imp:" and bounds changes in Improvements, etc.
-- If the prefix is followed by a !, the item should go in Breaking Changes.
-- the prefix(es) can be removed once items have been moved into their section
+- changes visible only to API users belong in the hledger-lib changelog.
+- section headings, in package changelogs: "Breaking changes" comes first, when there are any (the draft provides it). After that, use topic headings for a long section (as in hledger's recent releases: ## Lot tracking, ## Reports, ## Data import etc), or a suitable generic heading or two otherwise (eg Fixes, Improvements) - or none, for a very short section. Don't use the old fixed six-heading template, and never leave empty headings.
+- the category prefixes can be removed once items are in place; they can help choose headings first (eg "fix:" items under Fixes, and grouping "doc:" items compactly together).
 - follow the layout of the (recent) previous releases' changelogs, below.
-- the hledger changelog's new release section may instead be grouped by topic (## Lot tracking, ## Reports, ## Data import etc), as in recent releases; follow whichever structure the section already uses.
 - The hledger-lib changelog is likely to have some end-user-visible items; these should be moved to the appropriate tool changelog (usually hledger/CHANGES.md).
   Only API-user-visible changes should remain in the hledger-lib changelog.
-- In the project changelog:
+- In the project changelog (which keeps its own sections, listed in its header comment):
   Tools/process/infrastructure/justfile items should be summarised compactly in "Infrastructure/Misc".
   Project-level doc items (these often have upper-case filenames) should be summarised compactly in "Doc updates".
   Examples and scripts/addons/"bin:" items from the project changelog should be moved to the hledger changelog's "Examples" and "Scripts/addons" sections respectively.

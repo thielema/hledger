@@ -859,17 +859,23 @@ main = do
 
             mpkg = if dir=="doc" then Nothing else Just dir where dir = takeDirectory out
 
-            -- Group drafted items under the standard changelog section
-            -- headings, guessed from each item's category prefix (eg
-            -- "fix:..." or ";fix:..." -> Fixes, a "!" in the category ->
-            -- Breaking changes). Items with no recognisable category are
-            -- left first, ungrouped, for human attention. Headings with no
-            -- items are omitted. Used for the package changelogs only; the
-            -- project changelog has different sections.
-            groupItemsBySection s
-              | null items = s
-              | otherwise  = unlines $ intercalate [""] $ filter (not.null) $ ungrouped : sectiongroups
+            -- In package changelog drafts, move any breaking changes (a "!"
+            -- in the item's category prefix, eg "imp!:...") to the top,
+            -- under a "Breaking changes" heading, with the rest under
+            -- "Other changes". Further headings are chosen while polishing:
+            -- topic headings for a long changelog like hledger's, or a
+            -- suitable generic heading otherwise. (The project changelog
+            -- has its own sections and is left alone.)
+            liftBreakingItems s
+              | null breakingitems = s
+              | otherwise = unlines $ intercalate [""] $ concat [
+                   [["Breaking changes"]]
+                  ,breakingitems
+                  ,if null otheritems then [] else [["Other changes"]]
+                  ,otheritems
+                  ]
               where
+                (breakingitems, otheritems) = partition isbreaking items
                 -- each item is a "- " line plus its continuation lines, sans trailing blanks
                 items = splititems $ lines s
                   where
@@ -878,24 +884,11 @@ main = do
                       | "- " `isPrefixOf` l = let (body, rest) = break ("- " `isPrefixOf`) ls
                                               in dropWhileEnd null (l:body) : splititems rest
                       | otherwise = splititems ls
-                ungrouped = intercalate [""] [i | i <- items, isNothing (itemsection i)]
-                sectiongroups =
-                  [ [heading] ++ [""] ++ intercalate [""] is
-                  | heading <- ["Breaking changes","Fixes","Features","Improvements","Docs","API"]
-                  , let is = [i | i <- items, itemsection i == Just heading]
-                  , not (null is)
-                  ]
-                itemsection item = case item of
+                isbreaking item = case item of
                   (first:_) -> case break (==':') $ dropWhile (==';') $ drop 2 first of
-                    (cat, ':':_) | '!' `elem` cat        -> Just "Breaking changes"
-                                 | lcat == "fix"         -> Just "Fixes"
-                                 | lcat == "feat"        -> Just "Features"
-                                 | lcat `elem` ["imp","pkg"] -> Just "Improvements"
-                                 | lcat == "doc"         -> Just "Docs"
-                                 | lcat `elem` ["api","lib"] -> Just "API"
-                      where lcat = map toLower cat
-                    _ -> Nothing
-                  [] -> Nothing
+                    (cat, ':':_) -> '!' `elem` cat
+                    _            -> False
+                  [] -> False
 
           -- Parse the changelog.
           oldlines <- liftIO $ lines <$> readFileStrictly out
@@ -969,7 +962,7 @@ main = do
 
             -- Find the new commit messages relevant to this changelog, and clean them.
             let scanpath = fromMaybe projectChangelogExcludes mpkg
-            newitems <- (if isJust mpkg then groupItemsBySection else id)
+            newitems <- (if isJust mpkg then liftBreakingItems else id)
               . flagPossibleDuplicates . capitaliseAndPunctuateFirstLines . dropRoutineContent . fromStdout <$> (cmd Shell
               "set -o pipefail;"  -- so git log failure will cause this action to fail
               gitlog changelogGitFormat (lastscannedrev++"..") "--" scanpath
