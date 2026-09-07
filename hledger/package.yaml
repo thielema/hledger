@@ -119,8 +119,8 @@ dependencies:
 - haskeline >=0.6
 - http-client
 - http-types
-- megaparsec >=7.0.0 && <9.8.0 || >9.8.0 && <9.9
 - microlens >=0.4
+- megaparsec >=7.0.0 && <9.8 || >=9.8.0 && <9.9
 - mtl >=2.2.1
 - process
 - regex-tdfa
