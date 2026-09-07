@@ -924,8 +924,12 @@ matchesMixedAmount q ma = case amountsRaw ma of
     as -> any (q `matchesAmount`) as
 
 -- | Does the query match this account name ?
--- A matching in: clause is also considered a match.
+-- Only acct: and depth: terms can match; any other term (a date:, desc: etc.)
+-- fails to match, since an account name on its own has no such properties.
+-- (For matching type: and tag: terms against an account's other data,
+-- see matchesAccountExtra.)
 matchesAccount :: Query -> AccountName -> Bool
+matchesAccount (Any) _ = True
 matchesAccount (None) _ = False
 matchesAccount (Not m) a = not $ matchesAccount m a
 matchesAccount (Or ms) a = any (`matchesAccount` a) ms
@@ -935,8 +939,7 @@ matchesAccount (AllPostings qs) a = all1 (`matchesAccount` a) qs
 matchesAccount (Acct r) a = regexMatchText r a
 matchesAccount (Depth d) a = accountNameLevel a <= d
 matchesAccount (DepthAcct r d) a = accountNameLevel a <= d || not (regexMatchText r a)
-matchesAccount (Tag _ _) _ = False
-matchesAccount _ _ = True
+matchesAccount _ _ = False
 
 -- | Like matchesAccount, but with optional extra matching features:
 --
@@ -1229,8 +1232,8 @@ tests_Query = testGroup "Query" [
      assertBool "" $ Depth 2 `matchesAccount` "a"
      assertBool "" $ Depth 2 `matchesAccount` "a:b"
      assertBool "" $ not $ Depth 2 `matchesAccount` "a:b:c"
-     assertBool "" $ Date nulldatespan `matchesAccount` "a"
-     assertBool "" $ Date2 nulldatespan `matchesAccount` "a"
+     assertBool "" $ not $ Date nulldatespan `matchesAccount` "a"
+     assertBool "" $ not $ Date2 nulldatespan `matchesAccount` "a"
      assertBool "" $ not $ Tag (toRegex' "a") Nothing `matchesAccount` "a"
 
   ,testCase "matchesAccountExtra" $ do

@@ -77,8 +77,12 @@ accounts opts@CliOpts{rawopts_=rawopts, reportspec_=ReportSpec{_rsQuery=query,_r
         nub $
         filter (matchesAccountExtra (journalAccountType j) (journalInheritedAccountTags j) nodepthq) $
         map fst $ jdeclaredaccounts j
-      matchedundeclared = dbg5 "matchedundeclared" $ nub $ matchedused \\ matcheddeclared
-      matchedunused = dbg5 "matchedunused" $ nub $ matcheddeclared \\ matchedused
+      -- unused/undeclared subtract the full used/declared sets, not the query-filtered ones,
+      -- so that eg a date: query can't make a declared account look undeclared.
+      matchedundeclared = dbg5 "matchedundeclared" $ nub $ matchedused \\ alldeclared
+      matchedunused = dbg5 "matchedunused" $ nub $ matcheddeclared \\ allused
+      allused = map paccount $ journalPostings j
+      alldeclared = map fst $ jdeclaredaccounts j
       found = dbg5 "matchedacct" $ findMatchedByArgument rawopts "account" $ journalAccountNamesDeclaredOrImplied j
       matchedall = matcheddeclared ++ matchedused
       accts = dbg5 "accts to show" $

@@ -30,6 +30,8 @@ or declared but not used (`--unused`),
 or just the first one matched by a pattern (`--find`, returning a non-zero exit code if it fails).
 
 You can add [query arguments](#queries) to select a subset of transactions or accounts.
+Note that transaction-specific query terms like `date:` will exclude
+declared-but-unused accounts, which don't have that field.
 
 With `--directives`, it shows valid account directives which could be pasted into a journal file.
 This is useful together with `--undeclared` when updating your account declarations
