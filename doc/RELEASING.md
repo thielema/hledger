@@ -352,7 +352,10 @@ More procedure notes.
 
 - Do all releases from a release branch.
 
-- Update dev changelogs frequently in main. Finalise changelogs in the release branch. Merge back to main after release.
+- Update dev changelogs frequently in main - ideally every few weeks, or after each big merge -
+  so that each drafting/polishing session stays small and duplicates are rare.
+  Run `just changelogs`, polish the drafts (see the changelogs skill), and check with `just changelogs-check`.
+  Finalise changelogs in the release branch. Merge back to main after release.
   (Related older doc: [CHANGELOGS](CHANGELOGS.md))
 
 - All release binaries should be built from the release-tagged commit.
