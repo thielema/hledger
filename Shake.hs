@@ -869,6 +869,43 @@ main = do
               | isCommitHash oldversion = oldversion
               | otherwise = maybe oldversion (++("-"++oldversion)) mpkg
 
+          -- Issue numbers already mentioned in this changelog's unreleased
+          -- section or most recent release section. A drafted item mentioning
+          -- one of these may be a change that was already announced (eg
+          -- merged from another branch, or added to the changelog by hand).
+            recentissuerefs = nubSort $ concatMap issuerefs recentlines
+              where
+                recentlines = go (0::Int) (oldheading:rest)
+                  where
+                    go _ [] = []
+                    go n (l:ls)
+                      | "# " `isPrefixOf` l = if n >= 2 then [] else l : go (n+1) ls
+                      | otherwise           = l : go n ls
+            issuerefs ('#':cs) | not (null ds) = ds : issuerefs cs' where (ds,cs') = span isDigit cs
+            issuerefs (_:cs) = issuerefs cs
+            issuerefs [] = []
+
+          -- Add a warning line to draft items which look like they may
+          -- duplicate an already-announced change: ones mentioning an issue
+          -- number in recentissuerefs, and cherry-picked commits (often
+          -- already announced in another branch's changelog).
+            flagPossibleDuplicates s
+              | null s    = s
+              | otherwise = unlines $ go $ lines s
+              where
+                go [] = []
+                go (l:ls)
+                  | "- " `isPrefixOf` l =
+                      let
+                        (body, rest') = break ("- " `isPrefixOf`) ls
+                        dupes  = nubSort $ filter (`elem` recentissuerefs) $ concatMap issuerefs (l:body)
+                        cherry = any (isInfixOf "cherry picked from" . map toLower) (l:body)
+                        notes  =
+                             ["  DUPLICATE? #" ++ intercalate ", #" dupes ++ " already mentioned in this changelog." | not (null dupes)]
+                          ++ ["  CHERRYPICK? may already be announced in another branch's changelog." | cherry]
+                      in l : notes ++ body ++ go rest'
+                  | otherwise = l : go ls
+
           -- Find the latest commit (HEAD).
           latestrev <- unwords . words . fromStdout <$> (cmd Shell gitlog "-1 --pretty=%h" :: Action (Stdout String))
 
@@ -891,7 +928,7 @@ main = do
 
             -- Find the new commit messages relevant to this changelog, and clean them.
             let scanpath = fromMaybe projectChangelogExcludes mpkg
-            newitems <- capitaliseAndPunctuateFirstLines . dropRoutineContent . fromStdout <$> (cmd Shell
+            newitems <- flagPossibleDuplicates . capitaliseAndPunctuateFirstLines . dropRoutineContent . fromStdout <$> (cmd Shell
               "set -o pipefail;"  -- so git log failure will cause this action to fail
               gitlog changelogGitFormat (lastscannedrev++"..") "--" scanpath
               "|" commitMessageToChangelogItemCmd
