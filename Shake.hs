@@ -719,6 +719,46 @@ main = do
               ,"-e '/./,/^$/!d'"               --  replace consecutive newlines with one
               ]
 
+            -- Commit subjects (lowercased, after any ";" prefix) beginning
+            -- with one of these are routine bookkeeping, never announced in
+            -- release notes; their draft changelog items are dropped.
+            routineCommitPrefixes = [
+               "doc: changelog"           -- changelog drafting/editing/finalising
+              ,"doc: update changelog"
+              ,"doc: update command docs"
+              ,"doc: update embedded manuals"
+              ,"doc: update manuals"
+              ,"doc: ai usage"
+              ,"cabal:"                   -- regenerated cabal files
+              ,"pkg: update tested-with"
+              ]
+
+            -- Remove never-announced routine content from draft changelog
+            -- items: whole items generated from routine bookkeeping commits
+            -- (see routineCommitPrefixes), and "AI usage:"/"AI assistance:"
+            -- trailer lines (AI usage is reported separately, eg by
+            -- just ai-commits). Runs before capitaliseAndPunctuateFirstLines.
+            dropRoutineContent s
+              | null s    = s
+              | otherwise = unlines $ squeezeBlankLines $ go False $ lines s
+              where
+                -- An item is a "- " line plus any following lines up to the
+                -- next "- " line (bodies are indented, so only items start
+                -- at column 0 with "- ").
+                go _ [] = []
+                go dropping (l:ls)
+                  | "- " `isPrefixOf` l = if isroutine l then go True ls else l : go False ls
+                  | dropping            = go True ls
+                  | isaiusage l         = go False ls
+                  | otherwise           = l : go False ls
+                isroutine l = any (`isPrefixOf` subject) routineCommitPrefixes
+                  where subject = map toLower $ dropWhile (`elem` ("; "::String)) $ drop 2 l
+                isaiusage l = any (`isPrefixOf` t) ["ai usage:", "ai assistance:"]
+                  where t = map toLower $ dropWhile isSpace l
+                squeezeBlankLines (l1:ls@(l2:_)) | null l1 && null l2 = squeezeBlankLines ls
+                                                 | otherwise = l1 : squeezeBlankLines ls
+                squeezeBlankLines ls = ls
+
             -- Capitalise and add a trailing period to the first line of each
             -- changelog item that has additional (indented) body lines, so it
             -- reads as a complete sentence and doesn't run into the body.
@@ -837,7 +877,7 @@ main = do
 
             -- Find the new commit messages relevant to this changelog, and clean them.
             let scanpath = fromMaybe projectChangelogExcludes mpkg
-            newitems <- capitaliseAndPunctuateFirstLines . fromStdout <$> (cmd Shell
+            newitems <- capitaliseAndPunctuateFirstLines . dropRoutineContent . fromStdout <$> (cmd Shell
               "set -o pipefail;"  -- so git log failure will cause this action to fail
               gitlog changelogGitFormat (lastscannedrev++"..") "--" scanpath
               "|" commitMessageToChangelogItemCmd
