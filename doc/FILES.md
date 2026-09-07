@@ -357,7 +357,6 @@ src/hledger/
   doc/
     ACHIEVEMENTS.md
     BENCHMARKS.md
-    CHANGELOGS.md
     CODE.md
     COMMITS.md
     CONTRIBUTING.md
