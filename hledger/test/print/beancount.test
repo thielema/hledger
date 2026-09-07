@@ -286,3 +286,20 @@ $ hledger -f- print -O beancount
     Expenses:Test           1 EUR
 
 >=
+
+# ** 14. Underscores and spaces in account names are converted to dashes (#2596).
+<
+2024-01-01
+    assets:wells_fargo:fima_usd    1 USD
+    equity:opening balances
+
+$ hledger -f- print -O beancount
+;option "inferred_tolerance_default" "*:0.005"
+2024-01-01 open Assets:Wells-fargo:Fima-usd
+2024-01-01 open Equity:Opening-balances
+
+2024-01-01 *
+    Assets:Wells-fargo:Fima-usd           1 USD
+    Equity:Opening-balances
+
+>=

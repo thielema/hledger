@@ -902,7 +902,7 @@ or this [hledger2beancount.conf](https://github.com/plaintextaccounting/hledger/
 
 Aside from the top-level names, hledger will adjust your account names to make valid
 [Beancount account names](https://beancount.github.io/docs/beancount_language_syntax.html#accounts),
-by capitalising each part, replacing spaces with `-`, replacing other unsupported characters with `C<HEXBYTES>`,
+by capitalising each part, replacing spaces and underscores with `-`, replacing other unsupported characters with `C<HEXBYTES>`,
 prepending `A` to account name parts which don't begin with a letter or digit,
 and appending `:A` to account names which have only one part.
 
