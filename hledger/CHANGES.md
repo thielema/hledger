@@ -310,17 +310,11 @@ The `repl` and `run` commands have been improved since 1.99.3. In summary:
 [#2545]: https://github.com/plaintextaccounting/hledger/issues/2545
 [#2548]: https://github.com/plaintextaccounting/hledger/issues/2548
 [#2656]: https://github.com/plaintextaccounting/hledger/issues/2656
-[#2659]: https://github.com/plaintextaccounting/hledger/issues/2659
 [#2661]: https://github.com/plaintextaccounting/hledger/issues/2661
 [#2664]: https://github.com/plaintextaccounting/hledger/issues/2664
 [#2665]: https://github.com/plaintextaccounting/hledger/issues/2665
 [#2670]: https://github.com/plaintextaccounting/hledger/issues/2670
-[#2686]: https://github.com/plaintextaccounting/hledger/issues/2686
 [#2688]: https://github.com/plaintextaccounting/hledger/issues/2688
-[#2689]: https://github.com/plaintextaccounting/hledger/issues/2689
-[#2690]: https://github.com/plaintextaccounting/hledger/issues/2690
-[#2692]: https://github.com/plaintextaccounting/hledger/issues/2692
-[#2693]: https://github.com/plaintextaccounting/hledger/issues/2693
 [#2696]: https://github.com/plaintextaccounting/hledger/issues/2696
 [#2714]: https://github.com/plaintextaccounting/hledger/issues/2714
 

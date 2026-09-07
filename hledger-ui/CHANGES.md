@@ -29,8 +29,8 @@ Fixes
 
 - Pressing DOWN at the last list item, or pressing C-l (recenter) when
   near the end of a list, no longer scroll into blank padding space;
-  instead they keep as many items as possible on screen. [#2278,
-  #2593].  (Juan Wajnerman)
+  instead they keep as many items as possible on screen.
+  ([#2278], [#2593]) (Juan Wajnerman)
 
 - Fixed a long-standing memory leak (and CPU/GC thrashing) when reloading with --watch [#1825].
   Now --watch mode has no extra memory/CPU cost, and can be used freely with large journals,
@@ -51,7 +51,6 @@ Improvements
 
 [#1825]: https://github.com/plaintextaccounting/hledger/issues/1825
 [#2278]: https://github.com/plaintextaccounting/hledger/issues/2278
-[#2429]: https://github.com/plaintextaccounting/hledger/issues/2429
 [#2593]: https://github.com/plaintextaccounting/hledger/issues/2593
 
 
