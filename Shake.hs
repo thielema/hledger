@@ -875,6 +875,20 @@ main = do
           -- If it's newer,
           when (lastscannedrev /= latestrev) $ do
 
+            -- Check the resume point still exists and is an ancestor of HEAD.
+            -- A rebase or amend can leave the heading pointing to a rewritten
+            -- commit; drafting from there would fail, or re-list rebased
+            -- commits as duplicates. Fail with a helpful message instead.
+            Exit ancestorcheck <- cmd Shell "git merge-base --is-ancestor" lastscannedrev "HEAD 2>/dev/null"
+            when (ancestorcheck /= ExitSuccess) $ do
+              lasttouch <- unwords . words . fromStdout <$> (cmd Shell gitlog "-1 --pretty=%h --" out :: Action (Stdout String))
+              error $ unlines [
+                 out ++ ": the resume point '" ++ lastscannedrev ++ "' (from the topmost heading) is not an ancestor of HEAD."
+                ,"It was probably rewritten by a rebase or amend."
+                ,"To fix, change that heading to a suitable current commit hash;"
+                ,"eg the last commit touching this file: " ++ lasttouch
+                ]
+
             -- Find the new commit messages relevant to this changelog, and clean them.
             let scanpath = fromMaybe projectChangelogExcludes mpkg
             newitems <- capitaliseAndPunctuateFirstLines . dropRoutineContent . fromStdout <$> (cmd Shell
