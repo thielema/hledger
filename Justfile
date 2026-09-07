@@ -746,6 +746,10 @@ generaloptionshelp:
 changelogs *OPTS:
     ./Shake changelogs {{ OPTS }}
 
+# Check the changelogs for stale resume points, bad issue links, leftover draft markers. (Runs ./Shake changelogs-check)
+changelogs-check:
+    ./Shake changelogs-check
+
 # Drop any uncommitted changes to the project and package changelogs.
 changelogs-reset:
     git checkout */CHANGES.md

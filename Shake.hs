@@ -73,6 +73,8 @@ usage =
   ,"                         COMMAND.md or command options or general options)"
   ,"./Shake manuals [-c]     update the packages' embedded info/man/txt manuals"
   ,"./Shake changelogs [-c] [-n/--dry-run]"
+  ,"./Shake changelogs-check check changelogs for stale resume point, bad issue"
+  ,"                         links, leftover draft markers"
   ,"                         update CHANGES.md files, adding new commits & headings"
   ,"./Shake docs [-c]        update all program docs (CLI help, manuals, changelogs)"
   ,"./Shake site             update (render) the website, in ./site"
@@ -960,7 +962,8 @@ main = do
               error $ unlines [
                  out ++ ": the resume point '" ++ lastscannedrev ++ "' (from the topmost heading) is not an ancestor of HEAD."
                 ,"It was probably rewritten by a rebase or amend."
-                ,"To fix, change that heading to a suitable current commit hash;"
+                ,"To fix, change that heading to a suitable current commit hash"
+                ,"(eg with: just changelogs-catchup COMMIT);"
                 ,"eg the last commit touching this file: " ++ lasttouch
                 ]
 
@@ -989,6 +992,40 @@ main = do
                 putStrLn (out ++ ": updated to " ++ latestrev)
 
           )
+
+      -- Check the changelogs for common problems: a stale resume point,
+      -- issue references without a matching link definition (and vice versa),
+      -- and leftover draft markers. Checks each changelog's topmost section
+      -- only (the one being edited). Exits nonzero if problems are found.
+      phony "changelogs-check" $ do
+        problems <- fmap concat $ forM changelogs $ \f -> do
+          ls <- liftIO $ lines <$> readFileStrictly f
+          case break ("# " `isPrefixOf`) ls of
+            (_, []) -> return [f ++ ": no release heading found"]
+            (_, heading:rest) -> do
+              let
+                version = headDef "" $ drop 1 $ words heading
+                section = takeWhile (not . ("# " `isPrefixOf`)) rest
+                defs    = nubSort $ mapMaybe issueRefDefinition section
+                uses    = nubSort $ concatMap bracketedIssueRefs $ filter (isNothing . issueRefDefinition) section
+                markers = [f ++ ": leftover draft marker: " ++ dropWhile isSpace l
+                          | l <- section, any (`isInfixOf` l) ["DUPLICATE?","CHERRYPICK?"]]
+              stale <-
+                if isCommitHash version
+                then do
+                  Exit ok <- cmd Shell "git merge-base --is-ancestor" version "HEAD 2>/dev/null"
+                  return [f ++ ": heading commit " ++ version ++ " is not an ancestor of HEAD (fix with just changelogs-catchup COMMIT)" | ok /= ExitSuccess]
+                else return []
+              return $ concat [
+                 stale
+                ,[f ++ ": [#" ++ r ++ "] is used but has no link definition in the topmost section" | r <- uses \\ defs]
+                ,[f ++ ": [#" ++ r ++ "] is defined but unused in the topmost section" | r <- defs \\ uses]
+                ,markers
+                ]
+        liftIO $ mapM_ putStrLn problems
+        if null problems
+        then liftIO $ putStrLn "changelogs look ok"
+        else error "changelogs-check found problems"
 
       -- Update all program-specific docs, eg after setversion.
       phony "docs" $ need [
@@ -1130,6 +1167,27 @@ isReleaseVersion s = isVersion s && not (isDevVersion s)
 -- | Does this string look like a git commit hash ?
 -- Ie a sequence of 7 or more numbers or letters.
 isCommitHash s = length s > 6 && all isAlphaNum s
+
+-- | Extract the numbers of well-formed bracketed issue references,
+-- like "[#1234]", from a string.
+bracketedIssueRefs :: String -> [String]
+bracketedIssueRefs s = case s of
+  ('[':'#':cs) -> let (ds,rest) = span isDigit cs
+                  in case rest of
+                       (']':rest') | not (null ds) -> ds : bracketedIssueRefs rest'
+                       _ -> bracketedIssueRefs cs
+  (_:cs) -> bracketedIssueRefs cs
+  []     -> []
+
+-- | If this line is a markdown link reference definition for a
+-- bracketed issue reference, like "[#1234]: URL", return the issue number.
+issueRefDefinition :: String -> Maybe String
+issueRefDefinition l = case l of
+  ('[':'#':cs) -> let (ds,rest) = span isDigit cs
+                  in case rest of
+                       (']':':':_) | not (null ds) -> Just ds
+                       _ -> Nothing
+  _ -> Nothing
 
 -- | Remove all trailing newlines/carriage returns.
 chomp :: String -> String
