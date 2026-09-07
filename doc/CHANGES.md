@@ -20,7 +20,7 @@ General changes in the hledger project.
 For package-specific changes, see the hledger package changelogs.
 
 
-# 955f7774
+# 5817e58e
 
 - The hledger repo has moved to the plaintextaccounting github
   organisation: <https://github.com/plaintextaccounting/hledger>. Old
@@ -34,6 +34,7 @@ For package-specific changes, see the hledger package changelogs.
 - ai.journal: switch to simpler t/kt/Mt output-token units; import June/July usage; other edits
 - AI: various edits and clarifications (extra usage notes, policy reference links)
 - ANNOUNCE: edits
+- CHANGELOGS: retired; superseded by RELEASING and changelogs/SKILL.md
 - CONTRIBUTING: added a developer quick start; fixed test and benchmark links [#2528]
 - CREDITS, .mailmap: various edits (headings, alignment, stats table; consolidated Alex Chen's commits; tidied committer names)
 - DECISIONS: updates
@@ -47,9 +48,7 @@ For package-specific changes, see the hledger package changelogs.
 - REGRESSIONS: discontinue the regression bounties; other edits
 - release notes: fixed and simplified the binary install instructions - the mac/linux install command was discarding its download [#2707], and the windows command now installs to a directory that can be on PATH; also noted what the install command needs, and updated the eget repo path
 - relnotes/changelog: AI usage section edits; fix a link
-- RELEASING: edit
-- RELEASING: note that changelogs should group new entries by topic
-- RELEASING: consolidated to a single release script, grouped into four phases, with the point of no return made explicit
+- RELEASING: edits; consolidated to a single release script, grouped into phases
 - RULES: new doc gathering repo policies, old and new, in one place
 - SPEC-holdings: record decisions (future-dated postings stay included by default; XIRR's final cashflow is the displayed Value at the report date)
 - SPEC-lots: add a roadmap section for future work (per-account lot-tracking opt-out, tax boundary declarations, AVERAGE vs transfers, non-local-method coherence checks)
@@ -60,6 +59,7 @@ For package-specific changes, see the hledger package changelogs.
 - .gitignore, .ignore: stop tracking site/ under git entirely, but keep site/src/*.md (and the old manuals) visible to ripgrep/VS Code search via a new .ignore file
 - CI: binaries-mac-arm64-hx, an experimental workflow using the hx build tool (an alternative to stack/cabal, for easier reproducible builds); cache the official cabal binary; build with -O1
 - CI: bump most third-party actions to their latest major version; binaries-mac-arm64 bumped to macos-26-arm64; binaries-mac-x64 lists dependency versions like the others
+- Changelog tooling improved: `just changelogs` drafts are now pre-cleaned (routine commits dropped, AI usage lines stripped, breaking changes lifted to the top, possible duplicates flagged); a stale resume point (eg after a rebase) is detected and reported with its fix; and a new `just changelogs-check` verifies resume points, issue links and leftover draft markers. Changelog section headings are simplified: Breaking changes first, then topic or generic headings as suitable.
 - CI: the addon functional tests now run again (they had been accidentally excluded since 2017)
 - CI: the hledger-web browser tests now run on pull requests, as a non-blocking check
 - hledger-web: added an on-demand Playwright browser test suite covering the web UI's client-side behaviour, runnable with `just browsertest`

@@ -14,7 +14,7 @@ User-visible changes in hledger-web.
 See also the hledger changelog.
 
 
-# 955f7774
+# 5817e58e
 
 Fixes
 

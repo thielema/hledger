@@ -10,7 +10,7 @@
 User-visible changes in the hledger command line tool and library.
 
 
-# 955f7774
+# 5817e58e
 
 ## Breaking changes
 

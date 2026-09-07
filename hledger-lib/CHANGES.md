@@ -14,7 +14,7 @@ API/developer-ish changes in hledger-lib.
 For user-visible changes, see the hledger package changelog.
 
 
-# 955f7774
+# 5817e58e
 
 Breaking changes
 
