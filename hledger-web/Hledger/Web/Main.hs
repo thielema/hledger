@@ -161,8 +161,10 @@ web opts0 j = do
       putStrLn "This server will exit after 2m with no browser windows open (or press ctrl-c)"
       putStrLn "Opening web browser..."
       hFlush stdout
-      -- exits after 2m of inactivity (hardcoded)
+      -- exits after 2m of inactivity (hardcoded);
+      -- returns normally only in that case (ctrl-c or a server failure raises instead)
       Network.Wai.Handler.Launch.runHostPortFullUrl h p u app
+      putStrLn "No browser windows were open for 2m, exiting. (Use --serve to serve without this timeout.)"
 
     else do
       putStrLn "Press ctrl-c to quit"
