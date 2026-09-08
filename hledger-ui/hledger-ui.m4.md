@@ -303,6 +303,10 @@ when you press g to reload. Once you have fixed the problem,
 press g again to reload and resume normal operation.
 (Or, you can press escape to cancel the reload attempt.)
 
+Non-fatal warnings, eg from reading CSV files, don't interrupt like this;
+instead they are shown on the bottom line of the screen,
+at startup or after a reload, until the next key press.
+
 
 # WATCH MODE
 

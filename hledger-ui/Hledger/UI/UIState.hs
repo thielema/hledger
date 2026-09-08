@@ -77,6 +77,7 @@ uiState uopts j prevscrs scr = UIState {
   ,aMode               = Normal
   ,aScreen             = scr
   ,aPrevScreens        = prevscrs
+  ,aWarnings           = []
   }
 
 -- | Derive the display journal (what screens show) from the uncollapsed journal:

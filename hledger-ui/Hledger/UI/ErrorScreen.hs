@@ -155,12 +155,17 @@ uiAdjustOpts uopts = enableForecast uopts
 -- A forecast period specified in the provided opts, or at startup, is preserved.
 --
 uiReload :: CliOpts -> Day -> UIState -> EventM Name UIState UIState
-uiReload copts d ui = liftIO $ do
-  ej <-
-    let copts1   = uiAdjustOpts (astartupopts ui) copts
+uiReload copts d ui0 = do
+  ej <- liftIO $
+    let copts1   = uiAdjustOpts (astartupopts ui0) copts
         loadopts = copts1{rawopts_ = setboolopt "lots" (rawopts_ copts1)}  -- keep lot detail; the UI collapses it for display
     in runExceptT $ journalTransform loadopts <$> journalReload loadopts
-  -- dbg1IO "uiReload before reload" (map tdescription $ jtxns $ ajournal ui)
+  -- dbg1IO "uiReload before reload" (map tdescription $ jtxns $ ajournal ui0)
+  -- show any warnings collected during the reload (until the next keypress)
+  ui <- liftIO $ (\ws -> ui0{aWarnings=ws}) <$> uiTakeWarnings
+  -- The reload may have written to the terminal, eg output from third-party code
+  -- not using our warning handler; repaint the whole screen to repair any disruption.
+  redraw
   return $ case ej of
     Right jraw ->
       -- dbg1 "uiReload after reload" (map tdescription $ jtxns jraw) $
@@ -183,11 +188,13 @@ uiReload copts d ui = liftIO $ do
 -- since it was last loaded. The up app state is always updated, since the options or today-date may have changed.
 -- Also, this one runs in IO, suitable for suspendAndResume.
 uiReloadIfFileChanged :: CliOpts -> Day -> Journal -> UIState -> IO UIState
-uiReloadIfFileChanged copts d j ui = do
+uiReloadIfFileChanged copts d j ui0 = do
   ej <-
-    let copts1   = uiAdjustOpts (astartupopts ui) copts
+    let copts1   = uiAdjustOpts (astartupopts ui0) copts
         loadopts = copts1{rawopts_ = setboolopt "lots" (rawopts_ copts1)}  -- keep lot detail; the UI collapses it for display
     in runExceptT $ journalReloadIfChanged loadopts d j
+  -- show any warnings collected during the reload (until the next keypress)
+  ui <- (\ws -> ui0{aWarnings=ws}) <$> uiTakeWarnings
   return $ case ej of
     -- changed: save the uncollapsed journal; regenerateScreens derives the display journal from it
     Right (jraw, True)  -> regenerateScreens d ui{auncollapsedjournal = jraw}

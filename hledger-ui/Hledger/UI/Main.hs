@@ -38,7 +38,7 @@ import Data.List (find)
 import Data.List.Extra (nubSort)
 import Data.Maybe (fromMaybe)
 import Data.Text qualified as T
-import Graphics.Vty (Mode (Mouse), Vty (outputIface), Output (setMode))
+import Graphics.Vty (Event (EvKey), Mode (Mouse), Vty (outputIface), Output (setMode))
 import Graphics.Vty.CrossPlatform (mkVty)
 import Lens.Micro ((^.))
 import System.Directory (canonicalizePath)
@@ -55,7 +55,7 @@ import Hledger.UI.Theme
 import Hledger.UI.UIOptions
 import Hledger.UI.UITypes
 import Hledger.UI.UIState (uiState, uiDisplayJournal)
-import Hledger.UI.UIUtils (dbguiEv, showScreenStack, showScreenSelection)
+import Hledger.UI.UIUtils (dbguiEv, showScreenStack, showScreenSelection, uiInstallWarningCollector, uiTakeWarnings)
 import Hledger.UI.MenuScreen
 import Hledger.UI.AccountsScreen
 import Hledger.UI.RegisterScreen
@@ -120,13 +120,18 @@ hledgerUiMain = handleExit $ withGhcDebug' $ withProgName "hledger-ui.log" $ do 
     _ | boolopt "webman"  rawopts -> void $ openBrowserOn $ webManualUrl "hledger-ui" Nothing
     _ | boolopt "version" rawopts -> putStrLn prognameandversion
     -- _ | boolopt "binary-filename" rawopts -> putStrLn (binaryfilename progname)
-    _                                         -> withJournal loadcopts $ \j ->
-        -- Refresh the startup ReportSpec against the loaded journal so any
-        -- cur: terms are expanded for the journal's commodity aliases.
-        let opts' = case reportSpecExpandCurQueries j (reportspec_ copts') of
-                      Right rs -> opts{uoCliOpts = (uoCliOpts opts){reportspec_ = rs}}
-                      Left _   -> opts
-        in runBrickUi opts' j
+    _                                         -> do
+        -- From here on, warnings (from loading or later reloading the journal) should be
+        -- collected for display in the UI, not printed to stderr where they would be
+        -- hidden or would disrupt the terminal display.
+        uiInstallWarningCollector
+        withJournal loadcopts $ \j ->
+          -- Refresh the startup ReportSpec against the loaded journal so any
+          -- cur: terms are expanded for the journal's commodity aliases.
+          let opts' = case reportSpecExpandCurQueries j (reportspec_ copts') of
+                        Right rs -> opts{uoCliOpts = (uoCliOpts opts){reportspec_ = rs}}
+                        Left _   -> opts
+          in runBrickUi opts' j
 
   when (ghcDebugMode == GDPauseAtEnd) $ ghcDebugPause'
 
@@ -272,8 +277,11 @@ uiInitialState uopts0@UIOpts{uoCliOpts=copts@CliOpts{reportspec_=rspec@ReportSpe
 runBrickUi :: UIOpts -> Journal -> IO ()
 runBrickUi uopts0 j =
   do
+  -- show any warnings collected while loading the journal (until the first keypress)
+  startupwarnings <- uiTakeWarnings
+
   let
-    ui  = uiInitialState uopts0 j
+    ui  = (uiInitialState uopts0 j){aWarnings=startupwarnings}
     app = brickApp (uoTheme uopts0)
 
   -- print (length (show ui)) >> exitSuccess  -- show any debug output to this point & quit
@@ -360,6 +368,10 @@ brickApp mtheme = App {
 uiHandle :: BrickEvent Name AppEvent -> EventM Name UIState ()
 uiHandle ev = do
   dbguiEv $ "\n==== " ++ show ev
+  -- dismiss any displayed warnings on the next key press (which is otherwise handled as usual)
+  case ev of
+    VtyEvent (EvKey _ _) -> modify $ \u -> if null (aWarnings u) then u else u{aWarnings=[]}
+    _ -> return ()
   ui <- get
   case aScreen ui of
     MS sst -> msHandle sst ev
@@ -369,10 +381,27 @@ uiHandle ev = do
     ES sst -> esHandle sst ev
 
 uiDraw :: UIState -> [Widget Name]
-uiDraw ui =
-  case aScreen ui of
-    MS sst -> msDraw sst ui
-    AS sst -> asDraw sst ui
-    RS sst -> rsDraw sst ui
-    TS sst -> tsDraw sst ui
-    ES sst -> esDraw sst ui
+uiDraw ui = case reverse $ aWarnings ui of
+    []           -> screenlayers
+    latest:older -> warningOverlay latest (length older) : screenlayers
+  where
+    screenlayers =
+      case aScreen ui of
+        MS sst -> msDraw sst ui
+        AS sst -> asDraw sst ui
+        RS sst -> rsDraw sst ui
+        TS sst -> tsDraw sst ui
+        ES sst -> esDraw sst ui
+
+-- | An overlay layer showing the given (most recent) warning message,
+-- and how many more there are, on the screen's bottom line until the next keypress.
+warningOverlay :: String -> Int -> Widget Name
+warningOverlay msg nolder =
+  Widget Greedy Greedy $ do
+    c <- getContext
+    render $
+      translateBy (Location (0, c^.availHeightL - 1)) $
+      withAttr (attrName "warning") $ str $
+      " Warning: " ++ takeWhile (/='\n') msg ++ morestr ++ " "
+  where
+    morestr = if nolder > 0 then " (and " ++ show nolder ++ " more)" else ""

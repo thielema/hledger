@@ -24,6 +24,7 @@ module Hledger.Utils.IO (
   usageError,
   warn,
   warnIO,
+  setWarningHandler,
   ansiFormatError,
   ansiFormatWarning,
   printError,
@@ -143,6 +144,7 @@ import           Data.Colour.SRGB (sRGB)
 import           Data.Encoding (DynEncoding)
 import           Data.FileEmbed (makeRelativeToProject, embedStringFile)
 import           Data.Functor ((<&>))
+import           Data.IORef (IORef, newIORef, readIORef, writeIORef)
 import           Data.List hiding (uncons)
 import           Data.Maybe (isJust, catMaybes)
 import Data.Text qualified as T
@@ -241,9 +243,22 @@ ansiFormatError = (<> sgrresetall) . ((sgrbrightred <> sgrbold) <>)
 warn :: String -> a -> a
 warn = trace . formatWarning
 
+-- | The action warnIO uses to emit a warning message:
+-- by default, print it to stderr with a "Warning:" prefix and ANSI styling when supported.
+{-# NOINLINE warningHandler #-}
+warningHandler :: IORef (String -> IO ())
+warningHandler = unsafePerformIO $ newIORef $ traceIO . formatWarning
+
+-- | Replace the action warnIO uses to emit warning messages (which receives
+-- the message with no "Warning:" prefix or styling). Eg TUI apps can collect
+-- warnings for in-app display, instead of disrupting the terminal with stderr output.
+setWarningHandler :: (String -> IO ()) -> IO ()
+setWarningHandler = writeIORef warningHandler
+
 -- | Like warn, but take extra care to sequence properly in IO.
+-- Emits the warning with the current warning handler (see setWarningHandler).
 warnIO :: MonadIO m => String -> m ()
-warnIO = liftIO . traceIO . formatWarning
+warnIO msg = liftIO $ readIORef warningHandler >>= ($ msg)
 
 formatWarning =
   (if useColorOnStderrUnsafe then modifyFirstLine ansiFormatWarning else id) .
