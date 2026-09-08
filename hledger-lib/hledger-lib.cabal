@@ -132,7 +132,7 @@ library
   build-depends:
       Decimal >=0.5.1
     , Glob >=0.9
-    , aeson >=1 && <2.4
+    , aeson >=2.2.5.1 && <2.4
     , aeson-pretty
     , ansi-terminal >=0.9
     , array
@@ -194,7 +194,7 @@ test-suite doctest
   build-depends:
       Decimal >=0.5.1
     , Glob >=0.7
-    , aeson >=1 && <2.4
+    , aeson >=2.2.5.1 && <2.4
     , aeson-pretty
     , ansi-terminal >=0.9
     , array
@@ -257,7 +257,7 @@ test-suite unittest
   build-depends:
       Decimal >=0.5.1
     , Glob >=0.9
-    , aeson >=1 && <2.4
+    , aeson >=2.2.5.1 && <2.4
     , aeson-pretty
     , ansi-terminal >=0.9
     , array
