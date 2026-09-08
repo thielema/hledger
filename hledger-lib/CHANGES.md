@@ -14,7 +14,7 @@ API/developer-ish changes in hledger-lib.
 For user-visible changes, see the hledger package changelog.
 
 
-# 5817e58e
+# ac374ff8
 
 Breaking changes
 
@@ -25,6 +25,16 @@ Breaking changes
   serialise a `Journal` themselves; hledger and hledger-web don't expose
   Journal JSON.
 
+- `matchesPayeeWIP` is renamed to `matchesPayee`, now matching declared
+  payees strictly (see the hledger changelog); the unused and
+  inconsistent `matchesDescription` is dropped.
+
+- `Hledger.Utils.Text`'s quote helpers are renamed `textStripQuotes`,
+  `textIsSingleQuoted` and `textIsDoubleQuoted`, for consistency with
+  that module's other names. The `String` versions (`stripQuotes`,
+  `isSingleQuoted`, `isDoubleQuoted`) are now exported from
+  `Hledger.Utils.String`.
+
 Fixes
 
 - `divideAmount`/`divideMixedAmount` no longer raise an error when
@@ -34,6 +44,18 @@ Improvements
 
 - `Hledger.Data.Errors.decorateExcerpt` is now exported, and there's a
   new `wordsmay`, a total variant of `words'`.
+
+- `words'` and friends now tokenise quoted arguments more like the
+  shell (see the hledger changelog), with new doctests demonstrating
+  it. New `wordsEither` is like `wordsmay` but returns the parse error.
+
+- `warnIO` now emits through a swappable handler, settable with the new
+  `setWarningHandler`, so a TUI can collect warnings and display them
+  itself rather than letting them corrupt the terminal.
+
+- A `Journal` now also records the non-journal files its data came from
+  (a CSV rules file, the files it includes, and any file read by a
+  `source` rule), so callers watching for changes can watch those too.
 
 - `Write.Spreadsheet`'s `Cell` has a new `cellParts` field, holding a
   multi-commodity amount's individual amounts for writers (eg HTML)

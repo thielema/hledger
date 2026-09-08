@@ -14,7 +14,7 @@ User-visible changes in hledger-web.
 See also the hledger changelog.
 
 
-# 5817e58e
+# ac374ff8
 
 Fixes
 
@@ -130,12 +130,28 @@ Improvements
 
 - The unused Google Analytics hook has been removed.
 
+- The journal and register tables have been tidied up (Arthur Cinader).
+  Amounts are shown with tabular figures, so digits line up in a
+  column; column headers are small and muted rather than bold black;
+  and the zebra striping is replaced by a faint highlight on the row
+  under the pointer. Register rows also stay on one line at normal
+  window widths (below hledger-web's narrow-screen breakpoint,
+  descriptions wrap as before). [#2718]
+
+- In the default browse mode, hledger-web now explains itself when it
+  exits after two minutes with no browser window open, mentioning
+  `--serve` for serving without that timeout.
+
+- Changes to CSV rules files now trigger a reload, like changes to data
+  files (see hledger changelog).
+
 [#2559]: https://github.com/plaintextaccounting/hledger/issues/2559
 [#2679]: https://github.com/plaintextaccounting/hledger/issues/2679
 [#2698]: https://github.com/plaintextaccounting/hledger/issues/2698
 [#2700]: https://github.com/plaintextaccounting/hledger/issues/2700
 [#2703]: https://github.com/plaintextaccounting/hledger/issues/2703
 [#2704]: https://github.com/plaintextaccounting/hledger/issues/2704
+[#2718]: https://github.com/plaintextaccounting/hledger/issues/2718
 
 
 # 1.52.2 2026-08-24

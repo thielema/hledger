@@ -20,7 +20,7 @@ General changes in the hledger project.
 For package-specific changes, see the hledger package changelogs.
 
 
-# 5817e58e
+# ac374ff8
 
 - The hledger repo has moved to the plaintextaccounting github
   organisation: <https://github.com/plaintextaccounting/hledger>. Old
@@ -52,6 +52,7 @@ For package-specific changes, see the hledger package changelogs.
 - RULES: new doc gathering repo policies, old and new, in one place
 - SPEC-holdings: record decisions (future-dated postings stay included by default; XIRR's final cashflow is the displayed Value at the report date)
 - SPEC-lots: add a roadmap section for future work (per-account lot-tracking opt-out, tax boundary declarations, AVERAGE vs transfers, non-local-method coherence checks)
+- STYLE: new hledger-web doc recording the rules a change to the web UI's appearance should follow (no build step, nothing from a third party, no style attributes, how tabular and monetary data should read), for people and coding agents alike
 
 ## Tools/infrastructure
 
@@ -59,6 +60,8 @@ For package-specific changes, see the hledger package changelogs.
 - .gitignore, .ignore: stop tracking site/ under git entirely, but keep site/src/*.md (and the old manuals) visible to ripgrep/VS Code search via a new .ignore file
 - CI: binaries-mac-arm64-hx, an experimental workflow using the hx build tool (an alternative to stack/cabal, for easier reproducible builds); cache the official cabal binary; build with -O1
 - CI: bump most third-party actions to their latest major version; binaries-mac-arm64 bumped to macos-26-arm64; binaries-mac-x64 lists dependency versions like the others
+- hledger-web: the favicon's vector sources and the standard-library script that regenerates the .ico from them are now committed, so the mark can be edited rather than redrawn
+- skills: the changelogs skill was missing its YAML frontmatter, so it had no useful name or description to be matched against
 - Changelog tooling improved: `just changelogs` drafts are now pre-cleaned (routine commits dropped, AI usage lines stripped, breaking changes lifted to the top, possible duplicates flagged); a stale resume point (eg after a rebase) is detected and reported with its fix; and a new `just changelogs-check` verifies resume points, issue links and leftover draft markers. Changelog section headings are simplified: Breaking changes first, then topic or generic headings as suitable.
 - CI: the addon functional tests now run again (they had been accidentally excluded since 2017)
 - CI: the hledger-web browser tests now run on pull requests, as a non-blocking check

@@ -10,7 +10,7 @@
 User-visible changes in the hledger command line tool and library.
 
 
-# 5817e58e
+# ac374ff8
 
 ## Breaking changes
 
@@ -25,6 +25,33 @@ User-visible changes in the hledger command line tool and library.
 - `stats`'s `-1` flag has been renamed to `--oneline`, consistent with `print --oneline` (and git's `log --oneline`).
 
 - The `demo` command, which played asciinema recordings, has been removed.
+
+- Queries now match declared accounts strictly. Only `acct:` and
+  `depth:` terms can match an account's name (`type:` and `tag:` terms
+  still match its other data); transaction-specific terms like `date:`
+  now exclude declared-but-unused accounts, which have no such fields.
+  Previously those terms matched all declared accounts (though not when
+  negated). Eg with `account assets` declared, and one transaction
+  posting to expenses in 2026:
+
+      $ hledger accounts date:2026      # old: assets, expenses  new: expenses
+      $ hledger accounts not:date:2026  # old:                   new: assets
+
+  Also, `--unused` and `--undeclared` now subtract the full used and
+  declared sets, so eg a `date:` query can no longer make a declared
+  account look undeclared.
+
+- Similarly, `payee:` queries now match declared payees; previously
+  they matched none, so a query could hide declared payees from the
+  payees report. And matching is now strict: transaction-specific terms
+  like `date:` or `desc:` exclude declared payees. Eg with `payee A`
+  declared, and one transaction "2026-01-01 B":
+
+      $ hledger payees payee:A             # old:       new: A
+      $ hledger payees desc:A              # old: A     new:
+      $ hledger payees payee:A date:2000   # old: A     new:
+
+  `--unused`/`--undeclared` get the same fix as for accounts.
 
 - `any:` and `all:` queries now also work in posting-oriented reports
   (register, balance, aregister); previously they had an effect only in
@@ -194,6 +221,12 @@ The `repl` and `run` commands have been improved since 1.99.3. In summary:
 
 - Getting help in the REPL works better: `help` and `CMD -h` now show the same full, paged output as at the command line, and `help` (also `setup`) no longer fails when there's a problem in the journal.
 
+- Quoted arguments in `run`/`repl` command lines and in config files are now tokenised more like the shell: quotes can enclose part of an argument, not just the whole of it, so `date:'1 to 15'` is the single argument `date:1 to 15`, as at the command line. Also like the shell, a lone quote within an argument (eg `desc:o'brien`) must now be quoted or avoided.
+
+- A `run`/`repl` command line that can't be tokenised, eg because of an unclosed quote, now shows a proper parse error with the position and the problem line, instead of a raw parse error dump.
+
+- Changes to CSV rules files now trigger a reload. Automatic reloading watched only journal data files, so edits to a CSV rules file had no effect until restart. Journals now also record the other files their data came from - the CSV rules file, any rules files it includes, and the data file read by a `source` rule - and these are watched too. This affects `repl`, hledger-ui and hledger-web.
+
 ## Reports
 
 - `print` has a new `--oneline` flag showing just each entry's first line, for a compact overview.
@@ -246,6 +279,16 @@ The `repl` and `run` commands have been improved since 1.99.3. In summary:
   [#2326]
 
 - HTML output now prevents wrapping within dates and individual commodity amounts, by default. Each amount is wrapped in a `span` with an "amount" class, date cells are marked with a "date" class. `aregister` gets the same builtin table styles as the other reports. A `hledger.css` file now overrides the builtin styles (previously the builtin styles took precedence), and an example `hledger.css` file  provided in the repo.
+
+- In `print`'s beancount output, underscores in account names are now
+  converted to dashes rather than hex-encoded, giving cleaner names
+  (`assets:wells_fargo` becomes `Assets:Wells-fargo`, not
+  `Assets:WellsC5ffargo`). [#2596]
+
+- `print`'s beancount output no longer emits price directives dated in
+  year 0, which Beancount rejects. The 1:1 prices inferred from
+  commodity `alias:` tags are now dated 0001-01-01; other output
+  formats are unchanged.
 
 ## Other
 
@@ -315,6 +358,7 @@ The `repl` and `run` commands have been improved since 1.99.3. In summary:
 [#2539]: https://github.com/plaintextaccounting/hledger/issues/2539
 [#2545]: https://github.com/plaintextaccounting/hledger/issues/2545
 [#2548]: https://github.com/plaintextaccounting/hledger/issues/2548
+[#2596]: https://github.com/plaintextaccounting/hledger/issues/2596
 [#2656]: https://github.com/plaintextaccounting/hledger/issues/2656
 [#2661]: https://github.com/plaintextaccounting/hledger/issues/2661
 [#2664]: https://github.com/plaintextaccounting/hledger/issues/2664

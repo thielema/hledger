@@ -14,7 +14,7 @@ User-visible changes in hledger-ui.
 See also the hledger changelog.
 
 
-# 5817e58e
+# ac374ff8
 
 Fixes
 
@@ -26,6 +26,11 @@ Fixes
 - Fixed a long-standing memory leak (and CPU/GC thrashing) when reloading with --watch [#1825].
   Now --watch mode has no extra memory/CPU cost, and can be used freely with large journals,
   or enabled by default in your config file.
+
+- Errors raised as exceptions during a journal reload - eg a CSV
+  conversion error, or a watched file momentarily missing while an
+  editor saves it - no longer crash hledger-ui. They are now shown on
+  the error screen and recovered from, like journal parse errors.
 
 Improvements
 
@@ -39,6 +44,15 @@ Improvements
 - Error screen reloading is less flickery and more robust.
 
 - Add the -? and --webman flags; rename --tldr to --examples (see hledger changelog).
+
+- Warnings (eg the CSV data warnings, which could appear on every
+  --watch reload) no longer scroll and corrupt the display. They are
+  now shown on the bottom line in the warning colour, until the next
+  key press; and the screen is fully repainted after each reload,
+  repairing any disruption from other stray terminal output.
+
+- Changes to CSV rules files now trigger a reload, like changes to data
+  files (see hledger changelog).
 
 [#1825]: https://github.com/plaintextaccounting/hledger/issues/1825
 [#2278]: https://github.com/plaintextaccounting/hledger/issues/2278
