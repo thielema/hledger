@@ -105,7 +105,9 @@ run defaultJournalOverride findBuiltinCommand addons cmdaliases shellaliasesallo
         let journalFromStdin = any (== "-") $ map (snd . splitReaderPrefix) $ NE.toList inputFiles
         if journalFromStdin
         then error' "'run' can't read commands from stdin, as one of the input files was stdin as well"
-        else runREPL jpaths rungeneralopts addonfileargs findBuiltinCommand addons cmdaliases shellaliasesallowed Nothing Nothing True
+        -- watch is False: run never reloads changed files, in any of its modes
+        -- (unlike repl). Its other modes don't, since they don't go through runREPL.
+        else runREPL jpaths rungeneralopts addonfileargs findBuiltinCommand addons cmdaliases shellaliasesallowed Nothing Nothing False
     -- Otherwise the arguments are files to read commands from.
     | otherwise ->
         runFromFiles jpaths rungeneralopts addonfileargs findBuiltinCommand addons cmdaliases shellaliasesallowed args
