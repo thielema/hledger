@@ -143,8 +143,11 @@ runFromArgs defaultJournalOverride rungeneralopts addonfileargs findBuiltinComma
 -- When commands are read from file, we need to split the line into command and arguments
 parseCommand :: String -> [String]
 parseCommand line =
-  -- # begins a comment, ignore everything after #
-  takeWhile (not. ((Just '#')==) . headMay) $  words' (strip line)
+  case wordsEither line' of
+    -- # begins a comment, ignore everything after #
+    Right ws -> takeWhile (not. ((Just '#')==) . headMay) ws
+    Left err -> error' $ "could not parse this command line:\n" <> err
+  where line' = strip line
 
 -- | Interpret the common backslash escape sequences \n, \t, \r and \\ in a string,
 -- so the run/repl echo command can print newlines, tabs etc. An unrecognised escape

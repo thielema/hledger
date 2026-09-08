@@ -17,6 +17,7 @@ module Hledger.Utils.String (
  -- whitespacechars,
  words',
  wordsmay,
+ wordsEither,
  stripAnsi,
  -- * single-line layout
  strip,
@@ -44,7 +45,7 @@ import Data.List (intercalate, dropWhileEnd)
 import Data.Text qualified as T
 import Safe (headErr, tailErr)
 import System.Info (os)
-import Text.Megaparsec ((<|>), between, many, noneOf, sepBy)
+import Text.Megaparsec ((<|>), between, errorBundlePretty, many, noneOf, sepBy)
 import Text.Megaparsec.Char (char)
 import Text.Printf (printf)
 
@@ -215,8 +216,14 @@ words' s  = map stripquotes $ fromparse $ parsewithString wordsp s  -- PARTIAL
 -- | Like words', but return Nothing if parsing fails
 -- (eg because of an unclosed quote), rather than raising an error.
 wordsmay :: String -> Maybe [String]
-wordsmay "" = Just []
-wordsmay s = either (const Nothing) (Just . map stripquotes) $ parsewithString wordsp s
+wordsmay = either (const Nothing) Just . wordsEither
+
+-- | Like words', but on failure (eg because of an unclosed quote) return
+-- a pretty error message, showing the position and the problem, instead of
+-- raising an error.
+wordsEither :: String -> Either String [String]
+wordsEither "" = Right []
+wordsEither s  = either (Left . errorBundlePretty) (Right . map stripquotes) $ parsewithString wordsp s
 
 wordsp :: SimpleStringParser [String]
 wordsp = (singleQuotedPattern <|> doubleQuotedPattern <|> patterns) `sepBy` skipNonNewlineSpaces1

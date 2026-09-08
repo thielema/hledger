@@ -387,3 +387,15 @@ $ sh -c 'D=$(mktemp -d "${TMPDIR:-/tmp}/hledger-addon.XXXXXX"); J=$(mktemp "${TM
 # ** 33. run passes an argument containing an apostrophe to an addon unchanged.
 $ mkdir -p $$d; printf '#!/bin/sh\nprintf "argv:"; for a in "$@"; do printf " [%%s]" "$a"; done; echo\n' >$$d/hledger-zzzz; chmod +x $$d/hledger-zzzz; printf 'zzzz a "it%ss" b\n' "'" >$$f; PATH=$$d:$PATH hledger run -f /dev/null $$f; rm -rf $$d $$f
 argv: [-f] [/dev/null] [a] [it's] [b]
+
+# ** 34. A run/repl command line with an unclosed quote gives a clear error,
+# showing the position and the problem, not a raw parse error dump.
+$  printf "bal 'f\n" >$$f; hledger run -f /dev/null $$f; s=$?; rm -f $$f; exit $s
+>2 /could not parse this command line:
+1:7:
+  \|
+1 \| bal 'f
+  \|       \^
+unexpected end of input
+expecting '''/
+>= 1
