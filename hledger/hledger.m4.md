@@ -943,6 +943,11 @@ Beancount doesn't allow [redundant costs and conversion postings](https://hledge
 If you have any of these, the conversion postings will be omitted.
 Currently we support at most one cost + conversion postings group per transaction.
 
+#### Beancount price directives
+
+The 1:1 price directives which hledger infers from [commodity aliases](#commodity-aliases)
+are normally dated `0000-01-01`; in Beancount output they are dated `0001-01-01` instead.
+
 #### Beancount tolerance
 
 A sample `inferred_tolerance_default` option is provided (commented out).
