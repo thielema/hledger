@@ -405,7 +405,7 @@ commodityToBeancount :: CommoditySymbol -> BeancountCommoditySymbol
 commodityToBeancount "" = "CC"
 commodityToBeancount com =
   dbg9 "beancount commodity name" $
-  let com' = stripquotes com
+  let com' = textStripQuotes com
   in case currencySymbolToCode com' of
     Just code -> code
     Nothing ->

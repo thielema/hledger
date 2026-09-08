@@ -271,7 +271,7 @@ handleReadFnToTextReadFn p iopts fp =
 forecastPeriodFromRawOpts :: Day -> RawOpts -> Maybe DateSpan
 forecastPeriodFromRawOpts d rawopts = do
     arg <- maybestringopt "forecast" rawopts
-    let period = parsePeriodExpr d . stripquotes $ T.pack arg
+    let period = parsePeriodExpr d . textStripQuotes $ T.pack arg
     return $ if null arg then nulldatespan else either badParse (getSpan arg) period
   where
     badParse e = usageError $ "could not parse forecast period : "++customErrorBundlePretty e

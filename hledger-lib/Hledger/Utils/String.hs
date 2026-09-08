@@ -18,6 +18,9 @@ module Hledger.Utils.String (
  words',
  wordsmay,
  wordsEither,
+ stripQuotes,
+ isSingleQuoted,
+ isDoubleQuoted,
  stripAnsi,
  -- * single-line layout
  strip,
@@ -43,9 +46,9 @@ module Hledger.Utils.String (
 import Data.Char (isSpace, toLower, toUpper)
 import Data.List (intercalate, dropWhileEnd)
 import Data.Text qualified as T
-import Safe (headErr, tailErr)
 import System.Info (os)
-import Text.Megaparsec ((<|>), between, errorBundlePretty, many, noneOf, sepBy)
+import Safe (headErr, tailErr)
+import Text.Megaparsec (between, choice, errorBundlePretty, many, noneOf, sepBy, some)
 import Text.Megaparsec.Char (char)
 import Text.Printf (printf)
 
@@ -205,13 +208,28 @@ whitespacechars = " \t\n\r"
 redirectchars   = "<>"
 shellchars      = "<>(){}[]$&?#!~`*+\\"
 
--- | Quote-aware version of words - don't split on spaces which are inside quotes.
--- NB correctly handles "a'b" but not "''a''".
+-- | Quote-aware version of words, splitting a string into words like the
+-- shell does: spaces inside single or double quotes don't split, quotes enclosing
+-- a word are removed, and a word can mix unquoted and quoted parts
+-- (so date:'1 to 15' is the single word date:1 to 15).
 -- Can raise an error if parsing fails (eg if there's an unclosed quote);
--- wordsmay is a total version.
+-- wordsmay and wordsEither are total versions.
+--
+-- >>> words' "a b"
+-- ["a","b"]
+-- >>> words' "'a b' c"
+-- ["a b","c"]
+-- >>> words' "date:'1 to 15' x"
+-- ["date:1 to 15","x"]
+-- >>> words' "\"it's\""
+-- ["it's"]
+-- >>> words' "a '' b"
+-- ["a","","b"]
+-- >>> wordsmay "an unclosed 'quote"
+-- Nothing
 words' :: String -> [String]
 words' "" = []
-words' s  = map stripquotes $ fromparse $ parsewithString wordsp s  -- PARTIAL
+words' s  = fromparse $ parsewithString wordsp s  -- PARTIAL
 
 -- | Like words', but return Nothing if parsing fails
 -- (eg because of an unclosed quote), rather than raising an error.
@@ -223,23 +241,28 @@ wordsmay = either (const Nothing) Just . wordsEither
 -- raising an error.
 wordsEither :: String -> Either String [String]
 wordsEither "" = Right []
-wordsEither s  = either (Left . errorBundlePretty) (Right . map stripquotes) $ parsewithString wordsp s
+wordsEither s  = either (Left . errorBundlePretty) Right $ parsewithString wordsp s
 
 wordsp :: SimpleStringParser [String]
-wordsp = (singleQuotedPattern <|> doubleQuotedPattern <|> patterns) `sepBy` skipNonNewlineSpaces1
+wordsp = wordp `sepBy` skipNonNewlineSpaces1
     -- eof
     where
-      patterns = many (noneOf whitespacechars)
-      singleQuotedPattern = between (char '\'') (char '\'') (many $ noneOf "'")
-      doubleQuotedPattern = between (char '"') (char '"') (many $ noneOf "\"")
+      wordp = concat <$> many segmentp
+      segmentp = choice
+        [ between (char '\'') (char '\'') (many $ noneOf "'")
+        , between (char '"') (char '"') (many $ noneOf "\"")
+        , some $ noneOf $ quotechars <> whitespacechars
+        ]
 
 -- | Strip one matching pair of single or double quotes on the ends of a string.
-stripquotes :: String -> String
-stripquotes s = if isSingleQuoted s || isDoubleQuoted s then init $ tailErr s else s  -- PARTIAL tailErr won't fail because isDoubleQuoted
+stripQuotes :: String -> String
+stripQuotes s = if isSingleQuoted s || isDoubleQuoted s then init $ tailErr s else s  -- PARTIAL tailErr won't fail because isDoubleQuoted
 
+isSingleQuoted :: String -> Bool
 isSingleQuoted s@(_:_:_) = headErr s == '\'' && last s == '\''  -- PARTIAL headErr, last will succeed because of pattern
 isSingleQuoted _ = False
 
+isDoubleQuoted :: String -> Bool
 isDoubleQuoted s@(_:_:_) = headErr s == '"' && last s == '"'  -- PARTIAL headErr, last will succeed because of pattern
 isDoubleQuoted _ = False
 

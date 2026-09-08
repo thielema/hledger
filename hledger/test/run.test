@@ -406,3 +406,16 @@ expecting '''/
 $ mkdir -p $$d; printf 'date,amount\n2026-01-01,10\n' >$$d/t.csv; printf 'skip 1\nfields date,amount\naccount1 assets:one\naccount2 income:two\n' >$$d/t.csv.rules; printf 'skip 1\nfields date,amount\naccount1 assets:two\naccount2 income:two\n' >$$d/r2; printf 'print\n!cp %s/r2 %s/t.csv.rules\nprint\n' $$d $$d | hledger repl --no-conf -f $$d/t.csv 2>/dev/null | grep assets:; rm -rf $$d
     assets:one                                    10
     assets:two                                    10
+
+# ** 36. In a run/repl command line, quotes can enclose part of an argument,
+# as in the shell: date:'1 to 15' is the single argument "date:1 to 15".
+<
+2026-09-05 five
+  a  1
+  b
+2026-09-20 twenty
+  a  1
+  b
+$  printf "reg date:'2026-09-01 to 2026-09-15'\n" >$$f; hledger run -f- $$f; rm -f $$f
+2026-09-05 five                 a                                1             1
+                                b                               -1             0

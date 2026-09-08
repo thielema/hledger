@@ -249,11 +249,11 @@ words'' prefixes = fromparse . parsewith maybePrefixedQuotedPhrases -- XXX
         let prefix :: T.Text
             prefix = not' <> next
         p <- singleQuotedPattern <|> doubleQuotedPattern
-        return $ prefix <> stripquotes p
+        return $ prefix <> textStripQuotes p
       singleQuotedPattern :: SimpleTextParser T.Text
-      singleQuotedPattern = stripquotes . T.pack <$> between (char '\'') (char '\'') (many $ noneOf ("'" :: [Char]))
+      singleQuotedPattern = textStripQuotes . T.pack <$> between (char '\'') (char '\'') (many $ noneOf ("'" :: [Char]))
       doubleQuotedPattern :: SimpleTextParser T.Text
-      doubleQuotedPattern = stripquotes . T.pack <$> between (char '"') (char '"') (many $ noneOf ("\"" :: [Char]))
+      doubleQuotedPattern = textStripQuotes . T.pack <$> between (char '"') (char '"') (many $ noneOf ("\"" :: [Char]))
       patterns :: SimpleTextParser T.Text
       patterns = T.pack <$> many (noneOf (" \n\r" :: [Char]))
 
@@ -437,8 +437,8 @@ parseBooleanQuery d t =
                             -- if it is not one of the keywords "not", "and", "or".
                             queryArgP :: SimpleTextParser T.Text
                             queryArgP = choice'
-                              [ stripquotes . T.pack <$> between (char '\'') (char '\'') (many $ noneOf ("'" :: [Char])),
-                                stripquotes . T.pack <$> between (char '"') (char '"') (many $ noneOf ("\"" :: [Char])),
+                              [ textStripQuotes . T.pack <$> between (char '\'') (char '\'') (many $ noneOf ("'" :: [Char])),
+                                textStripQuotes . T.pack <$> between (char '"') (char '"') (many $ noneOf ("\"" :: [Char])),
                                 T.pack <$> (notFollowedBy keywordP >> (many $ noneOf (") \n\r" :: [Char]))) ]
 
                               where

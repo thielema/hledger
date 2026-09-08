@@ -370,7 +370,8 @@ Here's a quick reference:
 | In hledger-ui's filter prompt | Use single or double quotes
 | In hledger-web's search form  | Use single or double quotes
 | In an [argument file]         | Don't use spaces, don't shell-escape, do regex-escape, write one argument/option per line
-| In a [config file]            | Use single or double quotes, and enclose the whole argument <br>(`'desc:a b'` not `desc:'a b'`)
+| In a [config file]            | Use single or double quotes, enclosing all or part of an argument <br>(`'desc:a b'` or `desc:'a b'`, as in the unix shell)
+| In `repl` or a `run` script   | Use single or double quotes, enclosing all or part of an argument
 | In `ghci` (the Haskell REPL)  | Use double quotes, and enclose the whole argument
 
 [argument file]: #argument-files

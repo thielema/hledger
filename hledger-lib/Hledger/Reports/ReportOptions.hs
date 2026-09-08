@@ -474,7 +474,7 @@ beginDatesFromRawOpts d = collectopts (begindatefromrawopt d)
       | n == "period" =
         case
           either (\e -> usageError $ "could not parse period option: "++customErrorBundlePretty e) id $
-          parsePeriodExpr d' (stripquotes $ T.pack v)
+          parsePeriodExpr d' (textStripQuotes $ T.pack v)
         of
           (_, DateSpan (Just b) _) -> Just b
           _                        -> Nothing
@@ -492,7 +492,7 @@ endDatesFromRawOpts d = collectopts (enddatefromrawopt d)
       | n == "period" =
         case
           either (\e -> usageError $ "could not parse period option: "++customErrorBundlePretty e) id $
-          parsePeriodExpr d' (stripquotes $ T.pack v)
+          parsePeriodExpr d' (textStripQuotes $ T.pack v)
         of
           (_, DateSpan _ (Just e)) -> Just e
           _                        -> Nothing
@@ -511,7 +511,7 @@ intervalFromRawOpts = lastDef NoInterval . collectopts intervalfromrawopt
             extractIntervalOrNothing $
             parsePeriodExpr
               (error' "intervalFromRawOpts: did not expect to need today's date here")  -- PARTIAL: should not happen; we are just getting the interval, which does not use the reference date
-              (stripquotes $ T.pack v)
+              (textStripQuotes $ T.pack v)
       | n == "daily"     = Just $ Days 1
       | n == "weekly"    = Just $ Weeks 1
       | n == "monthly"   = Just $ Months 1
