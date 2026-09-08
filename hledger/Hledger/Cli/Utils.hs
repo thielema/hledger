@@ -233,7 +233,7 @@ journalReloadIfChanged :: CliOpts -> Day -> Journal -> ExceptT String IO (Journa
 journalReloadIfChanged opts _d j = do
   let maybeChangedFilename f = do newer <- journalFileIsNewer j f
                                   return $ if newer then Just f else Nothing
-  changedfiles <- liftIO $ catMaybes <$> mapM maybeChangedFilename (journalFilePaths j)
+  changedfiles <- liftIO $ catMaybes <$> mapM maybeChangedFilename (journalAllFilePaths j)
   case changedfiles of
     []  -> return (j, False)
     f:_ -> do

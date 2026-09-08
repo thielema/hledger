@@ -320,7 +320,7 @@ runBrickUi uopts0 j =
       -- with Debounce at the default 1ms it clears transient errors itself
       -- but gets tied up for ages
       withManager $ \mgr -> do
-        fs <- mapM (canonicalizePath . fst) $ jfiles j
+        fs <- mapM canonicalizePath $ journalAllFilePaths j
         let directories = nubSort $ map takeDirectory fs
         dbg1IO "files" fs
         dbg1IO "directories to watch" directories

@@ -62,18 +62,20 @@ reader sep = Reader
 parse :: SepFormat -> InputOpts -> FilePath -> Handle -> ExceptT String IO Journal
 parse sep iopts f h = do
   let rulesfile = getRulesFile f (mrules_file_ iopts)
-  rules <- readRules rulesfile
+  (rules, rulesfiles) <- readRules rulesfile
   mencoding <- rulesEncoding rulesfile rules
   csvtext <- lift $ hGetContentsPortably mencoding h
-  readJournalFromCsv rulesfile rules f csvtext (Just sep)
-  -- apply any command line account aliases. Can fail with a bad replacement pattern.
-  >>= liftEither . journalApplyAliases (aliasesFromOpts iopts)
-      -- journalFinalise assumes the journal's items are
-      -- reversed, as produced by JournalReader's parser.
-      -- But here they are already properly ordered. So we'd
-      -- better preemptively reverse them once more. XXX inefficient
-      . journalReverse
-  >>= journalFinalise iopts{balancingopts_=(balancingopts_ iopts){ignore_assertions_=True}} f ""
+  j <- readJournalFromCsv rulesfile rules f csvtext (Just sep)
+    -- apply any command line account aliases. Can fail with a bad replacement pattern.
+    >>= liftEither . journalApplyAliases (aliasesFromOpts iopts)
+        -- journalFinalise assumes the journal's items are
+        -- reversed, as produced by JournalReader's parser.
+        -- But here they are already properly ordered. So we'd
+        -- better preemptively reverse them once more. XXX inefficient
+        . journalReverse
+    >>= journalFinalise iopts{balancingopts_=(balancingopts_ iopts){ignore_assertions_=True}} f ""
+  -- Note the rules files, so that changes to them can be detected when reloading.
+  return j{jauxfiles = rulesfiles}
 
 --- ** tests
 

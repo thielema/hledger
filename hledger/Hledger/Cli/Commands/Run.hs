@@ -365,13 +365,13 @@ refreshStaleJournals :: IO ()
 refreshStaleJournals = do
   cache <- readMVar journalCache
   forM_ (Map.toList cache) $ \((iopts,fp), j) -> do
-    changed <- anyM (journalFileIsNewer j) (journalFilePaths j)
+    changed <- anyM (journalFileIsNewer j) (journalAllFilePaths j)
     when changed $
       reloadChanged fp "version" (runExceptT $ readJournalFile iopts fp)
         (\j' -> modifyMVar_ journalCache $ return . Map.insert (iopts,fp) j')
         -- On failure advance the cached journal's read time past its current files, so we report
         -- the error once and stay quiet until a file changes again.
-        (do newest <- maximum . (jlastreadtime j :) . catMaybes <$> mapM maybeFileModificationTime (journalFilePaths j)
+        (do newest <- maximum . (jlastreadtime j :) . catMaybes <$> mapM maybeFileModificationTime (journalAllFilePaths j)
             modifyMVar_ journalCache $ return . Map.adjust (journalSetLastReadTime newest) (iopts,fp))
 
 -- | If the config file has changed on disk since its command aliases were last read,

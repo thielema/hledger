@@ -109,6 +109,7 @@ module Hledger.Data.Journal (
   journalDescriptions,
   journalFilePath,
   journalFilePaths,
+  journalAllFilePaths,
   journalTransactionAt,
   journalNextTransaction,
   journalPrevTransaction,
@@ -244,6 +245,7 @@ journalDbg j@Journal{..} = chomp $ unlines $
   ,"jtxns: "                     <> shw jtxns
   ,"jfinalcommentlines: "        <> shw jfinalcommentlines
   ,"jfiles: "                    <> shw jfiles
+  ,"jauxfiles: "                 <> shw jauxfiles
   ,"jlastreadtime: "             <> shw jlastreadtime
   ]
   -- ++ ["}"]
@@ -326,6 +328,7 @@ journalConcat j1 j2 =
     ,jtxns                      = jtxns                      j1 <> jtxns                      j2
     ,jfinalcommentlines         = jfinalcommentlines j2  -- XXX discards j1's ?
     ,jfiles                     = jfiles                     j1 <> jfiles                     j2
+    ,jauxfiles                  = jauxfiles                  j1 <> jauxfiles                  j2
     ,jlastreadtime              = max (jlastreadtime j1) (jlastreadtime j2)
     }
 
@@ -386,6 +389,7 @@ nulljournal = Journal {
   ,jtxns                      = []
   ,jfinalcommentlines         = ""
   ,jfiles                     = []
+  ,jauxfiles                  = []
   ,jlastreadtime              = 0
   }
 
@@ -394,6 +398,12 @@ journalFilePath = fst . mainfile
 
 journalFilePaths :: Journal -> [FilePath]
 journalFilePaths = map fst . jfiles
+
+-- | All the files this journal's data was read from: its data files
+-- (journalFilePaths) and any auxiliary files such as CSV rules files (jauxfiles).
+-- These are the files to watch for changes when reloading.
+journalAllFilePaths :: Journal -> [FilePath]
+journalAllFilePaths j = journalFilePaths j <> jauxfiles j
 
 mainfile :: Journal -> (FilePath, Text)
 mainfile = headDef ("(unknown)", "") . jfiles

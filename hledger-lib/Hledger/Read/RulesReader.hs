@@ -176,7 +176,7 @@ parse iopts rulesfile h = do
   --  gives: file pattern, data cleaning/generating command, archive flag
 
   -- XXX higher-than usual logging priority for file reading (normally 6 or 7), to bypass excessive noise from elsewhere
-  rules <- readRules $ dbg1 "reading rules file" rulesfile
+  (rules, rulesfiles) <- readRules $ dbg1 "reading rules file" rulesfile
   let
     msourcearg = getDirective "source" rules
       -- Nothing -> error' $ rulesfile ++ " source rule must specify a file pattern or a command"
@@ -310,7 +310,9 @@ parse iopts rulesfile h = do
     -- and lets a later run advance to the next (newer) glob-matched file.
     maybe (return ()) removeFile mdatafile
 
-  return j
+  -- Note the other files this journal's data came from - the included rules files,
+  -- and the data file if any - so that changes to them can be detected when reloading.
+  return j{jauxfiles = rulesfiles <> maybe [] pure mexistingdatafile}
 
 -- | For the given rules file, run the given shell command, in the rules file's directory.
 -- If the command fails, raise an error and show its error output;
@@ -441,11 +443,14 @@ getRulesFile csvfile mrulesfile =
 
 -- | An exception-throwing IO action that reads and validates
 -- the specified CSV rules file (which may include other rules files).
-readRules :: FilePath -> ExceptT String IO CsvRules
+-- Also returns the paths of all the rules files read, so that changes
+-- to any of them can be detected later (see jauxfiles).
+readRules :: FilePath -> ExceptT String IO (CsvRules, [FilePath])
 readRules f = do
   liftIO $ dbg6IO "using conversion rules file" f
   (txt, sourcelines) <- expandIncludes (takeDirectory f) f =<< liftIO (readFilePortably f)
-  liftEither $ parseAndValidateCsvRules f sourcelines txt
+  rules <- liftEither $ parseAndValidateCsvRules f sourcelines txt
+  return (rules, nub $ f : map fst sourcelines)
 
 -- | Read the encoding specified by the @encoding@ rule, if any.
 -- Or throw an error if an unrecognised encoding is specified.

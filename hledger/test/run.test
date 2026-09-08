@@ -399,3 +399,10 @@ $  printf "bal 'f\n" >$$f; hledger run -f /dev/null $$f; s=$?; rm -f $$f; exit $
 unexpected end of input
 expecting '''/
 >= 1
+
+# ** 35. repl's automatic reloading notices a change to a CSV rules file,
+# not just to the data file. (The rules file is edited from within the repl,
+# with a ! shell command, between two print commands.)
+$ mkdir -p $$d; printf 'date,amount\n2026-01-01,10\n' >$$d/t.csv; printf 'skip 1\nfields date,amount\naccount1 assets:one\naccount2 income:two\n' >$$d/t.csv.rules; printf 'skip 1\nfields date,amount\naccount1 assets:two\naccount2 income:two\n' >$$d/r2; printf 'print\n!cp %s/r2 %s/t.csv.rules\nprint\n' $$d $$d | hledger repl --no-conf -f $$d/t.csv 2>/dev/null | grep assets:; rm -rf $$d
+    assets:one                                    10
+    assets:two                                    10
