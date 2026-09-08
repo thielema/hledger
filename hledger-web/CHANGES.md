@@ -24,18 +24,17 @@ Fixes
   hledger-web users should upgrade.
   (Arthur Cinader, Simon Michael, [#2698], advisory GHSA-538p-cvc4-4qjm)
 
-- Another XSS vulnerability has been fixed in the add transaction
-  form's error message. Any web page visited while hledger-web was
-  running could use it to run javascript in hledger-web's origin, and
+- A second XSS vulnerability has been fixed, in the add form's error
+  message. Any web page visited while hledger-web was running
+  could use it to run javascript in hledger-web's origin, and
   from there read the whole journal, or alter it. All hledger-web
   users should upgrade.  (Arthur Cinader, Simon Michael, [#2700],
   advisory GHSA-vq7r-8w52-jv84)
 
-- A newline submitted in a transaction's description, code or account
-  name is no longer written into the journal file. This removes the
-  possibility of the user inserting an include directive, which could
-  expose system files readable by the hledger-web server.  ([#2704],
-  advisory GHSA-vq7r-8w52-jv84)
+- A newline submitted by a user in a transaction's description, code or
+  account name is now removed, so the user can't inject an include directive
+  to read arbitrary files accessible to the hledger-web server.
+  ([#2704], advisory GHSA-vq7r-8w52-jv84)
 
 - The upload form now shows the name of the chosen file. It never did
   before, because of an escaping bug that disabled its handler.
@@ -52,12 +51,9 @@ Fixes
 
 Improvements
 
-- Keep the account sidebar's scroll position when switching accounts
-  [#2679] (Arthur Cinader).  The sidebar and the main content now
-  scroll independently (on wider screens), so you don't lose your
-  place when clicking an account - the account stays exactly where it
-  was. And, the sidebar's scroll position is remembered across
-  navigations.
+- The account sidebar now keeps its scroll position when you click an
+  account or navigate [#2679] (Arthur Cinader). The sidebar and the
+  main content also scroll independently, on wider screens.
 
 - --port 0 lets the OS choose a free port [#2559] (Arthur Cinader).
   The chosen port is reported in the startup message and used in the
@@ -67,7 +63,7 @@ Improvements
 - Add the -? and --webman flags; rename --tldr to --examples (see hledger changelog).
 
 - The web UI's javascript has been modernised, replacing five vendored
-  libraries with standard browser features (Arthur Cinader):
+  libraries with standard browser features (Arthur Cinader, [#2702]):
   autocomplete suggestions now use a native `<datalist>`; the button
   beside the date field opens the browser's own date picker (typed
   smart dates like "today" still work); and keyboard shortcuts,
@@ -90,57 +86,49 @@ Improvements
   browsers won't second-guess content types. Static files and error
   pages get them too. (Arthur Cinader)
 
-- The yesod-static and hjsmin dependencies have been dropped;
-  hledger-web now serves its static files itself, using wai-app-static
-  and file-embed. (yesod-static doesn't currently build with crypton
-  1.1+, which has kept it, and hledger-web, out of stackage nightly.)
-  Static file urls no longer include an `?etag=...` cache buster;
-  instead the files are served with an ETag header, and conditional
-  requests are answered with 304 Not Modified.
+- hledger-web no longer depends on the yesod-static and hjsmin
+  packages for serving its css, js and font files. This is
+  mainly a packaging fix: yesod-static doesn't build with crypton 1.1+,
+  which had kept hledger-web out of stackage nightly.
+  There is a behaviour change: static file urls no longer carry an
+  `?etag=...` suffix; instead browsers are told when their cached copy
+  is still good.
 
 - The aeson lower bound has been relaxed from 2.3 to 2.2.5.1, the
   oldest version not vulnerable to the HSEC-2026-0007 denial of
   service, easing installation while the ecosystem catches up with
   newer aeson.
 
-- hledger-web now sends a Content-Security-Policy with every page
-  [#2703] (Arthur Cinader). The browser loads scripts, styles, images
-  and fonts only from hledger-web's own origin, and runs only the
-  inline scripts that carry the page's nonce. A script that reached a
-  page some other way, eg through journal data, is blocked and
-  reported in the browser's console. The policy also refuses framing
-  by another site, as X-Frame-Options does for the other responses.
+- hledger-web now sends a Content-Security-Policy header with every
+  page [#2703] (Arthur Cinader). This tells your browser to load
+  scripts, styles, images and fonts only from hledger-web itself, and
+  to run only hledger-web's own scripts - so if anything script-like
+  ever reached a page, eg through data in your journal, the browser
+  would refuse to run it and report it in the console. In
+  normal use you should notice no difference.
 
-- The default --serve-browse mode no longer uses the wai-handler-launch
-  library. That library worked by inserting a script into every page,
-  which the new Content-Security-Policy could only allow by hash.
-  hledger-web now does the job itself: it opens the browser, each page
-  pings the server while it is open, and the server exits two minutes
-  after the last ping, so a write-capable server does not linger once
-  its pages are closed. The browser is opened by hledger's own launcher
-  (the Win32 API on Windows, `open` on mac, `xdg-open` elsewhere), which
-  now also works on Windows for hledger's other browser-opening flags,
-  such as --webman. (Arthur Cinader)
+- The default browse mode still opens the browser and exits two
+  minutes after its last page is closed, for cleanup and security;
+  but this is now done by a new implementation which fits better
+  with the Content Security Policy. The new launcher (using the Win32 API
+  on Windows, `open` on mac, `xdg-open` elsewhere) now also works on Windows
+  for hledger's other browser-opening flags, such as --webman. And when
+  hledger-web exits this way, it logs an informative message.
+  (Arthur Cinader, [#2722])
 
-- The register chart is drawn from data carried on the page rather
-  than from a script generated into it. This fixes the chart silently
-  disappearing when a commodity symbol contained a backslash and a
-  double quote, and moves the legend from inside the chart, where it
-  covered the start of the balance line, to the title line above it.
-
-- The unused Google Analytics hook has been removed.
+- The register chart no longer disappears when a commodity symbol
+  contains a backslash or a double quote. Its legend has also moved
+  out of the chart, where it could cover the start of the balance
+  line, up to the title line above it.
 
 - The journal and register tables have been tidied up (Arthur Cinader).
-  Amounts are shown with tabular figures, so digits line up in a
-  column; column headers are small and muted rather than bold black;
+  Digits in amounts are shown with equal width, so numbers line up neatly
+  in a column; column headers are small and muted rather than bold black;
   and the zebra striping is replaced by a faint highlight on the row
-  under the pointer. Register rows also stay on one line at normal
-  window widths (below hledger-web's narrow-screen breakpoint,
-  descriptions wrap as before). [#2718]
+  under the pointer. [#2718]
 
-- In the default browse mode, hledger-web now explains itself when it
-  exits after two minutes with no browser window open, mentioning
-  `--serve` for serving without that timeout.
+- The unused Google Analytics hook has been removed (it was disabled;
+  no page ever loaded analytics).
 
 - Changes to CSV rules files now trigger a reload, like changes to data
   files (see hledger changelog).
@@ -149,9 +137,11 @@ Improvements
 [#2679]: https://github.com/plaintextaccounting/hledger/issues/2679
 [#2698]: https://github.com/plaintextaccounting/hledger/issues/2698
 [#2700]: https://github.com/plaintextaccounting/hledger/issues/2700
+[#2702]: https://github.com/plaintextaccounting/hledger/issues/2702
 [#2703]: https://github.com/plaintextaccounting/hledger/issues/2703
 [#2704]: https://github.com/plaintextaccounting/hledger/issues/2704
 [#2718]: https://github.com/plaintextaccounting/hledger/issues/2718
+[#2722]: https://github.com/plaintextaccounting/hledger/issues/2722
 
 
 # 1.52.2 2026-08-24

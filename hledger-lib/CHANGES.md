@@ -68,7 +68,8 @@ Improvements
   returning a journal's apparent base currency (used by the `stats`
   command).
 
-- The aeson version bound has been relaxed to `>=1 && <2.4`.
+- The aeson lower bound has been relaxed from 2.3 to 2.2.5.1, the
+  oldest version not vulnerable to HSEC-2026-0007.
 
 
 # 1.52.2 2026-08-24

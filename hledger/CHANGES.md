@@ -26,41 +26,25 @@ User-visible changes in the hledger command line tool and library.
 
 - The `demo` command, which played asciinema recordings, has been removed.
 
-- Queries now match declared accounts strictly. Only `acct:` and
-  `depth:` terms can match an account's name (`type:` and `tag:` terms
-  still match its other data); transaction-specific terms like `date:`
-  now exclude declared-but-unused accounts, which have no such fields.
-  Previously those terms matched all declared accounts (though not when
-  negated). Eg with `account assets` declared, and one transaction
-  posting to expenses in 2026:
+- The `accounts` command now more strictly respects transaction-specific query terms
+  such as `date:`, `status:`, `desc:`; these prevent matching a declared
+  but unused account, which doesn't have those fields. (Previously they were ignored in that case.)
+  Only `acct:`, `depth:`, `type:` or `tag:` can match an unused account.
 
-      $ hledger accounts date:2026      # old: assets, expenses  new: expenses
-      $ hledger accounts not:date:2026  # old:                   new: assets
-
-  Also, `--unused` and `--undeclared` now subtract the full used and
-  declared sets, so eg a `date:` query can no longer make a declared
-  account look undeclared.
-
-- Similarly, `payee:` queries now match declared payees; previously
-  they matched none, so a query could hide declared payees from the
-  payees report. And matching is now strict: transaction-specific terms
-  like `date:` or `desc:` exclude declared payees. Eg with `payee A`
-  declared, and one transaction "2026-01-01 B":
-
-      $ hledger payees payee:A             # old:       new: A
-      $ hledger payees desc:A              # old: A     new:
-      $ hledger payees payee:A date:2000   # old: A     new:
-
-  `--unused`/`--undeclared` get the same fix as for accounts.
+- The `payees` command gets similar query fixes: `payee:` now matches
+  declared payees as expected (previously it matched none of them, so
+  a `payee:` query could hide them from the report),
+  and transaction-specific query terms like `date:` or `desc:` no longer match
+  a declared but unused payee.
 
 - `any:` and `all:` queries now also work in posting-oriented reports
-  (register, balance, aregister); previously they had an effect only in
-  transaction-oriented commands like print, degrading to a plain AND
-  elsewhere. A posting can now be selected because of its siblings: eg
+  like register, balance and aregister; previously they had an effect only in
+  commands which show whole transactions, like print.
+  So those reports can now select postings based on their siblings: eg
   `hledger balance expenses any:cash` shows expenses which were paid
-  with cash, which previously required a two-command pipeline.
-  aregister with these queries now behaves differently, and more
-  consistently, showing the same transactions as print would.
+  with cash - previously this required a two-command pipeline.
+  Also aregister with these queries now behaves more consistently,
+  showing the same transactions as print would.
 
 ## Config files
 
@@ -91,22 +75,26 @@ User-visible changes in the hledger command line tool and library.
 
 - Abbreviating `print`'s `--locations` flag as `--loc` now works as expected.
 
-- Arguments are now passed to addon commands as an argv list rather
-  than a shell command line, so empty arguments, apostrophes and other
-  special characters now reach the addon intact. (Kevin F. Konrad,
-  [#2696]) Where a shell command line is still used (addons run from
-  `run`/`repl`, and `!` shell aliases), quoting of apostrophes and
-  empty arguments has been fixed. (Arthur Cinader)
+- Command line arguments now reach addon commands exactly as you typed
+  them, fixing cases where apostrophes, empty strings or other special
+  characters were mangled or silently dropped (Kevin F. Konrad, [#2696]).
+  Except on Windows, where addons are still run through the shell, so
+  that .bat and other script addons keep working; there, arguments can
+  still be mangled. Quoting is also improved on the other paths which
+  still build a shell command line: addons run from `run` and `repl`,
+  and `!` shell aliases (Arthur Cinader).
 
-- `--` handling with addon commands is improved (Kevin F. Konrad,
-  [#2696]): hledger's own options written after `--` are no longer
-  stripped from addon arguments; only the first `--` is consumed, so
-  later ones reach the addon; and a `--` written in a config file
-  section or command alias now works like one on the command line,
-  making the documented `-- -n` escape hatch reachable from those too.
-  Also, flags requiring a value are now checked only against the
-  running command's flags, so a flag belonging to some other command is
-  no longer wrongly rejected with "needs a value".
+- Options written after `--` are passed through to an addon command rather than consumed by hledger;
+  additional `--` arguments are also passed through;
+  and `--` written in a config file section or a command alias now works as it does on the command line.
+  (Kevin F. Konrad, Arthur Cinader, [#2696])
+
+- hledger no longer rejects a flag with "needs a value" when that flag
+  belongs to some other command. Eg `--sort` takes a value in `register`,
+  so `hledger help --sort` used to fail with "--sort needs a value";
+  now `help` reports the more accurate "Unknown flag: --sort", and an
+  addon given `--sort` receives it.
+  (Kevin F. Konrad, [#2696])
 
 ## Help & docs
 
@@ -146,7 +134,9 @@ User-visible changes in the hledger command line tool and library.
 
 - Numbers can now also use `_` or `'` as digit group marks. (Kevin F. Konrad, [#273], [#1489])
 
-- `add` no longer offers default amounts with ambiguous digit group marks (eg instead of `-1.000` it will ofer `-1.000,`, avoiding misparsing. [#2656]
+- `add` will no longer suggest default amounts having ambiguous digit group marks
+  (such as `1.000` or `1,000`), which if accepted could be misparsed later. Instead it will
+  add a trailing decimal mark to disambiguate (eg `1.000,` or `1,000.`). [#2656]
 
 ## Data import
 
@@ -173,13 +163,17 @@ User-visible changes in the hledger command line tool and library.
   commands (`source PATTERN | cmd`) still fail hard, since they
   operate on a file that was actually found.
 
-- `import --dry-run` no longer wrongly archives data files when the
-  flag is given in abbreviated form (eg `--dr`). Also, the reader's
-  import-specific behaviour (preferring the oldest file matched by a
-  source glob, honouring the archive rule) now applies only to the
-  import command's own reading of its data files.
+- `import --dry-run` no longer wrongly archives data files when the flag
+  is given abbreviated, eg as `import --dr`. Also, `import`'s
+  special file handling - preferring the oldest file matching a
+  `source` glob, and honouring the `archive` rule - now happens only
+  when `import` itself reads its data files; previously any command
+  could trigger it if the word "import" happened to appear in its
+  arguments.
 
-- `import` with `archive` enabled, if there are multiple downloaded copies of the source file,  now properly deletes processed files and always makes progress. (Previously it could stall, reprocessing the oldest file each time.)
+- `import` with `archive` enabled, if there are multiple downloaded copies of the source file,
+  now properly deletes processed files and always makes progress. 
+  (Previously it could stall, reprocessing the oldest file each time.)
 
 - `--debug=2` now shows clearer output when reading a CSV rules file.
 
@@ -245,15 +239,11 @@ The `repl` and `run` commands have been improved since 1.99.3. In summary:
 
 - `setup` no longer reports unused commodity aliases as undeclared commodities; it's now consistent with `check commodities`.
 
-- `balance --budget` reports no longer lose their goals when the query
-  includes terms describing transactions or postings, such as
-  `status:`, `desc:` or `--cleared` [#2545]. Budget goal transactions
-  are generated, with synthetic status, code and description, so such
-  terms matched no goals at all and the goal and performance
-  percentage columns silently vanished. Now only the terms that
-  meaningfully select goals (account, account type, depth, date,
-  commodity) are applied to them; eg `bal --budget --cleared` compares
-  cleared spending against the full goals.
+- `balance --budget` reports no longer lose their goals when the command
+  includes transaction or posting filters, such as `status:`, `desc:`
+  or `--cleared` [#2545]. Instead only the attributes that meaningfully select goals
+  (account, account type, depth, date, commodity) affect them.
+  So now, `bal --budget --cleared` compares cleared spending against the full goals.
 
 - `-X`/`--value` with a commodity to which no conversion price can be
   found now prints a warning, instead of silently having no effect. An
@@ -278,7 +268,16 @@ The `repl` and `run` commands have been improved since 1.99.3. In summary:
   humans to read and troubleshoot; rendering in browsers is unchanged.
   [#2326]
 
-- HTML output now prevents wrapping within dates and individual commodity amounts, by default. Each amount is wrapped in a `span` with an "amount" class, date cells are marked with a "date" class. `aregister` gets the same builtin table styles as the other reports. A `hledger.css` file now overrides the builtin styles (previously the builtin styles took precedence), and an example `hledger.css` file  provided in the repo.
+- `aregister`'s HTML output now has the same builtin table styles as the other reports.
+
+- HTML output now prevents wrapping within all dates and individual commodity amounts, by default.
+  (Multi-commodity amounts can still wrap between the amounts.)
+  Each amount is wrapped in a `span` with an "amount" class, and date cells are marked with a "date" class,
+  for easier styling.
+
+- In HTML output, a `hledger.css` file now overrides the builtin styles
+  (previously the builtin styles took precedence).
+  An example `hledger.css` file is provided in the repo.
 
 - In `print`'s beancount output, underscores in account names are now
   converted to dashes rather than hex-encoded, giving cleaner names
@@ -306,9 +305,10 @@ The `repl` and `run` commands have been improved since 1.99.3. In summary:
   (USD)`). Previously it showed only the code, which looked like a
   journal commodity but wasn't usable in queries or `-X`.
 
-- The aeson version bound has been relaxed to `>=1 && <2.4`, easing
-  installation while the ecosystem catches up. (hledger's own stack
-  and cabal configs still select aeson 2.3, avoiding HSEC-2026-0007.)
+- The aeson (JSON library) lower bound has been relaxed from 2.3 to
+  2.2.5.1, the oldest version not vulnerable to the HSEC-2026-0007
+  denial of service, easing installation while the ecosystem catches
+  up with newer aeson.
 
 ## Docs
 

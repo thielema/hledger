@@ -27,10 +27,11 @@ Fixes
   Now --watch mode has no extra memory/CPU cost, and can be used freely with large journals,
   or enabled by default in your config file.
 
-- Errors raised as exceptions during a journal reload - eg a CSV
-  conversion error, or a watched file momentarily missing while an
-  editor saves it - no longer crash hledger-ui. They are now shown on
-  the error screen and recovered from, like journal parse errors.
+- hledger-ui gracefully handles more reloading failures,
+  such as failure caused by a changed CSV file or rules file,
+  or by a file momentarily removed when your editor saves it.
+  Instead of quitting, it now shows these on the error screen,
+  allowing recovery.
 
 Improvements
 
