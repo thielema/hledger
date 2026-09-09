@@ -56,20 +56,20 @@ For package-specific changes, see the hledger package changelogs.
 
 ## Tools/infrastructure
 
-- skills: add release skill for assisting hledger releases
-- .gitignore, .ignore: stop tracking site/ under git entirely, but keep site/src/*.md (and the old manuals) visible to ripgrep/VS Code search via a new .ignore file
+- Changelog tooling improved: `just changelogs` now pre-cleans changelogs items (routine commits dropped, AI usage lines stripped, breaking changes lifted to the top, possible duplicates flagged); a stale resume point (eg after a rebase) is detected and reported with its fix; and a new `just changelogs-check` verifies resume points, issue links and leftover draft markers. Changelog section headings are simplified: Security, then Breaking changes, then topic or generic headings as needed.
 - CI: binaries-mac-arm64-hx, an experimental workflow using the hx build tool (an alternative to stack/cabal, for easier reproducible builds); cache the official cabal binary; build with -O1
 - CI: bump most third-party actions to their latest major version; binaries-mac-arm64 bumped to macos-26-arm64; binaries-mac-x64 lists dependency versions like the others
-- hledger-web: the favicon's vector sources and the standard-library script that regenerates the .ico from them are now committed, so the mark can be edited rather than redrawn
-- skills: the changelogs skill was missing its YAML frontmatter, so it had no useful name or description to be matched against
-- Changelog tooling improved: `just changelogs` drafts are now pre-cleaned (routine commits dropped, AI usage lines stripped, breaking changes lifted to the top, possible duplicates flagged); a stale resume point (eg after a rebase) is detected and reported with its fix; and a new `just changelogs-check` verifies resume points, issue links and leftover draft markers. Changelog section headings are simplified: Breaking changes first, then topic or generic headings as suitable.
 - CI: the addon functional tests now run again (they had been accidentally excluded since 2017)
 - CI: the hledger-web browser tests now run on pull requests, as a non-blocking check
+- .gitignore, .ignore: stop tracking site/ under git entirely, but keep site/src/*.md (and the old manuals) visible to ripgrep/VS Code search via a new .ignore file
 - hledger-web: added an on-demand Playwright browser test suite covering the web UI's client-side behaviour, runnable with `just browsertest`
-- Release automation improved: `just ghrel` now assembles the github release on github (no local round trip for binaries) and creates it as a draft, with `just ghrel-publish` making it public after review; `just installpage` automates Install page version bumps; `just generaloptionshelp` automates updating the general options help in the manuals; and the relbranch, reltags-push and ghbin-download recipes are more robust
+- hledger-web: the favicon's vector sources and the standard-library script that regenerates the .ico from them are now committed, so the mark can be edited rather than redrawn
 - Justfile: various `just ai-*` AI-usage-reporting recipe tweaks; `just holdings-*` recipes for trying the holdings command against hledger/beancount/rledger example data; `just installrel`, `just contribs*` fixes; gitignore .hx; experimental hx build tool config
+- Release automation improved: `just ghrel` now assembles the github release on github (no local round trip for binaries) and creates it as a draft, with `just ghrel-publish` making it public after review; `just installpage` automates Install page version bumps; `just generaloptionshelp` automates updating the general options help in the manuals; and the relbranch, reltags-push and ghbin-download recipes are more robust
 - Shake: changelogs: capitalise multi-line items' first lines and give them a trailing period, so they read as complete sentences; single-line items are left as written
 - skills: add binary-badges skill, checking/refreshing the version badges in site/src/install.md; fix its red badge colour to match repology's hex
+- skills: add release skill for assisting hledger releases
+- skills: the changelogs skill was missing its YAML frontmatter, so it had no useful name or description to be matched against
 - stack/cabal: ensure haskeline 0.8.4.1 is used, fixing the Windows build again [#2410]
 - tools/aicommits: new script (plus `just ai-commits*` recipes) to report AI usage parsed from commit messages' "AI usage:" trailers
 - tools/skills: add a credits skill documenting the CREDITS.md refresh process

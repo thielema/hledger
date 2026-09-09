@@ -5,7 +5,9 @@
 | |_| | |
  \__,_|_|
 
-Section headings: "Breaking changes" first if any; then topic headings,
+Item order: security fixes first, then breaking changes, then the rest.
+Section headings: "Security" first if any, then "Breaking changes"
+if any; then topic headings,
 or a suitable generic heading (eg Fixes, Improvements), as needed.
 
 -->
@@ -18,20 +20,20 @@ See also the hledger changelog.
 
 Fixes
 
-- Pressing DOWN at the last list item, or pressing C-l (recenter) when
-  near the end of a list, no longer scroll into blank padding space;
-  instead they keep as many items as possible on screen.
-  ([#2278], [#2593]) (Juan Wajnerman)
-
-- Fixed a long-standing memory leak (and CPU/GC thrashing) when reloading with --watch [#1825].
-  Now --watch mode has no extra memory/CPU cost, and can be used freely with large journals,
-  or enabled by default in your config file.
+- Fixed a long-standing memory leak (and background CPU use) when reloading with --watch [#1825].
+  Now --watch mode has no extra memory/CPU cost, and can be used freely with large journals.
+  It's safe (and recommended!) to enable by default, eg in your `~/.hledger.conf` file
+  add `[ui] --watch`.
 
 - hledger-ui gracefully handles more reloading failures,
   such as failure caused by a changed CSV file or rules file,
   or by a file momentarily removed when your editor saves it.
-  Instead of quitting, it now shows these on the error screen,
-  allowing recovery.
+  Instead of quitting, it now shows the error screen, allowing recovery.
+
+- Pressing DOWN at the last list item, or pressing C-l (recenter) when
+  near the end of a list, no longer scrolls into blank padding space;
+  hledger-ui now keeps as many items as possible on screen.
+  ([#2278], [#2593], Juan Wajnerman)
 
 Improvements
 
@@ -39,21 +41,21 @@ Improvements
   (ie, it toggles the CLI's --lots flag). It resets to the startup
   state if ESC is pressed.
 
+- Changes to CSV rules files now trigger a reload, like changes to data
+  files (see hledger changelog).
+
+- Warnings (eg the CSV data warnings, which could appear on every
+  --watch reload) no longer scroll and disrupt the display; instead
+  they are shown on the bottom line, until the next key press.
+  Also the screen is now fully repainted after a reload,
+  repairing any other stray terminal output.
+
 - The transaction screen now refreshes in place, when there's a reload
   [#1825]. Previously you had to exit and re-enter it.
 
 - Error screen reloading is less flickery and more robust.
 
 - Add the -? and --webman flags; rename --tldr to --examples (see hledger changelog).
-
-- Warnings (eg the CSV data warnings, which could appear on every
-  --watch reload) no longer scroll and corrupt the display. They are
-  now shown on the bottom line in the warning colour, until the next
-  key press; and the screen is fully repainted after each reload,
-  repairing any disruption from other stray terminal output.
-
-- Changes to CSV rules files now trigger a reload, like changes to data
-  files (see hledger changelog).
 
 [#1825]: https://github.com/plaintextaccounting/hledger/issues/1825
 [#2278]: https://github.com/plaintextaccounting/hledger/issues/2278

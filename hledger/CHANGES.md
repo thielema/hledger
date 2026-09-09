@@ -16,15 +16,10 @@ User-visible changes in the hledger command line tool and library.
 
 - In journal format, a single tab is also now accepted as the separator between account and amount, for improved compatibility with Ledger. This also means account names can no longer contain tab characters.
 
-- In CSV rules, when a directive like `date-format` or `separator` is declared more than once, the last declaration now takes effect, as the manual describes, rather than the first. (Except for `skip`, where the first declaration still wins, also as the manual describes.) This makes it possible to override an included rules file's directives by writing new declarations after the `include` line. If any of your rules files relied on the old undocumented behaviour, declaring a directive before an `include` to override the included file, you should move that declaration below the `include`. [#2539]
-
-- Config files can no longer specify the command to run via a bare first word in the general section. Since config files can now define command aliases (which can run shell commands), letting a config file also select the default command was too risky. The command to run must now always be given on the command line.
-
-- The `--tldr` flag has been renamed to `--examples`.
-
-- `stats`'s `-1` flag has been renamed to `--oneline`, consistent with `print --oneline` (and git's `log --oneline`).
-
-- The `demo` command, which played asciinema recordings, has been removed.
+- In CSV rules, when a directive like `date-format` or `separator` is declared more than once, the last declaration now takes precedence, as the manual describes, rather than the first. 
+  (Except for `skip`, where the first declaration still wins, also as the manual describes.) 
+  This makes it possible to override an included rules file's directives by writing new declarations after the `include` line. 
+  If any of your rules files relied on the old undocumented behaviour, declaring a directive before an `include` to override the included file, you should move that declaration below the `include`. [#2539]
 
 - The `accounts` command now more strictly respects transaction-specific query terms
   such as `date:`, `status:`, `desc:`; these prevent matching a declared
@@ -46,9 +41,21 @@ User-visible changes in the hledger command line tool and library.
   Also aregister with these queries now behaves more consistently,
   showing the same transactions as print would.
 
+- Config files can no longer specify the command to run via a bare first word in the general section. 
+  Since config files can now define command aliases (which can run shell commands), letting a config file also select the default command was too risky. 
+  The command to run must now always be given on the command line.
+
+- The `demo` command, which played asciinema recordings, has been removed.
+
+- The `--tldr` flag has been renamed to `--examples`.
+
+- `stats`'s `-1` flag has been renamed to `--oneline`.
+
 ## Config files
 
-- Command aliases: you can now define custom commands by adding `NAME = COMMAND...` to the `[alias]` section of your config file. COMMAND can be a builtin command, an addon command, another alias, or a shell command prefixed with `!`, and can be continued on multiple indented lines. (Shell commands will run only from your user config file or one specified explicitly with `--conf`.)
+- Command aliases: you can now define custom commands by adding `NAME = COMMAND...` to the `[alias]` section of your config file.
+  COMMAND can be a builtin command, an addon command, another alias, or a shell command prefixed with `!`, and can be continued on multiple indented lines.
+  (Shell commands will run only from your user config file, or one specified explicitly with `--conf`.)
 
 - In config files, a `#` inside single or double quotes is no longer misparsed as a comment start.
 
@@ -66,23 +73,14 @@ User-visible changes in the hledger command line tool and library.
   - Colour output now works in terminals where the background lightness can't be detected, eg inside Emacs (a light background will be assumed).
   - In terminals without truecolor support, eg Emacs vterm or a stripped `COLORTERM` over ssh/tmux, we now downgrade to the nearest xterm 256-colour.
 
-- Balance assertion failure messages show a better troubleshooting command:
-  - regex metacharacters (eg the curly braces in `{2026-07-12, 2.5 €}`) will be escaped
-  - `-E` is added, so zero-amount postings will also be shown
-  - instead of `-I`, the more precise `--ignore-assertions` is used.
-
-- `acc`, `comm`, `desc` are now official short spellings for the `accounts`, `commodities`, and `descriptions` commands.
-
-- Abbreviating `print`'s `--locations` flag as `--loc` now works as expected.
-
-- Command line arguments now reach addon commands exactly as you typed
-  them, fixing cases where apostrophes, empty strings or other special
+- Command line arguments are now passed to addon commands exactly as you
+  typed them, fixing cases where apostrophes, empty strings or other special
   characters were mangled or silently dropped (Kevin F. Konrad, [#2696]).
-  Except on Windows, where addons are still run through the shell, so
+  (Except on Windows, where addons are still run through the shell, so
   that .bat and other script addons keep working; there, arguments can
-  still be mangled. Quoting is also improved on the other paths which
-  still build a shell command line: addons run from `run` and `repl`,
-  and `!` shell aliases (Arthur Cinader).
+  still be mangled.)
+  Quoting is also improved on the other paths which still build a shell command line:
+  addons run from `run` and `repl`, and `!` shell aliases (Arthur Cinader).
 
 - Options written after `--` are passed through to an addon command rather than consumed by hledger;
   additional `--` arguments are also passed through;
@@ -96,7 +94,16 @@ User-visible changes in the hledger command line tool and library.
   addon given `--sort` receives it.
   (Kevin F. Konrad, [#2696])
 
-## Help & docs
+- Abbreviating `print`'s `--locations` flag, eg `print --loc`, now works as expected.
+
+- Balance assertion failure messages show a better troubleshooting command:
+  - regex metacharacters (eg the curly braces in `{2026-07-12, 2.5 €}`) will be escaped
+  - `-E` is added, so zero-amount postings will also be shown
+  - instead of `-I`, the more precise `--ignore-assertions` is used.
+
+- `acc`, `comm`, `desc` are now official short spellings for the `accounts`, `commodities`, and `descriptions` commands.
+
+## Help
 
 - `help` has been reorganised and is now an entry point for all hledger docs.
 
@@ -132,11 +139,11 @@ User-visible changes in the hledger command line tool and library.
 
 ## Data entry
 
-- Numbers can now also use `_` or `'` as digit group marks. (Kevin F. Konrad, [#273], [#1489])
-
 - `add` will no longer suggest default amounts having ambiguous digit group marks
   (such as `1.000` or `1,000`), which if accepted could be misparsed later. Instead it will
   add a trailing decimal mark to disambiguate (eg `1.000,` or `1,000.`). [#2656]
+
+- Numbers can now also use `_` or `'` as digit group marks. (Kevin F. Konrad, [#273], [#1489])
 
 ## Data import
 
@@ -163,6 +170,10 @@ User-visible changes in the hledger command line tool and library.
   commands (`source PATTERN | cmd`) still fail hard, since they
   operate on a file that was actually found.
 
+- `import` with `archive` enabled, if there are multiple downloaded copies of the source file,
+  now properly deletes processed files and always makes progress. 
+  (Previously it could stall, reprocessing the oldest file each time.)
+
 - `import --dry-run` no longer wrongly archives data files when the flag
   is given abbreviated, eg as `import --dr`. Also, `import`'s
   special file handling - preferring the oldest file matching a
@@ -170,10 +181,6 @@ User-visible changes in the hledger command line tool and library.
   when `import` itself reads its data files; previously any command
   could trigger it if the word "import" happened to appear in its
   arguments.
-
-- `import` with `archive` enabled, if there are multiple downloaded copies of the source file,
-  now properly deletes processed files and always makes progress. 
-  (Previously it could stall, reprocessing the oldest file each time.)
 
 - `--debug=2` now shows clearer output when reading a CSV rules file.
 
@@ -196,8 +203,7 @@ Lot tracking has been reworked extensively since 1.99.3. In summary:
 - `close` no longer generates a spurious zero posting for some emptied accounts, and `close --lots` output is more readable (lot subaccount balances no longer show redundant costs).
 
 - A new `holdings` report shows your lot-tracked investment holdings, per account and commodity or per lot, with units, cost basis, current price and market value, portfolio weight, unrealised and realised gains, and XIRR annualised return.
-
-- `holdings` now values each lot in its own cost commodity, so Value, Weight, unrealised gain and XIRR no longer change or disappear when lots with different cost commodities are grouped into rows (by `--depth`, `--pivot`, tree mode etc). A row aggregating lots with different value commodities shows multiple amounts, like the Cost column; `-X COMM` gives a single-currency view as before.
+  Multiple cost and value commodities are supported, and displayed separately, or as a single-currency view with `-X COMM`.
 
 ## REPL & run
 
@@ -368,8 +374,8 @@ The `repl` and `run` commands have been improved since 1.99.3. In summary:
 [#2696]: https://github.com/plaintextaccounting/hledger/issues/2696
 [#2714]: https://github.com/plaintextaccounting/hledger/issues/2714
 
-# 1.52.2 2026-08-24
 
+# 1.52.2 2026-08-24
 
 
 # 1.99.3 2026-06-24

@@ -5,7 +5,9 @@
 | | | |_) |
 |_|_|_.__/
 
-Section headings: "Breaking changes" first if any; then topic headings,
+Item order: security fixes first, then breaking changes, then the rest.
+Section headings: "Security" first if any, then "Breaking changes"
+if any; then topic headings,
 or a suitable generic heading (eg Fixes, Improvements), as needed.
 
 -->

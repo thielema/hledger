@@ -5,7 +5,9 @@ __      _____| |__
  \ V  V /  __/ |_) |
   \_/\_/ \___|_.__/
 
-Section headings: "Breaking changes" first if any; then topic headings,
+Item order: security fixes first, then breaking changes, then the rest.
+Section headings: "Security" first if any, then "Breaking changes"
+if any; then topic headings,
 or a suitable generic heading (eg Fixes, Improvements), as needed.
 
 -->
@@ -16,7 +18,7 @@ See also the hledger changelog.
 
 # ac374ff8
 
-Fixes
+Security
 
 - An XSS (cross-site scripting) vulnerability has been fixed in the
   add form's autocomplete. Journal data from an untrusted source could
@@ -34,33 +36,48 @@ Fixes
 - A newline submitted by a user in a transaction's description, code or
   account name is now removed, so the user can't inject an include directive
   to read arbitrary files accessible to the hledger-web server.
-  ([#2704], advisory GHSA-vq7r-8w52-jv84)
+  (Simon Michael, [#2704], advisory GHSA-vq7r-8w52-jv84)
+
+- hledger-web now sends a Content-Security-Policy header with every
+  page [#2703] (Arthur Cinader). This tells your browser to load
+  scripts, styles, images and fonts only from hledger-web itself, and
+  to run only hledger-web's own scripts - so if anything script-like
+  ever reached a page, eg through data in your journal, the browser
+  would refuse to run it and report it in the console. In
+  normal use you should notice no difference.
+
+- hledger-web now sends the `X-Frame-Options: SAMEORIGIN` and
+  `X-Content-Type-Options: nosniff` security headers on every
+  response, so other sites can't frame its pages for clickjacking, and
+  browsers won't second-guess content types. Static files and error
+  pages get them too. (Arthur Cinader)
+
+- The unused Google Analytics hook has been removed (it was always disabled;
+  no page ever loaded analytics).
+  (Simon Michael)
+
+Fixes
 
 - The upload form now shows the name of the chosen file. It never did
   before, because of an escaping bug that disabled its handler.
   (Arthur Cinader)
 
-- /favicon.ico and /robots.txt no longer return 404 unless hledger-web
-  happens to be run from its source directory; they are now built into
+- /favicon.ico and /robots.txt no longer return 404 when hledger-web
+  is run outside its source directory; they are now built into
   the executable, like the other static files. robots.txt now also asks
   crawlers not to index the site. (Arthur Cinader)
+
+- The register chart no longer disappears when a commodity symbol
+  contains a backslash or a double quote. Its legend has also moved
+  out of the chart, where it could cover the start of the balance
+  line, up to the title line above it.
+  (Arthur Cinader)
+
+Improvements
 
 - hledger-web now has its own favicon: a gold coin struck with an equals
   sign, in the palette of the hledger coin logo. It replaces the Yesod
   scaffold's blue "y". (Arthur Cinader)
-
-Improvements
-
-- The account sidebar now keeps its scroll position when you click an
-  account or navigate [#2679] (Arthur Cinader). The sidebar and the
-  main content also scroll independently, on wider screens.
-
-- --port 0 lets the OS choose a free port [#2559] (Arthur Cinader).
-  The chosen port is reported in the startup message and used in the
-  default base url, so scripts can discover it. Supported with --serve
-  and --serve-api.
-
-- Add the -? and --webman flags; rename --tldr to --examples (see hledger changelog).
 
 - The web UI's javascript has been modernised, replacing five vendored
   libraries with standard browser features (Arthur Cinader, [#2702]):
@@ -80,11 +97,33 @@ Improvements
   shadow, dimmed backdrop - and open near the top of the window as
   before.
 
-- hledger-web now sends the `X-Frame-Options: SAMEORIGIN` and
-  `X-Content-Type-Options: nosniff` security headers on every
-  response, so other sites can't frame its pages for clickjacking, and
-  browsers won't second-guess content types. Static files and error
-  pages get them too. (Arthur Cinader)
+- The journal and register tables have been tidied up (Arthur Cinader).
+  Digits in amounts are shown with equal width, so numbers line up neatly
+  in a column; column headers are small and muted rather than bold black;
+  and the zebra striping is replaced by a faint highlight on the row
+  under the pointer. [#2718]
+
+- The account sidebar now keeps its scroll position when you click an
+  account or navigate [#2679] (Arthur Cinader). The sidebar and the
+  main content also scroll independently, on wider screens.
+
+- Add the -? and --webman flags; rename --tldr to --examples (see hledger changelog).
+
+- The default browse mode still opens the browser and exits two
+  minutes after its last page is closed, for cleanup and security;
+  but this is now done by a new implementation which fits better
+  with the Content Security Policy. The new launcher (using the Win32 API
+  on Windows, `open` on mac, `xdg-open` elsewhere) now also works on Windows
+  for hledger's other browser-opening flags, such as --webman. And when
+  hledger-web exits this way, it logs an informative message.
+  (Arthur Cinader, [#2722])
+
+- --port 0 lets the OS choose a free port [#2559] (Arthur Cinader).
+  The chosen port is reported in the startup message and used in the
+  default base url, so scripts can discover it. 
+
+- Changes to CSV rules files now trigger a reload, like changes to data
+  files (see hledger changelog).
 
 - hledger-web no longer depends on the yesod-static and hjsmin
   packages for serving its css, js and font files. This is
@@ -98,40 +137,6 @@ Improvements
   oldest version not vulnerable to the HSEC-2026-0007 denial of
   service, easing installation while the ecosystem catches up with
   newer aeson.
-
-- hledger-web now sends a Content-Security-Policy header with every
-  page [#2703] (Arthur Cinader). This tells your browser to load
-  scripts, styles, images and fonts only from hledger-web itself, and
-  to run only hledger-web's own scripts - so if anything script-like
-  ever reached a page, eg through data in your journal, the browser
-  would refuse to run it and report it in the console. In
-  normal use you should notice no difference.
-
-- The default browse mode still opens the browser and exits two
-  minutes after its last page is closed, for cleanup and security;
-  but this is now done by a new implementation which fits better
-  with the Content Security Policy. The new launcher (using the Win32 API
-  on Windows, `open` on mac, `xdg-open` elsewhere) now also works on Windows
-  for hledger's other browser-opening flags, such as --webman. And when
-  hledger-web exits this way, it logs an informative message.
-  (Arthur Cinader, [#2722])
-
-- The register chart no longer disappears when a commodity symbol
-  contains a backslash or a double quote. Its legend has also moved
-  out of the chart, where it could cover the start of the balance
-  line, up to the title line above it.
-
-- The journal and register tables have been tidied up (Arthur Cinader).
-  Digits in amounts are shown with equal width, so numbers line up neatly
-  in a column; column headers are small and muted rather than bold black;
-  and the zebra striping is replaced by a faint highlight on the row
-  under the pointer. [#2718]
-
-- The unused Google Analytics hook has been removed (it was disabled;
-  no page ever loaded analytics).
-
-- Changes to CSV rules files now trigger a reload, like changes to data
-  files (see hledger changelog).
 
 [#2559]: https://github.com/plaintextaccounting/hledger/issues/2559
 [#2679]: https://github.com/plaintextaccounting/hledger/issues/2679
