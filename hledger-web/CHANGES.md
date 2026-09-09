@@ -109,13 +109,10 @@ Improvements
 
 - Add the -? and --webman flags; rename --tldr to --examples (see hledger changelog).
 
-- The default browse mode still opens the browser and exits two
-  minutes after its last page is closed, for cleanup and security;
-  but this is now done by a new implementation which fits better
-  with the Content Security Policy. The new launcher (using the Win32 API
-  on Windows, `open` on mac, `xdg-open` elsewhere) now also works on Windows
-  for hledger's other browser-opening flags, such as --webman. And when
-  hledger-web exits this way, it logs an informative message.
+- hledger-web still opens the browser and exits two minutes after
+  its last page is closed, by default, for cleanup and security;
+  this is now done by a new implementation which fits better
+  with the Content Security Policy.
   (Arthur Cinader, [#2722])
 
 - --port 0 lets the OS choose a free port [#2559] (Arthur Cinader).
