@@ -14,7 +14,7 @@ module Hledger.Cli.CompoundBalanceCommand (
  ,compoundBalanceCommand
 ) where
 
-import Control.Monad (guard, unless)
+import Control.Monad (guard, unless, void)
 import Data.Bifunctor (second)
 import Data.Foldable (traverse_)
 import Data.Function ((&))
@@ -392,22 +392,21 @@ compoundBalanceReportAsSpreadsheet fmt accountLabel maybeBlank ropts cbr =
     dataHeaders =
       (guard (layout_ ropts /= LayoutTidy) >>) $
       map
-        (dataHeaderCell .
-            reportPeriodName
-                (period_titles_ ropts) (balanceaccum_ ropts) colspans)
+        (reportPeriodName
+            (period_titles_ ropts) (balanceaccum_ ropts) colspans)
         (if not (summary_only_ ropts) then colspans else []) ++
-      (guard (multiBalanceHasTotalsColumn ropts) >> [dataHeaderCell "Total"]) ++
-      (guard (average_   ropts) >> [dataHeaderCell "Average"])
-    dataHeaderCell label =
-      (Spr.headerCell label) {Spr.cellSpan = Spr.SpanHorizontal numSubColumns}
-    headerrow = leadingHeaders ++ dataHeaders
+      (guard (multiBalanceHasTotalsColumn ropts) >> ["Total"]) ++
+      (guard (average_ ropts) >> ["Average"])
+    headerrow =
+      leadingHeaders ++
+      concatMap (Spr.horizontalSpan subColumns . Spr.headerCell) dataHeaders
 
     blankrow =
       fmap (Spr.horizontalSpan headerrow . Spr.defaultCell) maybeBlank
-    numSubColumns =
+    subColumns =
         case layout_ ropts of
-            LayoutBareWide -> length allCommodities
-            _ -> 1
+            LayoutBareWide -> void allCommodities
+            _ -> [()]
     allCommodities = allCommoditiesFromSubreports subreports
 
     -- Make rows for a subreport: its title row, not the headings row,
