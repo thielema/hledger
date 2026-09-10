@@ -75,7 +75,7 @@ For package-specific changes, see the hledger package changelogs.
 - tools/skills: add a credits skill documenting the CREDITS.md refresh process
 
 
-[#2410]: https://github.com/simonmichael/hledger/issues/2410
+[#2410]: https://github.com/hledgerorg/hledger/issues/2410
 [#2528]: https://github.com/hledgerorg/hledger/issues/2528
 [#2681]: https://github.com/hledgerorg/hledger/issues/2681
 [#2707]: https://github.com/hledgerorg/hledger/issues/2707
@@ -138,9 +138,9 @@ used per month:
 - gitignore updates
 
 
-[#2410]: https://github.com/simonmichael/hledger/issues/2410
-[#2636]: https://github.com/simonmichael/hledger/issues/2636
-[#2642]: https://github.com/simonmichael/hledger/issues/2642
+[#2410]: https://github.com/hledgerorg/hledger/issues/2410
+[#2636]: https://github.com/hledgerorg/hledger/issues/2636
+[#2642]: https://github.com/hledgerorg/hledger/issues/2642
 
 
 # 1.99.2 2026-04-28
@@ -218,10 +218,10 @@ Infrastructure/tools
   - ensure linux binary uses fixed haskeline [#2410]
   - testbin: update, use testlatest tag / testbin branch
 
-[#2410]: https://github.com/simonmichael/hledger/issues/2410
-[#2497]: https://github.com/simonmichael/hledger/issues/2497
-[#2527]: https://github.com/simonmichael/hledger/issues/2527
-[#2528]: https://github.com/simonmichael/hledger/issues/2528
+[#2410]: https://github.com/hledgerorg/hledger/issues/2410
+[#2497]: https://github.com/hledgerorg/hledger/issues/2497
+[#2527]: https://github.com/hledgerorg/hledger/issues/2527
+[#2528]: https://github.com/hledgerorg/hledger/issues/2528
 
 
 # 1.51.2 2026-01-08
@@ -569,7 +569,7 @@ Scripts/addons
 
 - bin/hledger-simplebal: Fix shellcheck warnings. (Colin Dean)
 
-[#2159]: https://github.com/simonmichael/hledger/issues/2159
+[#2159]: https://github.com/hledgerorg/hledger/issues/2159
 
 # 1.32.2 2023-12-31
 
@@ -893,7 +893,7 @@ Docs
 
 - Clearer sponsoring info and more complete sponsor lists on website and README.
 
-- The new <https://github.com/simonmichael/hledger_finance> repo
+- The new <https://github.com/hledgerorg/hledger_finance> repo
   keeps track of our public finances (on Open Collective, Liberapay etc.)
 
 Examples
@@ -1055,8 +1055,8 @@ Tools/process:
 
 - Our doctests are disabled with GHC 9 for now to work around an
   upstream bug. 
-  ([#1503](https://github.com/simonmichael/hledger/issues/1503), 
-  [#1615](https://github.com/simonmichael/hledger/issues/1615))
+  ([#1503](https://github.com/hledgerorg/hledger/issues/1503), 
+  [#1615](https://github.com/hledgerorg/hledger/issues/1615))
 
 - bin/commitlint is a new tool for hledger developers which checks and
   describes new commit conventions which simplify maintenance of
@@ -1065,7 +1065,7 @@ Tools/process:
   (`ln -sf ../../bin/commitling .git/hooks/commit-msg`), 
   and is also run by our CI workflows to check pull requests.
   <https://hledger.org/CONTRIBUTING.html#commit-messages>,
-  <https://github.com/simonmichael/hledger/blob/main/bin/commitlint>
+  <https://github.com/hledgerorg/hledger/blob/main/bin/commitlint>
   (#1602)
 
 # 1.22 2021-07-03

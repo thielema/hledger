@@ -18,7 +18,7 @@ These binaries have the following changes since the 2.0pre1 release: https://git
 
 If you have [eget](https://github.com/zyedidia/eget), that's a convenient way to download the right binaries for your machine:
 ```
-eget simonmichael/hledger --pre-release --all
+eget hledgerorg/hledger --pre-release --all
 ```
 Otherwise:
 

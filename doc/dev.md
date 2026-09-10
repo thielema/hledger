@@ -38,7 +38,7 @@ and then symlinked into the hledger_site repo for rendering on hledger.org.
 
 See also:
 
-- <https://deepwiki.com/simonmichael/hledger> - an AI-generated presentation of hledger's user and dev docs.
+- <https://deepwiki.com/hledgerorg/hledger> - an AI-generated presentation of hledger's user and dev docs.
   Use with caution, but they look rather useful, as an alternate overview / map.
   Also you can ask it questions.
 

@@ -7,7 +7,7 @@
    at the end, pointing to the corresponding github issues.
    Removes any pre-existing #NUM link reference definitions from the region.
    This is useful eg for maintaining link reference definitions in release notes.
-   XXX Currently hardcoded for the simonmichael/hledger repo.
+   XXX Currently hardcoded for the hledgerorg/hledger repo.
    XXX Does not work if parts of region are collapsed as with TAB in markdown-mode.
    "
   (interactive "r")

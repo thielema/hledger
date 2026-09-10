@@ -484,10 +484,10 @@ A local developer build of unreleased code. This is typically in `main` or a dev
 The `hledger` git repository, containing the hledger software, reference manuals, and developer docs. <https://github.com/hledgerorg/hledger>
 
 **site repo**\
-The `hledger_website` git repository, containing most of the hledger website which appears at <https://hledger.org>. Usually checked out under the hledger repo as `site/`. <https://github.com/simonmichael/hledger_website>
+The `hledger_website` git repository, containing most of the hledger website which appears at <https://hledger.org>. Usually checked out under the hledger repo as `site/`. <https://github.com/hledgerorg/hledger_website>
 
 **finance repo**\
-The `hledger_finance` git repository, containing the hledger project's financial ledger. Usually checked out under the hledger repo as `finance/`. <https://github.com/simonmichael/hledger_finance>
+The `hledger_finance` git repository, containing the hledger project's financial ledger. Usually checked out under the hledger repo as `finance/`. <https://github.com/hledgerorg/hledger_finance>
 
 **main**\
 The branch named `main` in the hledger repo; the main line of hledger development. Pull requests are usually relative to this.

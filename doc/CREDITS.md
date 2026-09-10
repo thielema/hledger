@@ -230,4 +230,4 @@ table td:first-child h3 { margin:0; }
 | <!-- 1 -->      zieone                         | FreeBSD resolver update                                                                                                                                                                    |
 
 <br>
-<img src="https://contrib.rocks/image?repo=simonmichael/hledger&max=9999" />
+<img src="https://contrib.rocks/image?repo=hledgerorg/hledger&max=9999" />

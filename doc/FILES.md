@@ -11,8 +11,8 @@ A full working copy of the official hledger [repos](REPOS.md)
 is best laid out like this (manually; we currently don't use git submodules):
 <pre>
 src/hledger/ - git clone https://github.com/hledgerorg/hledger; cd hledger
-  site/      - git clone https://github.com/simonmichael/hledger_site site
-  finance/   - git clone https://github.com/simonmichael/hledger_finance finance
+  site/      - git clone https://github.com/hledgerorg/hledger_site site
+  finance/   - git clone https://github.com/hledgerorg/hledger_finance finance
 </pre>
 
 You don't need to clone all of these repos unless you are working in all of those areas.
@@ -462,9 +462,9 @@ src/hledger/
 
 These help configure the website.
 
-- [book.toml](https://github.com/simonmichael/hledger_site/blob/main/book.toml) is the main config file for mdbook.
+- [book.toml](https://github.com/hledgerorg/hledger_site/blob/main/book.toml) is the main config file for mdbook.
 
-- [src/SUMMARY.md](https://github.com/simonmichael/hledger_site/blob/main/src/SUMMARY.md)
+- [src/SUMMARY.md](https://github.com/hledgerorg/hledger_site/blob/main/src/SUMMARY.md)
   defines the site's pages and which ones appear in the sidebar
   (except for old manual versions; those are rendered separately).
 

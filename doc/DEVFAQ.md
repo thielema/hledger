@@ -20,8 +20,8 @@ including required C libraries, other build methods, and troubleshooting.
 
 There are three official repos:
 - <https://github.com/hledgerorg/hledger> - the main hledger repo, for hledger, hledger-ui and hledger-web. Shortcut url: <https://code.hledger.org>
-- <https://github.com/simonmichael/hledger_site> - the hledger.org website
-- <https://github.com/simonmichael/hledger_finance> - the hledger project's financial ledger
+- <https://github.com/hledgerorg/hledger_site> - the hledger.org website
+- <https://github.com/hledgerorg/hledger_finance> - the hledger project's financial ledger
 
 And third-party add-ons and tools (hledger-iadd, hledger-utils, full fledged hledger, hledger-flow, etc.) have their own repos.
 

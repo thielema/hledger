@@ -10788,7 +10788,7 @@ Advanced report commands
      Examples:
 
      * Using   roi   to   compute   total   return   of  investment  in  stocks:
-       https://github.com/simonmichael/hledger/blob/main/examples/invest-
+       https://github.com/hledgerorg/hledger/blob/main/examples/invest-
        ing/roi-unrealised.ledger
 
      * Cookbook > Return on Investment: https://hledger.org/roi.html
@@ -11414,7 +11414,7 @@ Data generation commands
 
      See also:
 
-     https://github.com/simonmichael/hledger/issues/99
+     https://github.com/hledgerorg/hledger/issues/99
 
    rewrite vs. print --auto
      This command predates print --auto, and currently does much the same thing,

@@ -5,8 +5,8 @@ This is the home for the hledger project's finances. (Shortcut: [hledger.org/fin
 ## Reports
 
 We log the hledger project's financial transactions and generate reports in the 
-[hledger_finance repo](https://github.com/simonmichael/hledger_finance).
-There you can review our [financial reports](https://github.com/simonmichael/hledger_finance?tab=readme-ov-file#reports).
+[hledger_finance repo](https://github.com/hledgerorg/hledger_finance).
+There you can review our [financial reports](https://github.com/hledgerorg/hledger_finance?tab=readme-ov-file#reports).
 
 ## Money and the hledger project
 

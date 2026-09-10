@@ -2552,8 +2552,8 @@ Doug Goldstein (@cardoe).
 [#2387]: https://github.com/hledgerorg/hledger/issues/2387
 [#2391]: https://github.com/hledgerorg/hledger/issues/2391
 [#2394]: https://github.com/hledgerorg/hledger/issues/2394
-[hledger_site#132]: https://github.com/simonmichael/hledger_site/issues/132
-[hledger_site#133]: https://github.com/simonmichael/hledger_site/issues/133
+[hledger_site#132]: https://github.com/hledgerorg/hledger_site/issues/132
+[hledger_site#133]: https://github.com/hledgerorg/hledger_site/issues/133
 
 
 ## 2025-05-16 hledger-1.42.2
@@ -2614,7 +2614,7 @@ Thomas Miedema (@thomie).
 [#2354]: https://github.com/hledgerorg/hledger/issues/2354
 [#2386]: https://github.com/hledgerorg/hledger/issues/2386
 [#2389]: https://github.com/hledgerorg/hledger/issues/2389
-[hledger_site#132]: https://github.com/simonmichael/hledger_site/issues/132
+[hledger_site#132]: https://github.com/hledgerorg/hledger_site/issues/132
 
 
 
@@ -5624,7 +5624,7 @@ Docs
 
 - Clearer sponsoring info and more complete sponsor lists on website and README.
 
-- The new <https://github.com/simonmichael/hledger_finance> repo
+- The new <https://github.com/hledgerorg/hledger_finance> repo
   keeps track of our public finances (on Open Collective, Liberapay etc.)
 
 Examples

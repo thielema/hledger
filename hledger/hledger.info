@@ -838,7 +838,7 @@ hledger will search for a default config file, in this order:
 --explicit --infer-costs
 
    And here is a commented starter config file:
-https://github.com/simonmichael/hledger/blob/main/hledger.conf.sample
+https://github.com/hledgerorg/hledger/blob/main/hledger.conf.sample
 
    You can put not only options, but also arguments in a config file.
 
@@ -1372,7 +1372,7 @@ File: hledger.info,  Node: JSON output,  Prev: SQL output,  Up: Output format
 Our JSON is rather large and verbose, since it is a faithful
 representation of hledger's internal data types.  To understand its
 structure, read the Haskell type definitions, which are mostly in
-https://github.com/simonmichael/hledger/blob/main/hledger-lib/Hledger/Data/Types.hs.
+https://github.com/hledgerorg/hledger/blob/main/hledger-lib/Hledger/Data/Types.hs.
 hledger-web's OpenAPI specification may also be relevant.
 
    hledger stores numbers with sometimes up to 255 significant digits.
@@ -4436,7 +4436,7 @@ $ hledger print -f basic.csv
 
    There's an introductory Tutorial: Import CSV data on hledger.org, and
 more CSV rules examples below, and a larger collection at
-https://github.com/simonmichael/hledger/tree/main/examples/csv.
+https://github.com/hledgerorg/hledger/tree/main/examples/csv.
 
 * Menu:
 
@@ -13386,7 +13386,7 @@ annual rate.
    Examples:
 
    * Using roi to compute total return of investment in stocks:
-     https://github.com/simonmichael/hledger/blob/main/examples/investing/roi-unrealised.ledger
+     https://github.com/hledgerorg/hledger/blob/main/examples/investing/roi-unrealised.ledger
 
    * Cookbook > Return on Investment: https://hledger.org/roi.html
 
@@ -14218,7 +14218,7 @@ output from 'hledger print'.
 
    See also:
 
-   https://github.com/simonmichael/hledger/issues/99
+   https://github.com/hledgerorg/hledger/issues/99
 
 
 File: hledger.info,  Node: rewrite vs print --auto,  Prev: Diff output format,  Up: rewrite
