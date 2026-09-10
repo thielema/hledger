@@ -10,7 +10,7 @@
 User-visible changes in the hledger command line tool and library.
 
 
-# ac374ff8
+# e5e4e608
 
 ## Breaking changes
 
@@ -191,11 +191,14 @@ Lot tracking has been reworked extensively since 1.99.3. In summary:
 
 - Many more real-world entries are now recognised and handled correctly: transfers involving multiple source or destination accounts, transfers written with `{}` cost annotations, transfer fees that are unpriced or split across several postings, in-kind (priceless) disposals, and entries whose amounts are implied or set by balance assignments.
 
+- In lot transfer entries, the source or destination amount can now be elided, like other amounts. [#2724]
+
 - Several bugs that could silently produce wrong numbers are fixed: a transfer's sent and received quantities must now match (previously lots could be silently dropped, or a shortfall silently treated as a no-gain fee); fees are now deducted before a transfer selects its lots, so FIFO/LIFO etc choose from the right lots; amounts stay correct when lot detail is collapsed for display (previously balances could be wrong or fees double-counted); and a transfer into an `AVERAGE` pool now re-averages the pool's cost, as an acquisition does.
 
 - Lot names are shown consistently and are always usable: a lot now displays the same name (same cost precision) when acquired, disposed, or transferred; inferred cost bases display enough digits to be exact; and any lot name shown in reports or errors can be used to reference that lot. Also, `print --lots` output can now always be read back by hledger.
 
 - Error messages are clearer and more accurate: they show the entry as it was written, not hledger's processed version; "no lots available" errors list the lots actually available; quantity-mismatch errors suggest the likely cause; an unbalanced entry is reported as such instead of producing a confusing inferred cost; and incompatible mixes of global (`*ALL` etc) and per-account disposal methods are now rejected.
+  Also lot errors summarise how hledger interpreted the entry's postings.
 
 - Balance assertions on lot subaccounts can't be checked correctly (assertions are checked before lots are calculated), and are now handled consistently: close --lots no longer generates them, and when lot detail is hidden (in print output or hledger-ui) existing ones are ignored instead of failing spuriously. The manual and the assertion failure message now explain this limitation.
 
@@ -372,6 +375,7 @@ The `repl` and `run` commands have been improved since 1.99.3. In summary:
 [#2688]: https://github.com/plaintextaccounting/hledger/issues/2688
 [#2696]: https://github.com/plaintextaccounting/hledger/issues/2696
 [#2714]: https://github.com/plaintextaccounting/hledger/issues/2714
+[#2724]: https://github.com/plaintextaccounting/hledger/issues/2724
 
 
 # 1.52.2 2026-08-24

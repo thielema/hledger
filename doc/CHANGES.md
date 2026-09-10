@@ -20,7 +20,7 @@ General changes in the hledger project.
 For package-specific changes, see the hledger package changelogs.
 
 
-# ac374ff8
+# e5e4e608
 
 - The hledger repo has moved to the plaintextaccounting github
   organisation: <https://github.com/plaintextaccounting/hledger>. Old
