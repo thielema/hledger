@@ -29,7 +29,7 @@ Eg:
 
 ## Get the code
 
-    git clone https://github.com/plaintextaccounting/hledger
+    git clone https://github.com/hledgerorg/hledger
     cd hledger
 
 ## Review code
@@ -118,7 +118,7 @@ useful for exploring and calling code interactively.
 
 If you try to run GHCI (or things based on it, like ghcid)
 right after cloning the hledger repo, you might see an error about CPP macros, eg like
-[on #961](https://github.com/plaintextaccounting/hledger/issues/961#issuecomment-459283412).
+[on #961](https://github.com/hledgerorg/hledger/issues/961#issuecomment-459283412).
 To fix this, build the hledger packages once, eg `stack build hledger`.
 
 Get a GHCI prompt for the hledger CLI (and hledger-lib):
@@ -136,7 +136,7 @@ Or use stack directly, eg:
     cd hledger; stack ghci hledger
 
 hledger-web also needs to find some things in its current directory (like the static/ directory).
-This normally just works, if not please [send details](https://github.com/plaintextaccounting/hledger/issues/274).
+This normally just works, if not please [send details](https://github.com/hledgerorg/hledger/issues/274).
 
 ## Use ghcid for watching GHC/GHCI
 

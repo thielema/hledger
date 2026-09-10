@@ -174,7 +174,7 @@ maybeWarnAboutAnon opts =
   if boolopt "anon" $ rawopts_ opts
     then error' $ unlines [
        "--anon does not give privacy, and perhaps should be avoided;"
-      ,"please see https://github.com/plaintextaccounting/hledger/issues/2133 ."
+      ,"please see https://github.com/hledgerorg/hledger/issues/2133 ."
       ,"For now it has been renamed to --obfuscate (a hidden flag)."
       ]
     else id

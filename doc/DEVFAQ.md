@@ -9,7 +9,7 @@ This is just getting started. It will absorb some of the other [Developer docs](
 ## How do I get/build the hledger source ?
 
 ```cli
-$ git clone https://github.com/plaintextaccounting/hledger
+$ git clone https://github.com/hledgerorg/hledger
 $ cd hledger
 $ stack build hledger    # or hledger-ui, hledger-web, or no argument to build all
 ```
@@ -19,7 +19,7 @@ including required C libraries, other build methods, and troubleshooting.
 ## What other repos are there ?
 
 There are three official repos:
-- <https://github.com/plaintextaccounting/hledger> - the main hledger repo, for hledger, hledger-ui and hledger-web. Shortcut url: <https://code.hledger.org>
+- <https://github.com/hledgerorg/hledger> - the main hledger repo, for hledger, hledger-ui and hledger-web. Shortcut url: <https://code.hledger.org>
 - <https://github.com/simonmichael/hledger_site> - the hledger.org website
 - <https://github.com/simonmichael/hledger_finance> - the hledger project's financial ledger
 

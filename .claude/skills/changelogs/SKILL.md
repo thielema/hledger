@@ -72,7 +72,7 @@ Here is how to polish a draft changelog. By default, you should
 - each issue number should be enclosed in square brackets (its own brackets - "[#1], [#2]", not "[#1, #2]")
 - and at the end of the draft entries, markdown urls should be inserted for each issue, for hyperlinking.
   These look like:
-  [#NNNN]: https://github.com/plaintextaccounting/hledger/issues/NNNN
+  [#NNNN]: https://github.com/hledgerorg/hledger/issues/NNNN
 - finally, run `just changelogs-check`, which verifies the resume points, the issue links, and that no DUPLICATE?/CHERRYPICK? markers remain; fix anything it reports.
 
 ## Finalising changelogs

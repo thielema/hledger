@@ -5,7 +5,7 @@ whoever makes it - person or coding agent. They are written down so that each
 change does not have to re-derive them from the existing css.
 
 Discussion of the overall direction is in
-[#200](https://github.com/plaintextaccounting/hledger/issues/200).
+[#200](https://github.com/hledgerorg/hledger/issues/200).
 
 ## Constraints
 
@@ -46,7 +46,7 @@ Discussion of the overall direction is in
 - `test/browser/security.spec.js` fails on any policy violation, and
   `Hledger/Web/Test.hs` checks the header itself.
 
-[#2703]: https://github.com/plaintextaccounting/hledger/issues/2703
+[#2703]: https://github.com/hledgerorg/hledger/issues/2703
 
 ## Tabular and monetary data
 

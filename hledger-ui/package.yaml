@@ -7,7 +7,7 @@ stability:     stable
 tested-with:   ghc==9.6.7, ghc==9.8.4, ghc==9.10.3, ghc==9.12.4, ghc==9.14.1
 homepage:      http://hledger.org
 bug-reports:   http://bugs.hledger.org
-github:        simonmichael/hledger
+github:        hledgerorg/hledger
 category:      Finance, Console
 synopsis:      Terminal interface for the hledger accounting system
 description: |

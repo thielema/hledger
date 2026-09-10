@@ -33,7 +33,7 @@ For how to run the tests, see [Developer workflows](DEVWORKFLOWS.md).
     [tasty](https://hackage.haskell.org/package/tasty) test runner,
     [tasty-hunit](https://hackage.haskell.org/package/tasty-hunit) HUnit-style tests,
     and some helpers from
-    [Hledger.Utils.Test](https://github.com/plaintextaccounting/hledger/blob/main/hledger-lib/Hledger/Utils/Test.hs),
+    [Hledger.Utils.Test](https://github.com/hledgerorg/hledger/blob/main/hledger-lib/Hledger/Utils/Test.hs),
     such as:
 
     - `tests` and `test` aliases for `testGroup` and `testCase`
@@ -90,9 +90,9 @@ For how to run the tests, see [Developer workflows](DEVWORKFLOWS.md).
     ```
 
     Here are
-    [some](https://github.com/plaintextaccounting/hledger/blob/main/hledger-lib/Hledger/Data/Posting.hs)
+    [some](https://github.com/hledgerorg/hledger/blob/main/hledger-lib/Hledger/Data/Posting.hs)
     real-world
-    [examples](https://github.com/plaintextaccounting/hledger/blob/main/hledger-lib/Hledger/Read/JournalReader.hs)
+    [examples](https://github.com/hledgerorg/hledger/blob/main/hledger-lib/Hledger/Read/JournalReader.hs)
     (search for `tests_`).
 
     The unit tests are shipped as part of the hledger executable, and
@@ -117,12 +117,12 @@ For how to run the tests, see [Developer workflows](DEVWORKFLOWS.md).
     with
     [shelltestrunner](https://hackage.haskell.org/package/shelltestrunner).
     Tests are defined in files named `*.test` under
-    [hledger/test/](https://github.com/plaintextaccounting/hledger/tree/main/hledger/test),
+    [hledger/test/](https://github.com/hledgerorg/hledger/tree/main/hledger/test),
     grouped by *component* (command or topic name).
     For more about these, see the README there.
 
     hledger-web also has some browser tests, defined with playwright in
-    [hledger-web/test/browser/](https://github.com/plaintextaccounting/hledger/tree/main/hledger-web/test/browser);
+    [hledger-web/test/browser/](https://github.com/hledgerorg/hledger/tree/main/hledger-web/test/browser);
     see the README there.
 
 4.  Code tests

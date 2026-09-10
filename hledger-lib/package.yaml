@@ -7,7 +7,7 @@ stability:     stable
 tested-with:   ghc==9.6.7, ghc==9.8.4, ghc==9.10.3, ghc==9.12.4, ghc==9.14.1
 homepage:      http://hledger.org
 bug-reports:   http://bugs.hledger.org
-github:        simonmichael/hledger
+github:        hledgerorg/hledger
 category:      Finance
 synopsis:      A library providing the core functionality of hledger
 description: |
@@ -204,7 +204,7 @@ tests:
     - hledger-lib
 
   # cabal users: when run by cabal, doctest requires a ghc environment file, so cabal.project ensures that
-  # https://github.com/plaintextaccounting/hledger/issues/1139
+  # https://github.com/hledgerorg/hledger/issues/1139
   doctest:
     source-dirs: test
     main: doctests.hs  # can't call it doctest.hs ("File name does not match module name")

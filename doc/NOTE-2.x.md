@@ -2,7 +2,7 @@
 
 ## Strategy
 
-Summary of discussion [Thoughts on hledger 2 #2547](https://github.com/plaintextaccounting/hledger/issues/2547):
+Summary of discussion [Thoughts on hledger 2 #2547](https://github.com/hledgerorg/hledger/issues/2547):
 
 ### Positions
 

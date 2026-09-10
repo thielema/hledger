@@ -269,7 +269,7 @@ Last updated: 2026-09
     `j devtag-push`
   - RELEASING.md checklist/notes updated
   - monitor/support/handle issues:
-    [issue tracker](https://github.com/plaintextaccounting/hledger/issues?q=is%3Aopen+is%3Aissue), matrix, irc, mail list, forum, reddit
+    [issue tracker](https://github.com/hledgerorg/hledger/issues?q=is%3Aopen+is%3Aissue), matrix, irc, mail list, forum, reddit
 
 Some more good things to do after a release:
 
@@ -481,7 +481,7 @@ A local developer build of unreleased code. This is typically in `main` or a dev
 ### Repos and branches
 
 **hledger repo**\
-The `hledger` git repository, containing the hledger software, reference manuals, and developer docs. <https://github.com/plaintextaccounting/hledger>
+The `hledger` git repository, containing the hledger software, reference manuals, and developer docs. <https://github.com/hledgerorg/hledger>
 
 **site repo**\
 The `hledger_website` git repository, containing most of the hledger website which appears at <https://hledger.org>. Usually checked out under the hledger repo as `site/`. <https://github.com/simonmichael/hledger_website>

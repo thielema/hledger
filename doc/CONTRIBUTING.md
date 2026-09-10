@@ -18,7 +18,7 @@ Install these prerequisites:
 
 Get and build the code (for more details and help with build problems, see [Build from source](install.md#build-from-source)):
 
-    git clone https://github.com/plaintextaccounting/hledger
+    git clone https://github.com/hledgerorg/hledger
     cd hledger
     stack build hledger    # or hledger-ui, hledger-web, or no argument to build all
 
@@ -46,7 +46,7 @@ and for more project scripts run `just` in the main repo.
 
 - Share what you've learned so far to help others. This is a quadruple win -
   it helps them, improves your own understanding, builds community, and frees up maintainer time!
-- Add translation to your language. Starting with the [tldr](https://github.com/plaintextaccounting/hledger/tree/main/doc/tldr) has high value. Or if you want to spend minimal effort, then just translate the [top level account names](https://github.com/plaintextaccounting/hledger/tree/main/examples/i18n)
+- Add translation to your language. Starting with the [tldr](https://github.com/hledgerorg/hledger/tree/main/doc/tldr) has high value. Or if you want to spend minimal effort, then just translate the [top level account names](https://github.com/hledgerorg/hledger/tree/main/examples/i18n)
 
 ## Funder ?
 
