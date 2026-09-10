@@ -261,6 +261,7 @@ module Hledger.Cli.Commands.Balance (
  ,multiBalanceReportAsCsv
  ,multiBalanceReportAsHtml
  ,multiBalanceReportAsTable
+ ,multiBalanceReportAsPartTable
  ,multiBalanceReportTableAsText
  ,multiBalanceReportAsSpreadsheet
  ,multiBalanceReportAsSpreadsheetParts
@@ -914,7 +915,17 @@ multiBalanceReportTableAsText ReportOpts{..} = renderTableByRowsB tableopts rend
 
 -- | Build a 'Table' from a multi-column balance report.
 multiBalanceReportAsTable :: ReportOpts -> MultiBalanceReport -> Table T.Text T.Text WideBuilder
-multiBalanceReportAsTable opts@ReportOpts{summary_only_, average_, balanceaccum_}
+multiBalanceReportAsTable opts report@(PeriodicReport _spans items _tr) =
+    multiBalanceReportAsPartTable opts
+        (allCommoditiesFromPeriodicReport items)
+        report
+
+multiBalanceReportAsPartTable ::
+    ReportOpts -> [CommoditySymbol] -> MultiBalanceReport ->
+    Table T.Text T.Text WideBuilder
+multiBalanceReportAsPartTable
+    opts@ReportOpts{summary_only_, average_, balanceaccum_}
+    allCommodities
     (PeriodicReport spans items tr) =
    maybetranspose $
    addtotalrow $
@@ -936,7 +947,6 @@ multiBalanceReportAsTable opts@ReportOpts{summary_only_, average_, balanceaccum_
             map (reportPeriodName (period_titles_ opts) balanceaccum_ spans) spans)
         ++ ["  Total" | multiBalanceHasTotalsColumn opts]
         ++ ["Average" | average_]
-    allCommodities = allCommoditiesFromPeriodicReport items
     (accts, rows) = unzip $ fmap fullRowAsTexts items'
       where
         isLeaf rs row = not $ any (\r -> T.isPrefixOf (displayFull (prrName row) <> ":") (displayFull (prrName r))) rs

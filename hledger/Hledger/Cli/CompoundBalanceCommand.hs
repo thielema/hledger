@@ -324,7 +324,8 @@ compoundBalanceReportAsText ropts (CompoundPeriodicReport title _colspans subrep
     -- An empty subreport title is omitted entirely (no title row above the data).
     subreportAsTable ropts1 (title1, r, _) = tablewithtitle
       where
-        Table lefthdrs tophdrs cells = multiBalanceReportAsTable ropts1 r
+        Table lefthdrs tophdrs cells =
+            multiBalanceReportAsPartTable ropts1 allCommodities r
         tablewithtitle
           | T.null title1 = Table lefthdrs tophdrs cells
           | otherwise     = Table
