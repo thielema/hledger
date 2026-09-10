@@ -137,3 +137,22 @@ $ hledger -f- bal --lots -N
              10 AAPL  assets:ira
              10 AAPL  assets:broker:{2026-01-15, $50}
               $-1100  assets:checking
+
+# ** 8. An unpriced disposal with an explicit lot selector, balanced by an
+# elided opted-out account posting, stays a disposal (the opt-out excludes
+# the elided posting from being read as a transfer destination), and errors
+# for lack of a selling price.
+<
+account assets:vault  ; lots: NONE
+
+2026-01-15 buy
+    assets:stocks    10 AAPL {$50}
+    assets:checking
+
+2026-02-01 move out of tracking
+    assets:stocks    -5 AAPL {$50}
+    assets:vault
+
+$ hledger -f- bal --lots
+>2 /dispose posting has no transacted price/
+>=1

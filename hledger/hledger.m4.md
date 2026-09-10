@@ -7458,6 +7458,12 @@ Transfer postings should not have a transacted price,
 and the total quantities sent and received must match: transferred lots keep their identity.
 Within that, source and destination postings need not pair up one to one -
 one source posting can feed several destination accounts, or several sources one destination.
+The destination amount can also be elided, even when the source posting
+carries a lot selector (eg `assets:broker -10 ETSY {2026-01-01}` balanced by
+a bare `assets:broker2` posting).
+A consequence: a disposal entry mistakenly written without a selling price,
+and with the other amount left implicit, looks like a lot transfer, and 
+is quietly read as one, without raising an error. If in doubt, `print -a` shows how an entry was read.
 If the destination receives less than the source sends (eg due to a fee deducted by an exchange),
 record the fee as its own posting in the same commodity (eg `expenses:fees 0.001 ETH @ $3000`, or without the price);
 several fee postings which together add up to the missing quantity also work.

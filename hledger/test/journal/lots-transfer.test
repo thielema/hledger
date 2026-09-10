@@ -1094,3 +1094,22 @@ $ hledger -f- bal --lots 2>&1
 --------------------
                $-200
                A 100  
+
+# ** 47. A transfer's destination amount can be elided even when the source
+# posting carries a lot selector: the mirrored basis annotation which the
+# balancer copies onto the inferred amount is read as an elided transfer destination.
+<
+2024-09-09 buy USD with JPY
+    assets:bank:JPY               -90,084.00 JPY
+    assets:bank:USD                632.83 USD {2024-09-09} @@ 90,084.00 JPY
+
+2024-09-10 transfer to broker
+    assets:bank:USD               -632.83 USD {2024-09-09}
+    assets:broker:USD
+
+$ hledger -f- print --verbose-tags desc:transfer
+2024-09-10 transfer to broker
+    assets:bank:USD                             -632.83 USD {2024-09-09}  ; ptype: transfer-from
+    assets:broker:USD                                 ; ptype: transfer-to
+
+>=

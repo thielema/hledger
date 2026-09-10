@@ -110,19 +110,23 @@ $ hledger -f- bal assets:stocks --lots
 
 $ hledger -f- bal assets:stocks --lots -N
 
-# ** 8. A dispose posting with unknown transacted cost (selling price) is an error.
+# ** 8. A disposal-like posting without a transacted cost (selling price),
+# balanced by an elided asset posting, is read as a lot transfer to that
+# account instead: the dispose reading would fail for lack of a price.
+# So a sale which forgot its price quietly becomes a transfer.
 <
 2026-01-15 buy
     assets:stocks    10 AAPL {$50}
     assets:checking
 
-2026-02-01 sell
+2026-02-01 sell, price forgotten
     assets:stocks    -5 AAPL {$50}
     assets:cash
 
-$ hledger -f- bal assets:stocks --lots
->2 /no transacted price/
->=1
+$ hledger -f- bal --lots -N
+              5 AAPL  assets:cash:{2026-01-15, $50}
+               $-500  assets:checking
+              5 AAPL  assets:stocks:{2026-01-15, $50}
 
 # ** 9. Explicit lot subaccount on dispose posting is accepted when it matches the resolved lot.
 <

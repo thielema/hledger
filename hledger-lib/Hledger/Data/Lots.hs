@@ -668,6 +668,25 @@ transactionClassifyLotPostings verbosetags lookupAccountType commodityIsLotful a
           let n = min (length negs) (length poss)
           in take n negs ++ take n poss
 
+    -- Could this balancer-copied-basis posting (see 'hasBalancerCopiedBasis')
+    -- serve as the elided destination of a lot transfer? True for a positive,
+    -- unpriced amount in a lot-tracking asset account. Such postings are
+    -- otherwise invisible to classification, since they may be the artifact
+    -- of a disposal missing its selling price; but the dispose reading of
+    -- their counterpart would fail anyway (no price), so preferring the
+    -- transfer reading only makes otherwise-erroring entries work.
+    -- (A forgotten-price disposal is thus read as a lot transfer to the
+    -- elided account, quietly; print -a shows the result for checking.)
+    isMirroredTransferToCandidate :: Posting -> Bool
+    isMirroredTransferToCandidate p =
+      let amts = amountsRaw (pamount p)
+          baseAcct = lotBaseAccount (paccount p)
+      in maybe False isAssetType (lookupAccountType baseAcct)
+         && not (accountUsesNoLots baseAcct)
+         && not (any isNegativeAmount amts)
+         && any (\a -> aquantity a > 0) amts
+         && not (any (isJust . acost) amts)
+
     -- Precompute per-commodity, per-quantity transfer counterpart info (O(n)).
     -- Keyed by (commodity, |quantity|) for exact quantity matching, the primary
     -- transfer detection; see negSums/posSums below for the sum-based fallback.
@@ -681,7 +700,9 @@ transactionClassifyLotPostings verbosetags lookupAccountType commodityIsLotful a
       where
         collect (!neg, !pos, !noCB) (i, p)
               | not (isReal p) = (neg, pos, noCB)  -- skip virtual postings
-              | hasBalancerCopiedBasis p = (neg, pos, noCB)  -- skip balancer-copied basis annotations
+              -- skip balancer-copied basis annotations, except elided
+              -- transfer destination candidates (isMirroredTransferToCandidate)
+              | hasBalancerCopiedBasis p, not (isMirroredTransferToCandidate p) = (neg, pos, noCB)
               | i `S.member` sameAcctTransferSet = (neg, pos, noCB)  -- skip same-account transfer pairs
               | optedOut p = (neg, pos, noCB)  -- skip lots: NONE accounts' postings
               | otherwise =
@@ -784,7 +805,16 @@ transactionClassifyLotPostings verbosetags lookupAccountType commodityIsLotful a
     classifyAt i p
       | not (isReal p) = p  -- skip virtual (parenthesised) postings
       | isClassifiedPosting p = p  -- skip postings already carrying a ptype tag (eg rgain/ugain postings added by journalAddGainOrUGainPosting)
-      | hasBalancerCopiedBasis p = p  -- skip balancer-copied basis annotations (see hasBalancerCopiedBasis)
+      -- A balancer-copied basis posting is normally left unclassified,
+      -- except when it can be read as the destination of a lot transfer
+      -- (see isMirroredTransferToCandidate).
+      | hasBalancerCopiedBasis p =
+          let baseAcct = lotBaseAccount (paccount p)
+              cbPairs = [(acommodity a, aquantity a) | a <- amountsRaw (pamount p), isJust (acostbasis a)]
+          in if isMirroredTransferToCandidate p
+                && any (\(c, q) -> hasTransferFromCounterpart baseAcct c q) cbPairs
+             then addTag "transfer-to" p
+             else p
       | i `S.member` sameAcctTransferSet =
           let amts = amountsRaw (pamount p)
               cls = if any isNegativeAmount amts then "transfer-from" else "transfer-to"
@@ -1466,15 +1496,15 @@ isGainPosting p = ("_ptype", "gain") `elem` ptags p
 --
 -- Such an annotation is not a lot selector - a cost basis annotation is
 -- posting-specific user intent - but we deliberately keep it until lot
--- classification has run: its presence is the evidence that distinguishes
--- an artifact pairing (eg @stocks -5 AAPL {$50} / cash@, a sale missing its
--- price, whose mirrored @+5 AAPL {$50}@ must not read as a transfer
--- destination) from a genuine elided transfer counterpart (a bare inferred
--- amount, eg #2690's elided destination). Classification skips these
--- postings and doesn't count them as transfer counterparts; afterwards
--- 'journalStripBalancerCopiedBases' removes the annotations, so downstream
--- code and reports only ever see user-written or lot-machinery-derived
--- cost bases.
+-- classification has run, when it identifies the elided destination of a
+-- lot transfer (see 'isMirroredTransferToCandidate' - the mirrored posting
+-- of eg @stocks -5 AAPL {$50} / cash@ could equally be the artifact of a
+-- sale missing its price, but the dispose reading would fail for lack of a
+-- price, so the transfer reading is preferred). Mirrored postings which
+-- can't be a transfer destination stay unclassified and invisible to
+-- counterpart detection; afterwards 'journalStripBalancerCopiedBases'
+-- removes their annotations, so downstream code and reports only ever see
+-- user-written or lot-machinery-derived cost bases.
 hasBalancerCopiedBasis :: Posting -> Bool
 hasBalancerCopiedBasis p =
   not (hasAmount (originalPosting p)) && any (isJust . acostbasis) (amountsRaw (pamount p))

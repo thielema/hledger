@@ -829,14 +829,19 @@ a transfer with a priced fee only balances at cost in split form, so the fee
 auto-split is tried first, falling back to the unsplit form. Note the balancer
 mechanically copies amounts (annotations included) into elided postings; a
 posting whose amount was wholly inferred yet carries a cost basis annotation
-has a *balancer-copied basis* — not user intent, so classification skips such
-postings and they don't act as transfer counterparts; but the copied
-annotation is deliberately kept until then, as the evidence distinguishing an
-artifact pairing (eg a sale missing its price) from a genuine elided transfer
-counterpart (`hasBalancerCopiedBasis` in Lots.hs). After lot processing,
-`journalStripBalancerCopiedBases` removes these annotations, so downstream
-code sees only user-written or lot-machinery-derived cost bases. Bare
-inferred amounts classify normally (eg an elided transfer destination).
+has a *balancer-copied basis* — not user intent
+(`hasBalancerCopiedBasis` in Lots.hs). When such a mirrored posting is a
+positive, unpriced amount in a lot-tracking asset account, classification
+reads it as the elided destination of a lot transfer
+(`isMirroredTransferToCandidate`). The same shape arises from a sale
+missing its price (eg `stocks -5 AAPL {$50} / cash`); such a mistake will
+be interpreted as a transfer, until the user notices.
+Mirrored postings which can't be a transfer destination (negative, priced, non-asset, or in a
+lots: NONE account) stay unclassified and invisible to counterpart
+detection. After lot processing, `journalStripBalancerCopiedBases` removes
+unclassified mirrored postings' annotations, so downstream code sees only
+user-written or lot-machinery-derived cost bases. Bare inferred amounts
+classify normally (eg an elided transfer destination for a bare source).
 
 Post-balancing:
 
