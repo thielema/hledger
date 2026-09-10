@@ -31,9 +31,7 @@ Flags:
                             one of the above formats selects that format.
 ```
 
-This command is a work in progress.
-
-It shows the assets held in lot-tracked accounts (see [Lots](#lots))
+This command shows the assets held in lot-tracked accounts (see [Lots](#lots))
 as of the report end date: one row per account and held commodity
 (an account holding several commodities gets several rows, repeating
 its name), or per lot and commodity with `--lots`.
@@ -62,6 +60,11 @@ the realised gain from disposals so far (RGain),
 and the annualised internal rate of return (XIRR, calculated from the
 holding's dated cashflows and current value, like roi's IRR;
 it includes realised gains).
+The cost column's heading reflects the lots shown: "Avg cost" on rows
+aggregating multiple lots, or when the lots shown all use the AVERAGE
+cost basis method (their cost basis is the pool average); "Unit cost"
+when each lot shows its own cost; and "Unit/Avg cost" when both kinds
+of lot are shown.
 In the totals row, RGain and XIRR are account-level, for the displayed
 accounts: they also include those accounts' fully disposed lots and
 commodities, which may have no row of their own. Fully disposed

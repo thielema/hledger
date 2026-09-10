@@ -60,8 +60,11 @@ json...).
 
 Notes:
 - On rows aggregating multiple lots, Date and Age are blank,
-  and Unit cost shows the average cost (column titled "Avg cost";
-  it is titled "Unit cost" when `--lots` is in effect).
+  and Unit cost shows the average cost. The column's title matches what
+  is shown: "Avg cost" on aggregating rows and when the displayed lots
+  all belong to AVERAGE/AVERAGEALL pools (whose per-lot rows show the
+  pool average); "Unit cost" with `--lots` when each lot shows its own
+  cost; "Unit/Avg cost" when both kinds are displayed.
   (Alternatives considered for aggregated Date/Age: oldest lot's date/age,
   a date range, quantity-weighted average age.)
 - A lot's cost basis is parsed from its subaccount name. When the name has

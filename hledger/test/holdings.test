@@ -682,16 +682,17 @@ Holdings on 2026-03-31
 
 # ** 39. With --lots, each AVERAGE lot row shows the pool's average as its
 # unit cost (as in the lot state, where every pool lot carries the current
-# average), not its original acquisition cost.
+# average), not its original acquisition cost. And since all displayed lots
+# here are in AVERAGE pools, the column keeps its "Avg cost" title.
 $ hledger -f- holdings -e 2026-04-01 --lots
 Holdings on 2026-03-31
 
-                            ||       Date  Age    Units  Unit cost  Price  Cost  Value  Weight  UGain  UGain%  RGain  XIRR 
-============================++=============================================================================================
- assets:broker:{2026-01-01} || 2026-01-01  89d   5 AAPL        $20         $100                                 $100       
- assets:broker:{2026-02-01} || 2026-02-01  58d  10 AAPL        $20         $200                                            
-----------------------------++---------------------------------------------------------------------------------------------
-                            ||                                             $300                                 $100       
+                            ||       Date  Age    Units  Avg cost  Price  Cost  Value  Weight  UGain  UGain%  RGain  XIRR 
+============================++============================================================================================
+ assets:broker:{2026-01-01} || 2026-01-01  89d   5 AAPL       $20         $100                                 $100       
+ assets:broker:{2026-02-01} || 2026-02-01  58d  10 AAPL       $20         $200                                            
+----------------------------++--------------------------------------------------------------------------------------------
+                            ||                                            $300                                 $100       
 
 # ** 40. The average is calculated as of the report end date: before the
 # second acquisition, it is the first acquisition's cost.
@@ -726,3 +727,28 @@ Holdings on 2026-02-28
  assets:broker2 || 2026-02-01  27d  10 AAPL       $20         $200                                            
 ----------------++--------------------------------------------------------------------------------------------
                 ||                                            $400                                            
+
+# ** 42. The cost column's heading matches what is shown: with --lots it is
+# "Unit cost", or "Avg cost" when the lots shown all use AVERAGE (test 39),
+# or "Unit/Avg cost" when averaged and non-averaged lots are shown together.
+<
+commodity AAPL  ; lots:AVERAGE
+commodity MSFT  ; lots:
+
+2026-01-01 buy AAPL
+    assets:cash     -$100
+    assets:broker    10 AAPL @ $10
+
+2026-01-02 buy MSFT
+    assets:cash     -$200
+    assets:broker     1 MSFT @ $200
+
+$ hledger -f- holdings --lots -e 2026-02-01
+Holdings on 2026-01-31
+
+                                  ||       Date  Age    Units  Unit/Avg cost  Price  Cost  Value  Weight  UGain  UGain%  RGain  XIRR 
+==================================++=================================================================================================
+ assets:broker:{2026-01-01}       || 2026-01-01  30d  10 AAPL            $10         $100                                            
+ assets:broker:{2026-01-02, $200} || 2026-01-02  29d   1 MSFT           $200         $200                                            
+----------------------------------++-------------------------------------------------------------------------------------------------
+                                  ||                                                 $300                                            

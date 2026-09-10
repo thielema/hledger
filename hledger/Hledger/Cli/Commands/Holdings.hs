@@ -558,7 +558,24 @@ holdings opts@CliOpts{rawopts_=rawopts, reportspec_=rspec@ReportSpec{_rsQuery=q,
       where
         addtotalrow totalrow tbl' = concatTables SingleLine tbl' $
           Table (Group NoLine [Header ""]) (Header []) [totalrow]
-    colheadings = ["Date", "Age", "Units", if showlots then "Unit cost" else "Avg cost", "Price", "Cost", "Value", "Weight", "UGain", "UGain%", "RGain", "XIRR"]
+    colheadings = ["Date", "Age", "Units", unitcostheading, "Price", "Cost", "Value", "Weight", "UGain", "UGain%", "RGain", "XIRR"]
+
+    -- The cost column's heading matches what's shown: "Avg cost" on rows
+    -- aggregating multiple lots (the default) or when the lots shown all
+    -- belong to AVERAGE/AVERAGEALL pools (whose per-lot rows show the
+    -- pool's average cost); "Unit cost" when each lot shows its own cost;
+    -- "Unit/Avg cost" when both kinds of lot are shown.
+    unitcostheading :: T.Text
+    unitcostheading
+      | not showlots || allavg = "Avg cost"
+      | anyavg = "Unit/Avg cost"
+      | otherwise = "Unit cost"
+      where
+        avgs = [ fst (resolveReductionMethodForAccount j (lotBaseAccount sub) c)
+                 `elem` [AVERAGE, AVERAGEALL]
+               | (sub, c) <- M.keys lotmap ]
+        allavg = not (null avgs) && and avgs
+        anyavg = or avgs
     renderacct r = renderPeriodicAcct ropts " " r
 
     rowLotCosts r = [rowCostValuer r $ multiplyAmount (aquantity a) c
