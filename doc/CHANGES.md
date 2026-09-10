@@ -80,6 +80,19 @@ For package-specific changes, see the hledger package changelogs.
 [#2681]: https://github.com/hledgerorg/hledger/issues/2681
 [#2707]: https://github.com/hledgerorg/hledger/issues/2707
 
+# 1.52.4 2026-09-10
+
+Doc updates
+
+- Github release install instructions have been fixed and simplified. [#2707]
+
+[#2707]: https://github.com/hledgerorg/hledger/issues/2707
+
+
+# 1.52.3 2026-08-27
+
+
+
 # 1.52.2 2026-08-24
 
 

@@ -74,6 +74,17 @@ Improvements
   oldest version not vulnerable to HSEC-2026-0007.
 
 
+# 1.52.4 2026-09-10
+
+Improvements
+
+- Allow megaparsec 9.8.1+ (but not 9.8.0, because of [megaparsec#572](https://github.com/mrkkrp/megaparsec/issues/572)).
+
+
+# 1.52.3 2026-08-27
+
+
+
 # 1.52.2 2026-08-24
 
 

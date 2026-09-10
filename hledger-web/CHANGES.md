@@ -146,6 +146,57 @@ Improvements
 [#2722]: https://github.com/hledgerorg/hledger/issues/2722
 
 
+# 1.52.4 2026-09-10
+
+Fixes
+
+- Raise aeson's lower bound to `>=2.2.5.1`, avoiding versions vulnerable to denial-of-service.
+  (<https://haskell.github.io/security-advisories/advisory/HSEC-2026-0007.html>)
+
+Improvements
+
+- The yesod-static and hjsmin dependencies have been dropped;
+  hledger-web now serves its static files itself, using wai-app-static
+  and file-embed. (yesod-static doesn't currently build with crypton
+  1.1+, which has kept it, and hledger-web, out of stackage nightly.)
+  Static file urls no longer include an `?etag=...` cache buster;
+  instead the files are served with an ETag header, and conditional
+  requests are answered with 304 Not Modified.
+  (Cherry picked from an AI-assisted change in hledger 2.x.)
+
+- Allow megaparsec 9.8.1+ (but not 9.8.0, because of [megaparsec#572](https://github.com/mrkkrp/megaparsec/issues/572)).
+
+- Allow yesod-core 1.7.0.0.
+
+
+# 1.52.3 2026-08-27
+
+Fixes
+
+- Another XSS (cross-site scripting) vulnerability has been fixed, in
+  the add transaction form's error message. Any web page visited while
+  hledger-web was running could use it to run javascript in
+  hledger-web's origin, and from there read the whole journal, or
+  alter it. All hledger-web users should upgrade. See also:
+  GHSA-vq7r-8w52-jv84.  (Arthur Cinader, Simon Michael, [#2700])
+
+- A newline submitted in a transaction's description, code or account
+  name is no longer written into the journal file. This removes the
+  possibility of the user inserting an include directive, which could
+  expose system files readable by the hledger-web server. See also:
+  GHSA-vq7r-8w52-jv84.  [#2704]
+
+  Note: as with #2698 in 1.52.2, these fixes were backported from
+  AI-assisted fixes in hledger 2, under the security exception in
+  https://hledger.org/AI.html; they have been reviewed and tested.
+
+- hledger-web's official binaries, and builds from the hledger source
+  tree, now use aeson 2.3, avoiding a denial of service bug.
+  (<https://haskell.github.io/security-advisories/advisory/HSEC-2026-0007.html>)
+
+[#2700]: https://github.com/hledgerorg/hledger/issues/2700
+[#2704]: https://github.com/hledgerorg/hledger/issues/2704
+
 # 1.52.2 2026-08-24
 
 Fixes
