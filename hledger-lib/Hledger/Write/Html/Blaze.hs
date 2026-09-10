@@ -50,16 +50,18 @@ formatCell cell =
     let class_ =
             map (HtmlAttr.class_ . Html.textValue) $
             filter (not . Text.null) [Spr.textFromClass $ cellClass cell] in
+    let addSpan spanAttr n attrs =
+            if n==1
+                then attrs
+                else spanAttr (Html.stringValue $ show n) : attrs in
     let span_ makeCell attrs =
             case Spr.cellSpan cell of
                 Spr.NoSpan -> foldl (!) makeCell attrs
                 Spr.Covered -> pure ()
                 Spr.SpanHorizontal n ->
-                    foldl (!) makeCell
-                        (HtmlAttr.colspan (Html.stringValue $ show n) : attrs)
+                    foldl (!) makeCell (addSpan HtmlAttr.colspan n attrs)
                 Spr.SpanVertical n ->
-                    foldl (!) makeCell
-                        (HtmlAttr.rowspan (Html.stringValue $ show n) : attrs)
+                    foldl (!) makeCell (addSpan HtmlAttr.rowspan n attrs)
             in
     case cellStyle cell of
         Head -> span_ (Html.th content) (style++class_)

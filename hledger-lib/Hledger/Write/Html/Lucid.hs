@@ -88,14 +88,18 @@ formatCell cell =
             [filter (not . Text.null) $
              Spr.textFromClass (cellClass cell) :
              ["date" | cellType cell == TypeDate]] in
+    let addSpan spanAttr n attrs =
+            if n==1
+                then attrs
+                else spanAttr (Text.pack $ show n) : attrs in
     let span_ makeCell attrs cont =
             case Spr.cellSpan cell of
                 Spr.NoSpan -> makeCell attrs cont
                 Spr.Covered -> pure ()
                 Spr.SpanHorizontal n ->
-                    makeCell (L.colspan_ (Text.pack $ show n) : attrs) cont
+                    makeCell (addSpan L.colspan_ n attrs) cont
                 Spr.SpanVertical n ->
-                    makeCell (L.rowspan_ (Text.pack $ show n) : attrs) cont
+                    makeCell (addSpan L.rowspan_ n attrs) cont
             in
     case cellStyle cell of
         Head -> span_ L.th_ (style++class_) content
