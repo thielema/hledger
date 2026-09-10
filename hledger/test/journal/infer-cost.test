@@ -38,5 +38,5 @@ $ hledger -f - print -x --lots
     assets:cash
 
 $ hledger -f - print
->2 /no lots available for commodity AAPL in account assets:brokerage/
+>2 /no AAPL lots available for transfer from account assets:brokerage/
 >= 1

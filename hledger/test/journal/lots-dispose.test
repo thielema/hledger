@@ -87,7 +87,7 @@ $ hledger -f- bal assets:stocks --lots
     assets:cash       $275
 
 $ hledger -f- bal assets:stocks --lots
->2 /no lots available/
+>2 /no AAPL lots available for disposal/
 >=1
 
 # ** 7. Multiple disposals reduce lots correctly.

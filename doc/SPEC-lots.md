@@ -831,14 +831,16 @@ mechanically copies amounts (annotations included) into elided postings; a
 posting whose amount was wholly inferred yet carries a cost basis annotation
 has a *balancer-copied basis* — not user intent
 (`hasBalancerCopiedBasis` in Lots.hs). When such a mirrored posting is a
-positive, unpriced amount in a lot-tracking asset account, classification
-reads it as the elided destination of a lot transfer
-(`isMirroredTransferToCandidate`). The same shape arises from a sale
-missing its price (eg `stocks -5 AAPL {$50} / cash`); such a mistake will
-be interpreted as a transfer, until the user notices.
-Mirrored postings which can't be a transfer destination (negative, priced, non-asset, or in a
-lots: NONE account) stay unclassified and invisible to counterpart
-detection. After lot processing, `journalStripBalancerCopiedBases` removes
+nonzero, unpriced amount in a lot-tracking asset account, classification
+reads it as the elided destination or source of a lot transfer
+(`isMirroredTransferCandidate`). The same shapes arise from mistakes:
+a sale missing its price (eg `stocks -5 AAPL {$50} / cash`) will be
+interpreted as a transfer, until the user notices; an acquisition missing
+its cost (eg `broker 10 AAPL {2026-01-01} / cash`) errors as a transfer
+from a lot-less account.
+Mirrored postings which can't be a transfer counterpart (priced, zero,
+non-asset, or in a lots: NONE account) stay unclassified and invisible to
+counterpart detection. After lot processing, `journalStripBalancerCopiedBases` removes
 unclassified mirrored postings' annotations, so downstream code sees only
 user-written or lot-machinery-derived cost bases. Bare inferred amounts
 classify normally (eg an elided transfer destination for a bare source).

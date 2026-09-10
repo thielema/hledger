@@ -68,7 +68,7 @@ journalCalculateLots:
 
 * selectLots:
   "SPECID requires an explicit lot selector",
-  "no lots available for commodity X in account Y",
+  "no X lots available for transfer/disposal from account Y",
   "no lots matching {...} for commodity X in account Y",
   "lot selector is ambiguous, matches N lots in account Y",
   "insufficient lots for commodity X in account Y"
@@ -669,22 +669,22 @@ transactionClassifyLotPostings verbosetags lookupAccountType commodityIsLotful a
           in take n negs ++ take n poss
 
     -- Could this balancer-copied-basis posting (see 'hasBalancerCopiedBasis')
-    -- serve as the elided destination of a lot transfer? True for a positive,
-    -- unpriced amount in a lot-tracking asset account. Such postings are
-    -- otherwise invisible to classification, since they may be the artifact
-    -- of a disposal missing its selling price; but the dispose reading of
-    -- their counterpart would fail anyway (no price), so preferring the
+    -- serve as the elided destination or source of a lot transfer? True for
+    -- a nonzero, unpriced amount in a lot-tracking asset account. Such
+    -- postings are otherwise invisible to classification, since they may be
+    -- the artifact of a disposal missing its selling price (positive mirror)
+    -- or an acquisition missing its cost (negative mirror); but those
+    -- readings would fail anyway (no price / no lot cost), so preferring the
     -- transfer reading only makes otherwise-erroring entries work.
     -- (A forgotten-price disposal is thus read as a lot transfer to the
     -- elided account, quietly; print -a shows the result for checking.)
-    isMirroredTransferToCandidate :: Posting -> Bool
-    isMirroredTransferToCandidate p =
+    isMirroredTransferCandidate :: Posting -> Bool
+    isMirroredTransferCandidate p =
       let amts = amountsRaw (pamount p)
           baseAcct = lotBaseAccount (paccount p)
       in maybe False isAssetType (lookupAccountType baseAcct)
          && not (accountUsesNoLots baseAcct)
-         && not (any isNegativeAmount amts)
-         && any (\a -> aquantity a > 0) amts
+         && any ((/= 0) . aquantity) amts
          && not (any (isJust . acost) amts)
 
     -- Precompute per-commodity, per-quantity transfer counterpart info (O(n)).
@@ -701,8 +701,8 @@ transactionClassifyLotPostings verbosetags lookupAccountType commodityIsLotful a
         collect (!neg, !pos, !noCB) (i, p)
               | not (isReal p) = (neg, pos, noCB)  -- skip virtual postings
               -- skip balancer-copied basis annotations, except elided
-              -- transfer destination candidates (isMirroredTransferToCandidate)
-              | hasBalancerCopiedBasis p, not (isMirroredTransferToCandidate p) = (neg, pos, noCB)
+              -- transfer source/destination candidates (isMirroredTransferCandidate)
+              | hasBalancerCopiedBasis p, not (isMirroredTransferCandidate p) = (neg, pos, noCB)
               | i `S.member` sameAcctTransferSet = (neg, pos, noCB)  -- skip same-account transfer pairs
               | optedOut p = (neg, pos, noCB)  -- skip lots: NONE accounts' postings
               | otherwise =
@@ -806,14 +806,17 @@ transactionClassifyLotPostings verbosetags lookupAccountType commodityIsLotful a
       | not (isReal p) = p  -- skip virtual (parenthesised) postings
       | isClassifiedPosting p = p  -- skip postings already carrying a ptype tag (eg rgain/ugain postings added by journalAddGainOrUGainPosting)
       -- A balancer-copied basis posting is normally left unclassified,
-      -- except when it can be read as the destination of a lot transfer
-      -- (see isMirroredTransferToCandidate).
+      -- except when it can be read as the elided destination or source of
+      -- a lot transfer (see isMirroredTransferCandidate).
       | hasBalancerCopiedBasis p =
           let baseAcct = lotBaseAccount (paccount p)
               cbPairs = [(acommodity a, aquantity a) | a <- amountsRaw (pamount p), isJust (acostbasis a)]
-          in if isMirroredTransferToCandidate p
-                && any (\(c, q) -> hasTransferFromCounterpart baseAcct c q) cbPairs
-             then addTag "transfer-to" p
+              isNeg = any isNegativeAmount (amountsRaw (pamount p))
+              hasMatch
+                | isNeg     = any (\(c, q) -> hasCounterpart baseAcct True c q) cbPairs
+                | otherwise = any (\(c, q) -> hasTransferFromCounterpart baseAcct c q) cbPairs
+          in if isMirroredTransferCandidate p && hasMatch
+             then addTag (if isNeg then "transfer-from" else "transfer-to") p
              else p
       | i `S.member` sameAcctTransferSet =
           let amts = amountsRaw (pamount p)
@@ -1496,15 +1499,16 @@ isGainPosting p = ("_ptype", "gain") `elem` ptags p
 --
 -- Such an annotation is not a lot selector - a cost basis annotation is
 -- posting-specific user intent - but we deliberately keep it until lot
--- classification has run, when it identifies the elided destination of a
--- lot transfer (see 'isMirroredTransferToCandidate' - the mirrored posting
--- of eg @stocks -5 AAPL {$50} / cash@ could equally be the artifact of a
--- sale missing its price, but the dispose reading would fail for lack of a
--- price, so the transfer reading is preferred). Mirrored postings which
--- can't be a transfer destination stay unclassified and invisible to
--- counterpart detection; afterwards 'journalStripBalancerCopiedBases'
--- removes their annotations, so downstream code and reports only ever see
--- user-written or lot-machinery-derived cost bases.
+-- classification has run, when it identifies the elided destination or
+-- source of a lot transfer (see 'isMirroredTransferCandidate' - the
+-- mirrored posting of eg @stocks -5 AAPL {$50} / cash@ could equally be
+-- the artifact of a sale missing its price, but the dispose reading would
+-- fail for lack of a price, so the transfer reading is preferred).
+-- Mirrored postings which can't be a transfer counterpart stay
+-- unclassified and invisible to counterpart detection; afterwards
+-- 'journalStripBalancerCopiedBases' removes their annotations, so
+-- downstream code and reports only ever see user-written or
+-- lot-machinery-derived cost bases.
 hasBalancerCopiedBasis :: Posting -> Bool
 hasBalancerCopiedBasis p =
   not (hasAmount (originalPosting p)) && any (isJust . acostbasis) (amountsRaw (pamount p))
@@ -1785,7 +1789,7 @@ reduceLotTransferToEquity j t ls p =
             acct      = lotBaseAccount (paccount p)
             (method, methodSource) = resolveReductionMethodWithSource j p commodity
         selected <- first (enrichLotError method methodSource)
-                  $ selectLots method (postingErrPrefix p) acct commodity qty cb ls
+                  $ selectLots method (postingErrPrefix p) "transfer" acct commodity qty cb ls
         let consumed = [(lotId, qty') | (lotId, _, qty') <- selected]
         return $ lotDbg t ("equity-transfer " ++ show qty ++ " " ++ T.unpack commodity
                            ++ " from " ++ T.unpack acct
@@ -2063,7 +2067,7 @@ processDisposePosting styles verbosetags j t lotState p = do
           Left $ showPos ++ "SPECID requires a lot selector on dispose postings"
 
         selected <- first (enrichLotError method methodSource)
-                  $ selectLots method (postingErrPrefix p) scopeAcct commodity posQty cb lotState
+                  $ selectLots method (postingErrPrefix p) "disposal" scopeAcct commodity posQty cb lotState
 
         let baseAcct = lotBaseAccount (paccount p)
             hasExplicitLotAcct = baseAcct /= paccount p
@@ -2188,7 +2192,7 @@ processTransferGroup styles verbosetags j t lotState0 (commodity, ifroms, itos) 
           (method, methodSource) = resolveReductionMethodWithSource j fromP commodity
           fromBaseAcct = lotBaseAccount (paccount fromP)
       selected <- first (enrichLotError method methodSource)
-                $ selectLots method (postingErrPrefix fromP) fromBaseAcct commodity fromQty fromCb st
+                $ selectLots method (postingErrPrefix fromP) "transfer" fromBaseAcct commodity fromQty fromCb st
       let st' = reduceLotState fromBaseAcct commodity [(lid, qty) | (lid, _, qty) <- selected] st
       return $ lotDbg t ("transferred out " ++ show fromQty ++ " " ++ T.unpack commodity
                           ++ " from " ++ T.unpack fromBaseAcct
@@ -2356,10 +2360,10 @@ enrichLotError method methodSource err =
 -- An all-Nothing selector (from @{}@) matches all lots.
 -- Returns a list of (lot id, lot amount, quantity consumed from this lot).
 -- Errors if total available quantity in matching lots is insufficient.
-selectLots :: ReductionMethod -> String -> AccountName -> CommoditySymbol
+selectLots :: ReductionMethod -> String -> String -> AccountName -> CommoditySymbol
            -> Quantity -> CostBasis -> LotState
            -> Either String [(LotId, Amount, Quantity)]
-selectLots method posStr account commodity qty selector lotState = do
+selectLots method posStr operation account commodity qty selector lotState = do
     when (method == SPECID && isWildcardSelector selector) $
       Left $ posStr ++ "SPECID requires an explicit lot selector"
     let allLots = M.findWithDefault M.empty commodity lotState
@@ -2369,8 +2373,9 @@ selectLots method posStr account commodity qty selector lotState = do
     when (M.null matchingLots) $
       Left $ posStr ++
         if M.null flatLots
-        then "no lots available for commodity " ++ T.unpack commodity
-              ++ " in account " ++ T.unpack account
+        then "no " ++ T.unpack commodity
+              ++ " lots available for " ++ operation
+              ++ " from account " ++ T.unpack account
               ++ showOtherAccountLots allLots
         else "no lots matching " ++ T.unpack (showLotName selector)
               ++ " for commodity " ++ T.unpack commodity

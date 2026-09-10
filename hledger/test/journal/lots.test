@@ -44,25 +44,27 @@ $ hledger -f- print
 
 >=
 
-# ** 4. Partial: date only. Lot calculation now requires a cost at load time,
-# so a date-only annotation with no cost or price errors.
+# ** 4. Partial: date only. An acquisition annotation with no cost or price
+# can't create a lot; the entry is read as a transfer from the elided
+# account instead, which errors here since that account holds no lots.
 <
 2026-01-01
     assets:investment    10 AAPL {2026-01-01}
     assets:cash
 
 $ hledger -f- print
->2 /has no lot cost|has no cost basis or price/
+>2 /no AAPL lots available for transfer from account assets:cash/
 >= 1
 
-# ** 5. Partial: label only.  Like 4, no cost, so lot calculation errors.
+# ** 5. Partial: label only. Like 4, no cost, so it errors as a transfer
+# from the lot-less elided account.
 <
 2026-01-01
     assets:investment    10 AAPL {"lot1"}
     assets:cash
 
 $ hledger -f- print
->2 /has no lot cost|has no cost basis or price/
+>2 /no AAPL lots available for transfer from account assets:cash/
 >= 1
 
 # ** 6. Parsing: a lot subaccount name with date and cost,
@@ -140,14 +142,15 @@ $ hledger -f- print
 >=1
 
 # ** 12. Empty cost basis annotations like {} are a cost-basis-present marker
-# but with no cost; lot calculation now errors at load time.
+# but with no cost; like 4, it errors as a transfer from the lot-less
+# elided account.
 <
 2026-01-01
     assets:broker    10 AAPL {}
     assets:cash
 
 $ hledger -f- print
->2 /has no lot cost|has no cost basis or price/
+>2 /no AAPL lots available for transfer from account assets:cash/
 >= 1
 
 # ** 13. print's json output exposes lot info in the acostbasis field.

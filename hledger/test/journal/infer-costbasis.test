@@ -41,7 +41,7 @@ commodity AAPL   ; lots:
     assets:cash
 
 $ hledger -f - print
->2 /no lots available for commodity AAPL/
+>2 /no AAPL lots available for disposal/
 >= 1
 
 # ** 4. Without explicit cost basis, a lotful commodity posting with @ is classified as acquire.
