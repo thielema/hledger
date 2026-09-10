@@ -822,18 +822,20 @@ It has four possible values:
 - `--layout=wide[,WIDTH]`: commodities are shown on a single line, optionally elided to WIDTH
 - `--layout=tall`: each commodity is shown on a separate line
 - `--layout=bare`: commodity symbols are in their own column, amounts are bare numbers
+- `--layout=barewide`: commodities are shown on a single line, all in separate columns, amounts are bare numbers
 - `--layout=tidy`: data is normalised to easily-consumed "tidy" form, with one row per data value.
   (This one is currently supported only by the `balance` command.)
 
 Here are the `--layout` modes supported by each [output format](#output-format)
 Only CSV output supports all of them:
 
-| -    | txt | csv | html | json | sql |
-|------|-----|-----|------|------|-----|
-| wide | Y   | Y   | Y    |      |     |
-| tall | Y   | Y   | Y    |      |     |
-| bare | Y   | Y   | Y    |      |     |
-| tidy |     | Y   |      |      |     |
+| -        | txt | csv | html | json | sql |
+|----------|-----|-----|------|------|-----|
+| wide     | Y   | Y   | Y    |      |     |
+| tall     | Y   | Y   | Y    |      |     |
+| bare     | Y   | Y   | Y    |      |     |
+| barewide | Y   | Y   | Y    |      |     |
+| tidy     |     | Y   |      |      |     |
 
 Examples:
 
@@ -926,6 +928,27 @@ Bare layout will sometimes display an extra row for the no-symbol commodity,
 because of zero amounts (hledger treats zeroes as commodity-less, usually).
 This can break `hledger-bar` confusingly (workaround: add a `cur:` query to exclude
 the no-symbol row).
+
+#### Barewide layout
+Commodity symbols are spread in the table headers,
+each commodity has its own column,
+all column groups share the same set of commodities
+even if in one commodity column all values are zero.
+For consistency you may think of layout `bare` as `baretall`.
+```cli
+$ hledger -f examples/bcexample.journal bal assets:us:etrade -3 -T -Y --layout=barewide
+Balance changes in 2012-01-01..2014-12-31:
+
+                  || 2012 (GLD)  2012 (ITOT)  2012 (USD)  2012 (VEA)  2012 (VHT)  2013 (GLD)  2013 (ITOT)  2013 (USD)  2013 (VEA)  2013 (VHT)  2014 (GLD)  2014 (ITOT)  2014 (USD)  2014 (VEA)  2014 (VHT)    Total (GLD)    Total (ITOT)    Total (USD)    Total (VEA)    Total (VHT) 
+==================++===================================================================================================================================================================================================================================================================
+ Assets:US:ETrade ||          0        10.00      337.18       12.00      106.00       70.00        18.00      -98.12       10.00       18.00           0       -11.00     4881.44       14.00      170.00          70.00           17.00        5120.50          36.00         294.00 
+------------------++-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                  ||          0        10.00      337.18       12.00      106.00       70.00        18.00      -98.12       10.00       18.00           0       -11.00     4881.44       14.00      170.00          70.00           17.00        5120.50          36.00         294.00 
+```
+
+Barewide layout is very useful for [FODS and CSV output](#output-format),
+since you can easily use LibreOffice's `VLOOKUP` function
+for accessing numbers in a table with mixed commodities.
 
 #### Tidy layout
 This produces normalised "tidy data" (see <https://cran.r-project.org/web/packages/tidyr/vignettes/tidy-data.html>)
