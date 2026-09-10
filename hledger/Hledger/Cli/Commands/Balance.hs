@@ -404,7 +404,7 @@ balance opts@CliOpts{reportspec_=rspec} j = case balancecalc_ ropts of
             "tsv"  -> printTSV . budgetReportAsCsv ropts
             "html" -> (<>"\n") . htmlAsLazyText . budgetReportAsHtml ropts
             "fods" -> printFods IO.localeEncoding .
-                      Map.singleton "Budget Report" . (,) (1,0) . budgetReportAsSpreadsheet oneLineNoCostFmt ropts
+                      Map.singleton "Budget Report" . budgetReportAsSpreadsheet oneLineNoCostFmt ropts
             _      -> error' $ unsupportedOutputFormatError fmt
       writeOutputLazyText opts $ render budgetreport
 
@@ -1294,22 +1294,25 @@ budgetReportAsTable ropts@ReportOpts{..} (PeriodicReport spans items totrow) =
 -- but includes alternating actual and budget amount columns.
 budgetReportAsCsv :: ReportOpts -> BudgetReport -> [[Text]]
 budgetReportAsCsv ropts report
-  = rawTableContent $
+  = rawTableContent $ snd $
     budgetReportAsSpreadsheet machineFmt ropts report
 
 -- | Render a budget report as HTML.
 budgetReportAsHtml :: ReportOpts -> BudgetReport -> Html
 budgetReportAsHtml ropts budgetr =
-  titledTableHtml (budgetReportTitle ropts budgetr) . map (map (fmap toHtml)) $
+  titledTableHtml (budgetReportTitle ropts budgetr) . map (map (fmap toHtml)) . snd $
     budgetReportAsSpreadsheet oneLineNoCostFmt ropts budgetr
 
 budgetReportAsSpreadsheet ::
-  AmountFormat -> ReportOpts -> BudgetReport -> [[Ods.Cell Ods.NumLines Text]]
+  AmountFormat -> ReportOpts -> BudgetReport ->
+  ((Int,Int), [[Ods.Cell Ods.NumLines Text]])
 budgetReportAsSpreadsheet
   fmt
   ropts@ReportOpts{..}
   (PeriodicReport colspans items totrow)
-  = (if transpose_ then Ods.transpose else id) $
+  = (if transpose_ then swap *** Ods.transpose else id) $
+  ((1, case layout_ of LayoutBare -> 2; _ -> 1)
+  ,
 
   -- heading row
   (addHeaderBorders $ map headerCell $
@@ -1326,6 +1329,7 @@ budgetReportAsSpreadsheet
   -- totals row
   ++ addTotalBorders
         (concat [ rowAsTexts Total (cell totalRowHeadingBudgetCsv) totrow | not no_total_ ])
+  )
 
   where
     cell = Ods.defaultCell
