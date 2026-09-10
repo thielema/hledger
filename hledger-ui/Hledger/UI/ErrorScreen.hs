@@ -19,6 +19,7 @@ where
 
 import Brick
 -- import Brick.Widgets.Border ("border")
+import Control.Exception (ErrorCall, IOException, catch)
 import Control.Monad.IO.Class (liftIO)
 import Data.Time.Calendar (Day)
 import Data.Void (Void)
@@ -144,6 +145,17 @@ hledgerparseerrorpositionp = do
 uiAdjustOpts :: UIOpts -> CliOpts -> CliOpts
 uiAdjustOpts uopts = enableForecast uopts
 
+-- | Run a journal-loading action, converting exceptions to Left so callers can
+-- show them on the error screen instead of crashing the app. Journal reader
+-- parse errors are returned as Left already, but some load errors are thrown
+-- as exceptions: ErrorCall (from error', eg for CSV conversion problems) or
+-- possibly IO errors (eg a watched file missing momentarily during an editor's save).
+catchLoadErrors :: IO (Either String a) -> IO (Either String a)
+catchLoadErrors act =
+  act
+  `catch` (\e -> return $ Left $ show (e :: ErrorCall))
+  `catch` (\e -> return $ Left $ show (e :: IOException))
+
 -- | Reload the journal from its input files, then update the ui app state accordingly.
 -- This means regenerate the entire screen stack from top level down to the current screen, using the provided today-date.
 -- As a convenience (usually), if journal reloading fails, this enters the error screen, or if already there, updates its message.
@@ -155,12 +167,17 @@ uiAdjustOpts uopts = enableForecast uopts
 -- A forecast period specified in the provided opts, or at startup, is preserved.
 --
 uiReload :: CliOpts -> Day -> UIState -> EventM Name UIState UIState
-uiReload copts d ui = liftIO $ do
-  ej <-
-    let copts1   = uiAdjustOpts (astartupopts ui) copts
+uiReload copts d ui0 = do
+  ej <- liftIO $
+    let copts1   = uiAdjustOpts (astartupopts ui0) copts
         loadopts = copts1{rawopts_ = setboolopt "lots" (rawopts_ copts1)}  -- keep lot detail; the UI collapses it for display
-    in runExceptT $ journalTransform loadopts <$> journalReload loadopts
-  -- dbg1IO "uiReload before reload" (map tdescription $ jtxns $ ajournal ui)
+    in catchLoadErrors $ runExceptT $ journalTransform loadopts <$> journalReload loadopts
+  -- dbg1IO "uiReload before reload" (map tdescription $ jtxns $ ajournal ui0)
+  -- show any warnings collected during the reload (until the next keypress)
+  ui <- liftIO $ (\ws -> ui0{aWarnings=ws}) <$> uiTakeWarnings
+  -- The reload may have written to the terminal, eg output from third-party code
+  -- not using our warning handler; repaint the whole screen to repair any disruption.
+  redraw
   return $ case ej of
     Right jraw ->
       -- dbg1 "uiReload after reload" (map tdescription $ jtxns jraw) $
@@ -183,11 +200,13 @@ uiReload copts d ui = liftIO $ do
 -- since it was last loaded. The up app state is always updated, since the options or today-date may have changed.
 -- Also, this one runs in IO, suitable for suspendAndResume.
 uiReloadIfFileChanged :: CliOpts -> Day -> Journal -> UIState -> IO UIState
-uiReloadIfFileChanged copts d j ui = do
+uiReloadIfFileChanged copts d j ui0 = do
   ej <-
-    let copts1   = uiAdjustOpts (astartupopts ui) copts
+    let copts1   = uiAdjustOpts (astartupopts ui0) copts
         loadopts = copts1{rawopts_ = setboolopt "lots" (rawopts_ copts1)}  -- keep lot detail; the UI collapses it for display
-    in runExceptT $ journalReloadIfChanged loadopts d j
+    in catchLoadErrors $ runExceptT $ journalReloadIfChanged loadopts d j
+  -- show any warnings collected during the reload (until the next keypress)
+  ui <- (\ws -> ui0{aWarnings=ws}) <$> uiTakeWarnings
   return $ case ej of
     -- changed: save the uncollapsed journal; regenerateScreens derives the display journal from it
     Right (jraw, True)  -> regenerateScreens d ui{auncollapsedjournal = jraw}

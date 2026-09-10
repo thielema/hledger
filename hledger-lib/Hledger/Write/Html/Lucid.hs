@@ -7,11 +7,16 @@ module Hledger.Write.Html.Lucid (
     Html,
     L.toHtml,
     styledTableHtml,
+    titledTableHtml,
     formatRow,
     formatCell,
+    formatTitle,
+    nl,
     ) where
 
+import           Control.Monad (unless)
 import           Data.Foldable (traverse_)
+import           Data.List (intersperse)
 import Data.Text qualified as Text
 import Lucid.Base qualified as L
 import Lucid qualified as L
@@ -24,20 +29,49 @@ import Hledger.Write.Spreadsheet qualified as Spr
 
 type Html = L.Html ()
 
+-- | A literal newline, to make the HTML output more human-readable.
+-- Emit it only between elements, never inside cell content,
+-- so it doesn't affect rendering.
+nl :: Html
+nl = L.toHtmlRaw ("\n"::Text.Text)
+
 -- | Export spreadsheet table data as HTML table.
 -- This is derived from <https://hackage.haskell.org/package/classify-frog-0.2.4.3/src/src/Spreadsheet/Format.hs>
 styledTableHtml :: (Lines border) => [[Cell border Html]] -> Html
-styledTableHtml table = do
-    L.link_ [L.rel_ "stylesheet", L.href_ "hledger.css"]
+styledTableHtml = titledTableHtml Text.empty
+
+-- | Like 'styledTableHtml', but with the given report title, if non-empty,
+-- as a heading above the table.
+titledTableHtml :: (Lines border) => Text.Text -> [[Cell border Html]] -> Html
+titledTableHtml title table = do
+    -- the builtin styles, then the optional user stylesheet so it can override them
     L.style_ Attr.tableStylesheet
-    L.table_ $ traverse_ formatRow table
+    nl
+    L.link_ [L.rel_ "stylesheet", L.href_ "hledger.css"]
+    nl
+    unless (Text.null title) $ formatTitle title
+    L.table_ $ nl <> traverse_ formatRow table
 
 formatRow:: (Lines border) => [Cell border Html] -> Html
-formatRow = L.tr_ . traverse_ formatCell
+formatRow row = L.tr_ (traverse_ formatCell row) <> nl
+
+-- | Render a report title as an HTML heading.
+formatTitle :: Text.Text -> Html
+formatTitle title = L.h3_ [L.class_ "report-title"] (L.toHtml title) <> nl
 
 formatCell :: (Lines border) => Cell border Html -> Html
 formatCell cell =
-    let str = cellContent cell in
+    -- Wrap amounts in <span class="amount">, one per amount,
+    -- so eg wrapping within amounts can be prevented with css.
+    let amountSpan = L.span_ [L.class_ "amount"] in
+    let str =
+            case cellParts cell of
+                [] -> case cellType cell of
+                    TypeAmount _ -> amountSpan $ cellContent cell
+                    _            -> cellContent cell
+                parts ->
+                    mconcat $ intersperse (L.toHtml (", "::Text.Text)) $
+                    map amountSpan parts in
     let content =
             if Text.null $ cellAnchor cell
                 then str
@@ -46,17 +80,26 @@ formatCell cell =
             case borderStyles cell of
                 [] -> []
                 ss -> [L.style_ $ Attr.concatStyles ss] in
+    -- Mark date cells with a "date" class, so eg wrapping within dates
+    -- can be prevented with css.
     let class_ =
-            map L.class_ $
-            filter (not . Text.null) [Spr.textFromClass $ cellClass cell] in
+            map (L.class_ . Text.unwords) $
+            filter (not . null) $
+            [filter (not . Text.null) $
+             Spr.textFromClass (cellClass cell) :
+             ["date" | cellType cell == TypeDate]] in
+    let addSpan spanAttr n attrs =
+            if n==1
+                then attrs
+                else spanAttr (Text.pack $ show n) : attrs in
     let span_ makeCell attrs cont =
             case Spr.cellSpan cell of
                 Spr.NoSpan -> makeCell attrs cont
                 Spr.Covered -> pure ()
                 Spr.SpanHorizontal n ->
-                    makeCell (L.colspan_ (Text.pack $ show n) : attrs) cont
+                    makeCell (addSpan L.colspan_ n attrs) cont
                 Spr.SpanVertical n ->
-                    makeCell (L.rowspan_ (Text.pack $ show n) : attrs) cont
+                    makeCell (addSpan L.rowspan_ n attrs) cont
             in
     case cellStyle cell of
         Head -> span_ L.th_ (style++class_) content

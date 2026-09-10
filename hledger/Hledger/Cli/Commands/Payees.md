@@ -24,6 +24,8 @@ The payee/payer name is the part of the transaction description before a | chara
 (or if there is no |, the whole description).
 
 You can add [query arguments](#queries) to select a subset of transactions or payees.
+Note that transaction-specific query terms like `date:` will exclude
+declared-but-unused payees, which don't have that field.
 
 Example:
 ```cli

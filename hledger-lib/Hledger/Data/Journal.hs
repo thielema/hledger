@@ -46,6 +46,9 @@ module Hledger.Data.Journal (
   journalPostingsAddCommodityTags,
   journalInferPostingsTransactedCost,
   journalCommodityUsesLots,
+  journalAccountUsesNoLots,
+  journalAccountLotsTags,
+  accountUsesNoLotsWith,
   journalLotfulCommodities,
   journalCommodityLotsMethod,
   postingLotsMethod,
@@ -96,6 +99,7 @@ module Hledger.Data.Journal (
   journalCommodities,
   journalCommoditiesFromPriceDirectives,
   journalCommoditiesFromTransactions,
+  journalBaseCurrency,
   journalBaseCurrencyCode,
   journalDateSpan,
   journalDateSpanBothDates,
@@ -105,6 +109,7 @@ module Hledger.Data.Journal (
   journalDescriptions,
   journalFilePath,
   journalFilePaths,
+  journalAllFilePaths,
   journalTransactionAt,
   journalNextTransaction,
   journalPrevTransaction,
@@ -157,7 +162,7 @@ import Data.List (foldl')
 #endif
 import Data.List.Extra (nubSort)
 import Data.Map.Strict qualified as M
-import Data.Maybe (catMaybes, fromMaybe, isNothing, mapMaybe, maybeToList)
+import Data.Maybe (catMaybes, fromMaybe, isJust, isNothing, listToMaybe, mapMaybe, maybeToList)
 import Data.Ord (comparing)
 import Data.Set qualified as S
 import Data.Text (Text)
@@ -173,6 +178,7 @@ import Text.Megaparsec (ParsecT)
 import Hledger.Utils
 import Hledger.Data.Types
 import Hledger.Data.AccountName
+import Hledger.Data.AccountType (isEquityType)
 import Hledger.Data.Amount
 import Hledger.Data.Currency (CurrencyCode, toCurrencyCode)
 import Hledger.Data.Errors (makeAccountTagErrorExcerpt, makeCommodityTagErrorExcerpt)
@@ -239,6 +245,7 @@ journalDbg j@Journal{..} = chomp $ unlines $
   ,"jtxns: "                     <> shw jtxns
   ,"jfinalcommentlines: "        <> shw jfinalcommentlines
   ,"jfiles: "                    <> shw jfiles
+  ,"jauxfiles: "                 <> shw jauxfiles
   ,"jlastreadtime: "             <> shw jlastreadtime
   ]
   -- ++ ["}"]
@@ -321,6 +328,7 @@ journalConcat j1 j2 =
     ,jtxns                      = jtxns                      j1 <> jtxns                      j2
     ,jfinalcommentlines         = jfinalcommentlines j2  -- XXX discards j1's ?
     ,jfiles                     = jfiles                     j1 <> jfiles                     j2
+    ,jauxfiles                  = jauxfiles                  j1 <> jauxfiles                  j2
     ,jlastreadtime              = max (jlastreadtime j1) (jlastreadtime j2)
     }
 
@@ -381,6 +389,7 @@ nulljournal = Journal {
   ,jtxns                      = []
   ,jfinalcommentlines         = ""
   ,jfiles                     = []
+  ,jauxfiles                  = []
   ,jlastreadtime              = 0
   }
 
@@ -389,6 +398,12 @@ journalFilePath = fst . mainfile
 
 journalFilePaths :: Journal -> [FilePath]
 journalFilePaths = map fst . jfiles
+
+-- | All the files this journal's data was read from: its data files
+-- (journalFilePaths) and any auxiliary files such as CSV rules files (jauxfiles).
+-- These are the files to watch for changes when reloading.
+journalAllFilePaths :: Journal -> [FilePath]
+journalAllFilePaths j = journalFilePaths j <> jauxfiles j
 
 mainfile :: Journal -> (FilePath, Text)
 mainfile = headDef ("(unknown)", "") . jfiles
@@ -469,23 +484,28 @@ journalCommoditiesFromPriceDirectives = S.fromList . concatMap pdcomms . jpriced
 journalCommoditiesFromTransactions :: Journal -> S.Set CommoditySymbol
 journalCommoditiesFromTransactions j = S.fromList $ map acommodity $ journalPostingAndCostAmounts j
 
--- | Guess a base currency for this journal, as a ISO 4217 currency code if possible,
--- choosing as follows:
+-- | Guess a base currency for this journal: Just the commodity symbol
+-- as used in the journal, and its ISO 4217 currency code if one is known
+-- (otherwise the symbol again), choosing as follows:
 -- 1. The "to" commodity that appears most often in P (price) directives, if any.
 -- 2. Otherwise, the commodity that appears most often in posting and cost amounts.
--- 3. Otherwise, "USD".
+-- 3. Otherwise, Nothing.
 -- The synthetic 1:1 bridge directives generated from commodity @alias:@ tags
 -- (see journalInferAliasPrices) are excluded from step 1, so that declaring
 -- aliases doesn't sway the guess.
 -- Commodity symbols are normalised to ISO 4217 codes where possible,
--- so that equivalent symbols are tallied together.
+-- so that equivalent symbols are tallied together; the symbol returned
+-- is the first-occurring one that normalises to the winning code.
 -- Ties are broken by first occurrence order.
-journalBaseCurrencyCode :: Journal -> CurrencyCode
-journalBaseCurrencyCode j =
-  fromMaybe "USD" $ mostFrequent priceTargetComms <|> mostFrequent postingAndCostComms
+journalBaseCurrency :: Journal -> Maybe (CommoditySymbol, CurrencyCode)
+journalBaseCurrency j = pick priceTargetComms <|> pick postingAndCostComms
   where
-    priceTargetComms    = map (toCurrencyCode . acommodity . pdamount) realPriceDirectives
-    postingAndCostComms = map (toCurrencyCode . acommodity) $ journalPostingAndCostAmounts j
+    pick syms = do
+      code <- mostFrequent $ map toCurrencyCode syms
+      sym  <- find ((== code) . toCurrencyCode) syms
+      Just (sym, code)
+    priceTargetComms    = map (acommodity . pdamount) realPriceDirectives
+    postingAndCostComms = map acommodity $ journalPostingAndCostAmounts j
 
     -- Price directives, excluding the 1:1 bridges inferred from commodity alias: tags.
     realPriceDirectives = filter (not . isCommodityAliasPrice) $ jpricedirectives j
@@ -506,6 +526,11 @@ journalBaseCurrencyCode j =
         stats             = foldl' bump M.empty (zip [0::Int ..] xs)
         bump m (i, x)     = M.insertWith combine x (-1, i) m
         combine _ (!c, i) = (c - 1, i)
+
+-- | The ISO 4217 currency code of this journal's guessed base currency
+-- ('journalBaseCurrency'), defaulting to "USD".
+journalBaseCurrencyCode :: Journal -> CurrencyCode
+journalBaseCurrencyCode = maybe "USD" snd . journalBaseCurrency
 
 -- | Unique transaction descriptions used in this journal.
 journalDescriptions :: Journal -> [Text]
@@ -732,6 +757,33 @@ journalLotfulCommodities :: Journal -> S.Set CommoditySymbol
 journalLotfulCommodities j@Journal{jdeclaredcommoditytags} =
   S.filter (journalCommodityUsesLots j) (M.keysSet jdeclaredcommoditytags)
 
+-- | The declared lots: tag values by account (the first value, if an
+-- account somehow has several).
+journalAccountLotsTags :: Journal -> M.Map AccountName Text
+journalAccountLotsTags Journal{jdeclaredaccounttags} =
+  M.mapMaybe (\tags -> listToMaybe [v | (k, v) <- tags, T.toLower k == "lots"]) jdeclaredaccounttags
+
+-- | Does this account opt out of lot tracking, via a NONE-valued lots: tag
+-- on its own or an ancestor's declaration ? The nearest declaration wins,
+-- so a subaccount can re-enable tracking with its own lots: method tag.
+-- Postings with explicit cost basis annotations are still lot-tracked
+-- regardless (the more specific declaration wins).
+journalAccountUsesNoLots :: Journal -> AccountName -> Bool
+journalAccountUsesNoLots = accountUsesNoLotsWith . journalAccountLotsTags
+
+-- | Like journalAccountUsesNoLots, but taking the 'journalAccountLotsTags'
+-- map (useful where no Journal is at hand, eg during balancing).
+accountUsesNoLotsWith :: M.Map AccountName Text -> AccountName -> Bool
+accountUsesNoLotsWith lotstags a =
+  case [v | a' <- a : parentAccountNames a, Just v <- [M.lookup a' lotstags]] of
+    (v:_) -> isNoneLotsTagValue v
+    []    -> False
+
+-- | Is this lots: tag value the special NONE value (case insensitive),
+-- valid on account declarations to opt out of lot tracking ?
+isNoneLotsTagValue :: Text -> Bool
+isNoneLotsTagValue v = T.toUpper (T.strip v) == "NONE"
+
 -- | Get the reduction method from a commodity's lots: tag value, if any.
 journalCommodityLotsMethod :: Journal -> CommoditySymbol -> Maybe ReductionMethod
 journalCommodityLotsMethod j c =
@@ -761,20 +813,45 @@ parseReductionMethod t = case T.toUpper (T.strip t) of
   _            -> Nothing
 
 -- | Check that all lots: tag values on commodity and account declarations are recognised.
--- Empty values (bare @lots:@ tag) are valid and default to FIFO.
--- Non-empty values must be one of the known reduction methods.
+-- On a commodity declaration, an empty value (bare @lots:@ tag) is valid,
+-- declaring the commodity lotful with the default FIFO reduction method;
+-- a non-empty value must be one of the known reduction methods.
+-- On an account declaration, the tag only sets the reduction method for
+-- lotful commodities in that account, so a method value is required.
 journalCheckLotsTagValues :: Journal -> Either String Journal
 journalCheckLotsTagValues j = do
   mapM_ checkCommodity (M.toList $ jdeclaredcommoditytags j)
   mapM_ checkAccount   (jdeclaredaccounts j)
   Right j
   where
-    msg :: String
-    msg = unlines [
+    methods = "FIFO, LIFO, HIFO, AVERAGE, SPECID, FIFOALL, LIFOALL, HIFOALL, AVERAGEALL"
+
+    unrecognisedmsg :: String
+    unrecognisedmsg = unlines [
        "%s:%d:"
       ,"%s"
       ,"unrecognised lots: tag value %s."
-      ,"Use FIFO, LIFO, HIFO, AVERAGE, SPECID, FIFOALL, LIFOALL, HIFOALL, AVERAGEALL, or nothing (meaning FIFO)"
+      ,"Use " ++ methods ++ ", or nothing (meaning FIFO)"
+      ]
+
+    valuelessmsg :: String
+    valuelessmsg = unlines [
+       "%s:%d:"
+      ,"%s"
+      ,"An account lots: tag sets the disposal order for lot-tracked commodities there,"
+      ,"so it needs a value, one of " ++ methods ++ ";"
+      ,"or NONE, to disable lot tracking in this account."
+      ,"(A commodity lots: tag enables lot tracking, and can also set the disposal order.)"
+      ]
+
+    nonecommoditymsg :: String
+    nonecommoditymsg = unlines [
+       "%s:%d:"
+      ,"%s"
+      ,"lots: NONE is not supported on commodity declarations."
+      ,"To disable lot tracking of this commodity in particular accounts,"
+      ,"add a lots: NONE tag to those accounts' declarations instead;"
+      ,"to disable it everywhere, remove the commodity's lots: tag."
       ]
 
     checkCommodity (sym, tags) =
@@ -785,8 +862,9 @@ journalCheckLotsTagValues j = do
     checkCommodityTag comm (k, v)
       | T.toLower k /= "lots"       = Right ()
       | T.null (T.strip v)          = Right ()
+      | isNoneLotsTagValue v        = Left $ printf nonecommoditymsg f l ex
       | Just _ <- parseReductionMethod v = Right ()
-      | otherwise = Left $ printf msg f l ex (show v)
+      | otherwise = Left $ printf unrecognisedmsg f l ex (show v)
           where (f, l, _mcols, ex) = makeCommodityTagErrorExcerpt comm k
 
     checkAccount (acctName, adi) =
@@ -794,9 +872,10 @@ journalCheckLotsTagValues j = do
 
     checkAccountTag acctName adi (k, v)
       | T.toLower k /= "lots"       = Right ()
-      | T.null (T.strip v)          = Right ()
+      | T.null (T.strip v)          = Left $ printf valuelessmsg f l ex
+      | isNoneLotsTagValue v        = Right ()
       | Just _ <- parseReductionMethod v = Right ()
-      | otherwise = Left $ printf msg f l ex (show v)
+      | otherwise = Left $ printf unrecognisedmsg f l ex (show v)
           where (f, l, _mcols, ex) = makeAccountTagErrorExcerpt (acctName, adi) k
 
 -- | To all postings in the journal, add any tags from their amount's commodities.
@@ -807,26 +886,69 @@ journalPostingsAddCommodityTags j = journalMapPostings addtags j
   where
     addtags p = p `postingAddTags` concatMap (journalCommodityTags j) (postingCommodities p)
 
--- | For positive postings with a cost basis, which are not lot transfers,
--- infer transacted cost from cost basis.
--- Must be called after journalClassifyLotPostings so ptype tags are available.
+-- | For positive postings with a cost basis, which don't look like lot
+-- transfer destinations, infer transacted cost from cost basis. This runs
+-- before transaction balancing (the inferred cost lets an acquire entry with
+-- an elided cash amount balance at cost), so lot classification hasn't
+-- happened yet; transfer destinations - which must not get a transacted
+-- cost - are recognised by shape: a positive cost-basis posting is skipped
+-- when the transaction has an explicit negative amount of the same commodity
+-- and quantity in another account (a transfer-from counterpart), or the
+-- commodity's unpriced negative and positive quantities sum to matching
+-- totals (a split or consolidating transfer group, possibly minus a fee),
+-- or an equity posting with no cost-basis amounts (an equity transfer, eg
+-- close --clopen --lots style opening balances).
 journalInferPostingsTransactedCost :: Journal -> Journal
-journalInferPostingsTransactedCost = journalMapPostings postingInferTransactedCost
-
-postingInferTransactedCost :: Posting -> Posting
-postingInferTransactedCost p
-  | ("_ptype", "transfer-to") `elem` ptags p = p   -- not for transfer postings
-  | not (any needsInference $ amounts $ pamount p) = p  -- nothing to infer
-  | otherwise = p'{poriginal = Just $ originalPosting p}
+journalInferPostingsTransactedCost j = journalMapTransactions inferTxn j
   where
-    p' = p{pamount = mapMixedAmount amountInferTransactedCost $ pamount p}
-    needsInference a = aquantity a > 0 && isNothing (acost a) && hasCostBasisCost a
-    amountInferTransactedCost a
-      | needsInference a, Just CostBasis{cbCost=Just c} <- acostbasis a = a{acost = Just (UnitCost c)}
-      | otherwise = a
-    hasCostBasisCost a = case acostbasis a of
-      Just CostBasis{cbCost=Just _} -> True
-      _ -> False
+    inferTxn t = t{tpostings = map (postingInferTransactedCost t) (tpostings t)}
+
+    postingInferTransactedCost t p
+      | not (any needsInference $ amounts $ pamount p) = p  -- nothing to infer
+      | hasEquityCounterpart t = p                          -- equity transfer: not for transfer postings
+      | otherwise = p'{poriginal = Just $ originalPosting p}
+      where
+        p' = p{pamount = mapMixedAmount amountInferTransactedCost $ pamount p}
+        needsInference a = aquantity a > 0 && isNothing (acost a) && hasCostBasisCost a
+                        && not (hasTransferFromCounterpart t p a)
+                        && not (hasTransferGroupShape t p (acommodity a))
+        amountInferTransactedCost a
+          | needsInference a, Just CostBasis{cbCost=Just c} <- acostbasis a = a{acost = Just (UnitCost c)}
+          | otherwise = a
+        hasCostBasisCost a = case acostbasis a of
+          Just CostBasis{cbCost=Just _} -> True
+          _ -> False
+
+    -- Does another posting have an explicit negative amount of this commodity
+    -- and quantity, in a different account ? Then this looks like a transfer pair.
+    hasTransferFromCounterpart t p a =
+      any (\q -> paccount q /= paccount p
+              && any (\qa -> acommodity qa == acommodity a && aquantity qa == negate (aquantity a))
+                     (amountsRaw (pamount q)))
+          (tpostings t)
+
+    -- Do the transaction's unpriced amounts in this commodity look like a
+    -- split or consolidating transfer group (#2692) ? True when the total
+    -- unpriced negative quantity equals the total unpriced positive quantity,
+    -- is nonzero, and at least one negative is in a different account.
+    -- Priced amounts are excluded on both sides: a priced posting (eg a fee
+    -- disposal -0.02 A {$100} @ $100) is a deliberate trade, not part of the
+    -- transfer.
+    hasTransferGroupShape t p c =
+      negTotal > 0 && negTotal == posTotal && any (/= paccount p) negAccts
+      where
+        unpricedAmts q = [a | a <- amountsRaw (pamount q), acommodity a == c, isNothing (acost a)]
+        negs = [(paccount q, negate (aquantity a)) | q <- tpostings t, a <- unpricedAmts q, aquantity a < 0]
+        posTotal = sum [aquantity a | q <- tpostings t, a <- unpricedAmts q, aquantity a > 0]
+        negTotal = sum (map snd negs)
+        negAccts = map fst negs
+
+    -- Does the transaction have an equity posting with no cost-basis amounts ?
+    -- (Mirrors the lot classifier's equity-transfer detection.)
+    hasEquityCounterpart t =
+      any (\q -> maybe False isEquityType (journalAccountType j (paccount q))
+              && not (any (isJust . acostbasis) (amountsRaw (pamount q))))
+          (tpostings t)
 
 -- | The account name to use for conversion postings generated by --infer-equity.
 -- This is the first account declared with type V/Conversion,
@@ -1476,8 +1598,10 @@ journalPivot fieldortagname j = j{jtxns = map (transactionPivot fieldortagname) 
 
 -- | Replace this transaction's postings' account names with the value
 -- of the given field or tag, if any.
+-- The postings are relinked to the new transaction, so that queries which
+-- look at a posting's siblings (any:, all:) see the pivoted account names.
 transactionPivot :: Text -> Transaction -> Transaction
-transactionPivot fieldortagname t = t{tpostings = map (postingPivot fieldortagname) . tpostings $ t}
+transactionPivot fieldortagname t = txnTieKnot t{tpostings = map (postingPivot fieldortagname) . tpostings $ t}
 
 -- | Replace this posting's account name with the value
 -- of the given field or tag, if any, otherwise the empty string.

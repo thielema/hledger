@@ -303,6 +303,10 @@ when you press g to reload. Once you have fixed the problem,
 press g again to reload and resume normal operation.
 (Or, you can press escape to cancel the reload attempt.)
 
+Non-fatal warnings, eg from reading CSV files, don't interrupt like this;
+instead they are shown on the bottom line of the screen,
+at startup or after a reload, until the next key press.
+
 
 # WATCH MODE
 
@@ -331,7 +335,7 @@ eg to toggle cleared mode, or to explore the history.
 
 - It may not work at all for you, depending on platform or system configuration.
   On some unix systems, increasing fs.inotify.max_user_watches or fs.file-max parameters in /etc/sysctl.conf might help.
-  ([#836](https://github.com/simonmichael/hledger/issues/836))
+  ([#836](https://github.com/hledgerorg/hledger/issues/836))
 - It may not detect changes made from outside a virtual machine, ie by an editor running on the host system.
 - It may not detect file changes on certain less common filesystems.
 

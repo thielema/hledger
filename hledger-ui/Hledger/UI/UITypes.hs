@@ -91,6 +91,8 @@ data UIState = UIState {
   ,aScreen      :: ~Screen   -- ^ the currently active screen (the zipper's focus)
   ,aPrevScreens :: ~[Screen] -- ^ suspended ancestor screens, nearest first
   ,aMode         :: Mode      -- ^ the currently active mode on the current screen
+  ,aWarnings     :: [String]  -- ^ warnings collected during the last journal (re)load, oldest first;
+                              --   displayed until the next keypress (see warningOverlay)
   } deriving (Show)
 
 -- | Any screen can be in one of several modes, which modifies 

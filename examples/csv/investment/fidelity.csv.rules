@@ -21,7 +21,7 @@ if ! ^[0-9]([^,]*,){11}
 
 # Run Date,Action,Symbol,Security Description,Security Type,Quantity,Price ($),Commission ($),Fees ($),Accrued Interest ($),Amount ($),Settlement Date
 # If you have multiple accounts there will also be an Account field after Run Date
-# (and it might need preprocessing, see https://github.com/simonmichael/hledger/issues/2082).
+# (and it might need preprocessing, see https://github.com/hledgerorg/hledger/issues/2082).
 fields Run_Date, Action, Symbol, Security_Description, Security_Type, Quantity, Price_Usd, Commission_Usd, Fees_Usd, Accrued_Interest_Usd, Amount_Usd, Settlement_Date
 
 date %Run_Date

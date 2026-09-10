@@ -29,6 +29,8 @@ module Hledger.UI.UIUtils (
   ,modify'
   ,suspend
   ,redraw
+  ,uiInstallWarningCollector
+  ,uiTakeWarnings
   ,reportSpecAddQuery
   ,reportSpecSetFutureAndForecast
   ,listScrollPushingSelection
@@ -55,6 +57,7 @@ import Brick.Widgets.List (List, listSelectedL, listNameL, listItemHeightL, list
 import Control.Concurrent.STM (atomically, writeTChan)  -- GHC only
 import Control.Monad.IO.Class
 import Data.Bifunctor (second)
+import Data.IORef (IORef, newIORef, atomicModifyIORef')
 import Data.List
 import Data.Text qualified as T
 import Data.Time (addDays)
@@ -64,6 +67,7 @@ import Graphics.Vty
   ,Vty (inputIface), InternalEvent (InputEvent), Input (eventChannel)
   )
 import Lens.Micro.Platform
+import System.IO.Unsafe (unsafePerformIO)
 
 import Hledger
 -- import Hledger.Cli.CliOptions (CliOpts(reportspec_))
@@ -135,6 +139,23 @@ suspend st = suspendAndResume $ suspendSignal >> return st
 -- | Tell vty to redraw the whole screen.
 redraw :: EventM a s ()
 redraw = getVtyHandle >>= liftIO . refresh
+
+-- | Where warnings emitted while the TUI is running are collected, oldest first,
+-- so they can be shown in the UI instead of being printed to stderr
+-- (which would disrupt the terminal display). See uiInstallWarningCollector.
+{-# NOINLINE uiWarningsRef #-}
+uiWarningsRef :: IORef [String]
+uiWarningsRef = unsafePerformIO $ newIORef []
+
+-- | Make warnIO collect warnings in uiWarningsRef instead of printing them to stderr.
+-- Call once, before starting the brick app.
+uiInstallWarningCollector :: IO ()
+uiInstallWarningCollector = setWarningHandler $ \msg ->
+  atomicModifyIORef' uiWarningsRef $ \ws -> (ws ++ [msg], ())
+
+-- | Take any warnings collected since last time, clearing the collection.
+uiTakeWarnings :: IO [String]
+uiTakeWarnings = atomicModifyIORef' uiWarningsRef $ \ws -> ([], ws)
 
 -- | Wrap a widget in the default hledger-ui screen layout.
 defaultLayout :: Widget Name -> Widget Name -> Widget Name -> Widget Name

@@ -35,9 +35,9 @@ import Control.Monad.Extra (concatMapM, anyM)
 import Data.IORef (IORef, newIORef, readIORef, writeIORef)
 import Data.Time.Clock.POSIX (POSIXTime, utcTimeToPOSIXSeconds)
 
-import System.Exit (ExitCode, exitWith)
+import System.Exit (ExitCode(..), exitWith)
 import System.Console.CmdArgs.Explicit (expandArgsAt, modeNames, flagNone)
-import System.IO (stdin, stderr, hIsTerminalDevice, hIsOpen, hPutStrLn, hFlush)
+import System.IO (stdin, stderr, stdout, hIsTerminalDevice, hIsOpen, hPutStrLn, hFlush)
 import System.IO.Unsafe (unsafePerformIO)
 import System.Console.Haskeline
 
@@ -105,7 +105,9 @@ run defaultJournalOverride findBuiltinCommand addons cmdaliases shellaliasesallo
         let journalFromStdin = any (== "-") $ map (snd . splitReaderPrefix) $ NE.toList inputFiles
         if journalFromStdin
         then error' "'run' can't read commands from stdin, as one of the input files was stdin as well"
-        else runREPL jpaths rungeneralopts addonfileargs findBuiltinCommand addons cmdaliases shellaliasesallowed Nothing Nothing True
+        -- watch is False: run never reloads changed files, in any of its modes
+        -- (unlike repl). Its other modes don't, since they don't go through runREPL.
+        else runREPL jpaths rungeneralopts addonfileargs findBuiltinCommand addons cmdaliases shellaliasesallowed Nothing Nothing False
     -- Otherwise the arguments are files to read commands from.
     | otherwise ->
         runFromFiles jpaths rungeneralopts addonfileargs findBuiltinCommand addons cmdaliases shellaliasesallowed args
@@ -143,8 +145,33 @@ runFromArgs defaultJournalOverride rungeneralopts addonfileargs findBuiltinComma
 -- When commands are read from file, we need to split the line into command and arguments
 parseCommand :: String -> [String]
 parseCommand line =
-  -- # begins a comment, ignore everything after #
-  takeWhile (not. ((Just '#')==) . headMay) $  words' (strip line)
+  case wordsEither line' of
+    -- # begins a comment, ignore everything after #
+    Right ws -> takeWhile (not. ((Just '#')==) . headMay) ws
+    Left err -> error' $ "could not parse this command line:\n" <> err
+  where line' = strip line
+
+-- | Interpret the common backslash escape sequences \n, \t, \r and \\ in a string,
+-- so the run/repl echo command can print newlines, tabs etc. An unrecognised escape
+-- is left as written (its backslash is kept).
+unescape :: String -> String
+unescape ('\\':c:cs) = case c of
+  'n'  -> '\n' : unescape cs
+  't'  -> '\t' : unescape cs
+  'r'  -> '\r' : unescape cs
+  '\\' -> '\\' : unescape cs
+  _    -> '\\' : c : unescape cs
+unescape (c:cs)      = c : unescape cs
+unescape []          = []
+
+-- | Run a shell command, and if it fails, exit with its exit code; on success just return,
+-- so a sequence of run/repl commands can continue. Flushes stdout first, so that our own
+-- buffered output (eg echo's) appears before the subprocess's output.
+runShellCommandOrExit :: String -> IO ()
+runShellCommandOrExit shcmd = do
+  hFlush stdout
+  ec <- system shcmd
+  when (ec /= ExitSuccess) $ exitWith ec
 
 -- | Take a single command line (from file, or REPL, or "--"-surrounded block of the args), and run it.
 -- addonfileargs are -f options (the session's explicit input files) to pass through to addon commands.
@@ -152,13 +179,13 @@ runCommand :: DefaultRunJournal -> [(String,String)] -> [String] -> (String -> M
 runCommand defaultJournalOverride rungeneralopts addonfileargs findBuiltinCommand addons cmdaliases shellaliasesallowed cmdline = do
   dbg1IO "runCommand for" cmdline
   case cmdline of
-    "echo":args -> putStrLn $ unwords $ args
+    "echo":args -> putStrLn $ unescape $ unwords args
     cmdname0:args0 ->
       -- The command may be a command alias defined in the config file; expand it.
       case expandCommandAlias (isJust . findBuiltinCommand) cmdaliases cmdname0 of
        -- A !-prefixed shell command alias: run it (if allowed), with any arguments appended.
        ShellCommand shcmd
-         | shellaliasesallowed -> system (unwords $ shcmd : map quoteForCommandLine args0) >>= exitWith
+         | shellaliasesallowed -> runShellCommandOrExit (unwords $ shcmd : map quoteForCommandLine args0)
          | otherwise -> error' $ "the command alias '" ++ cmdname0
              ++ "' runs a shell command, which is only allowed from your user config file or a --conf file"
        -- Otherwise an hledger command, with the alias's arguments preceding this line's own arguments.
@@ -204,7 +231,7 @@ runCommand defaultJournalOverride rungeneralopts addonfileargs findBuiltinComman
         Nothing | cmdname `elem` addons ->
           -- Pass the session's explicit input files to the addon, so it uses the same journal
           -- (as the CLI does by forwarding its -f options to addons).
-          system (printf "%s-%s %s" progname cmdname (unwords $ map quoteForCommandLine $ addonfileargs <> args)) >>= exitWith
+          runShellCommandOrExit (printf "%s-%s %s" progname cmdname (unwords $ map quoteForCommandLine $ addonfileargs <> args))
         Nothing ->
           error' $ "Unrecognized command" ++ aliasnote ++ ": " ++ unwords (cmdname:args)
     [] -> return ()
@@ -270,7 +297,7 @@ runREPL defaultJournalOverride@(DefaultRunJournal jpaths) rungeneralopts addonfi
               (_, addons')     <- readIORef addonsRef
               case strip input of
                 "!"       -> return ()           -- a bare !, do nothing
-                '!':shcmd -> void $ system shcmd  -- !SHELLCMD, run the rest as a shell command
+                '!':shcmd -> hFlush stdout >> void (system shcmd)  -- !SHELLCMD, run the rest as a shell command
                 -- h is a short alias for the help command.
                 _         -> runCommand defaultJournalOverride rungeneralopts addonfileargs findBuiltinCommand addons' cmdaliases' shellaliasesallowed $
                              case parseCommand input of
@@ -340,13 +367,13 @@ refreshStaleJournals :: IO ()
 refreshStaleJournals = do
   cache <- readMVar journalCache
   forM_ (Map.toList cache) $ \((iopts,fp), j) -> do
-    changed <- anyM (journalFileIsNewer j) (journalFilePaths j)
+    changed <- anyM (journalFileIsNewer j) (journalAllFilePaths j)
     when changed $
       reloadChanged fp "version" (runExceptT $ readJournalFile iopts fp)
         (\j' -> modifyMVar_ journalCache $ return . Map.insert (iopts,fp) j')
         -- On failure advance the cached journal's read time past its current files, so we report
         -- the error once and stay quiet until a file changes again.
-        (do newest <- maximum . (jlastreadtime j :) . catMaybes <$> mapM maybeFileModificationTime (journalFilePaths j)
+        (do newest <- maximum . (jlastreadtime j :) . catMaybes <$> mapM maybeFileModificationTime (journalAllFilePaths j)
             modifyMVar_ journalCache $ return . Map.adjust (journalSetLastReadTime newest) (iopts,fp))
 
 -- | If the config file has changed on disk since its command aliases were last read,

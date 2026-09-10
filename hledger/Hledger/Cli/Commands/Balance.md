@@ -47,7 +47,11 @@ Flags:
      --summary-only         display only row summaries (e.g. row total,
                             average) (in multicolumn reports)
   -N --no-total             omit the final total row
-     --no-elide             in tree mode, don't squash boring parent accounts
+     --no-elide             in tree mode, don't squash boring parent
+                            accounts; in list mode, also show parent accounts
+                            (usually zero, hidden without -E)
+     --full-names           in tree mode, show full account names instead of
+                            indented leaf names
      --format=FORMATSTR     use this custom line format (in simple reports)
   -S --sort-amount          sort by amount instead of account code/name (in
                             flat mode). With multiple columns, sorts by the row
@@ -141,7 +145,7 @@ Many of these work with the other balance-like commands as well (`bs`, `cf`, `is
 This command supports the
 [output destination](#output-destination) and
 [output format](#output-format) options,
-with output formats `txt`, `csv`, `tsv` (*Added in 1.32*), `json`, and (multi-period reports only:) `html`, `fods` (*Added in 1.40*).
+with output formats `txt`, `csv`, `tsv` (*Added in 1.32*), `json`, `html`, and `fods` (*Added in 1.40*).
 In `txt` output in a colour-supporting terminal, negative amounts are shown in red.
 
 ### Simple balance report
@@ -158,7 +162,7 @@ at the end of the journal period; more on this below.
 Accounts are sorted by [declaration order](#account)
 if any, and then alphabetically by account name.
 For instance 
-(using [examples/sample.journal](https://github.com/simonmichael/hledger/blob/main/examples/sample.journal)):
+(using [examples/sample.journal](https://github.com/hledgerorg/hledger/blob/main/examples/sample.journal)):
 
 ```cli
 $ hledger -f examples/sample.journal bal
@@ -306,6 +310,61 @@ non-plaintextaccounting-users. A tree mode report's final total is the
 sum of the top-level balances shown, not of all the balances shown.
 
 - Each group of sibling accounts (ie, under a common parent) is sorted separately.
+
+In list mode, `--no-elide` shows parent accounts as well, with their
+exclusive balances. These are zero unless the parent has postings of
+its own, so `-E/--empty` is usually also needed to make them visible.
+Together, these flags guarantee a complete table of all posted-to
+accounts and their parents, with full names:
+
+```cli
+$ hledger -f examples/sample.journal balance --no-elide -E
+                   0  assets
+                   0  assets:bank
+                   0  assets:bank:checking
+                  $1  assets:bank:saving
+                 $-2  assets:cash
+                   0  expenses
+                  $1  expenses:food
+                  $1  expenses:supplies
+                   0  income
+                 $-1  income:gifts
+                 $-1  income:salary
+                   0  liabilities
+                  $1  liabilities:debts
+--------------------
+                   0
+```
+
+This can be useful eg when exporting to a spreadsheet which will look
+up balances by account name.
+
+In tree mode, `--full-names` writes each account's full name instead of
+indenting leaf names, while keeping tree mode's inclusive balances.
+So `--tree --no-elide --full-names -E` shows the same complete table as
+above, but with inclusive balances:
+
+```cli
+$ hledger -f examples/sample.journal balance --tree --no-elide --full-names -E
+                 $-1  assets
+                  $1  assets:bank
+                   0  assets:bank:checking
+                  $1  assets:bank:saving
+                 $-2  assets:cash
+                  $2  expenses
+                  $1  expenses:food
+                  $1  expenses:supplies
+                 $-2  income
+                 $-1  income:gifts
+                 $-1  income:salary
+                  $1  liabilities
+                  $1  liabilities:debts
+--------------------
+                   0
+```
+
+Note that in this variant, parent and subaccount balances overlap, so
+(as in any tree mode report) the rows sum to more than the final total.
 
 ### Depth limiting
 
@@ -672,6 +731,12 @@ Here are more notes to help with learning and troubleshooting.
   It's common to restrict them to just expenses.
   (The `<unbudgeted>` account is occasionally hard to exclude; this is because of date surprises, discussed below.)
 
+- Only the account, account type, depth, date and commodity parts of the query
+  are applied to the budget goals; the other parts
+  (`status:`/`-U`/`-P`/`-C`, `code:`, `desc:`, `payee:`, `note:`, `tag:`, `real:`, `amt:`)
+  select actual transactions and postings only.
+  So eg `--budget --cleared` compares your cleared spending against the full budget goals.
+
 - When you have multiple currencies, you may want to convert them to
   one (`-X COMM --infer-market-prices`) and/or show just one at a time
   (`cur:COMM`).  If you do need to show multiple currencies at once,
@@ -757,18 +822,20 @@ It has four possible values:
 - `--layout=wide[,WIDTH]`: commodities are shown on a single line, optionally elided to WIDTH
 - `--layout=tall`: each commodity is shown on a separate line
 - `--layout=bare`: commodity symbols are in their own column, amounts are bare numbers
+- `--layout=barewide`: commodities are shown on a single line, all in separate columns, amounts are bare numbers
 - `--layout=tidy`: data is normalised to easily-consumed "tidy" form, with one row per data value.
   (This one is currently supported only by the `balance` command.)
 
 Here are the `--layout` modes supported by each [output format](#output-format)
 Only CSV output supports all of them:
 
-| -    | txt | csv | html | json | sql |
-|------|-----|-----|------|------|-----|
-| wide | Y   | Y   | Y    |      |     |
-| tall | Y   | Y   | Y    |      |     |
-| bare | Y   | Y   | Y    |      |     |
-| tidy |     | Y   |      |      |     |
+| -        | txt | csv | html | json | sql |
+|----------|-----|-----|------|------|-----|
+| wide     | Y   | Y   | Y    |      |     |
+| tall     | Y   | Y   | Y    |      |     |
+| bare     | Y   | Y   | Y    |      |     |
+| barewide | Y   | Y   | Y    |      |     |
+| tidy     |     | Y   |      |      |     |
 
 Examples:
 
@@ -861,6 +928,27 @@ Bare layout will sometimes display an extra row for the no-symbol commodity,
 because of zero amounts (hledger treats zeroes as commodity-less, usually).
 This can break `hledger-bar` confusingly (workaround: add a `cur:` query to exclude
 the no-symbol row).
+
+#### Barewide layout
+Commodity symbols are spread in the table headers,
+each commodity has its own column,
+all column groups share the same set of commodities
+even if in one commodity column all values are zero.
+For consistency you may think of layout `bare` as `baretall`.
+```cli
+$ hledger -f examples/bcexample.journal bal assets:us:etrade -3 -T -Y --layout=barewide
+Balance changes in 2012-01-01..2014-12-31:
+
+                  || 2012 (GLD)  2012 (ITOT)  2012 (USD)  2012 (VEA)  2012 (VHT)  2013 (GLD)  2013 (ITOT)  2013 (USD)  2013 (VEA)  2013 (VHT)  2014 (GLD)  2014 (ITOT)  2014 (USD)  2014 (VEA)  2014 (VHT)    Total (GLD)    Total (ITOT)    Total (USD)    Total (VEA)    Total (VHT) 
+==================++===================================================================================================================================================================================================================================================================
+ Assets:US:ETrade ||          0        10.00      337.18       12.00      106.00       70.00        18.00      -98.12       10.00       18.00           0       -11.00     4881.44       14.00      170.00          70.00           17.00        5120.50          36.00         294.00 
+------------------++-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                  ||          0        10.00      337.18       12.00      106.00       70.00        18.00      -98.12       10.00       18.00           0       -11.00     4881.44       14.00      170.00          70.00           17.00        5120.50          36.00         294.00 
+```
+
+Barewide layout is very useful for [FODS and CSV output](#output-format),
+since you can easily use LibreOffice's `VLOOKUP` function
+for accessing numbers in a table with mixed commodities.
 
 #### Tidy layout
 This produces normalised "tidy data" (see <https://cran.r-project.org/web/packages/tidyr/vignettes/tidy-data.html>)

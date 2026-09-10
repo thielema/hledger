@@ -27,6 +27,14 @@ foo
 $ hledger -f - payees --declared
 qux
 
-# ** 4. payees used in transactions matched by a query
+# ** 4. A date: query limits to payees used in matched transactions.
 $ hledger -f - payees date:2018-01-03
 foo
+
+# ** 5. A desc: query limits to payees used in matched transactions.
+$ hledger -f - payees desc:qux
+
+# ** 6. A payee: query limits to matched payees, whether declared or used.
+$ hledger -f - payees payee:qux
+qux
+

@@ -286,3 +286,42 @@ $ hledger -f- print -O beancount
     Expenses:Test           1 EUR
 
 >=
+
+# ** 14. Underscores and spaces in account names are converted to dashes (#2596).
+<
+2024-01-01
+    assets:wells_fargo:fima_usd    1 USD
+    equity:opening balances
+
+$ hledger -f- print -O beancount
+;option "inferred_tolerance_default" "*:0.005"
+2024-01-01 open Assets:Wells-fargo:Fima-usd
+2024-01-01 open Equity:Opening-balances
+
+2024-01-01 *
+    Assets:Wells-fargo:Fima-usd           1 USD
+    Equity:Opening-balances
+
+>=
+
+# ** 15. The year 0 date of price directives inferred from commodity alias:
+# tags is converted to 0001-01-01, which Beancount accepts.
+<
+commodity EUR 1.00  ; alias: €
+
+2024-01-01
+    assets:cash     €1
+    equity:opening
+
+$ hledger -f- print -O beancount
+;option "inferred_tolerance_default" "*:0.005"
+2024-01-01 open Assets:Cash
+2024-01-01 open Equity:Opening
+
+0001-01-01 price EUR 1 EUR
+
+2024-01-01 *
+    Assets:Cash              1 EUR
+    Equity:Opening
+
+>=

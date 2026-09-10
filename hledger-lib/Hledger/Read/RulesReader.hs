@@ -45,6 +45,7 @@ import Prelude hiding (Applicative(..))
 import Control.Applicative (Applicative(..))
 import Control.Concurrent (forkIO)
 import Control.DeepSeq (deepseq)
+import Control.Exception.Safe (catchAny, tryIO)
 import Control.Monad (unless, void, when)
 import Control.Monad.Except       (ExceptT(..), liftEither, throwError)
 import Control.Monad.Fail qualified as Fail
@@ -65,6 +66,7 @@ import Data.List (elemIndex, mapAccumL, nub, sortOn, isInfixOf, isPrefixOf)
 import Data.List (foldl')
 #endif
 import Data.List.Extra (groupOn)
+import Data.List.NonEmpty qualified as NE
 import Data.Maybe (catMaybes, fromMaybe, isJust)
 import Data.MemoUgly (memo)
 import Data.Text (Text)
@@ -74,7 +76,7 @@ import Data.Text.IO qualified as T
 import Data.Time ( Day, TimeZone, UTCTime, LocalTime, ZonedTime(ZonedTime),
   defaultTimeLocale, getCurrentTimeZone, localDay, parseTimeM, utcToLocalTime, localTimeToUTC, zonedTimeToUTC, utctDay)
 import Safe (atMay, headDef, headMay, lastMay, readMay)
-import System.Directory (createDirectoryIfMissing, doesDirectoryExist, doesFileExist, getHomeDirectory, getModificationTime, listDirectory, removeFile)
+import System.Directory (canonicalizePath, createDirectoryIfMissing, doesDirectoryExist, doesFileExist, getHomeDirectory, getModificationTime, listDirectory, removeFile)
 import System.Exit      (ExitCode(..))
 import System.FilePath (isAbsolute, splitDirectories, stripExtension, takeBaseName, takeDirectory, takeExtension, (<.>), (</>))
 import System.IO       (Handle, hClose, hPutStrLn, stderr, hGetContents')
@@ -163,9 +165,8 @@ parse iopts rulesfile h = do
   --  gives: import flag, dryrun flag, rulesdir
 
   let
-    args     = progArgs
-    import_  = any (`elem` args) ["import", "imp"]
-    dryrun   = any (`elem` args) ["--dry-run", "--dry"]
+    import_  = _importing iopts
+    dryrun   = _dryrun iopts
     yn b = if b then "yes" else "no"
   dbg2MsgIO $ "importing? " <> yn import_
   when import_ $ dbg2MsgIO $ "dry run? " <> yn dryrun
@@ -175,7 +176,7 @@ parse iopts rulesfile h = do
   --  gives: file pattern, data cleaning/generating command, archive flag
 
   -- XXX higher-than usual logging priority for file reading (normally 6 or 7), to bypass excessive noise from elsewhere
-  rules <- readRules $ dbg1 "reading rules file" rulesfile
+  (rules, rulesfiles) <- readRules $ dbg1 "reading rules file" rulesfile
   let
     msourcearg = getDirective "source" rules
       -- Nothing -> error' $ rulesfile ++ " source rule must specify a file pattern or a command"
@@ -268,7 +269,10 @@ parse iopts rulesfile h = do
 
     -- no file pattern, but a data generating command
     (Nothing, _, Just cmd) -> -- trace "data generating command" $
-      liftIO $ runCommand rulesfile $ dbg0Msg ("running: " ++ cmd) cmd
+      liftIO $
+        (runCommand rulesfile $ dbg0Msg ("running: " ++ cmd) cmd)
+        -- if it fails, warn and carry on
+        `catchAny` (\e -> warn (show e) $ return "")
 
     -- neither a file pattern nor a data generating command
     (Nothing, _, Nothing) -> -- trace "no file pattern or data generating command" $
@@ -306,7 +310,9 @@ parse iopts rulesfile h = do
     -- and lets a later run advance to the next (newer) glob-matched file.
     maybe (return ()) removeFile mdatafile
 
-  return j
+  -- Note the other files this journal's data came from - the included rules files,
+  -- and the data file if any - so that changes to them can be detected when reloading.
+  return j{jauxfiles = rulesfiles <> maybe [] pure mexistingdatafile}
 
 -- | For the given rules file, run the given shell command, in the rules file's directory.
 -- If the command fails, raise an error and show its error output;
@@ -437,12 +443,14 @@ getRulesFile csvfile mrulesfile =
 
 -- | An exception-throwing IO action that reads and validates
 -- the specified CSV rules file (which may include other rules files).
-readRules :: FilePath -> ExceptT String IO CsvRules
-readRules f =
-  liftIO (do
-    dbg6IO "using conversion rules file" f
-    readFilePortably f >>= expandIncludes (takeDirectory f)
-  ) >>= either throwError return . parseAndValidateCsvRules f
+-- Also returns the paths of all the rules files read, so that changes
+-- to any of them can be detected later (see jauxfiles).
+readRules :: FilePath -> ExceptT String IO (CsvRules, [FilePath])
+readRules f = do
+  liftIO $ dbg6IO "using conversion rules file" f
+  (txt, sourcelines) <- expandIncludes (takeDirectory f) f =<< liftIO (readFilePortably f)
+  rules <- liftEither $ parseAndValidateCsvRules f sourcelines txt
+  return (rules, nub $ f : map fst sourcelines)
 
 -- | Read the encoding specified by the @encoding@ rule, if any.
 -- Or throw an error if an unrecognised encoding is specified.
@@ -457,17 +465,45 @@ rulesEncoding rulesfile rules = do
 -- | Inline all files referenced by include directives in this hledger CSV rules text, recursively.
 -- Included file paths may be relative to the directory of the provided file path.
 -- Unlike with journal files, this is done as a pre-parse step to simplify the CSV rules parser.
--- Unfortunately this means that the parser won't see accurate file paths and positions with included files.
-expandIncludes :: FilePath -> Text -> IO Text
-expandIncludes dir0 content = mapM (expandLine dir0) (T.lines content) <&> T.unlines
+-- So that errors can still be reported at the right place, this also returns
+-- each expanded line's source: the file it came from and its line number there.
+-- Raises an error if an included file can not be read, or forms an include cycle.
+expandIncludes :: FilePath -> FilePath -> Text -> ExceptT String IO (Text, [(FilePath, Int)])
+expandIncludes dir file content = do
+  cfile <- liftIO $ canonicalizePath file
+  first T.unlines . unzip <$> expandLines [cfile] dir file content
   where
-    expandLine dir1 line =
-      case line of
-        (T.stripPrefix "include " -> Just f) -> expandIncludes dir2 =<< T.readFile f'
-          where
-            f' = dir1 </> T.unpack (T.dropWhile isSpace f)
-            dir2 = takeDirectory f'
-        _ -> return line
+    -- The first argument is the canonical paths of this file and its ancestors, for cycle detection.
+    expandLines :: [FilePath] -> FilePath -> FilePath -> Text -> ExceptT String IO [(Text, (FilePath, Int))]
+    expandLines ancestors dir1 file1 content1 = concat <$> mapM expandLine (zip [1..] $ T.lines content1)
+      where
+        expandLine (lnum, line) =
+          case line of
+            (T.stripPrefix "include " -> Just f) -> do
+              let f'   = dir1 </> T.unpack (T.strip f)
+                  err  = throwError . includeErrorMsg file1 lnum line
+              cf' <- liftIO $ canonicalizePath f'
+              when (cf' `elem` ancestors) $ err $ "This included file forms a cycle: " ++ f'
+              etxt <- liftIO $ tryIO $ readFilePortably f'
+              case etxt of
+                Left e    -> err $ "Could not read this included file:\n" ++ show e
+                Right txt -> expandLines (cf':ancestors) (takeDirectory f') f' txt
+            _ -> return [(line, (file1, lnum))]
+
+-- | Format an error message about a problematic include directive:
+-- the directive's file path, line number and line excerpt, megaparsec-style,
+-- followed by the given message.
+includeErrorMsg :: FilePath -> Int -> Text -> String -> String
+includeErrorMsg file lnum line msg = unlines
+  [ file ++ ":" ++ show lnum ++ ":1:"
+  , pad ++ " |"
+  , lnumstr ++ " | " ++ T.unpack line
+  , pad ++ " | ^"
+  , msg
+  ]
+  where
+    lnumstr = show lnum
+    pad = replicate (length lnumstr) ' '
 
 -- defaultRulesText :: FilePath -> Text
 -- defaultRulesText _csvfile = T.pack $ unlines
@@ -496,11 +532,40 @@ expandIncludes dir0 content = mapM (expandLine dir0) (T.lines content) <&> T.unl
 
 -- | An error-throwing IO action that parses this text as CSV conversion rules
 -- and runs some extra validation checks. The file path is used in error messages.
-parseAndValidateCsvRules :: FilePath -> T.Text -> Either String CsvRules
-parseAndValidateCsvRules rulesfile s =
+-- The lines' sources, as returned by expandIncludes, are used to report
+-- errors in included files at the right file and line number.
+parseAndValidateCsvRules :: FilePath -> [(FilePath, Int)] -> T.Text -> Either String CsvRules
+parseAndValidateCsvRules rulesfile sourcelines s =
   case parseCsvRules rulesfile s of
-    Left err    -> Left $ customErrorBundlePretty err
+    Left err    -> Left $ errorBundlePretty $ fixErrorSourcePosition sourcelines s $ finalizeCustomErrorBundle err
     Right rules -> first ((rulesfile <> ":\n") <>) $ validateCsvRules rules
+
+-- | Adjust this parse error bundle's position state, using the line sources
+-- returned by expandIncludes, so that the (first) error is reported at the
+-- right file and line number even when it is in text that was inlined from
+-- an included rules file. The bundle should already have been adjusted by
+-- finalizeCustomErrorBundle, and the given text should be the expanded rules
+-- text that was parsed.
+fixErrorSourcePosition :: [(FilePath, Int)] -> T.Text -> HledgerParseErrors -> HledgerParseErrors
+fixErrorSourcePosition sourcelines s bundle =
+  case msource of
+    Nothing -> bundle
+    Just (sourcefile, sourceline) ->
+      bundle{bundlePosState = (bundlePosState bundle)
+        { pstateInput      = T.drop linestartoffset s
+        , pstateOffset     = linestartoffset
+        , pstateSourcePos  = SourcePos sourcefile (mkPos sourceline) (mkPos 1)
+        , pstateLinePrefix = ""
+        }}
+  where
+    erroroffset = errorOffset $ NE.head $ bundleErrors bundle
+    textbeforeerror = T.take erroroffset s
+    expandedlinenum = T.count "\n" textbeforeerror + 1
+    linestartoffset = T.length textbeforeerror - T.length (T.takeWhileEnd (/= '\n') textbeforeerror)
+    msource = case atMay sourcelines (expandedlinenum - 1) of
+      Just source -> Just source
+      -- at end of input, just after the last line: report the line after the last line's source
+      Nothing     -> (\(file, lnum) -> (file, lnum + 1)) <$> lastMay sourcelines
 
 instance ShowErrorComponent String where
   showErrorComponent = id
@@ -1028,8 +1093,16 @@ regexp end = do
 
 _RULES_LOOKUP__________________________________________ = undefined
 
+-- | Look up the value of a top-level directive.
+-- If it is declared more than once, the last declaration wins,
+-- like most other rules (but see getDirectiveFirstWins).
 getDirective :: DirectiveName -> CsvRules -> Maybe FieldTemplate
-getDirective directivename = lookup directivename . rdirectives
+getDirective directivename = lookup directivename . reverse . rdirectives
+
+-- | Like getDirective, but if the directive is declared more than once,
+-- the first declaration wins. Used for the skip directive.
+getDirectiveFirstWins :: DirectiveName -> CsvRules -> Maybe FieldTemplate
+getDirectiveFirstWins directivename = lookup directivename . rdirectives
 
 -- | Look up the value (template) of a csv rule by rule keyword.
 csvRule :: CsvRules -> DirectiveName -> Maybe FieldTemplate
@@ -1240,7 +1313,7 @@ readJournalFromCsv rulesfile rules csvfile csvtext sep = do
     let csvlines1 = dbg9 "csvlines1" $ filter (not . T.null . T.strip) $ dbg9 "csvlines0" $ T.lines csvtext
 
     -- if there is a top-level skip rule, skip the specified number of non-empty lines
-    skiplines <- case getDirective "skip" rules of
+    skiplines <- case getDirectiveFirstWins "skip" rules of
                       Nothing -> return 0
                       Just "" -> return 1
                       Just s  -> maybe (throwError $ rulesfile <> ": could not parse skip value: " ++ T.unpack s) return . readMay $ T.unpack s
@@ -1272,6 +1345,17 @@ readJournalFromCsv rulesfile rules csvfile csvtext sep = do
     -- and check the remaining records for any obvious problems
     csvrecords <- liftEither $ dbg7 "validateCsv" <$> validateCsv csvrecords1
     dbg6IO "first 3 csv records" $ take 3 csvrecords
+
+    -- transactionFromCsvRecord below will replace characters which journal format can't
+    -- represent: semicolons in descriptions (#2413), right parentheses in codes.
+    -- Warn once per file for each; count the affected records here.
+    let warnfixed fieldname badchar replacement =
+          let n = length $ filter (maybe False (T.any (==badchar)) . flip (hledgerFieldValue rules) fieldname) csvrecords
+          in when (n > 0) $ warnIO $
+             csvfile <> ": replaced '" <> [badchar] <> "' with '" <> replacement <> "' in " <>
+             show n <> " " <> T.unpack fieldname <> "(s), since journal format can't represent it"
+    warnfixed "description" ';' ".,"
+    warnfixed "code"        ')' "]"
 
     -- XXX identify header lines some day ?
     -- let (headerlines, datalines) = identifyHeaderLines csvrecords'
@@ -1456,8 +1540,14 @@ transactionFromCsvRecord timesarezoned mtzin tzout sourcepos rules record =
               ["could not parse status value \""<>s<>"\" (should be *, ! or empty)"
               ,"the parse error is:      "<>T.pack (customErrorBundlePretty err)
               ]
-    code        = maybe "" singleline' $ fieldval "code"
-    description = maybe "" singleline' $ fieldval "description"
+    code        = maybe "" (fixparens . singleline') $ fieldval "code"
+    description = maybe "" (fixsemicolons . singleline') $ fieldval "description"
+    -- Journal format can't represent a semicolon in a description (when reparsed, it would
+    -- start a comment, truncating the description; #2413), or a right parenthesis in a code
+    -- (it would end the code early). Replace them with lookalikes.
+    -- readJournalFromCsv prints a warning when this happens.
+    fixsemicolons = T.replace ";" ".,"
+    fixparens     = T.replace ")" "]"
     comment     = maybe "" unescapeNewlines $ fieldval "comment"
 
     -- Convert some parsed comment text back into following comment syntax,

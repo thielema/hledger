@@ -28,7 +28,7 @@ import Data.Map qualified as Map
 import Data.Text qualified as T
 import Data.Text.Lazy qualified as TL
 import Data.Text.Lazy.Builder qualified as TB
-import Control.Monad (when)
+import Control.Monad (unless, when)
 import Lucid qualified as L hiding (Html)
 import Safe (readMay)
 import System.Console.CmdArgs.Explicit (flagNone, flagReq)
@@ -39,7 +39,8 @@ import Hledger
 import Hledger.Cli.CliOptions
 import Hledger.Cli.Utils
 import Hledger.Write.Csv (CSV, printCSV, printTSV)
-import Hledger.Write.Html (formatRow, htmlAsLazyText, toHtml)
+import Hledger.Write.Html (formatRow, formatTitle, htmlAsLazyText, nl, toHtml)
+import Hledger.Write.Html.Attribute (tableStylesheet)
 import Hledger.Write.Ods (printFods)
 import Hledger.Write.Spreadsheet qualified as Spr
 
@@ -120,7 +121,7 @@ aregister opts@CliOpts{rawopts_=rawopts,reportspec_=rspec} j = do
       (if empty_ ropts' then id else filter (not . mixedAmountLooksZero . fifth6)) $
       reverse items
     -- select renderer
-    render | fmt=="txt"  = withTitle ropts' . accountTransactionsReportAsText opts (_rsQuery rspec') thisacctq
+    render | fmt=="txt"  = accountTransactionsReportAsText opts (_rsQuery rspec') thisacctq
            | fmt=="html" = accountTransactionsReportAsHTML opts (_rsQuery rspec') thisacctq
             | fmt=="csv"  = printCSV . accountTransactionsReportAsCsv opts hd wd (_rsQuery rspec') thisacctq
             | fmt=="tsv"  = printTSV . accountTransactionsReportAsCsv opts hd wd (_rsQuery rspec') thisacctq
@@ -155,7 +156,7 @@ accountTransactionsReportAsSpreadsheet ::
 accountTransactionsReportAsSpreadsheet opts fmt hd wd reportq thisacctq is =
   optional hd
     [Spr.addHeaderBorders $ map Spr.headerCell $
-      ["txnidx","date","code","description","otheraccounts","change","balance"]]
+      ["txnidx","date","code","description","otheraccounts","amount","balance"]]
   ++
   map (accountTransactionsReportItemAsRecord opts fmt True wd reportq thisacctq) is
 
@@ -186,15 +187,24 @@ accountTransactionsReportItemAsRecord
 -- | Render a register report as a HTML snippet.
 accountTransactionsReportAsHTML :: CliOpts -> Query -> Query -> AccountTransactionsReport -> TL.Text
 accountTransactionsReportAsHTML copts reportq thisacctq items =
-  htmlAsLazyText $ do
+  (<>"\n") $ htmlAsLazyText $ do
+    -- the builtin styles, then the optional user stylesheet so it can override them
+    L.style_ tableStylesheet
+    nl
     L.link_ [L.rel_ "stylesheet", L.href_ "hledger.css"]
+    nl
+    let title = accountTransactionsReportTitle copts reportq thisacctq
+    unless (T.null title) $ formatTitle title
     L.table_ $ do
-      when (headingopt copts) $ L.thead_ $ L.tr_ $ do
-        L.th_ "date"
-        L.th_ "description"
-        L.th_ "otheraccounts"
-        L.th_ "change"
-        L.th_ "balance"
+      nl
+      when (headingopt copts) $ do
+        L.thead_ $ L.tr_ $ do
+          L.th_ "date"
+          L.th_ "description"
+          L.th_ "otheraccounts"
+          L.th_ "amount"
+          L.th_ "balance"
+        nl
       L.tbody_ $ for_ items $
         formatRow . map (fmap toHtml) .
         accountTransactionsReportItemAsRecord copts
@@ -205,7 +215,7 @@ accountTransactionsReportAsHTML copts reportq thisacctq items =
 -- | Render a register report as plain text suitable for console output.
 accountTransactionsReportAsText :: CliOpts -> Query -> Query -> AccountTransactionsReport -> TL.Text
 accountTransactionsReportAsText copts reportq thisacctq items = TB.toLazyText $
-    (optional (headingopt copts) $ acctHeading <> TB.singleton '\n')
+    titleBuilder
     <>
     postingsOrTransactionsReportAsText alignAll copts itemAsText itemamt itembal items
   where
@@ -214,8 +224,20 @@ accountTransactionsReportAsText copts reportq thisacctq items = TB.toLazyText $
     itemamt (_,_,_,_,a,_) = a
     itembal (_,_,_,_,_,a) = a
 
+    title = accountTransactionsReportTitle copts reportq thisacctq
+    titleBuilder | T.null title = mempty
+                 | otherwise    = TB.fromText title <> TB.singleton '\n'
+
+-- | The heading for an account transactions report: a description of the
+-- account shown, or --title's value if that was provided (possibly empty).
+-- Also empty when --heading=no.
+accountTransactionsReportTitle :: CliOpts -> Query -> Query -> Text
+accountTransactionsReportTitle copts reportq thisacctq
+  | not (headingopt copts) = ""
+  | otherwise = effectiveTitle (_rsReportOpts $ reportspec_ copts) defaultTitle
+  where
     -- show a heading indicating which account was picked, which can be confusing otherwise
-    acctHeading = maybe mempty (\s -> foldMap TB.fromText ["Transactions in ", s, " and subaccounts", qmsg, ":"]) macct
+    defaultTitle = maybe "" (\s -> T.concat ["Transactions in ", s, " and subaccounts", qmsg, ":"]) macct
       where
         -- XXX temporary hack ? recover the account name from the query
         macct = case filterQuery queryIsAcct thisacctq of
@@ -238,7 +260,7 @@ optional b x = if b then x else mempty
 -- | Render one account register report line item as plain text. Layout is like so:
 -- @
 -- <---------------- width (specified, terminal width, or 80) -------------------->
--- date (10)  description           other accounts       change (12)   balance (12)
+-- date (10)  description           other accounts       amount (12)   balance (12)
 -- DDDDDDDDDD dddddddddddddddddddd  aaaaaaaaaaaaaaaaaaa  AAAAAAAAAAAA  AAAAAAAAAAAA
 -- @
 -- If description's width is specified, account will use the remaining space.

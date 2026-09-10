@@ -19,7 +19,7 @@ $if elem ViewPermission perms
   $# visibly jump. sessionStorage can throw (not just be absent) when storage
   $# is blocked, eg in a sandboxed iframe, with cookies disabled, or in some
   $# private-browsing modes; the try makes this convenience a no-op there.
-  <script>
+  <script nonce=#{nonce}>
     (function () {
       var sidebar = document.getElementById('sidebar-menu');
       var key = 'hledgerSidebarScrollTop';
@@ -62,14 +62,12 @@ $if elem ViewPermission perms
           <span .glyphicon .glyphicon-question-sign>
   ^{widget}
 
-<div .modal.fade #helpmodal tabindex="-1" role="dialog" aria-labelledby="helpLabel" aria-hidden="true">
-  <div .modal-dialog .modal-lg>
-    <div .modal-content>
-      <div .modal-header>
-        <button type="button" .close data-dismiss="modal" aria-hidden="true">&times;
-        <span style="float:right; margin-right:4em;">#{progname} #{packageversion}
-        <h3 .modal-title #helpLabel>Help
-      <div .modal-body>
+<dialog #helpmodal tabindex=-1 aria-labelledby="helpLabel">
+  <div .modal-header>
+    <button type="button" .close data-dismiss="modal" aria-label="Close">&times;
+    <span .version>#{progname} #{packageversion}
+    <h3 .modal-title #helpLabel>Help
+  <div .modal-body>
         <div .row>
           <div .col-xs-6>
             <p>
@@ -111,5 +109,5 @@ $if elem ViewPermission perms
                 <li> <code>expr:'QEXPR'</code> - match with a boolean query (and, or, not, (..))
                 <li>  <code>any:'QEXPR'</code> - match transactions where any posting matches
                 <li>  <code>all:'QEXPR'</code> - match transactions where all postings match
-                <li style="margin-top:1em;"> <code>depth:N</code> - clip account names at this depth
+                <li .gap-above> <code>depth:N</code> - clip account names at this depth
                 $# <li> Description, account, status query terms are OR'ed, others are AND'ed.

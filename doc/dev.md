@@ -14,7 +14,6 @@ and then symlinked into the hledger_site repo for rendering on hledger.org.
 - [ACHIEVEMENTS](ACHIEVEMENTS.md)
 - [AI](AI.md)
 - [BENCHMARKS](BENCHMARKS.md)
-- [CHANGELOGS](CHANGELOGS.md)
 - [CLIMATE](CLIMATE.md)
 - [CODE](CODE.md)
 - [COMMITS](COMMITS.md)
@@ -29,7 +28,6 @@ and then symlinked into the hledger_site repo for rendering on hledger.org.
 - [IMPACT](IMPACT.md)
 - [ISSUES](ISSUES.md)
 - [JUST-MAKE-SHAKE](JUST-MAKE-SHAKE.md)
-- [LINKS](LINKS.md)
 - [MOCKUPS](MOCKUPS.md)
 - [PULLREQUESTS](PULLREQUESTS.md)
 - [REGRESSIONS](REGRESSIONS.md)
@@ -40,7 +38,7 @@ and then symlinked into the hledger_site repo for rendering on hledger.org.
 
 See also:
 
-- <https://deepwiki.com/simonmichael/hledger> - an AI-generated presentation of hledger's user and dev docs.
+- <https://deepwiki.com/hledgerorg/hledger> - an AI-generated presentation of hledger's user and dev docs.
   Use with caution, but they look rather useful, as an alternate overview / map.
   Also you can ask it questions.
 
@@ -61,7 +59,7 @@ Dev notes on joyful.com:
 **Github:**\
 main repo: <https://code.hledger.org>
 
-[commits](https://github.com/simonmichael/hledger/commits),
+[commits](https://github.com/hledgerorg/hledger/commits),
 <https://ci.hledger.org>,
 <https://nightly.hledger.org>,
 <https://release.hledger.org>
@@ -98,16 +96,6 @@ packages:
 [hledger-interest](https://hackage.haskell.org/package/hledger-interest),
 [hledger-irr](https://hackage.haskell.org/package/hledger-irr),
 [\*hledger\*](https://hackage.haskell.org/packages/search?terms=hledger)\
-diffs:
-[hledger-lib](https://hdiff.luite.com/cgit/hledger-lib/diff),
-[hledger](https://hdiff.luite.com/cgit/hledger/diff),
-[hledger-ui](https://hdiff.luite.com/cgit/hledger-ui/diff),
-[hledger-web](https://hdiff.luite.com/cgit/hledger-web/diff)\
-build status:
-[hledger-lib](https://matrix.hackage.haskell.org/package/hledger-lib),
-[hledger](https://matrix.hackage.haskell.org/package/hledger),
-[hledger-ui](https://matrix.hackage.haskell.org/package/hledger-ui),
-[hledger-web](https://matrix.hackage.haskell.org/package/hledger-web)\
 reverse deps:
 [hledger-lib](https://packdeps.haskellers.com/reverse/hledger-lib),
 [hledger](https://packdeps.haskellers.com/reverse/hledger),
@@ -199,14 +187,12 @@ binary packages:
 [\*hledger\*](https://packages.ubuntu.com/search?suite=all&searchon=names&keywords=hledger)\
 \
 **Gentoo:**
-[hledger](https://gpo.zugaina.org/dev-haskell/hledger),
-[hledger-web](https://gpo.zugaina.org/dev-haskell/hledger-web),
-[\*hledger\*](https://gpo.zugaina.org/Search?search=hledger)\
+[\*hledger\*](https://packages.gentoo.org/packages/search?q=hledger),
+[\*hledger\* overlays](https://gpo.zugaina.org/Search?search=hledger)\
 \
 **Fedora:**
-[hledger](https://apps.fedoraproject.org/packages/hledger),
-[\*hledger\*](https://apps.fedoraproject.org/packages/s/hledger),
-[hledger (package db)](https://admin.fedoraproject.org/pkgdb/package/hledger/),
+[hledger](https://packages.fedoraproject.org/pkgs/hledger/hledger/),
+[\*hledger\*](https://packages.fedoraproject.org/search?query=hledger),
 [Haskell SIG](https://fedoraproject.org/wiki/Haskell_SIG)\
 \
 **Void Linux:** [package search](https://voidlinux.org/packages/)->hledger\
@@ -215,7 +201,7 @@ binary packages:
 \
 **Sandstorm:**
 [hledger web app & reviews](https://apps.sandstorm.io/app/8x12h6p0x0nrzk73hfq6zh2jxtgyzzcty7qsatkg7jfg2mzw5n90),
-[issues](https://github.com/simonmichael/hledger/issues?utf8=✓&q=label%3A%22platform%3A%20sandstorm%22%20)\
+[issues](https://github.com/hledgerorg/hledger/issues?utf8=✓&q=label%3A%22platform%3A%20sandstorm%22%20)\
 \
 **Reference:** [fosskers GHC compatibility chart](https://www.fosskers.ca/en/blog/base)\
 \
@@ -229,7 +215,7 @@ hledger-api demo
 [api-demo.hledger.org/api/v1/accounts](https://api-demo.hledger.org/api/v1/accounts),
 [api-demo.hledger.org/swagger.json](https://api-demo.hledger.org/swagger.json),
 [in swagger editor](https://editor2.swagger.io/#/?import=api-demo.hledger.org/swagger.json&no-proxy)\
-[unfinished angular sample app](https://api-demo.hledger.org) ([code](https://github.com/simonmichael/hledger/tree/main/hledger-api/examples/angular))
+[unfinished angular sample app](https://api-demo.hledger.org) ([code](https://github.com/hledgerorg/hledger/tree/main/hledger-api/examples/angular))
 -->
 
 <!-- The Debian packages:

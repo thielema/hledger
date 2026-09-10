@@ -111,3 +111,25 @@ a:b
 $ hledger -f- accounts tag:a
 a
 a:b
+
+# ** 13. A date: query limits to accounts used in matched postings;
+# declared accounts have no date, so are excluded.
+<
+account assets
+account unused:acct
+
+2026-01-01
+  assets   1
+  income  -1
+
+$ hledger -f- accounts date:2026
+assets
+income
+
+# ** 14. An acct: query matches accounts declared or used.
+$ hledger -f- accounts unused
+unused:acct
+
+# ** 15. A declared account is not misreported as undeclared when a date: query is added.
+$ hledger -f- accounts --undeclared date:2026
+income

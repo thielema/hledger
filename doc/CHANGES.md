@@ -20,6 +20,70 @@ General changes in the hledger project.
 For package-specific changes, see the hledger package changelogs.
 
 
+# e5e4e608
+
+- The hledger repo has moved to the plaintextaccounting github
+  organisation: <https://github.com/hledgerorg/hledger>. Old
+  links redirect. [#2681]
+
+## Docs
+
+- ai.journal: updates
+- RELEASING: revise release script with lessons from the 1.52.2 release
+- AI: allow maintainer-discretion exceptions for hledger 1.x security fixes
+- ai.journal: switch to simpler t/kt/Mt output-token units; import June/July usage; other edits
+- AI: various edits and clarifications (extra usage notes, policy reference links)
+- ANNOUNCE: edits
+- CHANGELOGS: retired; superseded by RELEASING and changelogs/SKILL.md
+- CONTRIBUTING: added a developer quick start; fixed test and benchmark links [#2528]
+- CREDITS, .mailmap: various edits (headings, alignment, stats table; consolidated Alex Chen's commits; tidied committer names)
+- DECISIONS: updates
+- DEVFAQ, DEVWORKFLOWS, TESTS and other dev docs: updated for current tools, scripts and test suites; removed dead links; DEVFAQ now defers to install.md for build instructions [#2528]
+- examples/lots: merge and refresh the roi-vs-holdings comparison notes; cross-reference lots.journal and irr.journal
+- FUNDING: updated links
+- ghrelnotes: note the updated Windows binary; fix the eget command
+- hledger.conf.sample: edits
+- html: document builtin styling in the manual; sample hledger.css now demonstrates customising it
+- PULLREQUESTS, pull request template: many edits; link to the AI policy; first-time contributors' PRs may no longer use AI tools
+- REGRESSIONS: discontinue the regression bounties; other edits
+- release notes: fixed and simplified the binary install instructions - the mac/linux install command was discarding its download [#2707], and the windows command now installs to a directory that can be on PATH; also noted what the install command needs, and updated the eget repo path
+- relnotes/changelog: AI usage section edits; fix a link
+- RELEASING: edits; consolidated to a single release script, grouped into phases
+- RULES: new doc gathering repo policies, old and new, in one place
+- SPEC-holdings: record decisions (future-dated postings stay included by default; XIRR's final cashflow is the displayed Value at the report date)
+- SPEC-lots: add a roadmap section for future work (per-account lot-tracking opt-out, tax boundary declarations, AVERAGE vs transfers, non-local-method coherence checks)
+- STYLE: new hledger-web doc recording the rules a change to the web UI's appearance should follow (no build step, nothing from a third party, no style attributes, how tabular and monetary data should read), for people and coding agents alike
+
+## Tools/infrastructure
+
+- Changelog tooling improved: `just changelogs` now pre-cleans changelogs items (routine commits dropped, AI usage lines stripped, breaking changes lifted to the top, possible duplicates flagged); a stale resume point (eg after a rebase) is detected and reported with its fix; and a new `just changelogs-check` verifies resume points, issue links and leftover draft markers. Changelog section headings are simplified: Security, then Breaking changes, then topic or generic headings as needed.
+- CI: binaries-mac-arm64-hx, an experimental workflow using the hx build tool (an alternative to stack/cabal, for easier reproducible builds); cache the official cabal binary; build with -O1
+- CI: bump most third-party actions to their latest major version; binaries-mac-arm64 bumped to macos-26-arm64; binaries-mac-x64 lists dependency versions like the others
+- CI: the addon functional tests now run again (they had been accidentally excluded since 2017)
+- CI: the hledger-web browser tests now run on pull requests, as a non-blocking check
+- .gitignore, .ignore: stop tracking site/ under git entirely, but keep site/src/*.md (and the old manuals) visible to ripgrep/VS Code search via a new .ignore file
+- hledger-web: added an on-demand Playwright browser test suite covering the web UI's client-side behaviour, runnable with `just browsertest`
+- hledger-web: the favicon's vector sources and the standard-library script that regenerates the .ico from them are now committed, so the mark can be edited rather than redrawn
+- Justfile: various `just ai-*` AI-usage-reporting recipe tweaks; `just holdings-*` recipes for trying the holdings command against hledger/beancount/rledger example data; `just installrel`, `just contribs*` fixes; gitignore .hx; experimental hx build tool config
+- Release automation improved: `just ghrel` now assembles the github release on github (no local round trip for binaries) and creates it as a draft, with `just ghrel-publish` making it public after review; `just installpage` automates Install page version bumps; `just generaloptionshelp` automates updating the general options help in the manuals; and the relbranch, reltags-push and ghbin-download recipes are more robust
+- Shake: changelogs: capitalise multi-line items' first lines and give them a trailing period, so they read as complete sentences; single-line items are left as written
+- skills: add binary-badges skill, checking/refreshing the version badges in site/src/install.md; fix its red badge colour to match repology's hex
+- skills: add release skill for assisting hledger releases
+- skills: the changelogs skill was missing its YAML frontmatter, so it had no useful name or description to be matched against
+- stack/cabal: ensure haskeline 0.8.4.1 is used, fixing the Windows build again [#2410]
+- tools/aicommits: new script (plus `just ai-commits*` recipes) to report AI usage parsed from commit messages' "AI usage:" trailers
+- tools/skills: add a credits skill documenting the CREDITS.md refresh process
+
+
+[#2410]: https://github.com/hledgerorg/hledger/issues/2410
+[#2528]: https://github.com/hledgerorg/hledger/issues/2528
+[#2681]: https://github.com/hledgerorg/hledger/issues/2681
+[#2707]: https://github.com/hledgerorg/hledger/issues/2707
+
+# 1.52.2 2026-08-24
+
+
+
 # 1.99.3 2026-06-24
 
 ## AI usage
@@ -74,9 +138,9 @@ used per month:
 - gitignore updates
 
 
-[#2410]: https://github.com/simonmichael/hledger/issues/2410
-[#2636]: https://github.com/simonmichael/hledger/issues/2636
-[#2642]: https://github.com/simonmichael/hledger/issues/2642
+[#2410]: https://github.com/hledgerorg/hledger/issues/2410
+[#2636]: https://github.com/hledgerorg/hledger/issues/2636
+[#2642]: https://github.com/hledgerorg/hledger/issues/2642
 
 
 # 1.99.2 2026-04-28
@@ -154,10 +218,10 @@ Infrastructure/tools
   - ensure linux binary uses fixed haskeline [#2410]
   - testbin: update, use testlatest tag / testbin branch
 
-[#2410]: https://github.com/simonmichael/hledger/issues/2410
-[#2497]: https://github.com/simonmichael/hledger/issues/2497
-[#2527]: https://github.com/simonmichael/hledger/issues/2527
-[#2528]: https://github.com/simonmichael/hledger/issues/2528
+[#2410]: https://github.com/hledgerorg/hledger/issues/2410
+[#2497]: https://github.com/hledgerorg/hledger/issues/2497
+[#2527]: https://github.com/hledgerorg/hledger/issues/2527
+[#2528]: https://github.com/hledgerorg/hledger/issues/2528
 
 
 # 1.51.2 2026-01-08
@@ -505,7 +569,7 @@ Scripts/addons
 
 - bin/hledger-simplebal: Fix shellcheck warnings. (Colin Dean)
 
-[#2159]: https://github.com/simonmichael/hledger/issues/2159
+[#2159]: https://github.com/hledgerorg/hledger/issues/2159
 
 # 1.32.2 2023-12-31
 
@@ -829,7 +893,7 @@ Docs
 
 - Clearer sponsoring info and more complete sponsor lists on website and README.
 
-- The new <https://github.com/simonmichael/hledger_finance> repo
+- The new <https://github.com/hledgerorg/hledger_finance> repo
   keeps track of our public finances (on Open Collective, Liberapay etc.)
 
 Examples
@@ -991,8 +1055,8 @@ Tools/process:
 
 - Our doctests are disabled with GHC 9 for now to work around an
   upstream bug. 
-  ([#1503](https://github.com/simonmichael/hledger/issues/1503), 
-  [#1615](https://github.com/simonmichael/hledger/issues/1615))
+  ([#1503](https://github.com/hledgerorg/hledger/issues/1503), 
+  [#1615](https://github.com/hledgerorg/hledger/issues/1615))
 
 - bin/commitlint is a new tool for hledger developers which checks and
   describes new commit conventions which simplify maintenance of
@@ -1001,7 +1065,7 @@ Tools/process:
   (`ln -sf ../../bin/commitling .git/hooks/commit-msg`), 
   and is also run by our CI workflows to check pull requests.
   <https://hledger.org/CONTRIBUTING.html#commit-messages>,
-  <https://github.com/simonmichael/hledger/blob/main/bin/commitlint>
+  <https://github.com/hledgerorg/hledger/blob/main/bin/commitlint>
   (#1602)
 
 # 1.22 2021-07-03

@@ -113,7 +113,7 @@ Unlike balance assertions, assignments will post changes to balances as needed t
 This is another way to set starting balances when migrating to a new file,
 and it will set them correctly even in the presence of earlier files which do not have a closing balances transaction.
 However, it can hide errors, and disturb the accounting equation,
-so `--clopen` is usually [recommended](https://github.com/simonmichael/hledger/issues/2151).
+so `--clopen` is usually [recommended](https://github.com/hledgerorg/hledger/issues/2151).
 
 ### close --retain
 
@@ -156,6 +156,9 @@ With `--show-costs`, balances' costs are also shown, with different costs kept s
 This may generate very large journal entries, if you have many currency conversions or investment transactions.
 `close --show-costs` is currently the best way to view investment lots with hledger.
 (To move or dispose of lots, see the more capable [`hledger-move`](/scripts.md#hledger-move) script.)
+With `--lots`, lot subaccount balances are always shown without costs, even under `--show-costs`:
+their cost information is carried by the lot name itself,
+and transacted costs on lot postings would prevent the output from being read back.
 
 ### close and balance assertions
 
@@ -245,4 +248,4 @@ $ hledger bs -Y -f 2023.j                     # unclosed file, no query needed
 
 #### More detailed close examples
 
-See [examples/multi-year](https://github.com/simonmichael/hledger/tree/main/examples/multi-year/).
+See [examples/multi-year](https://github.com/hledgerorg/hledger/tree/main/examples/multi-year/).

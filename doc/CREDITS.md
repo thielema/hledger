@@ -18,7 +18,7 @@ and innumerable other benefactors.
 
 196 people have contributed 15.5k commits over 19 years.
 
-[hledger repo > Insights > Contributors](https://github.com/simonmichael/hledger/graphs/contributors)
+[hledger repo > Insights > Contributors](https://github.com/hledgerorg/hledger/graphs/contributors)
 
 <style>
 table td:first-child, table th:first-child { white-space: nowrap; text-align:right; }
@@ -230,4 +230,4 @@ table td:first-child h3 { margin:0; }
 | <!-- 1 -->      zieone                         | FreeBSD resolver update                                                                                                                                                                    |
 
 <br>
-<img src="https://contrib.rocks/image?repo=simonmichael/hledger&max=9999" />
+<img src="https://contrib.rocks/image?repo=hledgerorg/hledger&max=9999" />

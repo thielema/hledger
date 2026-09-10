@@ -5,7 +5,6 @@ and then Application.hs completes the job.
 -}
 
 {-# OPTIONS_GHC -fno-warn-orphans  #-}
-{-# LANGUAGE CPP                   #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -21,30 +20,26 @@ module Hledger.Web.App where
 import Control.Applicative ((<|>))
 import Control.Monad (join, when, unless)
 -- import Control.Monad.Except (runExceptT)  -- now re-exported by Hledger
+import Data.ByteString.Base64 qualified as B64
 import Data.ByteString.Char8 qualified as BC
 import Data.Traversable (for)
 import Data.IORef (IORef, readIORef, writeIORef)
 import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import Data.Text qualified as T
+import Data.Text.Encoding qualified as TE
 import Data.Time.Calendar (Day)
 import Network.HTTP.Conduit (Manager)
 import Network.HTTP.Types (status403)
 import Network.Wai (requestHeaders)
 import System.Directory (XdgDirectory (..), createDirectoryIfMissing,
                          getXdgDirectory)
+import System.Entropy (getEntropy)
 import System.FilePath (takeFileName, (</>))
 import Text.Blaze (Markup)
 import Text.Hamlet (hamletFile)
 import Yesod
-import Yesod.Static
 import Yesod.Default.Config
-
-#ifndef DEVELOPMENT
-import Hledger.Web.Settings (staticDir)
-import Text.Jasmine (minifym)
-import Yesod.Default.Util (addStaticContentExternal)
-#endif
 
 import Hledger
 import Hledger.Cli (CliOpts(..), journalReloadIfChanged)
@@ -60,7 +55,7 @@ import Data.List (isPrefixOf)
 -- access to the data present here.
 data App = App
     { settings :: AppConfig DefaultEnv Extra
-    , getStatic :: Static -- ^ Settings for static file serving.
+    , getStatic :: WaiSubsite -- ^ The static file serving site (see StaticFiles.hs).
     , httpManager :: Manager
       --
     , appOpts    :: WebOpts
@@ -135,6 +130,14 @@ instance Yesod App where
     VD{opts, j, qparam, q, qopts, perms} <- getViewData
     msg <- getMessage
     showSidebar <- shouldShowSidebar
+    -- The policy is sent from here rather than from a middleware, so that
+    -- the header and the page's script tags always carry the same nonce;
+    -- error pages come through here too, in a handler state of their own.
+    nonce <- liftIO newCspNonce
+    addHeader "Content-Security-Policy" $ cspHeader nonce
+    -- In browse mode the page pings the server while it is open (hledger.js);
+    -- the body attribute this sets is how the page knows to.
+    let browsemode = server_mode_ opts == ServeBrowse
 
     let rspec = reportspec_ (cliopts_ opts)
         ropts = _rsReportOpts rspec
@@ -167,42 +170,55 @@ instance Yesod App where
     -- you to use normal widget features in default-layout.
     pc <- widgetToPageContent $ do
       addStylesheet $ StaticR css_bootstrap_min_css
-      addStylesheet $ StaticR css_bootstrap_datepicker_standalone_min_css
       -- load these things early, in HEAD:
+      -- jquery is here only because flot (the register chart) needs it.
       toWidgetHead [hamlet|
         <script type="text/javascript" src="@{StaticR js_jquery_min_js}">
-        <script type="text/javascript" src="@{StaticR js_typeahead_bundle_min_js}">
       |]
-      addScript $ StaticR js_bootstrap_min_js
-      addScript $ StaticR js_bootstrap_datepicker_min_js
-      addScript $ StaticR js_jquery_url_js
-      addScript $ StaticR js_jquery_cookie_js
-      addScript $ StaticR js_jquery_hotkeys_js
       addScript $ StaticR js_jquery_flot_min_js
       addScript $ StaticR js_jquery_flot_selection_min_js
       addScript $ StaticR js_jquery_flot_time_min_js
       addScript $ StaticR js_jquery_flot_tooltip_min_js
-      toWidget [hamlet| \<!--[if lte IE 8]> <script type="text/javascript" src="@{StaticR js_excanvas_min_js}"></script> <![endif]--> |]
       addStylesheet $ StaticR hledger_css
       addScript $ StaticR hledger_js
       $(widgetFile "default-layout")
 
     withUrlRenderer $(hamletFile "templates/default-layout-wrapper.hamlet")
 
--- XXX why disabled during development ? Affects ghci, ghcid, tests, #2139 ?
-#ifndef DEVELOPMENT
-  -- This function creates static content files in the static folder
-  -- and names them based on a hash of their content. This allows
-  -- expiration dates to be set far in the future without worry of
-  -- users receiving stale content.
-  addStaticContent = addStaticContentExternal minifym base64md5 staticDir (StaticR . flip StaticRoute [])
-#endif
-
 -- This instance is required to use forms. You can modify renderMessage to
 -- achieve customized and internationalized form validation messages.
 instance RenderMessage App FormMessage where
     renderMessage _ _ = defaultFormMessage
 
+
+----------------------------------------------------------------------
+-- content security policy
+
+-- | The Content-Security-Policy sent with every HTML page. Everything loads
+-- from our own origin, and the only inline scripts allowed are the ones
+-- carrying this response's nonce: the two in default-layout.hamlet and its
+-- wrapper. The templates have no inline styles or event handlers, and flot
+-- sets its styles through the CSSOM, which the policy does not govern.
+-- frame-ancestors stops the pages being framed by another origin
+-- (clickjacking of the add and edit forms); the other responses get
+-- X-Frame-Options instead, see Application.hs.
+--
+-- 'self' assumes the static files come from our own origin. If --file-url
+-- (extraStaticRoot, #2139) is ever re-enabled, that origin has to be added
+-- to default-src as well, or every page will lose its styles and scripts.
+cspHeader :: Text -> Text
+cspHeader nonce = T.intercalate "; "
+  [ "default-src 'self'"
+  , "script-src 'self' 'nonce-" <> nonce <> "'"
+  , "object-src 'none'"
+  , "base-uri 'self'"
+  , "form-action 'self'"
+  , "frame-ancestors 'self'"
+  ]
+
+-- | A nonce for the policy above: 16 random bytes, base64 encoded.
+newCspNonce :: IO Text
+newCspNonce = TE.decodeUtf8 . B64.encode <$> getEntropy 16
 
 ----------------------------------------------------------------------
 -- template and handler utilities

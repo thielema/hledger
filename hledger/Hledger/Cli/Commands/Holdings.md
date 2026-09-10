@@ -9,7 +9,11 @@ Flags:
                             except where the account is depth-clipped.
   -t --tree                 list/tree mode: show accounts as a tree. Amounts
                             include subaccount amounts.
-     --no-elide             in tree mode, don't squash boring parent accounts
+     --no-elide             in tree mode, don't squash boring parent
+                            accounts; in list mode, also show parent accounts
+                            (usually zero, hidden without -E)
+     --full-names           in tree mode, show full account names instead of
+                            indented leaf names
      --drop=N               in list mode, omit N leading account name parts
   -S --sort-amount          sort by value (or cost) instead of account name,
                             largest first
@@ -27,11 +31,14 @@ Flags:
                             one of the above formats selects that format.
 ```
 
-This command is a work in progress.
-
-It shows the assets held in lot-tracked accounts (see [Lots](#lots))
-as of the report end date: one row per account, or one row per lot
-with `--lots`. With `--tree`, accounts are shown as a tree, with
+This command shows the assets held in lot-tracked accounts (see [Lots](#lots))
+as of the report end date: one row per account and held commodity
+(an account holding several commodities gets several rows, repeating
+its name), or per lot and commodity with `--lots`.
+Fully disposed commodities and accounts are not shown by default;
+with `-E/--empty`, they are shown as zero-units rows, keeping their
+realised gains and realised XIRR visible.
+With `--tree`, accounts are shown as a tree, with
 parent rows aggregating the lots beneath them; `--depth` limits and
 aggregates the displayed rows as usual.
 With `-S/--sort-amount`, rows are sorted by market value (or by cost,
@@ -39,31 +46,48 @@ when unpriced), largest first.
 The report title ("Holdings on DATE") can be customised with
 `--title=TEXT`, or suppressed with `--title=""`.
 Columns show each holding's acquisition date and age
-(when the row's lots share a single date; ages are shown in days, or
+(when its lots share a single date; ages are shown in days, or
 from one year in years with one decimal digit, eg `44d` or `1.1y`,
 approximating years as 365 days),
 the units held,
-the unit cost (or average cost, on rows aggregating multiple lots),
+the unit cost (or average cost, on rows aggregating multiple lots;
+for accounts using the AVERAGE cost basis method, this is the pool's
+running average as of the report date),
 the current market price, the total cost basis, the market value,
 the percentage of the portfolio's total value (Weight),
 the unrealised gain and gain percent (UGain, UGain%),
 the realised gain from disposals so far (RGain),
 and the annualised internal rate of return (XIRR, calculated from the
-account's dated cashflows and current value, like roi's IRR;
+holding's dated cashflows and current value, like roi's IRR;
 it includes realised gains).
-In the totals row, RGain and XIRR are account-level: they also include
-fully disposed lots, which have no row of their own (eg with `--lots`).
+The cost column's heading reflects the lots shown: "Avg cost" on rows
+aggregating multiple lots, or when the lots shown all use the AVERAGE
+cost basis method (their cost basis is the pool average); "Unit cost"
+when each lot shows its own cost; and "Unit/Avg cost" when both kinds
+of lot are shown.
+In the totals row, RGain and XIRR are account-level, for the displayed
+accounts: they also include those accounts' fully disposed lots and
+commodities, which may have no row of their own. Fully disposed
+accounts are included only when `-E` displays them.
 
 Market prices at the report date come from
 [P directives](#p-directives), and from transaction costs with
-`--infer-market-prices`, as usual; holdings are valued in their cost
-commodity when possible. When a holding has no market price,
-its Price, Value and gain columns are left blank.
+`--infer-market-prices`, as usual. Each lot is valued in its cost
+commodity when known; a row's Price and Value aggregate its lots,
+showing multiple amounts when their value commodities differ (like
+Cost), so values and value totals do not depend on how lots are
+grouped into rows (by `--depth`, `--pivot`, tree mode etc).
+When a lot has no market price, its row's Price, Value and gain
+columns are left blank.
+So in a multi-currency portfolio, aggregated rows and the totals row
+can mix currencies; use `-X COMM` for a single-currency view.
 
 With `-V`, `-X COMM` or `--value` ([Valuation](#valuation)), holdings
 are valued in the default or given valuation commodity instead, and the
 cost columns are also converted to it (at the valuation date, so percent
-gain is unaffected). `--value=then` is not supported, and `-B/--cost`
+gain is unaffected). Cashflows are not converted, however, so the XIRR
+column is left blank for holdings whose cashflows are in a different
+commodity. `--value=then` is not supported, and `-B/--cost`
 has no effect.
 Amounts are displayed with their commodity's display precision
 (unlike lot names, which can show more precision);
@@ -73,7 +97,7 @@ digit, or with the display style configured for the `%` commodity
 (eg by `-c '0.00 %'`).
 
 With `-O csv` or `-O tsv`, machine-readable output is produced instead:
-one record per row and commodity, with full account names, age in days,
+one record per displayed row, with full account names, age in days,
 bare units and gain percent numbers, gain and gain percent as
 separate fields, and no totals records.
 Amounts are shown without digit group marks; as in other commands'

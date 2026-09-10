@@ -46,7 +46,11 @@ Flags:
      --summary-only         display only row summaries (e.g. row total,
                             average) (in multicolumn reports)
   -N --no-total             omit the final total row
-     --no-elide             in tree mode, don't squash boring parent accounts
+     --no-elide             in tree mode, don't squash boring parent
+                            accounts; in list mode, also show parent accounts
+                            (usually zero, hidden without -E)
+     --full-names           in tree mode, show full account names instead of
+                            indented leaf names
      --format=FORMATSTR     use this custom line format (in simple reports)
   -S --sort-amount          sort by amount instead of account code/name (in
                             flat mode). With multiple columns, sorts by the row
@@ -131,9 +135,9 @@ balance can show..
 - commodities displayed on the same line or multiple lines (--layout)
 
 This command supports the output destination and output format options,
-with output formats txt, csv, tsv (Added in 1.32), json, and
-(multi-period reports only:) html, fods (Added in 1.40). In txt output
-in a colour-supporting terminal, negative amounts are shown in red.
+with output formats txt, csv, tsv (Added in 1.32), json, html, and fods
+(Added in 1.40). In txt output in a colour-supporting terminal, negative
+amounts are shown in red.
 
 Simple balance report
 
@@ -288,6 +292,57 @@ Notes:
 
 - Each group of sibling accounts (ie, under a common parent) is sorted
   separately.
+
+In list mode, --no-elide shows parent accounts as well, with their
+exclusive balances. These are zero unless the parent has postings of its
+own, so -E/--empty is usually also needed to make them visible.
+Together, these flags guarantee a complete table of all posted-to
+accounts and their parents, with full names:
+
+$ hledger -f examples/sample.journal balance --no-elide -E
+                   0  assets
+                   0  assets:bank
+                   0  assets:bank:checking
+                  $1  assets:bank:saving
+                 $-2  assets:cash
+                   0  expenses
+                  $1  expenses:food
+                  $1  expenses:supplies
+                   0  income
+                 $-1  income:gifts
+                 $-1  income:salary
+                   0  liabilities
+                  $1  liabilities:debts
+--------------------
+                   0
+
+This can be useful eg when exporting to a spreadsheet which will look up
+balances by account name.
+
+In tree mode, --full-names writes each account's full name instead of
+indenting leaf names, while keeping tree mode's inclusive balances. So
+--tree --no-elide --full-names -E shows the same complete table as
+above, but with inclusive balances:
+
+$ hledger -f examples/sample.journal balance --tree --no-elide --full-names -E
+                 $-1  assets
+                  $1  assets:bank
+                   0  assets:bank:checking
+                  $1  assets:bank:saving
+                 $-2  assets:cash
+                  $2  expenses
+                  $1  expenses:food
+                  $1  expenses:supplies
+                 $-2  income
+                 $-1  income:gifts
+                 $-1  income:salary
+                  $1  liabilities
+                  $1  liabilities:debts
+--------------------
+                   0
+
+Note that in this variant, parent and subaccount balances overlap, so
+(as in any tree mode report) the rows sum to more than the final total.
 
 Depth limiting
 
@@ -674,6 +729,12 @@ troubleshooting.
   particular accounts. It's common to restrict them to just expenses.
   (The <unbudgeted> account is occasionally hard to exclude; this is
   because of date surprises, discussed below.)
+
+- Only the account, account type, depth, date and commodity parts of the
+  query are applied to the budget goals; the other parts
+  (status:/-U/-P/-C, code:, desc:, payee:, note:, tag:, real:, amt:)
+  select actual transactions and postings only. So eg --budget --cleared
+  compares your cleared spending against the full budget goals.
 
 - When you have multiple currencies, you may want to convert them to one
   (-X COMM --infer-market-prices) and/or show just one at a time

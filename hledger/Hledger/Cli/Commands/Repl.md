@@ -18,7 +18,8 @@ so commands will run more quickly than if you ran them individually at the comma
 The input file(s) specified for the `repl` command will be used throughout the session;
 but you can override this temporarily by specifying new `-f` options for a command.
 
-Before running a command, any input files which have changed on disk are automatically reloaded.
+Before running a command, any input files which have changed on disk are automatically reloaded
+(including CSV rules files).
 Also command aliases are reloaded if the config file has changed,
 and addon commands are re-detected if PATH's contents have changed.
 The `--no-watch` flag disables all of this reloading,

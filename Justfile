@@ -478,6 +478,12 @@ SHELLTEST := STACK + ' exec -- shelltest --execdir --threads=40'
 # --test so that subsequent `stack test` won't recompile everything
 # --no-run-tests to avoid running the slow doctest suite every time
 
+# run hledger-web's browser tests against the current build, with any playwright OPTS (needs setup, see hledger-web/test/browser/README.md)
+@browsertest *PWOPTS:
+    {{ STACK }} build hledger-web
+    cd hledger-web/test/browser && \
+        HLEDGER_WEB="{{ STACK }} exec -- hledger-web" pnpm test {{ PWOPTS }}
+
 # too fragile:
 #    echo
 #    just perftest {{ STOPTS }}
@@ -731,15 +737,24 @@ manuals:
 manuals-site: manuals
     make -C site snapshot-$(just majorver)
 
+# Update the general options help shown in the manuals (doc/common.m4) from hledger's --help output.
+generaloptionshelp:
+    $STACK build hledger
+    tools/generaloptionshelp
+
 # Add latest commit messages to the changelogs. (Runs ./Shake changelogs [OPTS])
 changelogs *OPTS:
     ./Shake changelogs {{ OPTS }}
+
+# Check the changelogs for stale resume points, bad issue links, leftover draft markers. (Runs ./Shake changelogs-check)
+changelogs-check:
+    ./Shake changelogs-check
 
 # Drop any uncommitted changes to the project and package changelogs.
 changelogs-reset:
     git checkout */CHANGES.md
 
-# Set changelog headings to the specified commit, or HEAD. Run on release branch.
+# Set changelog headings to the specified commit, or HEAD. Rarely needed now (changelogs auto-relocates rewritten resume points). Run on release branch.
 changelogs-catchup *COMMIT:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -984,6 +999,10 @@ relbranch VER:
     make -C hledger/shell-completion/
     echo "now please commit any changes in hledger/shell-completion/"
 
+# Update the release version on the hledger.org Install page (site/src/install.md). NEWVER defaults to ./.version.
+installpage *NEWVER:
+    tools/installpage {{ NEWVER }}
+
 # Make draft release notes from changelogs. Run on release branch. Run just tools first.
 @relnotes:
     just _on-release-branch
@@ -1026,26 +1045,92 @@ reltags:
     just ghrun-open binaries-mac-x64
     just ghrun-open binaries-windows-x64
 
-# Push the 5 release tags for the specified release version. Do this after building release binaries and before creating the github release.
-reltags-push VER:
-    git push origin {{ VER }} hledger-{{ VER }} hledger-lib-{{ VER }} hledger-ui-{{ VER }} hledger-web-{{ VER }}
+# Push the current release's tags (made by reltags, named per */.version) to github. Do this after building release binaries and before creating the github release.
+reltags-push:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    just _on-release-branch
+    TAGS="`cat .version`"
+    for p in $PACKAGES; do TAGS="$TAGS $p-`cat $p/.version`"; done
+    git push origin $TAGS
 
-# XXX
-# Release binaries are downloaded to local machine, repacked, and uploaded to GH release.
-# Nightly binaries are copied from their last runs by a workflow on GH.
-# Why the difference, is special repacking needed, for release only ?
+# The github release is normally assembled by the release.yml workflow (via just ghrel),
+# entirely on github's servers. ghbin-download and ghrel-upload below support ghrel-local,
+# the older flow which routes the binaries through the local machine; kept as a fallback
+# for release branches that don't have release.yml.
 
 # Download new binaries from the latest runs of the platform binaries workflows, and recompress them.
+# If a release tag matching ./.version exists, each run is checked to be built from that tag's commit.
 ghbin-download:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    VER=$(just ver)
+    TAGCOMMIT=$(git rev-parse -q --verify "refs/tags/$VER^{commit}" || true)
+    [[ -n $TAGCOMMIT ]] || echo "note: no $VER tag found, not checking the runs' build commits"
     mkdir -p tmp
-    cd tmp; rm -rf hledger-*64
-    cd tmp; gh run download $(just _ghrun-id binaries-linux-x64)
-    cd tmp; gh run download $(just _ghrun-id binaries-mac-arm64)
-    cd tmp; gh run download $(just _ghrun-id binaries-mac-x64)
-    cd tmp; gh run download $(just _ghrun-id binaries-windows-x64)
-    cd tmp; mv */*.tar .; gzip -f *.tar
-    cd tmp; zip -j hledger-windows-x64.zip hledger-windows-x64/*
-    cd tmp; rm -rf hledger-*64
+    cd tmp
+    rm -rf hledger-*64
+    for w in binaries-linux-x64 binaries-mac-arm64 binaries-mac-x64 binaries-windows-x64; do
+      read -r id sha < <(gh run list --workflow $w --json databaseId,headSha --jq '.[0] | "\(.databaseId) \(.headSha)"')
+      if [[ -n $TAGCOMMIT && $sha != "$TAGCOMMIT" ]]; then
+        echo "error: latest $w run ($id) was built from commit $sha," >&2
+        echo "not the $VER tag's commit $TAGCOMMIT; not downloading" >&2
+        exit 1
+      fi
+      gh run download "$id"
+    done
+    mv */*.tar .
+    gzip -f *.tar
+    zip -j hledger-windows-x64.zip hledger-windows-x64/*
+    rm -rf hledger-*64
+
+# Create or update a draft github release for the current version, with release notes and
+# binaries attached, using the release.yml workflow - the binaries stay on github's servers.
+# Run on release branch, after reltags-push, once the binaries-* workflows have succeeded
+# for the tagged commit. Safe to re-run.
+ghrel:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    just _on-release-branch
+    VER=$(just ver)
+    BRANCH=$(git branch --show-current)
+    gh workflow run release.yml --ref "$BRANCH" -f version="$VER"
+    echo "Waiting for the release workflow to start.."
+    sleep 5
+    RUN=$(gh run list --workflow release.yml -b "$BRANCH" --json databaseId --jq '.[0].databaseId')
+    gh run watch "$RUN" --exit-status
+    echo "Draft release $VER is ready. Review it (just ghrel-open), then make it public with: just ghrel-publish"
+
+# Like ghrel, but assembling the release locally: create/update the draft release,
+# then download the binaries (ghbin-download) and upload them to it (ghrel-upload).
+# A fallback for release branches that don't have the release.yml workflow.
+ghrel-local:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    just _on-release-branch
+    VER=$(just ver)
+    if gh release view "$VER" >/dev/null 2>&1; then
+      echo "Updating github release $VER's notes"
+      doc/ghrelnotes "$VER" | gh release edit "$VER" -F-
+    else
+      PRERELEASE=$([[ $(just _versionIsPreview "$VER") == y ]] && echo --prerelease || true)
+      echo "Creating draft github release $VER"
+      doc/ghrelnotes "$VER" | gh release create "$VER" --draft --verify-tag $PRERELEASE --title "$VER" -F-
+    fi
+    just ghbin-download
+    just ghrel-upload
+    echo "Draft release $VER is ready. Review it (just ghrel-open), then make it public with: just ghrel-publish"
+
+# Publish the current version's draft github release, making it visible to the world. ⚠
+ghrel-publish:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    just _on-release-branch
+    VER=$(just ver)
+    gh release view "$VER"
+    read -p "Publish github release $VER, for all the world to see ? Enter to proceed, ctrl-c to cancel: "
+    gh release edit "$VER" --draft=false
+    gh release view "$VER" --json url --jq .url
 
 # Browse the latest github release.
 @ghrel-open:
@@ -1062,7 +1147,9 @@ ghrel-upload:
     set -euo pipefail
     just _on-release-branch
     VER=$(just ver)
-    read -p "Warning! uploading binaries to release $VER, are you sure ? Enter to proceed: "
+    if [[ $(gh release view "$VER" --json isDraft --jq .isDraft) != true ]]; then
+      read -p "Warning! uploading binaries to the published release $VER, are you sure ? Enter to proceed: "
+    fi
     gh release upload --clobber "$VER" tmp/hledger-linux-x64.tar.gz
     gh release upload --clobber "$VER" tmp/hledger-mac-arm64.tar.gz
     gh release upload --clobber "$VER" tmp/hledger-mac-x64.tar.gz
@@ -1143,11 +1230,11 @@ installrel VER:
     ARCH=$(ghc -ignore-dot-ghci -package-env - -e 'import System.Info' -e 'putStrLn $ case arch of "x86_64"->"x64"; "aarch64"->"arm64"; "arm"->"arm64"; _->"other"')
 
     # if [[ "$OS" == "windows" ]]; then
-    #   cd bin/old && curl -L https://github.com/simonmichael/hledger/releases/download/$VER/hledger-$OS-$ARCH.zip | funzip | `type -P gtar || echo tar` xf - --transform "s/$/-$VER/"
+    #   cd bin/old && curl -L https://github.com/hledgerorg/hledger/releases/download/$VER/hledger-$OS-$ARCH.zip | funzip | `type -P gtar || echo tar` xf - --transform "s/$/-$VER/"
     # else
     # fi
 
-    cd bin/old && curl -L https://github.com/simonmichael/hledger/releases/download/$VER/hledger-$OS-$ARCH.tar.gz | `type -P gtar || echo tar` xzf - --transform "s/\$/-$VER/"
+    cd bin/old && curl -L https://github.com/hledgerorg/hledger/releases/download/$VER/hledger-$OS-$ARCH.tar.gz | `type -P gtar || echo tar` xzf - --transform "s/\$/-$VER/"
 
 # # download recent versions of the hledger executables from github to bin/hledger*-VER
 # get-recent-binaries:
@@ -1427,13 +1514,13 @@ time *ARGS:
 @_versionFourthPart VER:
     echo {{ if VER =~ '\d+(\.\d+){3,}' { replace_regex(VER, '\d+(\.\d+){2}\.(\d+).*', '$2') } else { '' } }}
 
-# Does this dotted version number have a .99 third part and no fourth part ?
+# Is this a dev version number (ending in .99) ? Eg: 1.99, 1.52.99.
 @_versionIsDev VER:
-    echo {{ if VER =~ '(\d+\.){2}99$' { 'y' } else { '' } }}
+    echo {{ if VER =~ '^\d+\.(\d+\.)?99$' { 'y' } else { '' } }}
 
-# Does this dotted version number have a .99 third part and a fourth part ?
+# Is this a preview version number (a .99 part followed by one more part) ? Eg: 1.99.3, 1.52.99.1.
 @_versionIsPreview VER:
-    echo {{ if VER =~ '(\d+\.){2}99\.\d+' { 'y' } else { '' } }}
+    echo {{ if VER =~ '^\d+\.(\d+\.)?99\.\d+$' { 'y' } else { '' } }}
 
 # Show the hledger version number that's configured for the current branch.
 @ver:
@@ -1447,17 +1534,16 @@ time *ARGS:
 # @majorVersionIncrement MAJORVER:
 #     python3 -c "print({{MAJORVER}} + 0.01)"
 
-# Appropriate release branch name for the given version number ("MAJOR-branch")
+# Appropriate release branch name for the given version number:
+# "MAJOR-branch", or "VER-branch" for preview releases.
 _versionReleaseBranch VER:
     #!/usr/bin/env bash
     MAJOR=$(just _versionMajorPart {{ VER }})
-    if [[ $(just _versionIsDev {{ VER }}) == y ]] then
+    if [[ $(just _versionIsDev {{ VER }}) == y ]]; then
       echo "{{ VER }} is not a releasable version" >&2
       exit 1
-    elif [[ $(just _versionIsPreview {{ VER }}) == y ]] then
-      # echo "$(just majorVersionIncrement "$MAJOR")-branch"
-      echo "{{ VER }} is not a releasable version" >&2
-      exit 1
+    elif [[ $(just _versionIsPreview {{ VER }}) == y ]]; then
+      echo "{{ VER }}-branch"
     else
       echo "$MAJOR-branch"
     fi
@@ -1549,7 +1635,7 @@ twih:  # *DATE:
     `just worklog $DATE`
 
     recent issue activity:
-    https://github.com/simonmichael/hledger/issues?q=sort:updated-desc
+    https://github.com/hledgerorg/hledger/issues?q=sort:updated-desc
 
 
     == TWIH draft (in clipboard) : ========================

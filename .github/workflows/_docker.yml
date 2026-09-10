@@ -1,6 +1,6 @@
 # TRIGGER: Runs on any push to the docker branch.
 # ACTION: Generates docker images for linux x64 and arm64, and pushes them to Github's Container Registry.
-# Experimental, see https://github.com/simonmichael/hledger/pull/2002.
+# Experimental, see https://github.com/hledgerorg/hledger/pull/2002.
 
 name: docker
 

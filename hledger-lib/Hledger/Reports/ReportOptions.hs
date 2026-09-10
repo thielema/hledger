@@ -124,6 +124,7 @@ instance Default AccountListMode where def = ALFlat
 data Layout = LayoutWide (Maybe Int)
             | LayoutTall
             | LayoutBare
+            | LayoutBareWide
             | LayoutTidy
   deriving (Eq, Show)
 
@@ -148,6 +149,7 @@ data ReportOpts = ReportOpts {
     ,date2_            :: Bool
     ,empty_            :: Bool
     ,no_elide_         :: Bool
+    ,full_names_       :: Bool
     ,real_             :: Bool
     ,format_           :: StringFormat
     ,balance_base_url_ :: Maybe T.Text
@@ -217,6 +219,7 @@ defreportopts = ReportOpts
     , date2_            = False
     , empty_            = False
     , no_elide_         = False
+    , full_names_       = False
     , real_             = False
     , format_           = def
     , balance_base_url_ = Nothing
@@ -291,6 +294,7 @@ rawOptsToReportOpts d usecoloronstdout rawopts =
           ,date2_            = boolopt "date2" rawopts
           ,empty_            = boolopt "empty" rawopts
           ,no_elide_         = boolopt "no-elide" rawopts
+          ,full_names_       = boolopt "full-names" rawopts
           ,real_             = boolopt "real" rawopts
           ,format_           = format
           ,balance_base_url_ = T.pack <$> maybestringopt "base-url" rawopts
@@ -429,6 +433,7 @@ layoutopt rawopts = fromMaybe (LayoutWide Nothing) $ layout <|> column
                      , ("tall", LayoutTall)
                      , ("bare", LayoutBare)
                      , ("tidy", LayoutTidy)
+                     , ("barewide", LayoutBareWide)
                      ]
         -- For `--layout=elided,n`, elide to the given width
         (s,n) = break (==',') $ map toLower opt
@@ -437,7 +442,7 @@ layoutopt rawopts = fromMaybe (LayoutWide Nothing) $ layout <|> column
               c | Just w' <- readMay c -> Just w'
               _ -> usageError "width in --layout=wide,WIDTH must be an integer"
 
-        err = usageError "--layout's argument should be \"wide[,WIDTH]\", \"tall\", \"bare\", or \"tidy\""
+        err = usageError "--layout's argument should be \"wide[,WIDTH]\", \"tall\", \"bare\", \"barewide\", or \"tidy\""
 
 -- Get the period specified by any -b/--begin, -e/--end and/or -p/--period
 -- options appearing in the command line.
@@ -471,7 +476,7 @@ beginDatesFromRawOpts d = collectopts (begindatefromrawopt d)
       | n == "period" =
         case
           either (\e -> usageError $ "could not parse period option: "++customErrorBundlePretty e) id $
-          parsePeriodExpr d' (stripquotes $ T.pack v)
+          parsePeriodExpr d' (textStripQuotes $ T.pack v)
         of
           (_, DateSpan (Just b) _) -> Just b
           _                        -> Nothing
@@ -489,7 +494,7 @@ endDatesFromRawOpts d = collectopts (enddatefromrawopt d)
       | n == "period" =
         case
           either (\e -> usageError $ "could not parse period option: "++customErrorBundlePretty e) id $
-          parsePeriodExpr d' (stripquotes $ T.pack v)
+          parsePeriodExpr d' (textStripQuotes $ T.pack v)
         of
           (_, DateSpan _ (Just e)) -> Just e
           _                        -> Nothing
@@ -508,7 +513,7 @@ intervalFromRawOpts = lastDef NoInterval . collectopts intervalfromrawopt
             extractIntervalOrNothing $
             parsePeriodExpr
               (error' "intervalFromRawOpts: did not expect to need today's date here")  -- PARTIAL: should not happen; we are just getting the interval, which does not use the reference date
-              (stripquotes $ T.pack v)
+              (textStripQuotes $ T.pack v)
       | n == "daily"     = Just $ Days 1
       | n == "weekly"    = Just $ Weeks 1
       | n == "monthly"   = Just $ Months 1

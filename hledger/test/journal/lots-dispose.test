@@ -87,7 +87,7 @@ $ hledger -f- bal assets:stocks --lots
     assets:cash       $275
 
 $ hledger -f- bal assets:stocks --lots
->2 /no lots available/
+>2 /no AAPL lots available for disposal/
 >=1
 
 # ** 7. Multiple disposals reduce lots correctly.
@@ -110,19 +110,23 @@ $ hledger -f- bal assets:stocks --lots
 
 $ hledger -f- bal assets:stocks --lots -N
 
-# ** 8. A dispose posting with unknown transacted cost (selling price) is an error.
+# ** 8. A disposal-like posting without a transacted cost (selling price),
+# balanced by an elided asset posting, is read as a lot transfer to that
+# account instead: the dispose reading would fail for lack of a price.
+# So a sale which forgot its price quietly becomes a transfer.
 <
 2026-01-15 buy
     assets:stocks    10 AAPL {$50}
     assets:checking
 
-2026-02-01 sell
+2026-02-01 sell, price forgotten
     assets:stocks    -5 AAPL {$50}
     assets:cash
 
-$ hledger -f- bal assets:stocks --lots
->2 /no transacted price/
->=1
+$ hledger -f- bal --lots -N
+              5 AAPL  assets:cash:{2026-01-15, $50}
+               $-500  assets:checking
+              5 AAPL  assets:stocks:{2026-01-15, $50}
 
 # ** 9. Explicit lot subaccount on dispose posting is accepted when it matches the resolved lot.
 <
@@ -653,7 +657,7 @@ account income:capital  ; type:G
     income:capital                                     Rs-2803.24
 
 $ hledger -f- print --lots
->2 /no lots available for commodity FUND in account assets:fund/
+>2 /no lots matching .* for commodity FUND in account assets:fund/
 >=1
 
 
@@ -701,3 +705,71 @@ $ hledger -f- print -a date:2026-02
     equity:unrealised-gain                       $15  ; ptype: ugain, generated-posting:
 
 >=
+
+# ** 38. A lot's displayed name can be used to select the lot, even when it
+# rounds an inferred cost with more digits than displayed (eg $10/3 shown as
+# $3.33333333); gains are still computed from the full-precision stored cost,
+# so the gain here is exactly $2, not $2.00000001. #2689
+<
+commodity ABC ; lots:
+
+2021-03-08 buy
+     equity:open-close   -$10
+     assets:broker1      3 ABC
+
+2021-04-01 sell
+     assets:broker1     -3 ABC {2021-03-08, $3.33333333} @ $4
+     assets:cash        $12
+
+$ hledger -f- print --lots -x
+2021-03-08 buy
+    equity:open-close                           $-10
+    assets:broker1:{2021-03-08, $3.33333333}       3 ABC {$3.33333333} @@ $10
+
+2021-04-01 sell
+    assets:broker1:{2021-03-08, $3.33333333}      -3 ABC {2021-03-08, $3.33333333} @ $4
+    assets:cash                                  $12
+    revenues:gain                                $-2
+    equity:unrealised-gain                        $2
+
+>=
+
+# ** 39. A priceless disposal is allowed when it is an in-kind outflow:
+# non-asset postings receive the disposed units (same commodity, same total
+# quantity, possibly split across postings). No gain is calculated; the
+# units leave their lots at cost basis. #2692
+<
+commodity ABC ; lots:
+
+2020-03-08 buy
+    assets:cash        -$20
+    assets:broker1      5 ABC
+
+2020-06-01 donate from two programs
+    assets:broker1       -5 ABC {}
+    expenses:charity:a    3 ABC
+    expenses:charity:b    2 ABC
+$ hledger -f- bal --lots -N
+                $-20  assets:cash
+               3 ABC  expenses:charity:a
+               2 ABC  expenses:charity:b
+
+# ** 40. Also with several priceless disposals feeding one receiving posting. #2692
+<
+commodity ABC ; lots:
+
+2020-03-08 buy1
+    assets:cash        -$12
+    assets:broker1      3 ABC
+
+2020-03-09 buy2
+    assets:cash        -$10
+    assets:broker1      2 ABC
+
+2020-06-01 donate two lots
+    assets:broker1       -3 ABC {2020-03-08}
+    assets:broker1       -2 ABC {2020-03-09}
+    expenses:charity      5 ABC
+$ hledger -f- bal --lots -N
+                $-22  assets:cash
+               5 ABC  expenses:charity

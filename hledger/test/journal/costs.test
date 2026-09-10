@@ -130,12 +130,15 @@ $ hledger -f - balance --cost
                    0  
 >=0
 
-# ** 11. --value=cost,XXX is deprecated, but should still work (for now)
+# ** 11. --value=cost,XXX is deprecated, but should still work (for now).
+# The unknown valuation commodity is warned about.
 $ hledger -f - balance --value=cost,XXX
                  16$  a
                 -16$  b
 --------------------
                    0  
+>2
+Warning: no conversion prices to "XXX" can be found.
 >=0
 
 # ** 12. conversion postings should be generated when called --infer-equity
@@ -240,7 +243,7 @@ $ hledger -f - balance --no-total -B
 >= 0
 
 # In fact, here is how sign works with costs currently.
-# See discussion at https://github.com/simonmichael/hledger/issues/1870
+# See discussion at https://github.com/hledgerorg/hledger/issues/1870
 <
 2022-01-01 Positive Unit cost
     a        A 1

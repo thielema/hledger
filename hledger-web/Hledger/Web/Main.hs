@@ -24,21 +24,27 @@ If not, see <https://www.gnu.org/licenses/>.
 
 module Hledger.Web.Main where
 
+import Control.Concurrent (forkIO)
+import Control.Concurrent.Async (race)
 import Control.Exception (bracket)
 #if MIN_VERSION_base(4,20,0)
 import Control.Exception.Backtrace (setBacktraceMechanismState, BacktraceMechanism(..))
 #endif
 import Control.Monad (when, void)
+import Data.IORef (IORef, atomicModifyIORef', newIORef, readIORef, writeIORef)
+import Data.Streaming.Network (bindRandomPortTCP)
 import Data.String (fromString)
 import Data.Text qualified as T
+import GHC.Clock (getMonotonicTime)
+import Network.HTTP.Types (status204)
 import Network.Socket
-import Network.Wai (Application)
-import Network.Wai.Handler.Warp (runSettings, runSettingsSocket, defaultSettings, setHost, setPort)
-import Network.Wai.Handler.Launch (runHostPortFullUrl)
+import Network.Wai (Application, Middleware, pathInfo, responseLBS)
+import Network.Wai.Handler.Warp (Settings, runSettings, runSettingsSocket, defaultSettings, setBeforeMainLoop, setHost, setPort)
 import System.Directory (removeFile)
 import System.Environment ( getArgs, withArgs )
 import System.IO (hFlush, stdout)
 import System.PosixCompat.Files (getFileStatus, isSocket)
+import System.Time.Extra (sleep)
 import Text.Printf (printf)
 import Yesod.Default.Config
 import Yesod.Default.Main (defaultDevelApp)
@@ -47,7 +53,7 @@ import Hledger
 import Hledger.Cli hiding (progname,prognameandversion)
 import Hledger.Cli.Commands.Quickref (showQuickref)
 import Hledger.Web.Application (makeApplication)
-import Hledger.Web.Settings (Extra(..), parseExtra)
+import Hledger.Web.Settings (Extra(..), parseExtra, defbaseurl)
 import Hledger.Web.Test (hledgerWebTest)
 import Hledger.Web.WebOptions
 
@@ -109,14 +115,30 @@ web opts0 j = do
   let depthlessinitialq = filterQuery (not . queryIsDepth) . _rsQuery . reportspec_ $ cliopts_ opts
       j' = filterJournalTransactions depthlessinitialq j
       h = host_ opts
-      p = port_ opts
-      u = base_url_ opts
+      p0 = port_ opts
       staticRoot = T.pack <$> file_url_ opts  -- XXX not used #2139
+
+  -- --port 0 means "let the operating system choose a free port". To learn which
+  -- port it chose (so we can report it and build the base url), we must bind the
+  -- listening socket ourselves rather than let warp do it. This isn't supported in
+  -- --serve-browse mode, which needs a known port up front to open the browser at.
+  when (p0 == 0 && socket_ opts == Nothing && server_mode_ opts == ServeBrowse) $
+    error' $ unlines  -- PARTIAL:
+      ["--port 0 (let the operating system choose a free port) is not supported with --serve-browse."
+      ,"Please use --serve or --serve-api instead, which will report the chosen port."]
+  mtcpsock <- if p0 == 0 && socket_ opts == Nothing
+                then Just <$> bindRandomPortTCP (fromString h)
+                else return Nothing
+  let p = maybe p0 fst mtcpsock
+      -- If the base url is the default one (built from host and port), rebuild it
+      -- with the chosen port; if the user set --base-url, leave it untouched.
+      u | base_url_ opts == defbaseurl h p0 = defbaseurl h p
+        | otherwise                         = base_url_ opts
       appconfig = AppConfig{appEnv = Development
                            ,appHost = fromString h
                            ,appPort = p
                            ,appRoot = T.pack u
-                           ,appExtra = Extra "" Nothing staticRoot
+                           ,appExtra = Extra "" staticRoot
                            }
   app <- makeApplication opts j' appconfig
 
@@ -139,20 +161,21 @@ web opts0 j = do
     Nothing -> pure ()
 
   -- start server and maybe browser
+  let warpsettings = setHost (fromString h) (setPort p defaultSettings)
   if server_mode_ opts == ServeBrowse
     then do
       putStrLn "This server will exit after 2m with no browser windows open (or press ctrl-c)"
       putStrLn "Opening web browser..."
       hFlush stdout
-      -- exits after 2m of inactivity (hardcoded)
-      Network.Wai.Handler.Launch.runHostPortFullUrl h p u app
+      -- returns normally only after the idle exit (ctrl-c or a server failure raises instead)
+      serveAndBrowse warpsettings u app
+      putStrLn "No browser windows were open for 2m, exiting. (Use --serve to serve without this timeout.)"
 
     else do
       putStrLn "Press ctrl-c to quit"
       hFlush stdout
-      let warpsettings = setHost (fromString h) (setPort p defaultSettings)
-      case socket_ opts of
-        Just s -> do
+      case (socket_ opts, mtcpsock) of
+        (Just s, _) -> do
           if isUnixDomainSocketAvailable then
             bracket
               (do
@@ -172,5 +195,54 @@ web opts0 j = do
               ,"Please try again without --socket."
               ]
 
-        Nothing -> Network.Wai.Handler.Warp.runSettings warpsettings app
+        -- --port 0: serve on the socket we already bound to the OS-chosen port.
+        (Nothing, Just (_, sock)) -> Network.Wai.Handler.Warp.runSettingsSocket warpsettings sock app
+        (Nothing, Nothing)        -> Network.Wai.Handler.Warp.runSettings warpsettings app
 
+-- | Browse mode: serve the app, open the default web browser on it once it
+-- is listening, and return when no browser window has shown it for two
+-- minutes. A page says it is open by pinging /_ping while it is (see
+-- browsePingInit in static/hledger.js). The pings are answered here, before
+-- they reach the app, and the time of the latest one is kept.
+serveAndBrowse :: Settings -> String -> Application -> IO ()
+serveAndBrowse warpsettings u app = do
+  lastping <- newIORef =<< getMonotonicTime
+  let settings = setBeforeMainLoop (void $ forkIO $ void $ openBrowserOn u) warpsettings
+  -- Run these concurrently: when either one finishes or fails, so does the other.
+  void $ race
+    (runSettings settings $ answerPings lastping app)
+    (waitForIdle lastping)
+
+-- | Answer /_ping with 204 No Content, noting the time; pass everything else to the app.
+answerPings :: IORef Double -> Middleware
+answerPings lastping app req send
+  | pathInfo req == ["_ping"] = do
+      writeIORef lastping =<< getMonotonicTime
+      send $ responseLBS status204 [] ""
+  | otherwise = app req send
+
+-- | Return once no ping has arrived for browseIdleSeconds.
+waitForIdle :: IORef Double -> IO ()
+waitForIdle lastping = do
+  t   <- readIORef lastping
+  now <- getMonotonicTime
+  let remaining = t + browseIdleSeconds - now
+  when (remaining > 0) $ do
+    sleep remaining
+    woke <- getMonotonicTime
+    -- On some platforms the clock runs on while the system sleeps, and no
+    -- page could ping meanwhile. If the wait overran by more than a ping
+    -- interval, allow one more interval before deciding.
+    when (woke - now - remaining > browsePingSeconds) $
+      atomicModifyIORef' lastping $ \lp ->
+        (max lp (woke + browsePingSeconds + 5 - browseIdleSeconds), ())
+    waitForIdle lastping
+
+-- | How long browse mode keeps serving after the last ping. The pages ping
+-- every browsePingSeconds, so a few pings can go missing before this runs out.
+browseIdleSeconds :: Double
+browseIdleSeconds = 120
+
+-- | How often an open page pings, as set in hledger.js.
+browsePingSeconds :: Double
+browsePingSeconds = 30

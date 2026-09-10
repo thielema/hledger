@@ -53,8 +53,7 @@ hledger-web can be run in three modes:
 - `--serve-browse` mode (the default):
   the app serves the web UI and JSON API,
   and opens your default web browser to show the app if possible,
-  and exits automatically after two minutes of inactivity
-  (with no requests received and no open browser windows viewing it).
+  and exits automatically once no browser window has shown it for two minutes.
 
 - `--serve`: the app just serves the web UI and JSON API.
 
@@ -80,7 +79,8 @@ Flags:
                             origin; setting ORIGIN to "*" allows requests from
                             any origin
      --host=IPADDR          listen on this IP address (default: 127.0.0.1)
-     --port=PORT            listen on this TCP port (default: 5000)
+     --port=PORT            listen on this TCP port (default: 5000); 0 means
+                            a free port chosen by the OS
      --socket=SOCKET        listen on the given unix socket instead of an IP
                             address and port (unix only; implies --serve)
      --base-url=BASEURL     set the base url (default: http://IPADDR:PORT)
@@ -97,6 +97,10 @@ The special address `0.0.0.0` causes it to listen on all of this machine's addre
 
 Similarly, you can use `--port` to listen on a TCP port other than 5000.
 This is useful if you want to run multiple hledger-web instances on a machine.
+`--port 0` makes the operating system choose a free port, which is reported
+in the startup message and in the default base url. This can be useful eg
+when scripting; it is supported with `--serve` and `--serve-api`, but not
+with `--serve-browse`.
 
 When `--socket` is used, hledger-web creates and communicates via a socket file instead of a TCP port.
 This can be more secure, respects unix file permissions, and makes certain use cases easier,
@@ -167,16 +171,13 @@ file or any files it includes.
 
 Note, unlike any other hledger command, in this mode you (or any visitor)
 can alter or wipe the data files.
-
-Normally whenever a file is changed in this way, hledger-web saves a numbered backup
+Normally when hledger-web changes any data, it will save a numbered backup of the file
 (assuming file permissions allow it, the disk is not full, etc.)
 hledger-web is not aware of version control systems, currently; if you use one,
-you'll have to arrange to commit the changes yourself (eg with a cron job
-or a file watcher like entr).
+you'll have to arrange to commit the changes yourself.
 
-Changes which would leave the journal file(s) unparseable or non-valid
+Changes which would leave the journal file(s) unparseable or invalid
 (eg with failing balance assertions) are prevented.
-(Probably. This needs re-testing.)
 
 # RELOADING
 
@@ -186,8 +187,8 @@ when you reload the page or navigate to a new page.
 If a change makes a file unparseable,
 hledger-web will display an error message until the file has been fixed.
 
-(Note: if you are viewing files mounted from another machine, make
-sure that both machine clocks are roughly in step.)
+(If you are viewing files mounted from another machine, make sure that
+both machines have roughly the same idea of what time it is.)
 
 # JSON API
 
@@ -264,7 +265,7 @@ and click on the various data types, eg
 And for a higher level understanding, see the [journal docs](hledger.html#journal).
 There is also a basic [OpenAPI specification][openapi.yaml].
 
-[openapi.yaml]: https://github.com/simonmichael/hledger/blob/main/hledger-web/config/openapi.yaml
+[openapi.yaml]: https://github.com/hledgerorg/hledger/blob/main/hledger-web/config/openapi.yaml
 
 In some cases there is outer JSON corresponding to a "Report" type.
 To understand that, go to the

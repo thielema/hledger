@@ -4,10 +4,10 @@ license:       GPL-3.0-or-later
 maintainer:    Simon Michael <simon@joyful.com>
 author:        Simon Michael <simon@joyful.com>
 stability:     stable
-tested-with:   ghc==9.6.7, ghc==9.8.4, ghc==9.10.2, ghc==9.12.2
+tested-with:   ghc==9.6.7, ghc==9.8.4, ghc==9.10.3, ghc==9.12.4, ghc==9.14.1
 homepage:      http://hledger.org
 bug-reports:   http://bugs.hledger.org
-github:        simonmichael/hledger
+github:        hledgerorg/hledger
 category:      Finance, Console
 synopsis:      Command-line interface for the hledger accounting system
 description: |
@@ -99,7 +99,7 @@ flags:
 dependencies:
 - base >=4.18 && <4.23
 - hledger-lib >=1.99 && <1.100
-- aeson >=2.3 && <2.4
+- aeson >=2.2.5.1 && <2.4  # avoid https://haskell.github.io/security-advisories/advisory/HSEC-2026-0007.html
 - ansi-terminal >=0.9
 - bytestring
 - cmdargs >=0.10
@@ -110,7 +110,7 @@ dependencies:
 - extra >=1.7.11
 - filepath
 - githash >=0.1.6.2
-# https://github.com/simonmichael/hledger/issues/2410
+# https://github.com/hledgerorg/hledger/issues/2410
 # haskeline 0.8.4.0+ is needed to fix ANSI display by add on MS Windows (https://github.com/haskell/haskeline/issues/130).
 # But most stackage snapshots have an older haskeline, that can't be upgraded because it's a GHC core lib.
 # Dev builds and the github release builds force the newer haskeline (by using a recent stackage snapshot, or cabal), so are free of the bug.
@@ -119,9 +119,10 @@ dependencies:
 - haskeline >=0.6
 - http-client
 - http-types
-- megaparsec >=7.0.0 && <9.8.0 || >9.8.0 && <9.9
 - microlens >=0.4
+- megaparsec >=7.0.0 && <9.8 || >=9.8.0 && <9.9
 - mtl >=2.2.1
+- open-browser >=0.5
 - process
 - regex-tdfa
 - req
@@ -212,8 +213,9 @@ library:
   # - Hledger.Cli.Utils
   # - Hledger.Cli.Version
   dependencies:
-  - Diff >=0.2
+  - Diff >=1.0  # for Data.Algorithm.DiffContext's context-diff API
   - hashable >=1.2.4
+  - pretty
   - lucid
   - modern-uri >=0.3
 

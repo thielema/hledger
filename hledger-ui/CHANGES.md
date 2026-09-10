@@ -5,22 +5,65 @@
 | |_| | |
  \__,_|_|
 
-Breaking changes
-
-Fixes
-
-Features
-
-Improvements
-
-Docs
-
-API
+Item order: security fixes first, then breaking changes, then the rest.
+Section headings: "Security" first if any, then "Breaking changes"
+if any; then topic headings,
+or a suitable generic heading (eg Fixes, Improvements), as needed.
 
 -->
 
 User-visible changes in hledger-ui.
 See also the hledger changelog.
+
+
+# e5e4e608
+
+Fixes
+
+- Fixed a long-standing memory leak (and background CPU use) when reloading with --watch [#1825].
+  Now --watch mode has no extra memory/CPU cost, and can be used freely with large journals.
+  It's safe (and recommended!) to enable by default, eg in your `~/.hledger.conf` file
+  add `[ui] --watch`.
+
+- hledger-ui gracefully handles more reloading failures,
+  such as failure caused by a changed CSV file or rules file,
+  or by a file momentarily removed when your editor saves it.
+  Instead of quitting, it now shows the error screen, allowing recovery.
+
+- Pressing DOWN at the last list item, or pressing C-l (recenter) when
+  near the end of a list, no longer scrolls into blank padding space;
+  hledger-ui now keeps as many items as possible on screen.
+  ([#2278], [#2593], Juan Wajnerman)
+
+Improvements
+
+- The L key now toggles showing lot subaccounts and per-lot detail
+  (ie, it toggles the CLI's --lots flag). It resets to the startup
+  state if ESC is pressed.
+
+- Changes to CSV rules files now trigger a reload, like changes to data
+  files (see hledger changelog).
+
+- Warnings (eg the CSV data warnings, which could appear on every
+  --watch reload) no longer scroll and disrupt the display; instead
+  they are shown on the bottom line, until the next key press.
+  Also the screen is now fully repainted after a reload,
+  repairing any other stray terminal output.
+
+- The transaction screen now refreshes in place, when there's a reload
+  [#1825]. Previously you had to exit and re-enter it.
+
+- Error screen reloading is less flickery and more robust.
+
+- Add the -? and --webman flags; rename --tldr to --examples (see hledger changelog).
+
+[#1825]: https://github.com/hledgerorg/hledger/issues/1825
+[#2278]: https://github.com/hledgerorg/hledger/issues/2278
+[#2593]: https://github.com/hledgerorg/hledger/issues/2593
+
+
+# 1.52.2 2026-08-24
+
 
 
 # 1.99.3 2026-06-24
@@ -52,7 +95,7 @@ Docs
 API
 
 
-[#2646]: https://github.com/simonmichael/hledger/issues/2646
+[#2646]: https://github.com/hledgerorg/hledger/issues/2646
 
 # 1.99.2 2026-04-28
 
@@ -109,13 +152,13 @@ Improvements
 
 - Allow brick 2.11
 
-[#1911]: https://github.com/simonmichael/hledger/issues/1911
-[#2168]: https://github.com/simonmichael/hledger/issues/2168
-[#2175]: https://github.com/simonmichael/hledger/issues/2175
-[#2476]: https://github.com/simonmichael/hledger/issues/2476
-[#2544]: https://github.com/simonmichael/hledger/issues/2544
-[#2550]: https://github.com/simonmichael/hledger/issues/2550
-[#2551]: https://github.com/simonmichael/hledger/issues/2551
+[#1911]: https://github.com/hledgerorg/hledger/issues/1911
+[#2168]: https://github.com/hledgerorg/hledger/issues/2168
+[#2175]: https://github.com/hledgerorg/hledger/issues/2175
+[#2476]: https://github.com/hledgerorg/hledger/issues/2476
+[#2544]: https://github.com/hledgerorg/hledger/issues/2544
+[#2550]: https://github.com/hledgerorg/hledger/issues/2550
+[#2551]: https://github.com/hledgerorg/hledger/issues/2551
 
 
 # 1.51.2 2026-01-08
@@ -127,7 +170,7 @@ Improvements
 
 - Allow base 4.22 / ghc 9.14.
 
-[#2512]: https://github.com/simonmichael/hledger/issues/2512
+[#2512]: https://github.com/hledgerorg/hledger/issues/2512
 
 
 # 1.51.1 2025-12-08
@@ -204,10 +247,10 @@ API
 - Hledger.UI.UIState:
   enableForecastPreservingPeriod -> enableForecast
 
-[#2014]: https://github.com/simonmichael/hledger/issues/2014
-[#2288]: https://github.com/simonmichael/hledger/issues/2288
-[#2451]: https://github.com/simonmichael/hledger/issues/2451
-[#2454]: https://github.com/simonmichael/hledger/issues/2454
+[#2014]: https://github.com/hledgerorg/hledger/issues/2014
+[#2288]: https://github.com/hledgerorg/hledger/issues/2288
+[#2451]: https://github.com/hledgerorg/hledger/issues/2451
+[#2454]: https://github.com/hledgerorg/hledger/issues/2454
 
 
 # 1.50 2025-09-03
@@ -377,7 +420,7 @@ Improvements
   and seems not strictly needed.
   [#2149]
 
-[#2149]: https://github.com/simonmichael/hledger/issues/2149
+[#2149]: https://github.com/hledgerorg/hledger/issues/2149
 
 
 # 1.33 2024-04-18

@@ -1,6 +1,6 @@
 # AI policy
 
-Last updated: 2026-08-05
+Last updated: 2026-08-24
 
 The productivity benefits from AI-assisted software development are becoming obvious.
 And the disruptions, costs and risks of AI will keep becoming clearer.
@@ -48,7 +48,9 @@ Here are our current policies for AI use in hledger.
 1. hledger does not use AI at runtime.
 
 2. hledger 1.x (2007..2025) was developed without AI assistance.
-   New commits intended for the legacy hledger1 branch may not use AI.
+   New commits intended for the legacy hledger1 branch may not use AI,
+   except rarely, at maintainer's discretion, for security-related fixes
+   (disclosure is still required).
 
 3. hledger 2.x (2026..) is developed with careful AI assistance,
    in ways that increase quality and human maintainability.
@@ -169,7 +171,7 @@ because the cost of designing and building it outweighed the need and the availa
 
 ## Measuring usage
 
-The hledger project's estimated AI usage is tracked in [ai.journal](https://github.com/simonmichael/hledger/blob/main/doc/ai/ai.journal).
+The hledger project's estimated AI usage is tracked in [ai.journal](https://github.com/hledgerorg/hledger/blob/main/doc/ai/ai.journal).
 
 Some notes on tracking AI usage:
 
@@ -216,32 +218,43 @@ Other contributors' usage estimates can be added here too.
   - [The Wonders of AI: We Are Retiring Our Bug Bounty Program](https://turso.tech/blog/the-wonders-of-ai) ([discussion](https://news.ycombinator.com/item?id=48148391))
   - <https://news.ycombinator.com/item?id=48142553> Have a Coherent AI Policy
   - <https://github.com/rust-lang/rust-forge/pull/1040> Add an LLM policy for rust-lang/rust
-  - [Pope Leo XIV: Magnifica Humanitas: On Safeguarding The Human Person In The Time Of Artificial Intelligence](https://www.vatican.va/content/leo-xiv/en/encyclicals/documents/20260515-magnifica-humanitas.html)
-    ([summary](https://www.theregister.com/ai-ml/2026/05/26/pope-leo-warns-ai-boom-can-give-big-tech-and-the-people-who-run-it-too-much-power/5245883))
 
-### Policies
-- <https://sfconservancy.org/llm-gen-ai/llm-backed-generative-ai-recommendations.html>
-- <https://docs.fedoraproject.org/en-US/council/policy/ai-contribution-policy>
-- <https://github.com/stanford-cs336/assignment1-basics/blob/main/CLAUDE.md>
-- <https://ladybird.org/posts/changing-how-we-develop-ladybird/> ([discussion](https://news.ycombinator.com/item?id=48409191))
-- <https://blog.rust-lang.org/inside-rust/2026/08/05/rust-langrust-is-adopting-an-llm-policy> ([discussion](https://news.ycombinator.com/item?id=49179039))
-
-### Law
-- <https://www.congress.gov/crs-product/LSB10922>
-- <https://legallayer.substack.com/p/who-owns-the-claude-code-wrote> ([discussion](https://news.ycombinator.com/item?id=47932937))
-
-### Research
-- **[AI 2027](https://ai-2027.com)** Mandatory reading.
-- [From Technical Debt to Cognitive and Intent Debt: Rethinking Software Health in the Age of AI](https://arxiv.org/pdf/2603.22106)
-
-### Practitioners
+### Software Practitioners
 - Donald Knuth: <https://cs.stanford.edu/~knuth/papers/claude-cycles.pdf>
 - Kent Beck: <https://tidyfirst.substack.com/t/genies>,\
   <https://www.youtube.com/watch?v=5htJ2ML7BKU> 
 - Martin Fowler: <https://martinfowler.com/fragments/2026-04-02.html>
 - <https://news.ycombinator.com/item?id=47648828> Eight years of wanting, three months of building with AI
 - Raffael Schneider: <https://raskell.io/articles/looking-back-on-2025>
+- Bryan Cantrill: <https://bcantrill.dtrace.org/2026/09/05/the-revolt-of-the-reader/> on AI-assisted writing
+
+### Policies
+- [Pope Leo XIV: Magnifica Humanitas: On Safeguarding The Human Person In The Time Of Artificial Intelligence](https://www.vatican.va/content/leo-xiv/en/encyclicals/documents/20260515-magnifica-humanitas.html)
+  ([summary](https://www.theregister.com/ai-ml/2026/05/26/pope-leo-warns-ai-boom-can-give-big-tech-and-the-people-who-run-it-too-much-power/5245883))
+- <https://sfconservancy.org/llm-gen-ai/llm-backed-generative-ai-recommendations.html>
+- <https://docs.fedoraproject.org/en-US/council/policy/ai-contribution-policy>
+- <https://github.com/stanford-cs336/assignment1-basics/blob/main/CLAUDE.md>
+- <https://ladybird.org/posts/changing-how-we-develop-ladybird/> ([discussion](https://news.ycombinator.com/item?id=48409191))
+- <https://blog.rust-lang.org/inside-rust/2026/08/05/rust-langrust-is-adopting-an-llm-policy> ([discussion](https://news.ycombinator.com/item?id=49179039))
+- <https://dbushell.com/ai/> ([discussion](https://news.ycombinator.com/item?id=49537900))
+- <https://www.visidata.org/blog/2026/ai/#self-assessed-ai-level-for-contributions>
+- <https://rfd.shared.oxide.computer/rfd/0576>
+
+### Research
+- [AI 2027](https://ai-2027.com), [AI 2040](https://ai-2040.com)
+- Jaron Lanier: <https://www.newyorker.com/science/annals-of-artificial-intelligence/there-is-no-ai>
+- Margaret-Anne Storey: [From Technical Debt to Cognitive and Intent Debt: Rethinking Software Health in the Age of AI](https://arxiv.org/pdf/2603.22106)
+
+### Law
+- <https://www.congress.gov/crs-product/LSB10922>
+- <https://legallayer.substack.com/p/who-owns-the-claude-code-wrote> ([discussion](https://news.ycombinator.com/item?id=47932937))
+
+### Risks
+- <https://simonwillison.net/2025/Jun/16/the-lethal-trifecta/>
+and so many more.
 
 ### Tools
 - <https://ccusage.com>
 - <https://github.com/ratherlegit/environmental-impact-tracker>
+- <https://www.pangram.com>
+

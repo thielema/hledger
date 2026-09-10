@@ -28,6 +28,7 @@ import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Lazy qualified as TL
 import Data.Text.Lazy.Builder qualified as TB
+import Data.Time.Calendar (Day, fromGregorian)
 import Safe (maximumBound)
 import Text.DocLayout (realLength)
 import Text.Printf
@@ -82,13 +83,20 @@ showTransactionBeancount t =
 -- | Render a PriceDirective in Beancount format: DATE price COMMODITY AMOUNT
 showPriceDirectiveBeancount :: PriceDirective -> Text
 showPriceDirectiveBeancount pd =
-  showDate (pddate pd)
+  showDate (dateToBeancount $ pddate pd)
   <> " price "
   <> commodityToBeancount (pdcommodity pd)
   <> " "
   <> wbToText (showAmountB beancountPriceFmt $ amountToBeancount $ pdamount pd)
   where
     beancountPriceFmt = defaultFmt{ displayZeroCommodity=True, displayForceDecimalMark=True, displayQuotes=False }
+
+-- | Convert a date to one Beancount will accept.
+-- Beancount rejects year 0, which is the date hledger gives to the 1:1 price
+-- directives it infers from commodity alias: tags; those become 0001-01-01.
+dateToBeancount :: Day -> Day
+dateToBeancount d | d == fromGregorian 0 1 1 = fromGregorian 1 1 1
+                  | otherwise                = d
 
 nl = "\n"
 
@@ -254,7 +262,7 @@ type BeancountAccountName = AccountName
 type BeancountAccountNameComponent = AccountName
 
 -- | Convert a hledger account name to a valid Beancount account name.
--- It replaces spaces with dashes and other non-supported characters with C<HEXBYTES>;
+-- It replaces spaces and underscores with dashes and other non-supported characters with C<HEXBYTES>;
 -- prepends the letter A to any part which doesn't begin with a letter or number;
 -- adds a second :A part if there is only one part;
 -- and capitalises each part.
@@ -305,8 +313,14 @@ accountNameComponentToBeancount acctpart =
 beancountAccountDummyStartChar :: Char
 beancountAccountDummyStartChar = 'A'
 
+-- | Convert a character which is not valid in a Beancount account name
+-- (or commodity name) to one or more valid characters: spaces and underscores,
+-- which are the usual hledger word separators, become a dash;
+-- anything else is encoded as C<HEXBYTES>.
 charToBeancount :: Char -> String
-charToBeancount c = if isSpace c then "-" else printf "C%x" c
+charToBeancount c
+  | isSpace c || c == '_' = "-"
+  | otherwise             = printf "C%x" c
 
 -- XXX these probably allow too much unicode:
 
@@ -391,7 +405,7 @@ commodityToBeancount :: CommoditySymbol -> BeancountCommoditySymbol
 commodityToBeancount "" = "CC"
 commodityToBeancount com =
   dbg9 "beancount commodity name" $
-  let com' = stripquotes com
+  let com' = textStripQuotes com
   in case currencySymbolToCode com' of
     Just code -> code
     Nothing ->

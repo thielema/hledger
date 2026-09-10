@@ -26,6 +26,14 @@ json...).
 - Rows are the accounts holding lotful commodities (ie accounts with lot
   subaccounts), plus any query arguments to narrow them further.
   Cash and other non-lotful accounts don't appear.
+- Each account gets one row per commodity held at or under it, with all
+  attribute columns computed per commodity; an account holding several
+  commodities gets several rows, repeating its name (#2693).
+  (Lots of different commodities can even share one lot subaccount name -
+  same date and cost - and still get separate rows.)
+- Fully disposed commodities and accounts are hidden by default; with
+  `-E/--empty` they are shown as zero-units rows, keeping their realised
+  gain (and realised XIRR) visible (#2693).
 - Lot subaccounts follow the standard `--lots` display toggle:
   hidden (aggregated into their base account) by default,
   shown as rows with `--lots`.
@@ -52,10 +60,23 @@ json...).
 
 Notes:
 - On rows aggregating multiple lots, Date and Age are blank,
-  and Unit cost shows the average cost (column titled "Avg cost";
-  it is titled "Unit cost" when `--lots` is in effect).
+  and Unit cost shows the average cost. The column's title matches what
+  is shown: "Avg cost" on aggregating rows and when the displayed lots
+  all belong to AVERAGE/AVERAGEALL pools (whose per-lot rows show the
+  pool average); "Unit cost" with `--lots` when each lot shows its own
+  cost; "Unit/Avg cost" when both kinds are displayed.
   (Alternatives considered for aggregated Date/Age: oldest lot's date/age,
   a date range, quantity-weighted average age.)
+- A lot's cost basis is parsed from its subaccount name. When the name has
+  no cost part (AVERAGE/AVERAGEALL lots' names omit it, staying stable
+  across re-averaging), the pool's running average as of the report end
+  date is used instead: sum of quantity x unit cost basis over the pool's
+  lot postings (acquisitions carry their acquisition cost,
+  disposals/transfers the then-current average), divided by total units.
+  This sum is only valid over a whole pool - the base account's lots for
+  AVERAGE, all accounts' for AVERAGEALL - so with `--lots`, each pool
+  lot's row shows the pool average (as in the lot state, where every pool
+  lot carries the current average), not its original acquisition cost.
 - Age is shown in days, or from one year in years with one decimal digit,
   eg `44d`, `1.1y`, approximating years as 365 days. (A long/short-term
   capital gains indicator could be added later.) The csv/json outputs
@@ -63,13 +84,16 @@ Notes:
 - Weight is each row's value as a percentage of the portfolio's total
   value; blank unless all displayed holdings are priced in one commodity.
 - RGain sums each dispose posting's proceeds minus the cost basis of the
-  disposed units, for the lots at or under the row's account. Fully
-  disposed lots have no row of their own (eg with --lots), but their
-  realised gains are included in the totals row, which computes RGain
-  and XIRR from the displayed rows' base accounts - consistent across
-  display modes. Fully disposed accounts don't appear in the report at
-  all, so neither do their realised gains.
-- XIRR solves for the annualised rate of return implied by the account's
+  disposed units, for the row's commodity's lots at or under the row's
+  account. Fully disposed lots and commodities have no row of their own
+  by default (`-E` shows zero-units rows for disposed commodities), but
+  their realised gains are included in the totals row, which computes
+  RGain and XIRR from the displayed rows' base accounts - consistent
+  across display modes. Fully disposed accounts don't appear in the
+  report by default, and neither do their realised gains (the totals
+  correspond to the displayed rows); `-E` shows them, and the totals
+  then include them.
+- XIRR solves for the annualised rate of return implied by the holding's
   dated cashflows (acquisitions at transacted or basis cost, disposals at
   proceeds) plus its current value, like roi's IRR (using ridders,
   rate**(days/365.25)); it thus includes realised gains. Blank when
@@ -95,10 +119,15 @@ Notes:
 ## Valuation
 - Prices are market prices at the report date, from P directives, and from
   transaction costs with `--infer-market-prices`, looked up with the standard
-  price oracle. Each holding is valued in its cost commodity when possible
+  price oracle. Each lot is valued in its cost commodity when known
   (so UGain = Value - Cost is meaningful); otherwise in the default valuation
-  commodity.
-- UGain and UGain% are shown when the value and cost are in a
+  commodity. A row's Price and Value aggregate its lots' prices and values,
+  showing multiple amounts when the lots' value commodities differ (like Cost).
+  Because lots are valued individually, values and value totals do not depend
+  on how lots are grouped into rows (by --depth, --pivot, tree mode etc).
+- A row's Price and Value are blank if any of its lots has no market price.
+- UGain is value minus cost per commodity, shown when the value and cost
+  amounts cover the same commodities; UGain% additionally requires a
   single common commodity.
 - `-V`/`-X COMM`/`--value=end|now|DATE[,COMM]` select the valuation
   commodity and/or valuation date. The cost columns (Cost, Unit/Avg cost,
@@ -106,6 +135,9 @@ Notes:
   commodity at the valuation date, so percent gain is unaffected by
   currency conversion. Costs with no market price to the valuation
   commodity are left unconverted (making UGain blank).
+  Cashflows are not converted (that would need historical rates at each
+  flow date), so XIRR is blank for holdings whose cashflows are in a
+  different commodity than their value.
 - `--value=then` is not supported (holdings is a snapshot report).
 - `-B/--cost` has no effect; units always stay units.
 
@@ -149,25 +181,24 @@ Holdings on 2026-03-31
                                         ||                                             $2850  $3130  100.0%   $280    9.8%   $100  137.8%
 ```
 
-With `--lots --tree` (parent rows aggregate; multi-commodity cells go
-multi-line as in bal; boring parents are squashed as usual):
+With `--lots --tree` (parent rows aggregate the lots beneath them, one row
+per commodity with the account name repeated; boring parents are squashed
+as usual):
 
 ```
 $ hledger holdings --lots --tree
 Holdings on 2026-03-31
 
-                              ||       Date  Age    Units  Unit cost  Price   Cost  Value  Weight  UGain  UGain%  RGain    XIRR
-==============================++================================================================================================
- assets                       ||                  15 AAPL               $72  $2850  $3130  100.0%   $280    9.8%   $100  137.8%
-                              ||                   5 MSFT              $410
-   broker                     ||                  15 AAPL               $72  $2850  $3130  100.0%   $280    9.8%   $100  137.8%
-                              ||                   5 MSFT              $410
-     funds:{2026-02-15, $400} || 2026-02-15  44d   5 MSFT       $400   $410  $2000  $2050   65.5%    $50    2.5%          22.7%
-     stocks                   ||                  15 AAPL     $56.67    $72   $850  $1080   34.5%   $230   27.1%   $100  419.4%
-       {2026-01-15, $50}      || 2026-01-15  75d   5 AAPL        $50    $72   $250   $360   11.5%   $110   44.0%   $100  759.2%
-       {2026-02-01, $60}      || 2026-02-01  58d  10 AAPL        $60    $72   $600   $720   23.0%   $120   20.0%         215.2%
-------------------------------++------------------------------------------------------------------------------------------------
-                              ||                                             $2850  $3130  100.0%   $280    9.8%   $100  137.8%
+                            ||       Date  Age    Units  Unit cost  Price   Cost  Value  Weight  UGain  UGain%  RGain    XIRR
+============================++================================================================================================
+ assets:broker              ||                  15 AAPL     $56.67    $72   $850  $1080   34.5%   $230   27.1%   $100  419.4%
+ assets:broker              || 2026-02-15  44d   5 MSFT       $400   $410  $2000  $2050   65.5%    $50    2.5%          22.7%
+   funds:{2026-02-15, $400} || 2026-02-15  44d   5 MSFT       $400   $410  $2000  $2050   65.5%    $50    2.5%          22.7%
+   stocks                   ||                  15 AAPL     $56.67    $72   $850  $1080   34.5%   $230   27.1%   $100  419.4%
+     {2026-01-15, $50}      || 2026-01-15  75d   5 AAPL        $50    $72   $250   $360   11.5%   $110   44.0%   $100  759.2%
+     {2026-02-01, $60}      || 2026-02-01  58d  10 AAPL        $60    $72   $600   $720   23.0%   $120   20.0%         215.2%
+----------------------------++------------------------------------------------------------------------------------------------
+                            ||                                             $2850  $3130  100.0%   $280    9.8%   $100  137.8%
 ```
 
 With `--depth 2` (aggregation up the tree):
@@ -176,12 +207,12 @@ With `--depth 2` (aggregation up the tree):
 $ hledger holdings --depth 2
 Holdings on 2026-03-31
 
-               || Date  Age    Units  Avg cost  Price   Cost  Value  Weight  UGain  UGain%  RGain    XIRR
-===============++=========================================================================================
- assets:broker ||            15 AAPL              $72  $2850  $3130  100.0%   $280    9.8%   $100  137.8%
-               ||             5 MSFT             $410
----------------++-----------------------------------------------------------------------------------------
-               ||                                      $2850  $3130  100.0%   $280    9.8%   $100  137.8%
+               ||       Date  Age    Units  Avg cost  Price   Cost  Value  Weight  UGain  UGain%  RGain    XIRR
+===============++===============================================================================================
+ assets:broker ||                  15 AAPL    $56.67    $72   $850  $1080   34.5%   $230   27.1%   $100  419.4%
+ assets:broker || 2026-02-15  44d   5 MSFT      $400   $410  $2000  $2050   65.5%    $50    2.5%          22.7%
+---------------++-----------------------------------------------------------------------------------------------
+               ||                                            $2850  $3130  100.0%   $280    9.8%   $100  137.8%
 ```
 
 ## Implementation notes
@@ -200,6 +231,10 @@ Holdings on 2026-03-31
   (amount arithmetic discards cost basis, so balances alone don't suffice).
   Each lot's cost basis is parsed back from the lot subaccount name, which by
   construction contains the acquisition date and unit cost.
+- Each report row expands to one Holding record per commodity (rowHoldings
+  in Holdings.hs); with -E, also zero-units records for commodities with
+  realised gains but no units. All output formats (text table, csv/tsv,
+  html, fods, json) render these same records, so they always agree (#2693).
 - Rendering via Text.Tabular.AsciiWide as in Balance.hs.
 
 ## Phases

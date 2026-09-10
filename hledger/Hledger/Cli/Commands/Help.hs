@@ -30,7 +30,7 @@ import Hledger.Cli.DocFiles
 import Hledger.Cli.Utils (openBrowserOn)
 import Hledger.Cli.Version (webManualUrl)
 import Hledger.Data.RawOptions
-import Hledger.Utils (embedFileRelative, runPager)
+import Hledger.Utils (embedFileRelative, runPager, titleLine)
 --import Hledger.Utils.Debug
 
 helpmode = hledgerCommandMode
@@ -41,7 +41,10 @@ helpmode = hledgerCommandMode
   ,flagNone ["p"] (setboolopt "help-p") "use less (or $PAGER) when showing the manual"
   ,flagNone ["w"] (setboolopt "help-w") "use a web browser when showing the manual"
   ,flagNone ["l"] (setboolopt "help-l") "just list the manual topics matching TOPIC"
-  ,flagNone ["builtin"] (setboolopt "builtin") "with commands: show only built-in commands"
+  -- These three limit the commands list to one category of command; with none of them, all are shown.
+  ,flagNone ["builtins"] (setboolopt "builtins") "with commands: show only builtin commands"
+  ,flagNone ["addons"]   (setboolopt "addons")   "with commands: show only addon commands"
+  ,flagNone ["aliases"]  (setboolopt "aliases")  "with commands: show only command aliases"
   ]
   [(helpflagstitle, helpflags)]
   hiddenflags  -- accept --conf/--no-conf etc., eg so "help commands" can show config aliases
@@ -85,10 +88,10 @@ manual opts mtopic
       "\"" <> topic <> "\" does not match any manual section heading.\n"
       <> "Run `hledger help manual` to list all topics, or `hledger help` for the quick reference."
     ambiguousHeading
-      | null topic = "manual topics:"
+      | null topic = titleLine "HLEDGER MANUAL TOPICS"
       | otherwise  = "\"" <> topic <> "\" matches several manual sections; please be more specific:"
     matchingHeading
-      | null topic = "manual topics:"
+      | null topic = titleLine "HLEDGER MANUAL TOPICS"
       | otherwise  = "manual topics matching \"" <> topic <> "\":"
     -- Show the given tool's manual, positioned at the given heading if any, in the best viewer.
     showManualAt tool mtopic' = do

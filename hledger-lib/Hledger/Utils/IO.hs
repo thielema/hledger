@@ -24,6 +24,7 @@ module Hledger.Utils.IO (
   usageError,
   warn,
   warnIO,
+  setWarningHandler,
   ansiFormatError,
   ansiFormatWarning,
   printError,
@@ -110,6 +111,8 @@ module Hledger.Utils.IO (
   sgrresetall,
   accent,
   gradientStr,
+  titleLine,
+  titleAndVersionLine,
 
   -- ** Generic
 
@@ -141,6 +144,7 @@ import           Data.Colour.SRGB (sRGB)
 import           Data.Encoding (DynEncoding)
 import           Data.FileEmbed (makeRelativeToProject, embedStringFile)
 import           Data.Functor ((<&>))
+import           Data.IORef (IORef, newIORef, readIORef, writeIORef)
 import           Data.List hiding (uncons)
 import           Data.Maybe (isJust, catMaybes)
 import Data.Text qualified as T
@@ -239,9 +243,22 @@ ansiFormatError = (<> sgrresetall) . ((sgrbrightred <> sgrbold) <>)
 warn :: String -> a -> a
 warn = trace . formatWarning
 
+-- | The action warnIO uses to emit a warning message:
+-- by default, print it to stderr with a "Warning:" prefix and ANSI styling when supported.
+{-# NOINLINE warningHandler #-}
+warningHandler :: IORef (String -> IO ())
+warningHandler = unsafePerformIO $ newIORef $ traceIO . formatWarning
+
+-- | Replace the action warnIO uses to emit warning messages (which receives
+-- the message with no "Warning:" prefix or styling). Eg TUI apps can collect
+-- warnings for in-app display, instead of disrupting the terminal with stderr output.
+setWarningHandler :: (String -> IO ()) -> IO ()
+setWarningHandler = writeIORef warningHandler
+
 -- | Like warn, but take extra care to sequence properly in IO.
+-- Emits the warning with the current warning handler (see setWarningHandler).
 warnIO :: MonadIO m => String -> m ()
-warnIO = liftIO . traceIO . formatWarning
+warnIO msg = liftIO $ readIORef warningHandler >>= ($ msg)
 
 formatWarning =
   (if useColorOnStderrUnsafe then modifyFirstLine ansiFormatWarning else id) .
@@ -1040,6 +1057,22 @@ gradientStr intensity h w row col0 s
             where t     = fromIntegral (row + c) / fullspan  -- 0 at top-left, 1 at bottom-right
                   mix a b = a + (b - a) * t
       in intensity $ concat $ zipWith paint [col0..] s
+
+-- | Render a title heading coloured with hledger's blue-to-green bold gradient,
+-- when colour is enabled.
+titleLine :: String -> String
+titleLine title = gradientStr bold' 1 (length title) 0 0 title
+
+-- | Render a one-line heading with a title at the left and a version (or other
+-- short annotation) right-aligned to the given width, both coloured with
+-- hledger's blue-to-green gradient (bold title, faint version) when colour is
+-- enabled.
+titleAndVersionLine :: Int -> String -> String -> String
+titleAndVersionLine width title version = styledtitle <> pad <> styledversion
+  where
+    styledtitle   = gradientStr bold'  1 (length title)   0 0 title
+    styledversion = gradientStr faint' 1 (length version) 0 0 version
+    pad = replicate (max 1 $ width - length title - length version) ' '
 
 -- Generic:
 

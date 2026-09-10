@@ -701,6 +701,10 @@ data Journal = Journal {
                                                                       --   followed by any included files in the order encountered.
                                                                       --   TODO: FilePath is a sloppy type here, don't assume it's a
                                                                       --   real file; values like "" or "-" can be seen
+  ,jauxfiles                :: [FilePath]                             -- ^ paths of other files which affected this journal's data,
+                                                                      --   but are not journal data files (currently: CSV rules files,
+                                                                      --   and any rules files they include). Watched for changes,
+                                                                      --   like jfiles, when reloading.
   ,jlastreadtime            :: POSIXTime                              -- ^ when this journal was last read from its file(s)
   -- NOTE: after adding new fields, eg involving account names, consider updating
   -- the Anon instance in Hleger.Cli.Anon

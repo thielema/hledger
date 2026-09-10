@@ -26,7 +26,7 @@ license:        GPL-3.0-or-later
 license-file:   LICENSE
 build-type:     Simple
 tested-with:
-    ghc==9.6.7, ghc==9.8.4, ghc==9.10.2, ghc==9.12.2
+    ghc==9.6.7, ghc==9.8.4, ghc==9.10.3, ghc==9.12.4, ghc==9.14.1
 extra-source-files:
     CHANGES.md
     README.md
@@ -36,7 +36,7 @@ extra-source-files:
 
 source-repository head
   type: git
-  location: https://github.com/simonmichael/hledger
+  location: https://github.com/hledgerorg/hledger
 
 flag debug
   description: Build with GHC 9.10+ stack traces enabled
@@ -71,7 +71,7 @@ library
       ansi-terminal >=0.9
     , async
     , base >=4.18 && <4.23
-    , brick >=2.1.1 && <2.3.2 || >2.3.2 && <3
+    , brick >=2.1.1 && <2.3.2 || >=2.4 && <3
     , cmdargs >=0.8
     , containers >=0.5.9
     , data-default
@@ -83,7 +83,7 @@ library
     , githash >=0.1.6.2
     , hledger ==1.99.*
     , hledger-lib ==1.99.*
-    , megaparsec >=7.0.0 && <9.8.0 || >9.8.0 && <9.9
+    , megaparsec >=7.0.0 && <9.8 || >=9.8.0 && <9.9
     , microlens >=0.4
     , microlens-platform >=0.2.3.1
     , mtl >=2.2.1
@@ -139,7 +139,7 @@ test-suite unittest
   cpp-options: -DVERSION="1.99"
   build-depends:
       base >=4.18 && <4.23
-    , brick >=2.1.1 && <2.3.2 || >2.3.2 && <3
+    , brick >=2.1.1 && <2.3.2 || >=2.4 && <3
     , cmdargs >=0.8
     , directory
     , filepath

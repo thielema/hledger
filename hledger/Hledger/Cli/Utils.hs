@@ -31,11 +31,13 @@ module Hledger.Cli.Utils
     )
 where
 
+import Control.Exception (IOException, try)
 import Control.Monad.Except (ExceptT)
 import Control.Monad.IO.Class (liftIO)
 import Data.List
 import Data.List.NonEmpty qualified as NE (head, toList)
 import Data.Maybe
+import Data.Set qualified as S
 import Data.Text qualified as T
 import Data.Text.IO qualified as T
 import Data.Text.Lazy qualified as TL
@@ -53,6 +55,7 @@ import System.Info (os)
 import System.Process (readProcessWithExitCode)
 import Text.Printf
 import Text.Regex.TDFA ((=~))
+import Web.Browser (openBrowser)
 
 import Hledger.Cli.CliOptions
 import Hledger.Cli.Anon
@@ -84,8 +87,31 @@ withJournal opts cmd = do
   -- to let the add command work.
   journalpaths <- journalFilePathFromOpts opts
   let iopts = (inputopts_ opts){_journaldir = Just (takeDirectory (NE.head journalpaths))}
-  j <- runExceptT $ journalTransform opts <$> readJournalFiles iopts (NE.toList journalpaths)
-  either error' cmd j  -- PARTIAL:
+  ej <- runExceptT $ journalTransform opts <$> readJournalFiles iopts (NE.toList journalpaths)
+  case ej of
+    Left e  -> error' e  -- PARTIAL:
+    Right j -> do
+      maybeWarnUnknownValuationCommodity opts j
+      cmd j
+
+-- | Warn on stderr if -X/--value requests a valuation commodity for which
+-- valuation will certainly have no effect: one appearing in no P directive
+-- or cost (from which conversion prices could come) and in which no
+-- amounts are already denominated. Also suggest a journal commodity
+-- equivalent under ISO 4217 currency code normalisation, if any
+-- (eg $ for USD).
+maybeWarnUnknownValuationCommodity :: CliOpts -> Journal -> IO ()
+maybeWarnUnknownValuationCommodity opts j =
+  case valuationTypeValuationCommodity =<< value_ (_rsReportOpts $ reportspec_ opts) of
+    Just c
+      | c `S.notMember` journalCommoditiesFromPriceDirectives j
+      , c `S.notMember` journalCommoditiesFromTransactions j ->
+          warnIO $ "no conversion prices to \"" <> T.unpack c <> "\" can be found." <> suggestion c
+    _ -> return ()
+  where
+    suggestion c = case [s | s <- S.toList (journalCommodities j), s /= c, toCurrencyCode s == toCurrencyCode c] of
+      (s:_) -> " Did you mean \"" <> T.unpack s <> "\" ?"
+      []    -> ""
 
 {-# DEPRECATED withJournalDo "renamed, please use withJournal instead" #-}
 withJournalDo = withJournal
@@ -148,7 +174,7 @@ maybeWarnAboutAnon opts =
   if boolopt "anon" $ rawopts_ opts
     then error' $ unlines [
        "--anon does not give privacy, and perhaps should be avoided;"
-      ,"please see https://github.com/simonmichael/hledger/issues/2133 ."
+      ,"please see https://github.com/hledgerorg/hledger/issues/2133 ."
       ,"For now it has been renamed to --obfuscate (a hidden flag)."
       ]
     else id
@@ -209,7 +235,7 @@ journalReloadIfChanged :: CliOpts -> Day -> Journal -> ExceptT String IO (Journa
 journalReloadIfChanged opts _d j = do
   let maybeChangedFilename f = do newer <- journalFileIsNewer j f
                                   return $ if newer then Just f else Nothing
-  changedfiles <- liftIO $ catMaybes <$> mapM maybeChangedFilename (journalFilePaths j)
+  changedfiles <- liftIO $ catMaybes <$> mapM maybeChangedFilename (journalAllFilePaths j)
   case changedfiles of
     []  -> return (j, False)
     f:_ -> do
@@ -256,26 +282,31 @@ maybeFileModificationTime f = do
     return Nothing
 
 -- | Attempt to open a web browser on the given url, all platforms.
+-- On Windows this goes through the open-browser package, which asks the
+-- Win32 API to open the url. Elsewhere it runs the platform's launchers in
+-- turn until one exits successfully (one that is not installed counts as
+-- failing): `open` on mac; `xdg-open` and then some older launchers that
+-- may be installed on Linux. If nothing starts, print the url instead.
 openBrowserOn :: String -> IO ExitCode
-openBrowserOn = trybrowsers browsers
+openBrowserOn u
+  | os == "mingw32" = do
+      ok <- openBrowser u
+      if ok then return ExitSuccess else couldnotstart ["the Win32 API"]
+  | otherwise = trylaunchers launchers
     where
-      trybrowsers (b:bs) u1 = do
-        (e,_,_) <- readProcessWithExitCode b [u1] ""
-        case e of
-          ExitSuccess -> return ExitSuccess
-          ExitFailure _ -> trybrowsers bs u1
-      trybrowsers [] u1 = do
-        putStrLn $ printf "Could not start a web browser (tried: %s)" $ intercalate ", " browsers
-        putStrLn $ printf "Please open your browser and visit %s" u1
+      trylaunchers (cmd:rest) = do
+        r <- try $ readProcessWithExitCode cmd [u] ""
+        case r of
+          Right (ExitSuccess,_,_)    -> return ExitSuccess
+          Right (ExitFailure _,_,_)  -> trylaunchers rest
+          Left (_ :: IOException)    -> trylaunchers rest
+      trylaunchers [] = couldnotstart launchers
+      couldnotstart tried = do
+        putStrLn $ printf "Could not start a web browser (tried: %s)" $ intercalate ", " tried
+        putStrLn $ printf "Please open your browser and visit %s" u
         return $ ExitFailure 127
-      browsers | os=="darwin"  = ["open"]
-               | os=="mingw32" = ["c:/Program Files/Mozilla Firefox/firefox.exe"]
-               | otherwise     = ["sensible-browser","gnome-www-browser","firefox"]
-    -- jeffz: write a ffi binding for it using the Win32 package as a basis
-    -- start by adding System/Win32/Shell.hsc and follow the style of any
-    -- other module in that directory for types, headers, error handling and
-    -- what not.
-    -- ::ShellExecute(NULL, "open", "www.somepage.com", NULL, NULL, SW_SHOWNORMAL);
+      launchers | os == "darwin" = ["open"]
+                | otherwise      = ["xdg-open", "sensible-browser", "gnome-www-browser", "firefox"]
 
 -- | Back up this file with a (incrementing) numbered suffix then
 -- overwrite it with this new text, or give an error, but only if the text
