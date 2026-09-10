@@ -167,7 +167,7 @@ from hledger print.
 
 See also:
 
-https://github.com/plaintextaccounting/hledger/issues/99
+https://github.com/hledgerorg/hledger/issues/99
 
 rewrite vs. print --auto
 
