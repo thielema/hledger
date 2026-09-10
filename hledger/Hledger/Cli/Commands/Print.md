@@ -116,7 +116,7 @@ with standardised symbol placement, decimal mark, and digit group marks.
 This does not apply to their decimal digits;
 `print` normally shows the same decimal digits that are recorded in each journal entry.
 
-You can override the decimal precisions with `print`'s special `--round` option (*since 1.32*).
+You can override the decimal precisions with `print`'s special `--round` option.
 `--round` tries to show amounts with their commodities' standard decimal precisions, increasingly strongly:
 
 - `--round=none` show amounts with original precisions (default)
@@ -193,7 +193,7 @@ This command also supports the
 [output destination](hledger.html#output-destination) and
 [output format](hledger.html#output-format) options
 The output formats supported are
-`txt`, `ledger`, `beancount` (*Added in 1.32*), `csv`, `tsv` (*Added in 1.32*), `json` and `sql`.
+`txt`, `ledger`, `beancount`, `csv`, `tsv`, `json` and `sql`.
 
 The `ledger` format is currently the same as `txt` except it renders amounts' cost basis
 using Ledger's lot syntax (`[DATE] (LABEL) {COST}`)

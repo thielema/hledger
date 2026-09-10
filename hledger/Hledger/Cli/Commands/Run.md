@@ -8,8 +8,6 @@ Flags:
 no command-specific flags
 ```
 
-This command is experimental and could change in the future.
-
 You can use `run` in three ways:
 
 - `hledger run -- CMD1 -- CMD2 -- CMD3`  - read commands from the command line, separated by `--`

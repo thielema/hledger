@@ -3604,7 +3604,7 @@ In this case the command receives no input; it should output CSV data suitable f
 
 ### Data cleaning / data generating commands
 
-After `source`'s file pattern, you can write `|` (pipe) and a data cleaning command (or command pipeline).
+After `source`'s file pattern, you can write `|` (pipe) and a data cleaning command (or command pipeline) (since hledger 1.50).
 If hledger's CSV rules aren't enough, you can pre-process the downloaded data here with a shell command or script, to make it more suitable for conversion.
 The command will be executed by your default shell, in the directory of the rules file, will receive the data file's content as standard input,
 and should output zero or more lines of character-separated-values, suitable for conversion by the CSV rules.
@@ -3635,8 +3635,6 @@ If the command produces error output, but exits successfully, hledger will show 
 If a data cleaning command fails, hledger will fail and show the error output in the error message.
 If a data generating command fails, hledger will show the error as a warning and continue, treating this as if no data was found.
 
-*Added in 1.50; experimental.*
-
 ## `archive`
 
 With `archive` added to a rules file, the `import` command
@@ -3654,8 +3652,6 @@ troubleshooting your CSV rules,
 regenerating entries with improved rules,
 checking for variations in your bank's CSV,
 etc.
-
-*Added in 1.50; experimental.*
 
 ## `encoding`
 
@@ -3723,8 +3719,6 @@ The following encodings are supported:
 `cp869`,
 `cp874`,
 `cp932`.
-
-*Added in 1.42.*
 
 ## `separator`
 
@@ -4198,7 +4192,6 @@ When using these, there's two things to be aware of:
 
 You can also prefix a matcher with `!` to negate it.
 Eg `! whole foods`, `! %3 whole foods`, `!%description whole foods` will match if "whole foods" is NOT present.
-*Since 1.32.*
 
 The pattern is, as usual in hledger, a POSIX extended regular expression
 that also supports GNU word boundaries (`\b`, `\B`, `\<`, `\>`) and nothing else.
@@ -4209,17 +4202,14 @@ For more details and tips, see [Regular expressions in CSV rules](#regular-expre
 When an if block has multiple matchers, each on its own line,
 
 - By default they are OR'd (any of them can match).
-- Matcher lines beginning with `&` (or `&&`, *since 1.42*) are AND'ed with the matcher above (all in the AND'ed group must match).
-- Matcher lines beginning with `& !` (*since 1.41*, or `&& !`, *since 1.42*) are first negated and then AND'ed with the matcher above.
+- Matcher lines beginning with `&` (or `&&`) are AND'ed with the matcher above (all in the AND'ed group must match).
+- Matcher lines beginning with `& !` (or `&& !`) are first negated and then AND'ed with the matcher above.
 
 You can also combine multiple matchers one the same line separated by `&&` (AND) or `&& !` (AND NOT).
 Eg `%description amazon && %date 2025-01-01` will match only when the
 description field contains "amazon" and the date field contains "2025-01-01".
-*Added in 1.42.*
 
 ### Match groups
-
-*Added in 1.32*
 
 Matchers can define match groups: parenthesised portions of the regular expression
 which are available for reference in field assignments. Groups are enclosed
@@ -4422,8 +4412,7 @@ By default this will read data from foo.csv in the same directory,
 but you can add a [source](#source) rule to specify a different data file,
 perhaps located in your web browser's download directory.
 
-This feature was added in hledger 1.30, so you won't see it in most CSV rules examples.
-But it helps remove some of the busywork of managing CSV downloads.
+This feature helps remove some of the busywork of managing CSV downloads.
 Most of your financial institutions's default CSV filenames are
 different and can be recognised by a glob pattern.  So you can put a
 rule like `source Checking1*.csv` in foo-checking.csv.rules, and then
@@ -5860,7 +5849,6 @@ So if `commodity $1000.00  ; alias: USD U` is declared,
 the queries `cur:\\$`, `cur:USD`, `cur:U` and `cur:U.+` will all match
 amounts like `$1` or `1 USD` or `1 U`.
 \
-*(experimental)*
 
 ### sym: query
 **`sym:FULLREGEX`**\
@@ -5868,7 +5856,6 @@ This is like `cur:`, but matches a specific commodity symbol, ignoring
 alias-group relationships. So in the example above, `sym:USD` would
 match `1 USD` but not `$1` or `1 U`.
 \
-*(experimental)*
 
 ### desc: query
 **`desc:REGEX`**\
@@ -7073,7 +7060,8 @@ First, a quick glossary:
 
 # Lot reporting
 
-(Since 1.99.1)
+Automated lot tracking and capital gains reporting is one of the main new features of hledger 2.
+Your testing and feedback are important for making it better.
 
 When you buy (acquire) some amount of an investment commodity (a lot),
 it can be important (depending on your local tax rules) 
@@ -7095,9 +7083,6 @@ You can record all details explicitly; or use more convenient low-boilerplate en
 hledger checks lot entries, 
 tracks and infers lot movements (reporting any problems, such as disposal of nonexistent lots), 
 and calculates capital gains when lots are sold.
-
-Note, this is currently available in experimental preview releases of hledger 2.0.
-Your testing and feedback are important for making it better.
 
 For a more technical version of what's in this manual, see [SPEC-lots](/SPEC-lots.html).
 

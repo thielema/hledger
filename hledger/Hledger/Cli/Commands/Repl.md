@@ -9,8 +9,6 @@ Flags:
                             files, config aliases and addon commands
 ```
 
-This command is experimental and could change in the future.
-
 `hledger repl` starts a read-eval-print loop (REPL) where you can enter commands interactively.
 As with the `run` command, each input file (or each input file/input options combination) is parsed just once,
 so commands will run more quickly than if you ran them individually at the command line.
