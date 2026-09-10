@@ -433,7 +433,7 @@ layoutopt rawopts = fromMaybe (LayoutWide Nothing) $ layout <|> column
                      , ("tall", LayoutTall)
                      , ("bare", LayoutBare)
                      , ("tidy", LayoutTidy)
-                     , ("bare-wide", LayoutBareWide)
+                     , ("barewide", LayoutBareWide)
                      ]
         -- For `--layout=elided,n`, elide to the given width
         (s,n) = break (==',') $ map toLower opt
@@ -442,7 +442,7 @@ layoutopt rawopts = fromMaybe (LayoutWide Nothing) $ layout <|> column
               c | Just w' <- readMay c -> Just w'
               _ -> usageError "width in --layout=wide,WIDTH must be an integer"
 
-        err = usageError "--layout's argument should be \"wide[,WIDTH]\", \"tall\", \"bare\", \"bare-wide\", or \"tidy\""
+        err = usageError "--layout's argument should be \"wide[,WIDTH]\", \"tall\", \"bare\", \"barewide\", or \"tidy\""
 
 -- Get the period specified by any -b/--begin, -e/--end and/or -p/--period
 -- options appearing in the command line.
