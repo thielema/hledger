@@ -230,7 +230,7 @@ hledger: Error: -:7:
   |     equity:opening/closing balances
 
 Postings were read as: transfer-from, unclassified.
-no lots matching {2021-03-08, "0001", $5} for commodity ABC in account assets:broker1
+no lots matching {2021-03-08, "0001", $5} for commodity ABC in account assets:broker1 on 2026-08-10
 Available lots in this account:
   {2021-03-08, $5}  2
 Using FIFO (default).

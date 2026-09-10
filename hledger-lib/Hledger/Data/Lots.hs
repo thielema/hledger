@@ -68,8 +68,8 @@ journalCalculateLots:
 
 * selectLots:
   "SPECID requires an explicit lot selector",
-  "no X lots available for transfer/disposal from account Y",
-  "no lots matching {...} for commodity X in account Y",
+  "no X lots available for transfer/disposal from account Y on DATE",
+  "no lots matching {...} for commodity X in account Y on DATE",
   "lot selector is ambiguous, matches N lots in account Y",
   "insufficient lots for commodity X in account Y"
 
@@ -1817,7 +1817,7 @@ reduceLotTransferToEquity j t ls p =
             acct      = lotBaseAccount (paccount p)
             (method, methodSource) = resolveReductionMethodWithSource j p commodity
         selected <- first (enrichLotError method methodSource)
-                  $ selectLots method (postingErrPrefix p) "transfer" acct commodity qty cb ls
+                  $ selectLots method (postingErrPrefix p) "transfer" (tdate t) acct commodity qty cb ls
         let consumed = [(lotId, qty') | (lotId, _, qty') <- selected]
         return $ lotDbg t ("equity-transfer " ++ show qty ++ " " ++ T.unpack commodity
                            ++ " from " ++ T.unpack acct
@@ -2095,7 +2095,7 @@ processDisposePosting styles verbosetags j t lotState p = do
           Left $ showPos ++ "SPECID requires a lot selector on dispose postings"
 
         selected <- first (enrichLotError method methodSource)
-                  $ selectLots method (postingErrPrefix p) "disposal" scopeAcct commodity posQty cb lotState
+                  $ selectLots method (postingErrPrefix p) "disposal" (tdate t) scopeAcct commodity posQty cb lotState
 
         let baseAcct = lotBaseAccount (paccount p)
             hasExplicitLotAcct = baseAcct /= paccount p
@@ -2220,7 +2220,7 @@ processTransferGroup styles verbosetags j t lotState0 (commodity, ifroms, itos) 
           (method, methodSource) = resolveReductionMethodWithSource j fromP commodity
           fromBaseAcct = lotBaseAccount (paccount fromP)
       selected <- first (enrichLotError method methodSource)
-                $ selectLots method (postingErrPrefix fromP) "transfer" fromBaseAcct commodity fromQty fromCb st
+                $ selectLots method (postingErrPrefix fromP) "transfer" (tdate t) fromBaseAcct commodity fromQty fromCb st
       let st' = reduceLotState fromBaseAcct commodity [(lid, qty) | (lid, _, qty) <- selected] st
       return $ lotDbg t ("transferred out " ++ show fromQty ++ " " ++ T.unpack commodity
                           ++ " from " ++ T.unpack fromBaseAcct
@@ -2388,10 +2388,10 @@ enrichLotError method methodSource err =
 -- An all-Nothing selector (from @{}@) matches all lots.
 -- Returns a list of (lot id, lot amount, quantity consumed from this lot).
 -- Errors if total available quantity in matching lots is insufficient.
-selectLots :: ReductionMethod -> String -> String -> AccountName -> CommoditySymbol
+selectLots :: ReductionMethod -> String -> String -> Day -> AccountName -> CommoditySymbol
            -> Quantity -> CostBasis -> LotState
            -> Either String [(LotId, Amount, Quantity)]
-selectLots method posStr operation account commodity qty selector lotState = do
+selectLots method posStr operation date account commodity qty selector lotState = do
     when (method == SPECID && isWildcardSelector selector) $
       Left $ posStr ++ "SPECID requires an explicit lot selector"
     let allLots = M.findWithDefault M.empty commodity lotState
@@ -2404,10 +2404,12 @@ selectLots method posStr operation account commodity qty selector lotState = do
         then "no " ++ T.unpack commodity
               ++ " lots available for " ++ operation
               ++ " from account " ++ T.unpack account
+              ++ " on " ++ show date
               ++ showOtherAccountLots allLots
         else "no lots matching " ++ T.unpack (showLotName selector)
               ++ " for commodity " ++ T.unpack commodity
               ++ " in account " ++ T.unpack account
+              ++ " on " ++ show date
               ++ "\nAvailable lots in this account:" ++ showLotList flatLots
     when (method == SPECID && M.size matchingLots > 1) $
       Left $ posStr ++ "lot selector is ambiguous, matches " ++ show (M.size matchingLots)
