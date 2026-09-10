@@ -289,7 +289,7 @@ import Data.List (foldl')
 #endif
 import Data.Map qualified as Map
 import Data.Set qualified as S
-import Data.Maybe (mapMaybe, fromMaybe)
+import Data.Maybe (mapMaybe, fromMaybe, maybeToList)
 import Data.Tuple (swap)
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -1311,25 +1311,18 @@ budgetReportAsSpreadsheet
   ropts@ReportOpts{..}
   (PeriodicReport colspans items totrow)
   = (if transpose_ then swap *** Ods.transpose else id) $
-  ((1, case layout_ of LayoutBare -> 2; _ -> 1)
-  ,
+  ((length allHeaders, length leadingHeaders)
+   ,
+    -- heading row
+    allHeaders ++
 
-  -- heading row
-  (addHeaderBorders $ map headerCell $
-  "Account" :
-  ["Commodity" | layout_ == LayoutBare ]
-   ++ (if not summary_only_ then concatMap (\spn -> [renderPeriodHeading period_titles_ spn, "budget"]) colspans else [])
-   ++ concat [["Total"  ,"budget"] | row_total_]
-   ++ concat [["Average","budget"] | average_]
-  ) :
+    -- account rows
+    concatMap (\row -> rowAsTexts Value (accountCell row) row) items
 
-  -- account rows
-  concatMap (\row -> rowAsTexts Value (accountCell row) row) items
-
-  -- totals row
-  ++ addTotalBorders
-        (concat [ rowAsTexts Total (cell totalRowHeadingBudgetCsv) totrow | not no_total_ ])
-  )
+    -- totals row
+    ++ addTotalBorders
+          (concat [ rowAsTexts Total (cell totalRowHeadingBudgetCsv) totrow | not no_total_ ])
+    )
 
   where
     cell = Ods.defaultCell
@@ -1337,6 +1330,29 @@ budgetReportAsSpreadsheet
         let name = prrFullName row in
         setAccountAnchor (balance_base_url_) querystring_ name $
         cell $ renderPeriodicAcct ropts nbsp row
+    allHeaders =
+      case layout_ of
+      LayoutBareWide ->
+          [headerWithoutBorders $
+              Ods.emptyCell :
+              concatMap
+                  (Ods.horizontalSpan allCommodities . headerCell)
+                  dateHeaders,
+           addHeaderBorders $ map headerCell $
+              leadingHeaders ++ (dateHeaders >> allCommodities)]
+      _ -> [addHeaderBorders $ map headerCell $ leadingHeaders ++ dateHeaders]
+    leadingHeaders =
+      "Account" : ["Commodity" | layout_ == LayoutBare ]
+    dateHeaders =
+      (if not summary_only_
+            then concatMap (\spn -> [renderPeriodHeading period_titles_ spn, "budget"]) colspans
+            else [])
+       ++ concat [["Total"  ,"budget"] | row_total_]
+       ++ concat [["Average","budget"] | average_]
+    allCommodities =
+       S.toAscList $
+       foldMap (foldMap maCommodities . concatMap (\(change,goal) -> maybeToList change ++ maybeToList goal) . prrAmounts) items
+
     {-
     ToDo: The chosen HTML cell class names are not put in stone.
     If you find you need more systematic names,
@@ -1357,12 +1373,16 @@ budgetReportAsSpreadsheet
         LayoutBare ->
             zipWith (:) (map cell cs)   -- add symbols
           . transpose                   -- each row becomes a list of Text quantities
-          . map (map (fmap wbToText) . cellsFromMixedAmount dopts . second (fromMaybe nullmixedamt))
+          . bareCells cs
           $ vals
+        LayoutBareWide -> [concat . bareCells allCommodities $ vals]
         _ -> [map showNorm vals]
       where
+        bareCells cs_ =
+          map (map (fmap wbToText) .
+          cellsFromMixedAmount (setDisplayCommodityBare fmt cs_) .
+          second (fromMaybe nullmixedamt))
         cs = S.toList . mconcat . map maCommodities $ mapMaybe snd vals
-        dopts = setDisplayCommodityBare fmt cs
         vals = flattentuples rc (if not summary_only_ then as else [])
             ++ concat [[(rowTotalClass rc, rowtot),
                         (budgetTotalClass rc, budgettot)]
