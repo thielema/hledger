@@ -57,9 +57,9 @@ Improvements
 
 - Add the -? and --webman flags; rename --tldr to --examples (see hledger changelog).
 
-[#1825]: https://github.com/plaintextaccounting/hledger/issues/1825
-[#2278]: https://github.com/plaintextaccounting/hledger/issues/2278
-[#2593]: https://github.com/plaintextaccounting/hledger/issues/2593
+[#1825]: https://github.com/hledgerorg/hledger/issues/1825
+[#2278]: https://github.com/hledgerorg/hledger/issues/2278
+[#2593]: https://github.com/hledgerorg/hledger/issues/2593
 
 
 # 1.52.2 2026-08-24
@@ -95,7 +95,7 @@ Docs
 API
 
 
-[#2646]: https://github.com/plaintextaccounting/hledger/issues/2646
+[#2646]: https://github.com/hledgerorg/hledger/issues/2646
 
 # 1.99.2 2026-04-28
 
@@ -152,13 +152,13 @@ Improvements
 
 - Allow brick 2.11
 
-[#1911]: https://github.com/plaintextaccounting/hledger/issues/1911
-[#2168]: https://github.com/plaintextaccounting/hledger/issues/2168
-[#2175]: https://github.com/plaintextaccounting/hledger/issues/2175
-[#2476]: https://github.com/plaintextaccounting/hledger/issues/2476
-[#2544]: https://github.com/plaintextaccounting/hledger/issues/2544
-[#2550]: https://github.com/plaintextaccounting/hledger/issues/2550
-[#2551]: https://github.com/plaintextaccounting/hledger/issues/2551
+[#1911]: https://github.com/hledgerorg/hledger/issues/1911
+[#2168]: https://github.com/hledgerorg/hledger/issues/2168
+[#2175]: https://github.com/hledgerorg/hledger/issues/2175
+[#2476]: https://github.com/hledgerorg/hledger/issues/2476
+[#2544]: https://github.com/hledgerorg/hledger/issues/2544
+[#2550]: https://github.com/hledgerorg/hledger/issues/2550
+[#2551]: https://github.com/hledgerorg/hledger/issues/2551
 
 
 # 1.51.2 2026-01-08
@@ -170,7 +170,7 @@ Improvements
 
 - Allow base 4.22 / ghc 9.14.
 
-[#2512]: https://github.com/plaintextaccounting/hledger/issues/2512
+[#2512]: https://github.com/hledgerorg/hledger/issues/2512
 
 
 # 1.51.1 2025-12-08
@@ -247,10 +247,10 @@ API
 - Hledger.UI.UIState:
   enableForecastPreservingPeriod -> enableForecast
 
-[#2014]: https://github.com/plaintextaccounting/hledger/issues/2014
-[#2288]: https://github.com/plaintextaccounting/hledger/issues/2288
-[#2451]: https://github.com/plaintextaccounting/hledger/issues/2451
-[#2454]: https://github.com/plaintextaccounting/hledger/issues/2454
+[#2014]: https://github.com/hledgerorg/hledger/issues/2014
+[#2288]: https://github.com/hledgerorg/hledger/issues/2288
+[#2451]: https://github.com/hledgerorg/hledger/issues/2451
+[#2454]: https://github.com/hledgerorg/hledger/issues/2454
 
 
 # 1.50 2025-09-03
@@ -420,7 +420,7 @@ Improvements
   and seems not strictly needed.
   [#2149]
 
-[#2149]: https://github.com/plaintextaccounting/hledger/issues/2149
+[#2149]: https://github.com/hledgerorg/hledger/issues/2149
 
 
 # 1.33 2024-04-18

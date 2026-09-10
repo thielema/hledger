@@ -23,7 +23,7 @@ For package-specific changes, see the hledger package changelogs.
 # e5e4e608
 
 - The hledger repo has moved to the plaintextaccounting github
-  organisation: <https://github.com/plaintextaccounting/hledger>. Old
+  organisation: <https://github.com/hledgerorg/hledger>. Old
   links redirect. [#2681]
 
 ## Docs
@@ -76,9 +76,9 @@ For package-specific changes, see the hledger package changelogs.
 
 
 [#2410]: https://github.com/simonmichael/hledger/issues/2410
-[#2528]: https://github.com/plaintextaccounting/hledger/issues/2528
-[#2681]: https://github.com/plaintextaccounting/hledger/issues/2681
-[#2707]: https://github.com/plaintextaccounting/hledger/issues/2707
+[#2528]: https://github.com/hledgerorg/hledger/issues/2528
+[#2681]: https://github.com/hledgerorg/hledger/issues/2681
+[#2707]: https://github.com/hledgerorg/hledger/issues/2707
 
 # 1.52.2 2026-08-24
 
