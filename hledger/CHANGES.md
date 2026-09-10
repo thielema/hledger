@@ -2635,7 +2635,7 @@ Fixes
 
 
 
-[#2156]: https://github.com/simonmichael/issue/2156
+[#2156]: https://github.com/hledgerorg/hledger/issues/2156
 
 
 
