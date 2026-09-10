@@ -945,27 +945,38 @@ main = do
           -- If it's newer,
           when (lastscannedrev /= latestrev) $ do
 
-            -- Check the resume point still exists and is an ancestor of HEAD.
+            -- Check the resume point is still an ancestor of HEAD.
             -- A rebase or amend can leave the heading pointing to a rewritten
-            -- commit; drafting from there would fail, or re-list rebased
-            -- commits as duplicates. Fail with a helpful message instead.
+            -- commit; drafting from there would re-list the rebased commits
+            -- as duplicates. In that case, find the commit's equivalent in
+            -- the current history and resume from that instead; or if that
+            -- fails, stop with a helpful message.
             Exit ancestorcheck <- cmd Shell "git merge-base --is-ancestor" lastscannedrev "HEAD 2>/dev/null"
-            when (ancestorcheck /= ExitSuccess) $ do
-              lasttouch <- unwords . words . fromStdout <$> (cmd Shell gitlog "-1 --pretty=%h --" out :: Action (Stdout String))
-              error $ unlines [
-                 out ++ ": the resume point '" ++ lastscannedrev ++ "' (from the topmost heading) is not an ancestor of HEAD."
-                ,"It was probably rewritten by a rebase or amend."
-                ,"To fix, change that heading to a suitable current commit hash"
-                ,"(eg with: just changelogs-catchup COMMIT);"
-                ,"eg the last commit touching this file: " ++ lasttouch
-                ]
+            resumerev <-
+              if ancestorcheck == ExitSuccess
+              then return lastscannedrev
+              else do
+                mequiv <- relocateResumePoint lastscannedrev
+                case mequiv of
+                  Just equiv -> do
+                    liftIO $ putStrLn $ out ++ ": resume point " ++ lastscannedrev ++ " was rewritten; resuming from its equivalent " ++ equiv
+                    return equiv
+                  Nothing -> do
+                    lasttouch <- unwords . words . fromStdout <$> (cmd Shell gitlog "-1 --pretty=%h --" out :: Action (Stdout String))
+                    error $ unlines [
+                       out ++ ": the resume point '" ++ lastscannedrev ++ "' (from the topmost heading) is not an ancestor of HEAD."
+                      ,"It was probably rewritten by a rebase or amend, and no equivalent commit was found in the current history."
+                      ,"To fix, change that heading to a suitable current commit hash"
+                      ,"(eg with: just changelogs-catchup COMMIT);"
+                      ,"eg the last commit touching this file: " ++ lasttouch
+                      ]
 
             -- Find the new commit messages relevant to this changelog, and clean them.
             let scanpath = fromMaybe projectChangelogExcludes mpkg
             newitems <- (if isJust mpkg then liftBreakingItems else id)
               . flagPossibleDuplicates . capitaliseAndPunctuateFirstLines . dropRoutineContent . fromStdout <$> (cmd Shell
               "set -o pipefail;"  -- so git log failure will cause this action to fail
-              gitlog changelogGitFormat (lastscannedrev++"..") "--" scanpath
+              gitlog changelogGitFormat (resumerev++"..") "--" scanpath
               "|" commitMessageToChangelogItemCmd
               :: Action (Stdout String))
 
@@ -1007,7 +1018,13 @@ main = do
                 if isCommitHash version
                 then do
                   Exit ok <- cmd Shell "git merge-base --is-ancestor" version "HEAD 2>/dev/null"
-                  return [f ++ ": heading commit " ++ version ++ " is not an ancestor of HEAD (fix with just changelogs-catchup COMMIT)" | ok /= ExitSuccess]
+                  if ok == ExitSuccess
+                  then return []
+                  else do
+                    mequiv <- relocateResumePoint version
+                    return $ case mequiv of
+                      Just equiv -> [f ++ ": heading commit " ++ version ++ " was rewritten; just changelogs will resume from its equivalent " ++ equiv]
+                      Nothing    -> [f ++ ": heading commit " ++ version ++ " is not an ancestor of HEAD (fix with just changelogs-catchup COMMIT)"]
                 else return []
               return $ concat [
                  stale
@@ -1181,6 +1198,37 @@ issueRefDefinition l = case l of
                        (']':':':_) | not (null ds) -> Just ds
                        _ -> Nothing
   _ -> Nothing
+
+-- | Given a commit hash which is no longer an ancestor of HEAD (it was
+-- probably rewritten by a rebase or amend), try to find its equivalent
+-- commit in the current history, by matching author date and author email
+-- (and the commit subject, as a tiebreaker if needed; a rewrite preserves
+-- the author date and author, though it may change the hash and subject).
+-- Returns Nothing if the old commit's metadata can't be read (eg it has
+-- been garbage collected) or if no unique match is found.
+relocateResumePoint :: String -> Action (Maybe String)
+relocateResumePoint oldhash = do
+  (Exit code, Stdout oldmeta) <- cmd Shell "git log -1 --pretty=%aI%x09%ae%x09%s" oldhash "-- 2>/dev/null"
+  case (code, parsemeta (chomp oldmeta)) of
+    (ExitSuccess, Just (date, email, subject)) -> do
+      Stdout candidates <- cmd Shell "git log --abbrev=8 --pretty=%h%x09%aI%x09%ae%x09%s -10000"
+      let
+        parsed = mapMaybe parsehashmeta $ lines candidates
+        datematches = [(h,s) | (h,d,e,s) <- parsed, d == date, e == email]
+        matches = case datematches of
+          [m] -> [m]
+          ms  -> filter ((== subject) . snd) ms
+      return $ case matches of
+        [(h,_)] -> Just h
+        _       -> Nothing
+    _ -> return Nothing
+  where
+    parsemeta l = case splitOn "\t" l of
+      (d:e:rest@(_:_)) -> Just (d, e, intercalate "\t" rest)
+      _ -> Nothing
+    parsehashmeta l = case splitOn "\t" l of
+      (h:d:e:rest@(_:_)) -> Just (h, d, e, intercalate "\t" rest)
+      _ -> Nothing
 
 -- | Remove all trailing newlines/carriage returns.
 chomp :: String -> String

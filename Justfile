@@ -754,7 +754,7 @@ changelogs-check:
 changelogs-reset:
     git checkout */CHANGES.md
 
-# Set changelog headings to the specified commit, or HEAD. Run on release branch.
+# Set changelog headings to the specified commit, or HEAD. Rarely needed now (changelogs auto-relocates rewritten resume points). Run on release branch.
 changelogs-catchup *COMMIT:
     #!/usr/bin/env bash
     set -euo pipefail

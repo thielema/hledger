@@ -20,8 +20,11 @@ The drafts come partly pre-cleaned:
 - in package changelogs, breaking changes (a "!" in the commit's category prefix) are moved to the top under a "Breaking changes" heading, with the rest under "Other changes"
 - items that may duplicate an already-announced change are flagged with a "DUPLICATE?" or "CHERRYPICK?" note line.
 
-If drafting fails with "resume point ... is not an ancestor of HEAD", the heading's commit
-was rewritten by a rebase or amend; fix the headings with `just changelogs-catchup COMMIT`.
+If the heading's commit was rewritten by a rebase or amend, drafting automatically finds
+the equivalent commit in the current history (matching author date/author/subject) and
+resumes from there, mentioning this. Only if no equivalent can be found does it fail with
+"resume point ... is not an ancestor of HEAD"; then fix the headings by hand or with
+`just changelogs-catchup COMMIT`.
 
 ## Polishing changelogs
 
