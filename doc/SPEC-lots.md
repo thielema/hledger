@@ -795,6 +795,14 @@ their original parse-time form, generated postings omitted - rather than
 the processed in-memory entry, mentioning the problem posting's inferred
 amount when it is not visible in the excerpt
 (`transactionAsWritten` in Lots.hs, #2686).
+For transparency about hledger's interpretation, the excerpt is followed
+by a one-line summary of how the postings were classified, when they were:
+`Postings were read as: transfer-from, transfer-to, unclassified; and
+generated: dispose, balance-assertion.`
+(`postingsReadAs` in Lots.hs). The classifications are listed in posting
+order, matching the excerpt's lines; generated postings (omitted from the
+excerpt) are named at the end. The excerpt shows what the user wrote;
+this line shows how hledger read it, keeping the two clearly separate.
 See [SPEC-finalising.md](SPEC-finalising.md) for how this sits in the
 broader pipeline.
 

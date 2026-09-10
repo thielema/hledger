@@ -404,6 +404,7 @@ hledger: Error: -:7:
   |     assets:fund                                   -9.216 FUND {Rs1801.215277778} @@ Rs19403.24
   |     income:capital                           Rs-2803.30
 
+Postings were read as: unclassified, dispose, gain; and generated: ugain.
 This disposal's realised gain amount is wrong.
   written:    Rs-2803.30
   calculated: Rs-2803.239999997952

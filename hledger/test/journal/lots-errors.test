@@ -107,6 +107,7 @@ hledger: Error: -:3:
   |     assets:broker                               2220 T  ; @ $0.01
   |     equity:conversion
 
+Postings were read as: unclassified, acquire, unclassified.
 T is lotful but this acquire posting has no cost basis or price.
 No lot will be created.
 >=1
@@ -202,6 +203,7 @@ hledger: Error: -:6:
   |     expenses:fees                                  0.05 A @ $150
   |     income:gains
 
+Postings were read as: transfer-from, transfer-to, unclassified, gain; and generated: dispose, balance-assertion.
 This disposal has an amountless gain or unrealised-gain posting.
 Write the amount explicitly, or omit the posting entirely
 (hledger will then infer both rgain and ugain from the cost basis).
@@ -227,6 +229,7 @@ hledger: Error: -:7:
   |     assets:broker1:{2021-03-08, "0001", $5}       -2 ABC {2021-03-08, "0001", $5}
   |     equity:opening/closing balances
 
+Postings were read as: transfer-from, unclassified.
 no lots matching {2021-03-08, "0001", $5} for commodity ABC in account assets:broker1
 Available lots in this account:
   {2021-03-08, $5}  2
@@ -292,6 +295,7 @@ hledger: Error: -:7:
   |     expenses:fees                                 -0.1 ABC
   |     assets:broker2                                 5 ABC
 
+Postings were read as: transfer-from, unclassified, transfer-to.
 Mismatched transfer quantities for lot-tracked commodity ABC: 4.9 transferred out but 5 received.
 More was received than sent, which a fee can't explain;
 check the entry for sign errors or rounding adjustments.
@@ -321,6 +325,7 @@ hledger: Error: -:7:
   |     expenses:fees                                  0.15 ABC
   |     revenues:rebate                               -0.05 ABC
 
+Postings were read as: transfer-from, transfer-to, unclassified, unclassified.
 Mismatched transfer quantities for lot-tracked commodity ABC: 5 transferred out but 4.9 received.
 If the difference is a fee, you can either
 - record the fee expense in the lot-tracked commodity, with posting(s)

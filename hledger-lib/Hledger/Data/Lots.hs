@@ -1565,7 +1565,7 @@ unclassifiedLotWarning j t idx p =
       inferrednote = if hasAmount (originalPosting p) then "" else
         " (with inferred amount " ++ showMixedAmountOneLine (pamount p) ++ ")"
       (f, line, _, ex) = makePostingErrorExcerptByIndex (transactionAsWritten t) (asWrittenPostingIndex t idx) Nothing
-  in printf "%s:%d:\n%s\n" f line ex
+  in printf "%s:%d:\n%s\n%s" f line ex (postingsReadAs t)
      ++ source ++ " but this posting" ++ inferrednote ++ " was not classified as\n"
      ++ "acquire, dispose, or transfer. Lot state will not be updated.\n"
      ++ "Possible fixes: add a cost basis ({$X}), a price (@ $X),\n"
@@ -1639,23 +1639,50 @@ asWrittenPostingIndex t idx = length [() | q <- take idx (tpostings t), not (isG
 isGeneratedPosting :: Posting -> Bool
 isGeneratedPosting = postingHasTag generatedPostingTagName
 
--- | Format a verbose error prefix for a transaction: "file:line:\nexcerpt\n\n".
+-- | A one-line summary of how lot classification read a transaction's
+-- postings, to include in error messages after the as-written excerpt:
+-- each non-generated posting's classification ("_ptype" tag value, or
+-- "unclassified") in posting order, plus a count of any generated postings.
+-- Returns "" when classification hasn't run yet (no posting has a ptype
+-- tag), eg for errors raised at earlier pipeline stages.
+-- The excerpt always shows what the user wrote; this line shows how
+-- hledger interpreted it, since the interpretation (and any error arising
+-- from it) may not be obvious from the entry alone.
+postingsReadAs :: Transaction -> String
+postingsReadAs t
+  | not (any isClassifiedPosting ps) = ""
+  | otherwise =
+      "Postings were read as: " ++ intercalate ", " (map readAs written)
+      ++ (case generated of
+            [] -> ""
+            gs -> "; and generated: " ++ intercalate ", " (map readAs gs))
+      ++ ".\n"
+  where
+    ps = tpostings t
+    (generated, written) = partition isGeneratedPosting ps
+    readAs p = case lookup "_ptype" (ptags p) of
+      Just ptype -> T.unpack ptype
+      Nothing | postingHasTag lotParentAssertionTagName p -> "balance-assertion"
+              | otherwise -> "unclassified"
+
+-- | Format a verbose error prefix for a transaction: "file:line:\nexcerpt\n\n",
+-- plus a summary of how the postings were classified, if they were ('postingsReadAs').
 -- Prepend to an error message to show source position and a transaction excerpt,
 -- rendered as the user wrote it ('transactionAsWritten').
 txnErrPrefix :: Transaction -> String
-txnErrPrefix t = printf "%s:%d:\n%s\n" f line ex
+txnErrPrefix t = printf "%s:%d:\n%s\n%s" f line ex (postingsReadAs t)
   where (f, line, _, ex) = makeTransactionErrorExcerpt (transactionAsWritten t) (const Nothing)
 
--- | Format a verbose error prefix for a posting: "file:line:\nexcerpt\n\n".
--- Like txnErrPrefix but marks the specific posting's line, found by
--- comparing cost-stripped postings (falling back to the transaction line
--- if the posting can't be identified).
+-- | Format a verbose error prefix for a posting: "file:line:\nexcerpt\n\n",
+-- plus a classification summary, like 'txnErrPrefix', but marking the
+-- specific posting's line, found by comparing cost-stripped postings
+-- (falling back to the transaction line if the posting can't be identified).
 postingErrPrefix :: Posting -> String
 postingErrPrefix p = case ptransaction p of
   Nothing -> printf "%s:%d:\n%s\n" ("-"::String) (0::Int) (""::Text)
   Just t  -> case transactionFindPostingIndex ((== postingStripCosts p) . postingStripCosts) t of
     Nothing -> txnErrPrefix t
-    Just i1 -> printf "%s:%d:\n%s\n" f line ex
+    Just i1 -> printf "%s:%d:\n%s\n%s" f line ex (postingsReadAs t)
       where (f, line, _, ex) =
               makePostingErrorExcerptByIndex (transactionAsWritten t) (asWrittenPostingIndex t (i1-1)) Nothing
 
