@@ -242,6 +242,34 @@ holdings opts@CliOpts{rawopts_=rawopts, reportspec_=rspec@ReportSpec{_rsQuery=q,
       , acommodity proceeds == acommodity basis
       ]
 
+    -- The current average unit cost of each AVERAGE/AVERAGEALL pool, as of
+    -- the report end date, keyed by (base account, commodity): the sum of
+    -- quantity * unit cost basis over the pool's lot postings, divided by
+    -- the total units. Acquisitions carry their acquisition cost and
+    -- disposals/transfers the then-current average, so this works out to
+    -- the pool's running average. It is valid only summed over the whole
+    -- pool: the base account's lots for AVERAGE, or all accounts' lots for
+    -- AVERAGEALL. Used to fill in the cost missing from AVERAGE lots'
+    -- costless subaccount names (see lotsUnder).
+    poolavgmap :: M.Map (AccountName, CommoditySymbol) Amount
+    poolavgmap = M.fromList
+      [ ((base, c), styleAmounts styles $ avgcost unitsamt costtot)
+      | (base, c) <- nubSort [ (lotBaseAccount sub, c') | ((sub, c'), _) <- lotpostings ]
+      , let method = fst $ resolveReductionMethodForAccount j base c
+      , method `elem` [AVERAGE, AVERAGEALL]
+      , let entries = [ (a, ub)
+                      | ((sub, c'), (_, a)) <- lotpostings
+                      , c' == c
+                      , method == AVERAGEALL || lotBaseAccount sub == base
+                      , Just ub <- [cbCost =<< acostbasis a] ]
+      , (ub1:_) <- [map snd entries]
+      , all ((== acommodity ub1) . acommodity) (map snd entries)
+      , let units = sum [aquantity a | (a, _) <- entries]
+      , units /= 0
+      , let unitsamt = nullamt{acommodity=c, aquantity=units}
+            costtot  = ub1{aquantity = sum [aquantity a * aquantity ub | (a, ub) <- entries]}
+      ]
+
     -- The values in a map whose keys are at or under the given account
     -- (and in the given held commodity, if specified).
     underIn :: M.Map (AccountName, CommoditySymbol) v -> AccountName -> Maybe CommoditySymbol -> [v]
@@ -450,12 +478,19 @@ holdings opts@CliOpts{rawopts_=rawopts, reportspec_=rspec@ReportSpec{_rsQuery=q,
       where lotcomms = [acommodity a | (a, _) <- lotsUnder $ prrFullName r]
 
     -- The lots held at or under the given account, excluding empty ones.
+    -- A lot's cost basis comes from its subaccount name; when the name has
+    -- no cost part (AVERAGE lots' names omit it, staying stable across
+    -- re-averaging), the pool's current average cost is filled in instead.
     lotsUnder :: AccountName -> [(Amount, Maybe CostBasis)]
     lotsUnder acct =
-      [ (a, lotBasis sub) | ((sub, _), a) <- M.toAscList lotmap
+      [ (a, addPoolAvg sub a <$> lotBasis sub) | ((sub, _), a) <- M.toAscList lotmap
       , acct == sub || acct `isAccountNamePrefixOf` sub
       , not $ amountLooksZero a
       ]
+      where
+        addPoolAvg sub a cb@CostBasis{cbCost=Nothing} =
+          cb{cbCost = M.lookup (lotBaseAccount sub, acommodity a) poolavgmap}
+        addPoolAvg _ _ cb = cb
 
     -- Report rows come from a single-period, end-balances multiBalanceReport:
     -- on the lot-detailed journal with --lots (rows are lot subaccounts),

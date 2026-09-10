@@ -7599,8 +7599,10 @@ Disposals use this average cost, and consume lots in FIFO order
 Under AVERAGE, the lot subaccount name omits the cost component
 (`{2026-01-15}` rather than `{2026-01-15, $50}`) so it stays stable
 across acquisitions. 
-The average cost can best be seen with `print -x`, currently;
-in disposal postings it is visible in the cost basis annotations and inferred gain amounts.
+The average cost can be seen in the [holdings](#holdings) report's Avg cost column,
+which shows each pool's running average as of the report date.
+It also appears in disposal postings' cost basis annotations and inferred
+gain amounts, shown by `print -x`.
 (`print -x` shows acquire postings with their acquisition cost basis, not the average.)
 Transferring lots into an average-cost account recalculates the pool's
 average, just like an acquisition at the transferred lots' cost;

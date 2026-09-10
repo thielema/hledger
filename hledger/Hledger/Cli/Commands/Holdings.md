@@ -52,7 +52,9 @@ Columns show each holding's acquisition date and age
 from one year in years with one decimal digit, eg `44d` or `1.1y`,
 approximating years as 365 days),
 the units held,
-the unit cost (or average cost, on rows aggregating multiple lots),
+the unit cost (or average cost, on rows aggregating multiple lots;
+for accounts using the AVERAGE cost basis method, this is the pool's
+running average as of the report date),
 the current market price, the total cost basis, the market value,
 the percentage of the portfolio's total value (Weight),
 the unrealised gain and gain percent (UGain, UGain%),

@@ -105,6 +105,7 @@ module Hledger.Data.Lots (
   lotSubaccountName,
   mergeCostBasis,
   parseLotName,
+  resolveReductionMethodForAccount,
   showLotName,
 ) where
 

@@ -64,6 +64,16 @@ Notes:
   it is titled "Unit cost" when `--lots` is in effect).
   (Alternatives considered for aggregated Date/Age: oldest lot's date/age,
   a date range, quantity-weighted average age.)
+- A lot's cost basis is parsed from its subaccount name. When the name has
+  no cost part (AVERAGE/AVERAGEALL lots' names omit it, staying stable
+  across re-averaging), the pool's running average as of the report end
+  date is used instead: sum of quantity x unit cost basis over the pool's
+  lot postings (acquisitions carry their acquisition cost,
+  disposals/transfers the then-current average), divided by total units.
+  This sum is only valid over a whole pool - the base account's lots for
+  AVERAGE, all accounts' for AVERAGEALL - so with `--lots`, each pool
+  lot's row shows the pool average (as in the lot state, where every pool
+  lot carries the current average), not its original acquisition cost.
 - Age is shown in days, or from one year in years with one decimal digit,
   eg `44d`, `1.1y`, approximating years as 365 days. (A long/short-term
   capital gains indicator could be added later.) The csv/json outputs
