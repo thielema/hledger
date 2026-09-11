@@ -118,8 +118,8 @@ This does not apply to their decimal digits; print normally shows the
 same decimal digits that are recorded in each journal entry.
 
 You can override the decimal precisions with print's special --round
-option (since 1.32). --round tries to show amounts with their
-commodities' standard decimal precisions, increasingly strongly:
+option. --round tries to show amounts with their commodities' standard
+decimal precisions, increasingly strongly:
 
 - --round=none show amounts with original precisions (default)
 - --round=soft add/remove decimal zeros in amounts (except costs)
@@ -197,8 +197,8 @@ a compact overview. It affects the default txt output only.
 print output format
 
 This command also supports the output destination and output format
-options The output formats supported are txt, ledger, beancount (Added
-in 1.32), csv, tsv (Added in 1.32), json and sql.
+options The output formats supported are txt, ledger, beancount, csv,
+tsv, json and sql.
 
 The ledger format is currently the same as txt except it renders
 amounts' cost basis using Ledger's lot syntax ([DATE] (LABEL) {COST})

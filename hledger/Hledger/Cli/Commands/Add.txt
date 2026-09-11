@@ -71,8 +71,8 @@ There is a detailed tutorial at https://hledger.org/add.html.
 
 add and balance assertions
 
-Since hledger 1.43, you can add a balance assertion by writing
-AMOUNT = BALANCE when asked for an amount. Eg 100 = 500.
+You can add a balance assertion by writing AMOUNT = BALANCE when asked
+for an amount. Eg 100 = 500.
 
 Also, each time you enter a new amount, hledger re-checks all balance
 assertions in the journal and rejects the new amount if it would make
