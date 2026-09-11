@@ -1,6 +1,6 @@
 # AI policy
 
-Last updated: 2026-08-24
+Last updated: 2026-09-11
 
 The productivity benefits from AI-assisted software development are becoming obvious.
 And the disruptions, costs and risks of AI will keep becoming clearer.
@@ -227,6 +227,7 @@ Other contributors' usage estimates can be added here too.
 - <https://news.ycombinator.com/item?id=47648828> Eight years of wanting, three months of building with AI
 - Raffael Schneider: <https://raskell.io/articles/looking-back-on-2025>
 - Bryan Cantrill: <https://bcantrill.dtrace.org/2026/09/05/the-revolt-of-the-reader/> on AI-assisted writing
+- Andy Balaam: <https://artificialworlds.net/blog/2025/12/16/why-i-dont-use-ai/>, <https://artificialworlds.net/blog/2026/09/11/feeling-sad-about-ai/>
 
 ### Policies
 - [Pope Leo XIV: Magnifica Humanitas: On Safeguarding The Human Person In The Time Of Artificial Intelligence](https://www.vatican.va/content/leo-xiv/en/encyclicals/documents/20260515-magnifica-humanitas.html)
@@ -257,4 +258,4 @@ and so many more.
 - <https://ccusage.com>
 - <https://github.com/ratherlegit/environmental-impact-tracker>
 - <https://www.pangram.com>
-
+- <https://isaiprofitable.com>
