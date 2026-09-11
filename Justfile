@@ -631,7 +631,7 @@ samplejournals:
 
 # show throughput of recent hledger versions (requires samplejournals)
 @bench-throughput-recent:
-    for v in 1.25 1.28 1.29 1.32 1.32.3; do printf "\nhledger-$v:\n"; for i in `seq 1 3`; do hledger-$v -f examples/10ktxns-10kaccts.journal stats | grep throughput; done; done
+    for v in 1.25 1.40 1.52 1.99.4; do printf "\nhledger-$v:\n"; for i in `seq 1 3`; do hledger-$v -f examples/10ktxns-10kaccts.journal stats | grep ^Run; done; done
 
 # @bench-balance-many-accts:
 #     quickbench -w hledger-1.26,hledger-21ad,ledger -f bench-many-accts.sh -N2
