@@ -167,10 +167,12 @@ General output flags (affecting some commands):
                             'dates':   exact dates/date ranges always
 
 General help flags:
-  -h --help                 show command line help
-     --tldr                 show command examples with tldr
-     --info                 show the manual with info
-     --man                  show the manual with man
+  -?                        show the hledger quick reference
+  -h --help                 show this command's usage help
+     --info                 show this command's manual with info
+     --man                  show this command's manual with man
+     --webman               show this command's manual on the web
+     --examples             show examples for this command
      --version              show version information
      --debug=[1-9]          show this much debug output (default: 1)
      --pager=YN             use a pager when needed ? y/yes (default) or n/no
@@ -482,6 +484,10 @@ when you press g to reload.  Once you have fixed the problem, press g
 again to reload and resume normal operation.  (Or, you can press escape
 to cancel the reload attempt.)
 
+   Non-fatal warnings, eg from reading CSV files, don't interrupt like
+this; instead they are shown on the bottom line of the screen, at
+startup or after a reload, until the next key press.
+
 
 File: hledger-ui.info,  Node: WATCH MODE,  Next: ENVIRONMENT,  Prev: SCREENS,  Up: Top
 
@@ -567,21 +573,21 @@ with the UI unresponsive.
 Tag Table:
 Node: Top221
 Node: OPTIONS1867
-Node: MOUSE9508
-Node: KEYS9840
-Node: SCREENS15169
-Node: Menu screen15909
-Node: Cash accounts screen16225
-Node: Balance sheet accounts screen16586
-Node: Income statement accounts screen16922
-Node: All accounts screen17307
-Node: Register screen17670
-Node: Transaction screen20113
-Node: Error screen21293
-Node: WATCH MODE21659
-Node: --watch problems22557
-Node: ENVIRONMENT23475
-Node: BUGS23708
+Node: MOUSE9664
+Node: KEYS9996
+Node: SCREENS15325
+Node: Menu screen16065
+Node: Cash accounts screen16381
+Node: Balance sheet accounts screen16742
+Node: Income statement accounts screen17078
+Node: All accounts screen17463
+Node: Register screen17826
+Node: Transaction screen20269
+Node: Error screen21449
+Node: WATCH MODE22006
+Node: --watch problems22904
+Node: ENVIRONMENT23822
+Node: BUGS24055
 
 End Tag Table
 

@@ -49,8 +49,8 @@ with a date field.  (See hledger(1) -> Input for details.)
 
    * '--serve-browse' mode (the default): the app serves the web UI and
      JSON API, and opens your default web browser to show the app if
-     possible, and exits automatically after two minutes of inactivity
-     (with no requests received and no open browser windows viewing it).
+     possible, and exits automatically once no browser window has shown
+     it for two minutes.
 
    * '--serve': the app just serves the web UI and JSON API.
 
@@ -91,7 +91,8 @@ Flags:
                             origin; setting ORIGIN to "*" allows requests from
                             any origin
      --host=IPADDR          listen on this IP address (default: 127.0.0.1)
-     --port=PORT            listen on this TCP port (default: 5000)
+     --port=PORT            listen on this TCP port (default: 5000); 0 means
+                            a free port chosen by the OS
      --socket=SOCKET        listen on the given unix socket instead of an IP
                             address and port (unix only; implies --serve)
      --base-url=BASEURL     set the base url (default: http://IPADDR:PORT)
@@ -108,7 +109,10 @@ accessible address configured on this machine, The special address
 
    Similarly, you can use '--port' to listen on a TCP port other than
 5000.  This is useful if you want to run multiple hledger-web instances
-on a machine.
+on a machine.  '--port 0' makes the operating system choose a free port,
+which is reported in the startup message and in the default base url,
+and is where the browser is opened in '--serve-browse' mode.  This can
+be useful eg when scripting.
 
    When '--socket' is used, hledger-web creates and communicates via a
 socket file instead of a TCP port.  This can be more secure, respects
@@ -212,10 +216,12 @@ General output flags (affecting some commands):
                             'dates':   exact dates/date ranges always
 
 General help flags:
-  -h --help                 show command line help
-     --tldr                 show command examples with tldr
-     --info                 show the manual with info
-     --man                  show the manual with man
+  -?                        show the hledger quick reference
+  -h --help                 show this command's usage help
+     --info                 show this command's manual with info
+     --man                  show this command's manual with man
+     --webman               show this command's manual on the web
+     --examples             show examples for this command
      --version              show version information
      --debug=[1-9]          show this much debug output (default: 1)
      --pager=YN             use a pager when needed ? y/yes (default) or n/no
@@ -280,17 +286,14 @@ let you edit, upload, or download the journal file or any files it
 includes.
 
    Note, unlike any other hledger command, in this mode you (or any
-visitor) can alter or wipe the data files.
+visitor) can alter or wipe the data files.  Normally when hledger-web
+changes any data, it will save a numbered backup of the file (assuming
+file permissions allow it, the disk is not full, etc.)  hledger-web is
+not aware of version control systems, currently; if you use one, you'll
+have to arrange to commit the changes yourself.
 
-   Normally whenever a file is changed in this way, hledger-web saves a
-numbered backup (assuming file permissions allow it, the disk is not
-full, etc.)  hledger-web is not aware of version control systems,
-currently; if you use one, you'll have to arrange to commit the changes
-yourself (eg with a cron job or a file watcher like entr).
-
-   Changes which would leave the journal file(s) unparseable or
-non-valid (eg with failing balance assertions) are prevented.
-(Probably.  This needs re-testing.)
+   Changes which would leave the journal file(s) unparseable or invalid
+(eg with failing balance assertions) are prevented.
 
 
 File: hledger-web.info,  Node: RELOADING,  Next: JSON API,  Prev: EDITING UPLOADING DOWNLOADING,  Up: Top
@@ -304,8 +307,8 @@ when you reload the page or navigate to a new page.  If a change makes a
 file unparseable, hledger-web will display an error message until the
 file has been fixed.
 
-   (Note: if you are viewing files mounted from another machine, make
-sure that both machine clocks are roughly in step.)
+   (If you are viewing files mounted from another machine, make sure
+that both machines have roughly the same idea of what time it is.)
 
 
 File: hledger-web.info,  Node: JSON API,  Next: DEBUG OUTPUT,  Prev: RELOADING,  Up: Top
@@ -532,14 +535,14 @@ We welcome bug reports in the hledger issue tracker
 
 Tag Table:
 Node: Top223
-Node: OPTIONS2575
-Node: PERMISSIONS12281
-Node: EDITING UPLOADING DOWNLOADING13536
-Node: RELOADING14551
-Node: JSON API15118
-Node: DEBUG OUTPUT20767
-Node: ENVIRONMENT21309
-Node: BUGS21545
+Node: OPTIONS2528
+Node: PERMISSIONS12685
+Node: EDITING UPLOADING DOWNLOADING13940
+Node: RELOADING14867
+Node: JSON API15448
+Node: DEBUG OUTPUT21097
+Node: ENVIRONMENT21639
+Node: BUGS21875
 
 End Tag Table
 

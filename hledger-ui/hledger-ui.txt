@@ -143,10 +143,12 @@ OPTIONS
                                         'dates':   exact dates/date ranges always
 
             General help flags:
-              -h --help                 show command line help
-                 --tldr                 show command examples with tldr
-                 --info                 show the manual with info
-                 --man                  show the manual with man
+              -?                        show the hledger quick reference
+              -h --help                 show this command's usage help
+                 --info                 show this command's manual with info
+                 --man                  show this command's manual with man
+                 --webman               show this command's manual on the web
+                 --examples             show examples for this command
                  --version              show version information
                  --debug=[1-9]          show this much debug output (default: 1)
                  --pager=YN             use a pager when needed ? y/yes (default) or n/no
@@ -379,6 +381,10 @@ SCREENS
      you  press  g to reload.  Once you have fixed the problem, press g again to
      reload and resume normal operation.  (Or, you can press  escape  to  cancel
      the reload attempt.)
+
+     Non-fatal  warnings,  eg from reading CSV files, don't interrupt like this;
+     instead they are shown on the bottom line of the screen, at startup or  af-
+     ter a reload, until the next key press.
 
 WATCH MODE
      One  of  hledger-ui's  best features is the auto-reloading -w/--watch mode.
