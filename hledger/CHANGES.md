@@ -375,7 +375,6 @@ The `repl` and `run` commands have been improved since 1.99.3. In summary:
 - rewrite: noted that --diff re-renders the transactions it changes, and that --layout can be set to minimise the diff
 - roi vs holdings: added comparison examples and interop advice (see also Examples)
 - Two-space delimiter: rewritten
-
 - Dropped the "added in VERSION" and "experimental" labels throughout
   the manuals; notable behaviour changes still mention the hledger
   version.

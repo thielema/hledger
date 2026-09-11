@@ -53,7 +53,6 @@ For package-specific changes, see the hledger package changelogs.
 - SPEC-holdings: record decisions (future-dated postings stay included by default; XIRR's final cashflow is the displayed Value at the report date)
 - SPEC-lots: add a roadmap section for future work (per-account lot-tracking opt-out, tax boundary declarations, AVERAGE vs transfers, non-local-method coherence checks)
 - STYLE: new hledger-web doc recording the rules a change to the web UI's appearance should follow (no build step, nothing from a third party, no style attributes, how tabular and monetary data should read), for people and coding agents alike
-
 - examples: added lots/average.journal
 - README: dropped the gitscope.dev badges; that service is gone
 
