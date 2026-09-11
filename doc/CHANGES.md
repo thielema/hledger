@@ -20,9 +20,9 @@ General changes in the hledger project.
 For package-specific changes, see the hledger package changelogs.
 
 
-# e5e4e608
+# 009e3b5d
 
-- The hledger repo has moved to the plaintextaccounting github
+- The hledger repo has moved to the hledgerorg github
   organisation: <https://github.com/hledgerorg/hledger>. Old
   links redirect. [#2681]
 
@@ -54,6 +54,9 @@ For package-specific changes, see the hledger package changelogs.
 - SPEC-lots: add a roadmap section for future work (per-account lot-tracking opt-out, tax boundary declarations, AVERAGE vs transfers, non-local-method coherence checks)
 - STYLE: new hledger-web doc recording the rules a change to the web UI's appearance should follow (no build step, nothing from a third party, no style attributes, how tabular and monetary data should read), for people and coding agents alike
 
+- examples: added lots/average.journal
+- README: dropped the gitscope.dev badges; that service is gone
+
 ## Tools/infrastructure
 
 - Changelog tooling improved: `just changelogs` now pre-cleans changelogs items (routine commits dropped, AI usage lines stripped, breaking changes lifted to the top, possible duplicates flagged); a stale resume point (eg after a rebase) is detected and reported with its fix; and a new `just changelogs-check` verifies resume points, issue links and leftover draft markers. Changelog section headings are simplified: Security, then Breaking changes, then topic or generic headings as needed.
@@ -79,6 +82,12 @@ For package-specific changes, see the hledger package changelogs.
 [#2528]: https://github.com/hledgerorg/hledger/issues/2528
 [#2681]: https://github.com/hledgerorg/hledger/issues/2681
 [#2707]: https://github.com/hledgerorg/hledger/issues/2707
+
+- Shake changelogs: resume points rewritten by rebase/amend are now
+  auto-relocated (matching author date/author/subject), instead of
+  re-listing already-drafted commits; changelogs-catchup is rarely
+  needed now.
+
 
 # 1.52.4 2026-09-10
 

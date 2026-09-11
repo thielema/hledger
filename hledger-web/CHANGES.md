@@ -16,7 +16,7 @@ User-visible changes in hledger-web.
 See also the hledger changelog.
 
 
-# e5e4e608
+# 009e3b5d
 
 Security
 
@@ -117,7 +117,9 @@ Improvements
 
 - --port 0 lets the OS choose a free port [#2559] (Arthur Cinader).
   The chosen port is reported in the startup message and used in the
-  default base url, so scripts can discover it. 
+  default base url, so scripts can discover it. This now works in the
+  default --serve-browse mode too, which previously required a fixed
+  port; the browser is opened at the chosen port.
 
 - Changes to CSV rules files now trigger a reload, like changes to data
   files (see hledger changelog).
@@ -135,6 +137,8 @@ Improvements
   service, easing installation while the ecosystem catches up with
   newer aeson.
 
+- Exclude megaparsec 9.8.0, to avoid a position marker bug in error messages ([megaparsec#572](https://github.com/mrkkrp/megaparsec/issues/572)).
+
 [#2559]: https://github.com/hledgerorg/hledger/issues/2559
 [#2679]: https://github.com/hledgerorg/hledger/issues/2679
 [#2698]: https://github.com/hledgerorg/hledger/issues/2698
@@ -144,6 +148,8 @@ Improvements
 [#2704]: https://github.com/hledgerorg/hledger/issues/2704
 [#2718]: https://github.com/hledgerorg/hledger/issues/2718
 [#2722]: https://github.com/hledgerorg/hledger/issues/2722
+
+
 
 
 # 1.52.4 2026-09-10

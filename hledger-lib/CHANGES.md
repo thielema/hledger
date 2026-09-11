@@ -16,7 +16,7 @@ API/developer-ish changes in hledger-lib.
 For user-visible changes, see the hledger package changelog.
 
 
-# e5e4e608
+# 009e3b5d
 
 Breaking changes
 
@@ -72,6 +72,14 @@ Improvements
 
 - The aeson lower bound has been relaxed from 2.3 to 2.2.5.1, the
   oldest version not vulnerable to HSEC-2026-0007.
+
+
+- Exclude megaparsec 9.8.0, to avoid a position marker bug in error messages ([megaparsec#572](https://github.com/mrkkrp/megaparsec/issues/572)).
+
+- Hledger.Write.Spreadsheet, Write.Html.Blaze, Write.Html.Lucid,
+  Reports.ReportOptions: support for the new barewide balance report
+  layout; formatCell no longer emits redundant colspan=1/rowspan=1
+  attributes. (Henning Thielemann)
 
 
 # 1.52.4 2026-09-10

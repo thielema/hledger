@@ -16,7 +16,7 @@ User-visible changes in hledger-ui.
 See also the hledger changelog.
 
 
-# e5e4e608
+# 009e3b5d
 
 Fixes
 
@@ -57,9 +57,13 @@ Improvements
 
 - Add the -? and --webman flags; rename --tldr to --examples (see hledger changelog).
 
+- Exclude megaparsec 9.8.0, to avoid a position marker bug in error messages ([megaparsec#572](https://github.com/mrkkrp/megaparsec/issues/572)).
+
 [#1825]: https://github.com/hledgerorg/hledger/issues/1825
 [#2278]: https://github.com/hledgerorg/hledger/issues/2278
 [#2593]: https://github.com/hledgerorg/hledger/issues/2593
+
+
 
 
 # 1.52.4 2026-09-10

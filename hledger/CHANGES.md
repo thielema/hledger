@@ -10,7 +10,7 @@
 User-visible changes in the hledger command line tool and library.
 
 
-# e5e4e608
+# 009e3b5d
 
 ## Breaking changes
 
@@ -207,6 +207,32 @@ Lot tracking has been reworked extensively since 1.99.3. In summary:
 - A new `holdings` report shows your lot-tracked investment holdings, per account and commodity or per lot, with units, cost basis, current price and market value, portfolio weight, unrealised and realised gains, and XIRR annualised return.
   Multiple cost and value commodities are supported, and displayed separately, or as a single-currency view with `-X COMM`.
 
+- The "no lots available" and "no lots matching" errors now show the
+  attempted transaction's date, clarifying that lot availability is
+  checked at that date.
+
+- holdings: the cost column's heading matches the lots shown:
+  "Avg cost" on rows aggregating multiple lots, as before; and now
+  also with --lots, when the lots shown all use the AVERAGE method
+  (their per-lot rows show the pool's average cost). "Unit cost" when
+  each lot shows its own cost, and "Unit/Avg cost" when both kinds of
+  lot are shown together. The csv/tsv/html/json outputs keep the stable
+  unitcost field name regardless.
+
+- holdings: show cost information for AVERAGE accounts.
+  An AVERAGE account's Avg cost, Cost, UGain and UGain% columns were
+  blank: holdings parses each lot's cost basis from its subaccount name,
+  and AVERAGE lots' names deliberately omit the cost (staying stable
+  across re-averaging). Now, when a lot's name has no cost part, holdings
+  fills in the pool's running average as of the report end date, computed
+  from the lot postings' cost basis annotations: sum of quantity * unit
+  cost over the pool's postings (acquisitions carry their acquisition
+  cost, disposals and transfers the then-current average), divided by
+  total units. The sum spans the whole pool - the base account's lots for
+  AVERAGE, all accounts' for AVERAGEALL - so with --lots, each pool lot's
+  row shows the pool average, as in the lot state, where every pool lot
+  carries the current average.
+
 ## REPL & run
 
 The `repl` and `run` commands have been improved since 1.99.3. In summary:
@@ -297,6 +323,13 @@ The `repl` and `run` commands have been improved since 1.99.3. In summary:
   commodity `alias:` tags are now dated 0001-01-01; other output
   formats are unchanged.
 
+- bal: A new `barewide` layout combines the bare and wide layouts:
+  amounts are bare numbers, and each commodity gets its own column,
+  with the symbol shown in the column heading. All column groups share
+  the same set of commodity columns. Supported in single-period,
+  multi-period and budget balance reports, with txt, csv and html
+  output. (Henning Thielemann)
+
 ## Other
 
 - `rewrite`'s `--diff` output can now be applied by `patch` or `git
@@ -317,6 +350,8 @@ The `repl` and `run` commands have been improved since 1.99.3. In summary:
   2.2.5.1, the oldest version not vulnerable to the HSEC-2026-0007
   denial of service, easing installation while the ecosystem catches
   up with newer aeson.
+
+- Exclude megaparsec 9.8.0, to avoid a position marker bug in error messages ([megaparsec#572](https://github.com/mrkkrp/megaparsec/issues/572)).
 
 ## Docs
 
@@ -340,6 +375,10 @@ The `repl` and `run` commands have been improved since 1.99.3. In summary:
 - rewrite: noted that --diff re-renders the transactions it changes, and that --layout can be set to minimise the diff
 - roi vs holdings: added comparison examples and interop advice (see also Examples)
 - Two-space delimiter: rewritten
+
+- Dropped the "added in VERSION" and "experimental" labels throughout
+  the manuals; notable behaviour changes still mention the hledger
+  version.
 
 ## Examples
 
