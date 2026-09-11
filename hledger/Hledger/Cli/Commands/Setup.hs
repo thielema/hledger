@@ -615,7 +615,10 @@ getLatestHledgerVersionFromHackage = do
         else return $ Left $ "HTTP status " ++ show status
     Left err -> return $ Left $ "other exception: " ++ show err
 
--- | Like the above, but get the version from the first number on the hledger.org Install page.
+-- | Like the above, but get the version from the first number
+-- in the first line containing "current hledger release"
+-- on the hledger.org Install page.
+-- (This has been hard coded for a while, so keep those words in the page to avoid breaking this.)
 getLatestHledgerVersionFromHledgerOrg :: IO (Either String String)
 getLatestHledgerVersionFromHledgerOrg = do
   let url = https "hledger.org" /: "install.html"
