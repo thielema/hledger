@@ -301,7 +301,7 @@ import System.Console.CmdArgs.Explicit as C (flagNone, flagReq, flagOpt)
 import Safe (headMay, maximumMay)
 import Text.Tabular.AsciiWide
     (Header(..), Align(..), Properties(..), Cell(..), Table(..), TableOpts(..),
-    cellWidth, concatTables, renderColumns, renderRowB, renderTableB, renderTableByRowsB, textCell)
+    cellWidth, concatTables, renderColumns, renderRowB, renderTable, renderTableByRowsB, textCell)
 
 import System.IO qualified as IO
 
@@ -425,7 +425,7 @@ balance opts@CliOpts{reportspec_=rspec} j = case balancecalc_ ropts of
     _ -> do  -- single period simple balance report
         let report = styleAmounts styles $ balanceReport rspec j -- simple Ledger-style balance report
             render = case fmt of
-              "txt"  -> withTitle ropts . TB.toLazyText . balanceReportAsText ropts
+              "txt"  -> withTitle ropts . balanceReportAsText ropts
               "csv"  -> printCSV . balanceReportAsCsv ropts
               "tsv"  -> printTSV . balanceReportAsCsv ropts
               "html" -> (<>"\n") . htmlAsLazyText . balanceReportAsHtml ropts
@@ -496,12 +496,16 @@ balanceReportAsCsv opts =
     rawTableContent . balanceReportAsSpreadsheet machineFmt opts
 
 -- | Render a single-column balance report as plain text.
-balanceReportAsText :: ReportOpts -> BalanceReport -> TB.Builder
-balanceReportAsText originalopts report@((items, total)) = case layout_ originalopts of
+balanceReportAsText :: ReportOpts -> BalanceReport -> TL.Text
+balanceReportAsText originalopts report@((items, total)) =
+  case layout_ originalopts of
     LayoutBare | iscustom -> error' "Custom format not supported with commodity columns"  -- PARTIAL:
-    LayoutBare -> bareLayoutBalanceReportAsText originalopts report
+    LayoutBare ->
+      TB.toLazyText $ bareLayoutBalanceReportAsText originalopts report
     LayoutBareWide -> bareWideLayoutBalanceReportAsText originalopts report
-    _ -> unlinesB ls <> unlinesB (if no_total_ opts then [] else [overline, totalLines])
+    _ ->
+      TB.toLazyText $
+      unlinesB ls <> unlinesB (if no_total_ opts then [] else [overline, totalLines])
   where
     opts = widenDefaultBalanceLineFormat originalopts report
     (ls, sizes) = unzip $ map (balanceReportItemAsText opts) items
@@ -574,9 +578,9 @@ bareLayoutBalanceReportAsText opts (items, total) =
     singleColumnTableInterColumnBorder = if pretty_ opts then SingleLine else NoLine
 
 -- | Render a single-column balance report as plain text with a separate commodity column (--layout=barewide)
-bareWideLayoutBalanceReportAsText :: ReportOpts -> BalanceReport -> TB.Builder
+bareWideLayoutBalanceReportAsText :: ReportOpts -> BalanceReport -> TL.Text
 bareWideLayoutBalanceReportAsText opts br =
-  renderTableB tableopts (textCell TopLeft) (textCell TopLeft) (textCell TopRight) $
+  renderTable tableopts (textCell TopLeft) (textCell TopLeft) (textCell TopRight) $
   Table
     (if null totalheadings
         then Group NoLine rowheadings
@@ -1438,7 +1442,7 @@ tests_Balance = testGroup "Balance" [
     testCase "unicode in balance layout" $ do
       j <- readJournal'' "2009/01/01 * медвежья шкура\n  расходы:покупки  100\n  актив:наличные\n"
       let rspec = defreportspec{_rsReportOpts=defreportopts{no_total_=True}}
-      TB.toLazyText (balanceReportAsText (_rsReportOpts rspec) (balanceReport rspec{_rsDay=fromGregorian 2008 11 26} j))
+      balanceReportAsText (_rsReportOpts rspec) (balanceReport rspec{_rsDay=fromGregorian 2008 11 26} j)
         @?=
         TL.unlines
         ["                -100  актив:наличные"
