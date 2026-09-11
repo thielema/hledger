@@ -96,15 +96,22 @@ to avoid interfering with branch switching; RELEASING.md should be updated from 
 1. **rel: update command docs and manuals:** `just manuals`
 1. **rel: update changelogs:** `just changelogs`; edit by hand; `just changelogs-finalise`
 1. **rel: update relnotes:** `just relnotes`; edit (add summary); commit
+   - (major release) show the drafted summary to the maintainer and get it confirmed before committing.
    - it's normal for some packages to have zero changes in a bugfix release - `just relnotes` emits a one-line
      "Uses PKG X.Y.Z" for them; not a problem for downstream packagers.
-1. **rel: update announcements:** edit `doc/ANNOUNCE`
-1. **rel: make release builds:** `just ghbin`
+1. **(major or preview release) rel: update announcements:** edit `doc/ANNOUNCE` - do this before making the
+   release builds below, so that it is included in the release tags. (Preview releases are announced too;
+   in general they are treated more like major than minor releases.)
+   Show the drafted ANNOUNCE to the maintainer for editing/confirmation before committing it.
 1. **rel: update install docs:** `just installpage`; edit `doc/ghrelnotes`, `doc/ghtestbinnotes.md`, and finish
-   `site/src/install.md` by hand ("Update the Install page" below) - do this on the release branch, before the
-   cherry-pick below, not on main (main's copies of ghrelnotes/ghtestbinnotes.md describe the *next preview* line
-   and are unrelated to the release branch's version).
+   `site/src/install.md` by hand ("Update the Install page" below) - do this on the release branch, not on main
+   (main's copies of ghrelnotes/ghtestbinnotes.md describe the *next preview* line and are unrelated to the
+   release branch's version).
+1. **rel: make release builds:** `just ghbin` - do this last, once the release branch has all its commits, so the
+   binaries are built from the commit that will be tagged. Takes 30-40 minutes; watch with `just ghbin-open`.
+   If more commits land on the branch afterwards, re-run it.
 1. **main: cherry-pick changelogs, relnotes, announcement, other relevant updates from relbranch** `jjui -r ::`
+   - this happens on main and doesn't affect the release branch, so it can be done while the binaries build.
 
 ### Phase 3: tag and publish ⚠
 
@@ -121,6 +128,14 @@ Everything before this phase is revisable (nothing shared beyond scratch CI bran
    - the workflow selects each binaries-* workflow's run for the release tag's commit, and fails if there's
      no successful one (eg if the binaries were built from a different commit - rerun `just ghbin` on the tag).
    - on older release branches without the release.yml workflow, use `just ghrel-local` instead.
+   - release branches cut before 2026-09 have the *old* release.yml (nominally triggered by the tag push, and
+     picking each binaries-* workflow's **latest** successful run rather than the tag commit's), and lack the
+     `ghrel`/`ghrel-publish` recipes. Rather than cherry-pick the new tooling onto such a branch, use the old
+     workflow (as in the 1.52.4 release): make sure `just ghbin` ran from the final release commit and finished,
+     and cancel any stale binaries runs, before pushing tags. In 1.52.4 the tag push did not actually trigger the
+     workflow, and dispatching it needed the tag ref for a good tag_name: `gh workflow run release.yml --ref TAG`.
+     Its notes come out empty (it passes refs/tags/TAG to ghrelnotes); fix with `just ghrel-notes`. Then review
+     the draft and publish by hand: `gh release edit TAG --draft=false --latest`.
    - a good final check before publishing: download and unpack the archive for your own platform and run
      `./hledger --version` etc - it should show `VER-gHASH` matching the release tag's commit.
      (Use `--no-conf` if your personal config uses newer syntax than the release understands.)
