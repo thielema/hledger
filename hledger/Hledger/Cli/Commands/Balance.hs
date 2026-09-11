@@ -992,14 +992,14 @@ multiBalanceRowAsCellBuilders bopts ropts@ReportOpts{..} colspans allCommodities
                            $ clsamts
       LayoutBare       -> zipWith (:) (map wbCell cs)  -- add symbols
                            . transpose                         -- each row becomes a list of Text quantities
-                           . map (cellsFromMixedAmount (setDisplayCommodityBare bopts cs))
+                           . map (cellsFromMixedAmount (setDisplayCommodityBare cs bopts))
                            $ clsamts
-      LayoutBareWide   -> [concatMap (cellsFromMixedAmount (setDisplayCommodityBare bopts allCommodities))
+      LayoutBareWide   -> [concatMap (cellsFromMixedAmount (setDisplayCommodityBare allCommodities bopts))
                             $ clsamts]
       LayoutTidy       -> concat
                            . zipWith (map . addDateColumns) colspans
                            . map ( zipWith (\c a -> [wbCell c, a]) cs
-                                  . cellsFromMixedAmount (setDisplayCommodityBare bopts cs))
+                                  . cellsFromMixedAmount (setDisplayCommodityBare cs bopts))
                            $ classified
                                  -- Do not include totals column or average for tidy output, as this
                                  -- complicates the data representation and can be easily calculated
@@ -1274,7 +1274,7 @@ budgetReportAsTable ropts@ReportOpts{..} (PeriodicReport spans items totrow) =
           LayoutWide width ->
                ( pure . showMixedAmountB oneLineNoCostFmt{displayMaxWidth=width, displayColour=color_}
                , \a -> pure . percentage a)
-          _ -> ( showMixedAmountLinesB (setDisplayCommodityBare noCostFmt cs){displayCommodity=layout_/=LayoutBare, displayColour=color_}
+          _ -> ( showMixedAmountLinesB (setDisplayCommodityBare cs noCostFmt){displayCommodity=layout_/=LayoutBare, displayColour=color_}
                , \a b -> map (percentage' a b) cs)
           where
             -- | Calculate the percentage of actual change to budget goal to show, if any.
@@ -1394,7 +1394,7 @@ budgetReportAsSpreadsheet
       where
         bareCells cs_ =
           map (map (fmap wbToText) .
-          cellsFromMixedAmount (setDisplayCommodityBare fmt cs_) .
+          cellsFromMixedAmount (setDisplayCommodityBare cs_ fmt) .
           second (fromMaybe nullmixedamt))
         cs = S.toList . mconcat . map maCommodities $ mapMaybe snd vals
         vals = flattentuples rc (if not summary_only_ then as else [])
@@ -1405,12 +1405,12 @@ budgetReportAsSpreadsheet
                         (budgetAverageClass rc, budgetavg)]
                             | average_]
 
-setDisplayCommodityBare :: AmountFormat -> [CommoditySymbol] -> AmountFormat
-setDisplayCommodityBare fmt cs =
+setDisplayCommodityBare :: [CommoditySymbol] -> AmountFormat -> AmountFormat
+setDisplayCommodityBare cs fmt =
     fmt{
-        displayCommodity=False,
-        displayCommodityOrder=Just cs,
-        displayMinWidth=Nothing
+        displayCommodity = False,
+        displayCommodityOrder = Just cs,
+        displayMinWidth = Nothing
     }
 
 
