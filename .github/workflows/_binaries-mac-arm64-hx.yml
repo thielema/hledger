@@ -1,11 +1,11 @@
-# TRIGGER: Runs on any push to binaries-mac-arm64-hx or binaries branches.
+# TRIGGER: Runs on any push to the binaries-mac-arm64-hx branch.
 # ACTION: Builds, tests and saves mac arm64 dynamic binaries with hx,
 # using the ghc configured in hx.toml and the deps saved in hx.lock.
 
 name: binaries-mac-arm64-hx
 on:
   push:
-    branches: [ binaries-mac-arm64-hx, binaries ]
+    branches: [ binaries-mac-arm64-hx ]
   workflow_dispatch:
 
 jobs:
