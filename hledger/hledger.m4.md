@@ -7112,8 +7112,12 @@ See [Cost basis methods](#cost-basis-methods).
 
 Sometimes you may want to disable lots/gains processing,
 to silence lot-related errors when you are working with incomplete journals
-(eg, when piping hledger print into another hledger command).
+(eg, when piping hledger print into another hledger command,
+or when fixing a complex journal's problems one at a time).
 For this, use the `--ignore-lots` flag, or just `-I`.
+This skips lot tracking, capital gains calculation, and all lot error
+checking, while still doing enough lot inference that lot entries
+balance as usual.
 
 ## First lots example
 
@@ -7312,8 +7316,8 @@ Note this enclosing the leaf account name (final account name component) in `{` 
 and hledger will report an error if what's inside the braces is is not a valid lot name.
 This is a breaking change from hledger 1.x, which had no special handling for such names.
 If you have such an account name and don't want hledger to reject it,
-you can pass `--ignore-lots` (or `-I`) to skip lot processing entirely,
-causing `:{...}` to be treated as ordinary subaccounts.
+you can pass `--ignore-lots` (or `-I`) to skip most lot processing,
+allowing `:{...}` names to be treated as ordinary subaccounts.
 
 When [strictly checking account names](#account-error-checking), lot subaccounts are ignored -
 you only need to declare the base account (eg `assets:stocks`), not the lot subaccounts.

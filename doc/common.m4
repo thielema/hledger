@@ -91,7 +91,7 @@ General input flags:
                             hledger-ui, also make future-dated transactions
                             visible at startup.
      --ignore-assertions    don't check balance assertions by default
-     --ignore-lots          don't check lot entries by default
+     --ignore-lots          don't do lot tracking or checking by default
   -I                        shortcut for --ignore-assertions --ignore-lots
      --txn-balancing=...    how to check that transactions are balanced:
                             'old':   - use global display precision

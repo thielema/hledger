@@ -36,16 +36,51 @@ lot-related content (lotful commodities, cost basis annotations, or
 disposals) is validated up front. Journals with no lot activity pay near-zero cost
 via an internal fast path.
 
-This processing can be disabled with `--ignore-lots` (or its shortcut alias `-I`,
-which also sets `--ignore-assertions`). When either is active, the gated lot pipeline
-stages (`journalAddGainOrUGainPosting`, `journalCheckLotsTagValues`,
-`journalCalculateLots`, `journalAddOrCheckGainPostings`) are skipped entirely.
-Capital gains are not
-inferred, lot subaccounts are not added, and lot-related errors (malformed `lots:`
-tags, missing lot cost, ambiguous selectors, dispose-before-acquire, etc.) are not
-raised. Classification tags and cost inference from user-written `{}` annotations
-still happen, since those stages run before the `--ignore-lots` gate. Use this when
-working with incomplete journal fragments (eg piping between hledger commands).
+Lot checking can be disabled with `--ignore-lots` (or its shortcut alias `-I`,
+which also sets `--ignore-assertions`). This is a troubleshooting aid, for
+loading incomplete or problematic journals (eg piping between hledger
+commands, or fixing a complex journal incrementally); it silences lot errors
+without introducing new ones. It splits the lot pipeline in two:
+
+- The pre-balancing "enrichment" stages still run, so lot entries balance
+  the same as with lots enabled: `journalInferBasisFromAccountNames` (in
+  lenient mode: an invalid or conflicting lot subaccount name leaves the
+  posting unchanged, an ordinary subaccount, instead of erroring),
+  `journalInferPostingsTransactedCost`, `journalAddGainOrUGainPosting` (in
+  lenient mode: the amountless-gain-posting error is skipped), and
+  `journalStripBalancerCopiedBases`. The transaction balancer also stays
+  lot-aware (`lotful_commodities_`/`account_lots_tags_` are populated as
+  usual, so lot fee auto-splitting still works), with one relaxation: the
+  lot quantity mismatch veto on balancing cost inference is skipped
+  (`lenient_lots_` in BalancingOpts), so a transfer whose lot quantities
+  don't add up (eg an unrecorded fee) loads with an inferred conversion
+  cost instead of erroring. Thus `--ignore-lots` loads a superset of the
+  journals that load with lots enabled.
+
+- The post-balancing checking and calculation stages are skipped entirely:
+  `journalClassifyLotPostings`, `journalCheckLotsTagValues`,
+  `journalCheckLotsMethodCoherence`, `journalCalculateLots`,
+  `journalAddOrCheckGainPostings`. Capital gains are not inferred or
+  checked, lot subaccounts are not added, and lot-related errors (malformed
+  `lots:` tags, missing lot cost, ambiguous selectors, dispose-before-acquire,
+  insufficient lots, etc.) are not raised.
+
+Rationale (2026-09): before this split, `--ignore-lots` skipped the
+pre-balancing stages and blanked the balancer's lot-awareness too, which
+made it *add* errors and misreadings rather than only removing them:
+disposals with a written gain amount failed to balance (unbalanced by the
+gain), transfers with a priced fee failed to balance (the fee's at-cost
+value only cancels in split form), an acquire with an elided counterpart
+and a `{cost}` balanced wrongly (the counterpart was mirrored as the lot
+commodity instead of money), and amountless gain postings were inferred as
+multi-commodity garbage. Only the pre-balancing stages can affect
+balancedness, so running them always (leniently) and skipping only the
+post-balancing stages gives the desired "silence errors, add none"
+behaviour. Known accepted exceptions - entries old `--ignore-lots` loaded
+that now error (identically to lots-on mode, being genuinely
+inconsistent): a lot subaccount name whose basis contradicts an explicit
+counterpart amount at a different price, and a gain entry that balanced
+only without its inferred counterpart posting.
 
 `--strict`/`-s` and `hledger check lots` both override `--ignore-lots`, restoring
 full lot processing for that invocation.
@@ -64,7 +99,8 @@ When `--lots` is absent, reports show a collapsed view: lot subaccounts are hidd
 synthetic placeholder postings are dropped, and inferred gain amounts appear on the
 base (parent) gain account rather than on per-lot detail accounts. Inferred gains are
 visible in reports like `incomestatement` even without `--lots` — unless
-`--ignore-lots` is in effect, in which case no gains were inferred in the first place.
+`--ignore-lots` is in effect, in which case gains are not calculated from lots
+(only user-written gain postings, and their generated balancing counterparts, appear).
 
 In the journal, lot operations can be recorded
 
@@ -806,9 +842,12 @@ this line shows how hledger read it, keeping the two clearly separate.
 See [SPEC-finalising.md](SPEC-finalising.md) for how this sits in the
 broader pipeline.
 
-All stages below are **gated by `checklots`** — they run when none of
-`--ignore-lots` or `-I` is set, or when `--strict`/`-s` or `hledger check lots`
-overrides them.
+The post-balancing stages below are **gated by `checklots`** — they run when
+none of `--ignore-lots` or `-I` is set, or when `--strict`/`-s` or `hledger
+check lots` overrides them. The pre-balancing stages and the balancer's
+lot-awareness always run, so lot entries balance the same in both modes;
+with `--ignore-lots` the pre-balancing stages are lenient, skipping their
+errors (see "Lots mode" above).
 
 Lot classification runs **once, after transaction balancing**, when every
 posting amount (including ones inferred from elided amounts or balance
@@ -878,7 +917,8 @@ Post-balancing:
 The gated stages raise errors when the journal contains lot-related content that
 can't be resolved (missing lot cost, ambiguous selectors, dispose before acquire,
 malformed `lots:` tag values, etc.); `--ignore-lots` suppresses these by skipping
-the stages entirely.
+the gated stages entirely (and by making the always-on pre-balancing stages
+lenient).
 
 The `--lots` flag is a display toggle consumed in the report-loading layer
 (`journalTransform` in `Hledger.Cli.Utils`). When absent, `journalCollapseLotDetail`

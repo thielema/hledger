@@ -270,7 +270,7 @@ to add up. If the difference is a fee, you can either
   adding up to the missing quantity
 - or split the sending posting into a transfer part and fee part(s)
   matching the fee expense(s).
-(Lot processing can be disabled with --ignore-lots.)
+(With --ignore-lots, a balancing conversion cost is inferred instead.)
 >=1
 
 # ** 16. A balanced transfer-like entry where more of the lotful commodity is

@@ -1057,8 +1057,12 @@ mkGeneratedGainPosting verbosetags acc amt ptypeTag =
 -- correct is checked later by 'journalAddOrCheckGainPostings' after lot
 -- matching. Disposals with no detectable rgain are left alone; if there's a
 -- disposal gain, the rgain+ugain pair is added by 'journalAddOrCheckGainPostings'.
-journalAddGainOrUGainPosting :: Bool -> Journal -> Either String Journal
-journalAddGainOrUGainPosting verbosetags j = do
+--
+-- With a true first argument (lenient mode, used by --ignore-lots), the
+-- amountless-gain-posting error is skipped, leaving that transaction
+-- unchanged for the balancer to handle.
+journalAddGainOrUGainPosting :: Bool -> Bool -> Journal -> Either String Journal
+journalAddGainOrUGainPosting lenient verbosetags j = do
     txns' <- mapM infer (jtxns j)
     Right j{jtxns = txns'}
   where
@@ -1100,7 +1104,8 @@ journalAddGainOrUGainPosting verbosetags j = do
       where ps = filter isReal (tpostings t)
 
     addCounter t existing missingAcc ptypeTag
-      | any (not . hasAmount) existing = Left (amountlessErr t)
+      | any (not . hasAmount) existing =
+          if lenient then Right t else Left (amountlessErr t)
       | otherwise =
           let balancingP = mkGeneratedGainPosting verbosetags missingAcc (maNegate $ foldMap pamount existing) ptypeTag
           in  Right $ txnTieKnot t{tpostings = tpostings t ++ [balancingP]}

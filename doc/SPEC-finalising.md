@@ -59,35 +59,46 @@ journalFinalise
   9.  journalAddAutoPostings            -- if --auto, do transaction balancing (preliminary) to infer some missing amounts/costs,
                                         -- then apply auto posting rules. Calls journalBalanceTransactions.
 
-  -- Lot cost basis inference from account names, classification, and transacted cost inference (before balancing)
+  -- Lot cost basis and transacted cost inference (before balancing; always run,
+  -- so lot entries balance the same with or without --ignore-lots;
+  -- lenient with --ignore-lots: their errors are skipped, leaving the affected postings unchanged)
   10. journalInferBasisFromAccountNames  -- if account name has a {…} lot subaccount, parse cost basis from it
-  11. journalClassifyLotPostings         -- tag lot postings as acquire/dispose/transfer-from/transfer-to
-  12. journalInferPostingsTransactedCost  -- infer cost from cost basis of acquire postings
+  11. journalInferPostingsTransactedCost -- infer cost from cost basis of acquire postings
+  12. journalAddGainOrUGainPosting       -- if only one of rgain/ugain is written, add the other
+                                         -- (pre-balancer, so the ordinary balancer accepts the paired disposal)
 
   -- Transaction balancing (main)
   13. journalBalanceTransactions         -- infer remaining balancing amounts, balancing costs, and balance assignment amounts;
                                         -- and check transactions balanced and (unless --ignore-assertions) balance assertions satisfied.
+                                        -- Lot-aware in both modes (lotful commodities guide cost inference, lot fees are auto-split);
+                                        -- with --ignore-lots (lenient_lots_), the lot quantity mismatch veto on
+                                        -- balancing cost inference is skipped, so mismatched transfers load.
+
+  -- Lot classification (default; skipped by --ignore-lots/-I; restored by --strict or `check lots`)
+  14. journalClassifyLotPostings         -- tag lot postings as acquire/dispose/transfer-from/transfer-to
 
   -- Post-balancing enrichment
-  14. journalInferCommodityStyles        -- infer canonical commodity styles, now with all amounts present
-  15. journalPostingsAddCommodityTags    -- propagate commodity tags to postings
-  16. journalTagCostsAndEquityAndMaybeInferCosts(2nd)   -- if --infer-costs, infer costs from equity conversion postings
-  17. journalInferEquityFromCosts        -- if --infer-equity, infer equity conversion postings from costs
-  18. journalInferMarketPricesFromTransactions  -- infer market prices from costs
-  19. journalRenumberAccountDeclarations  -- renumber account declarations for consistent ordering
+  15. journalInferCommodityStyles        -- infer canonical commodity styles, now with all amounts present
+  16. journalPostingsAddCommodityTags    -- propagate commodity tags to postings
+  17. journalTagCostsAndEquityAndMaybeInferCosts(2nd)   -- if --infer-costs, infer costs from equity conversion postings
+  18. journalInferEquityFromCosts        -- if --infer-equity, infer equity conversion postings from costs
+  19. journalInferMarketPricesFromTransactions  -- infer market prices from costs
+  20. journalInferAliasPrices            -- inject 1:1 bridges for alias: tags on commodity directives
+  21. journalRenumberAccountDeclarations  -- renumber account declarations for consistent ordering
 
-  -- Lot calculation (default; skipped by --ignore-lots/-I; restored by --strict or `check lots`)
-  20. journalAddGainOrUGainPosting     -- if only one of rgain/ugain is written, add the other
-                                       -- (pre-balancer, so the ordinary balancer accepts the paired disposal)
-  21. journalCheckLotsTagValues         -- validate lots: tag values on commodity/account declarations
-  22. journalCalculateLots              -- evaluate lot selectors, apply reduction methods,
+  -- Lot calculation and checking (default; skipped by --ignore-lots/-I; restored by --strict or `check lots`)
+  22. journalCheckLotsTagValues         -- validate lots: tag values on commodity/account declarations
+  23. journalCheckLotsMethodCoherence   -- reject a global (*ALL) method mixed with other methods for one commodity
+  24. journalCalculateLots              -- evaluate lot selectors, apply reduction methods,
                                         -- calculate lot balances, add explicit lot subaccounts,
                                         -- infer cost basis for bare disposals, normalize transacted cost
-  23. journalCheckAcquireBasis         -- gated separately on `hledger check basis` (not on checklots);
+  25. journalCheckAcquireBasis         -- gated separately on `hledger check basis` (not on checklots);
                                        -- error if any acquire posting has cost basis ≠ transacted cost
-  24. journalAddOrCheckGainPostings    -- for disposals with no gain postings, add the rgain+ugain pair
+  26. journalAddOrCheckGainPostings    -- for disposals with no gain postings, add the rgain+ugain pair
                                        -- sized at the disposal gain; otherwise check any user-written
                                        -- gain amount against the disposal gain
+  27. journalStripBalancerCopiedBases  -- always: remove balancer-copied basis annotations,
+                                       -- kept until now as classification evidence
 ```
 
 ## Sequencing constraints
@@ -195,13 +206,16 @@ Several steps only run with specific flags:
 | journalAddAutoPostings                 | `--auto`                                                        |
 | journalTagCostsAndEquity (2nd)         | `--infer-costs`                                                 |
 | journalInferEquityFromCosts            | `--infer-equity`                                                |
-| journalAddGainOrUGainPosting           | default; skipped by `--ignore-lots`/`-I`; restored by `--strict` or `hledger check lots` |
+| journalInferBasisFromAccountNames      | always; lenient (skips its errors) with `--ignore-lots`/`-I`, unless restored by `--strict` or `hledger check lots` |
+| journalAddGainOrUGainPosting           | always; lenient, as above                                       |
+| journalClassifyLotPostings             | default; skipped by `--ignore-lots`/`-I`; restored by `--strict` or `hledger check lots` |
 | journalCheckLotsTagValues              | same                                                            |
+| journalCheckLotsMethodCoherence        | same                                                            |
 | journalCalculateLots                   | same                                                            |
 | journalCheckAcquireBasis               | only when `hledger check basis` is requested                    |
-| journalAddOrCheckGainPostings          | same as the other lot stages above                              |
+| journalAddOrCheckGainPostings          | same as the other gated lot stages above                        |
 
-The four lot stages are gated together by a single `checklots` condition, mirroring
+The gated lot stages share a single `checklots` condition, mirroring
 the `checkassertions` mechanism:
 
 ```haskell
@@ -209,6 +223,11 @@ checklots = not ignore_lots_ || strict_ || checking "lots"
 ```
 
 where `checking "lots"` peeks at `progArgs` for a literal `check lots` invocation.
+When `checklots` is off, the pre-balancing lot stages run in lenient mode
+(skipping their errors) rather than being skipped, and the transaction balancer
+relaxes its lot quantity mismatch veto (`lenient_lots_` in BalancingOpts),
+so that --ignore-lots silences lot errors without introducing new ones
+(see SPEC-lots.md "Lots mode").
 
 The `--lots` flag is a separate display-time toggle that controls whether reports
 show the full lot detail or a collapsed view (via `journalCollapseLotDetail` in the

@@ -41,7 +41,7 @@ data InputOpts = InputOpts {
     ,auto_              :: Bool                 -- ^ generate extra postings according to auto posting rules ?
     ,infer_equity_      :: Bool                 -- ^ infer equity conversion postings from costs ?
     ,infer_costs_       :: Bool                 -- ^ infer costs from equity conversion postings ? distinct from BalancingOpts{infer_balancing_costs_}
-    ,ignore_lots_       :: Bool                 -- ^ skip lot tracking checks and inference ?
+    ,ignore_lots_       :: Bool                 -- ^ skip lot tracking and its checks, silencing lot errors ? (basic lot inference still runs, leniently, so lot entries balance)
     ,balancingopts_     :: BalancingOpts        -- ^ options for transaction balancing
     ,strict_            :: Bool                 -- ^ do extra correctness checks ?
     ,_defer             :: Bool                 -- ^ internal flag: postpone checks, because we are processing multiple files ?

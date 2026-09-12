@@ -72,6 +72,7 @@ data BalancingOpts = BalancingOpts
   , account_types_         :: M.Map AccountName AccountType  -- ^ account type map, passed through for any balancing helpers that need it
   , lotful_commodities_    :: S.Set CommoditySymbol  -- ^ commodities declared lotful, used to guide balancing cost inference (when lots are enabled)
   , account_lots_tags_     :: M.Map AccountName T.Text  -- ^ declared lots: tag values by account, used to detect lots: NONE opt-outs (when lots are enabled)
+  , lenient_lots_          :: Bool  -- ^ with --ignore-lots: relax the lot quantity mismatch veto, inferring a balancing conversion cost anyway
   , verbose_balancing_tags_        :: Bool  -- ^ should tags added by balancing helpers (eg lot fee splits) also be made visible in comments ?
   } deriving (Eq, Ord, Show)
 
@@ -84,6 +85,7 @@ defbalancingopts = BalancingOpts
   , account_types_         = M.empty
   , lotful_commodities_    = S.empty
   , account_lots_tags_     = M.empty
+  , lenient_lots_          = False
   , verbose_balancing_tags_        = False
   }
 
@@ -105,7 +107,7 @@ defbalancingopts = BalancingOpts
 --    (using the given display styles if provided)
 --
 transactionCheckBalanced :: BalancingOpts -> Transaction -> [String]
-transactionCheckBalanced BalancingOpts{commodity_styles_=_mglobalstyles, txn_balancing_, lotful_commodities_} t = errs
+transactionCheckBalanced BalancingOpts{commodity_styles_=_mglobalstyles, txn_balancing_, lotful_commodities_, lenient_lots_} t = errs
   where
     -- get real and balanced virtual postings, to be checked separately
     (rps, bvps) = foldr partitionPosting ([], []) $ tpostings t
@@ -172,7 +174,7 @@ transactionCheckBalanced BalancingOpts{commodity_styles_=_mglobalstyles, txn_bal
         -- to balance by inference.
         lotmismatchmsg ps = case map T.unpack $ lotMismatchCommodities lotful_commodities_ ps of
           [] -> ""
-          cs -> unlines [
+          cs -> unlines $ [
              "\nNote, " ++ intercalate ", " cs ++ " is a lot-tracked commodity being transferred between accounts,"
             ,"so no balancing conversion cost was inferred; its quantities are expected"
             ,"to add up. If the difference is a fee, you can either"
@@ -180,8 +182,8 @@ transactionCheckBalanced BalancingOpts{commodity_styles_=_mglobalstyles, txn_bal
             ,"  adding up to the missing quantity"
             ,"- or split the sending posting into a transfer part and fee part(s)"
             ,"  matching the fee expense(s)."
-            ,"(Lot processing can be disabled with --ignore-lots.)"
             ]
+            ++ ["(With --ignore-lots, a balancing conversion cost is inferred instead.)" | not lenient_lots_]
         oldbalancingmsg = unlines [
           -- -------------------------------------------------------------------------------
            "\nNote, hledger <1.50 accepted this entry because of the global display precision,"
@@ -242,7 +244,7 @@ balanceTransactionHelper :: BalancingOpts -> Transaction -> Either String (Trans
 balanceTransactionHelper bopts t = do
   let lbl = lbl_ "balanceTransactionHelper"
   (t', inferredamtsandaccts) <- t
-    & (if infer_balancing_costs_ bopts then transactionInferBalancingCosts (lotful_commodities_ bopts) else id)
+    & (if infer_balancing_costs_ bopts then transactionInferBalancingCosts (lenient_lots_ bopts) (lotful_commodities_ bopts) else id)
     & dbg9With (lbl "amounts after balancing-cost-inferring".show.map showMixedAmountOneLine.transactionAmounts)
     & transactionInferBalancingAmount (fromMaybe M.empty $ commodity_styles_ bopts) (account_types_ bopts)
     <&> dbg9With (lbl "balancing amounts inferred".show.map (second showMixedAmountOneLine).snd)
@@ -384,10 +386,10 @@ transactionInferBalancingAmount styles _atypes t@Transaction{tpostings=ps}
 -- use any decimal places. The minimum of 2 helps make the costs shown by the
 -- print command a bit less surprising in this case. Could do better.)
 --
-transactionInferBalancingCosts :: S.Set CommoditySymbol -> Transaction -> Transaction
-transactionInferBalancingCosts lotfulcomms t@Transaction{tpostings=ps} = t{tpostings=ps'}
+transactionInferBalancingCosts :: Bool -> S.Set CommoditySymbol -> Transaction -> Transaction
+transactionInferBalancingCosts lenientlots lotfulcomms t@Transaction{tpostings=ps} = t{tpostings=ps'}
   where
-    ps' = map (costInferrerFor lotfulcomms t BalancedVirtualPosting . costInferrerFor lotfulcomms t RealPosting) ps
+    ps' = map (costInferrerFor lenientlots lotfulcomms t BalancedVirtualPosting . costInferrerFor lenientlots lotfulcomms t RealPosting) ps
 
 -- | Does one of these postings make this commodity look lot-related ?
 -- True if the commodity appears in a posting amount with a cost basis
@@ -442,8 +444,8 @@ lotMismatchCommodities lotfulcomms postings =
 -- balance the posting, if and as appropriate for the given transaction and
 -- posting realness (real or balanced virtual) (or if we cannot or should not infer
 -- costs, leaves the posting unchanged).
-costInferrerFor :: S.Set CommoditySymbol -> Transaction -> PostingRealness -> (Posting -> Posting)
-costInferrerFor lotfulcomms t pt = maybe id infercost inferFromAndTo
+costInferrerFor :: Bool -> S.Set CommoditySymbol -> Transaction -> PostingRealness -> (Posting -> Posting)
+costInferrerFor lenientlots lotfulcomms t pt = maybe id infercost inferFromAndTo
   where
     lbl = lbl_ "costInferrerFor"
     postings     = filter (\p -> preal p == pt) $ tpostings t
@@ -452,7 +454,8 @@ costInferrerFor lotfulcomms t pt = maybe id infercost inferFromAndTo
 
     -- We can infer prices if there are no prices given, exactly two commodities in the normalised
     -- sum of postings in this transaction, these two have opposite signs, and neither looks like
-    -- a lot quantity mismatch (see lotMismatchCommodities). The amount we are
+    -- a lot quantity mismatch (see lotMismatchCommodities; this veto is skipped in lenient
+    -- --ignore-lots mode, letting such entries load). The amount we are
     -- converting from is normally the first commodity to appear in the ordered list of postings;
     -- but if exactly one of the two commodities looks lot-related (its posting has a cost basis
     -- annotation or an inherited lots: account tag), or failing that, is a declared lotful
@@ -461,7 +464,7 @@ costInferrerFor lotfulcomms t pt = maybe id infercost inferFromAndTo
     -- used here; these are shape checks.)
     -- If we cannot infer prices, return Nothing.
     inferFromAndTo = case sumamounts of
-      [a,b] | noprices, oppositesigns, null (lotMismatchCommodities lotfulcomms postings) ->
+      [a,b] | noprices, oppositesigns, lenientlots || null (lotMismatchCommodities lotfulcomms postings) ->
         prefer (commodityHasLotPosting postings) <|> prefer (`S.member` lotfulcomms) <|> asum (map orderIfMatches pcommodities)
         where
           prefer hasquality = case (hasquality (acommodity a), hasquality (acommodity b)) of

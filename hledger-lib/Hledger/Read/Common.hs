@@ -342,6 +342,7 @@ journalFinalise iopts@InputOpts{auto_,balancingopts_,ignore_lots_,infer_costs_,i
     checkordereddates = checking "ordereddates"
     checkassertions = not ignore_assertions_ || strict_ || checking "assertions"
     checklots       = not ignore_lots_       || strict_ || checking "lots"
+    lenientlots     = not checklots
     checkbasis      = checking "basis"
 
   t <- liftIO getPOSIXTime
@@ -368,23 +369,28 @@ journalFinalise iopts@InputOpts{auto_,balancingopts_,ignore_lots_,infer_costs_,i
       -- Auto postings
       >>= (if auto_ && not (null $ jtxnmodifiers pj)
             then journalAddAutoPostings verbose_tags_ _ioDay                      -- add auto postings if enabled; does preliminary transaction balancing
-                  balancingopts_{lotful_commodities_ = if checklots then journalLotfulCommodities pj else mempty
-                                ,account_lots_tags_ = if checklots then journalAccountLotsTags pj else mempty
+                  balancingopts_{lotful_commodities_ = journalLotfulCommodities pj
+                                ,account_lots_tags_ = journalAccountLotsTags pj
+                                ,lenient_lots_ = lenientlots
                                 ,verbose_balancing_tags_ = verbose_tags_}
             else pure)
 
       -- Lot cost basis and transacted cost inference
-      -- (skipped by --ignore-lots or -I; forced back on by --strict or `hledger check lots`)
-      >>= (if checklots then journalInferBasisFromAccountNames           else pure)  -- infer cost basis from lot subaccount names (validates them)
-      <&> (if checklots then journalInferPostingsTransactedCost          else id  )  -- in acquire-shaped postings, infer a transacted cost from cost basis
-      >>= (if checklots then journalAddGainOrUGainPosting verbose_tags_  else pure)  -- if user wrote an explicit rgain or ugain posting alone, add its counter
+      -- These enrichment stages always run, so lot entries balance the same
+      -- with or without --ignore-lots; with --ignore-lots (unless overridden
+      -- by --strict or `hledger check lots`) they are lenient, skipping their
+      -- errors and leaving the affected postings/transactions unchanged.
+      >>= journalInferBasisFromAccountNames lenientlots                           -- infer cost basis from lot subaccount names (validating them, unless lenient)
+      <&> journalInferPostingsTransactedCost                                      -- in acquire-shaped postings, infer a transacted cost from cost basis
+      >>= journalAddGainOrUGainPosting lenientlots verbose_tags_                  -- if user wrote an explicit rgain or ugain posting alone, add its counter
 
       -- Transaction balancing
       >>= (\j -> if checkordereddates then journalCheckOrdereddates j $> j else Right j)     -- maybe check that journal entries are in date order
       >>= (\j -> journalBalanceTransactions                                                  -- infer balance assignments/amounts, maybe check balance assertions
             (balancingopts_{ignore_assertions_=not checkassertions, account_types_ = jaccounttypes j
-                           ,lotful_commodities_ = if checklots then journalLotfulCommodities j else mempty
-                           ,account_lots_tags_ = if checklots then journalAccountLotsTags j else mempty
+                           ,lotful_commodities_ = journalLotfulCommodities j
+                           ,account_lots_tags_ = journalAccountLotsTags j
+                           ,lenient_lots_ = lenientlots
                            ,verbose_balancing_tags_ = verbose_tags_}) j)
 
       -- Lot classification
@@ -413,7 +419,7 @@ journalFinalise iopts@InputOpts{auto_,balancingopts_,ignore_lots_,infer_costs_,i
       >>= (if checklots then journalCalculateLots verbose_tags_          else pure)  -- evaluate lot selectors, calculate lot balances, add lot subaccounts
       >>= (if checkbasis then journalCheckAcquireBasis                   else pure)  -- if `hledger check basis`, error on any acquire with cost basis ≠ transacted cost
       >>= (if checklots then journalAddOrCheckGainPostings verbose_tags_ else pure)  -- in disposal transactions, add the realised-gain + unrealised-gain posting pair
-      <&> (if checklots then journalStripBalancerCopiedBases             else id  )  -- remove balancer-copied basis annotations, kept until now as classification evidence
+      <&> journalStripBalancerCopiedBases                                            -- remove balancer-copied basis annotations, kept until now as classification evidence
 
 -- | Apply any auto posting rules to generate extra postings on this journal's transactions.
 -- With a true first argument, adds visible tags to generated postings and modified transactions.
@@ -447,8 +453,12 @@ journalAddForecast verbosetags (Just forecastspan) j = j{jtxns = jtxns j ++ fore
 -- name and set or merge it into the posting's amounts' @acostbasis@.
 -- This allows users to write lot subaccounts explicitly without redundant @{...}@
 -- amount annotations.
-journalInferBasisFromAccountNames :: Journal -> Either String Journal
-journalInferBasisFromAccountNames j = do
+--
+-- With a true first argument (lenient mode, used by --ignore-lots), a posting
+-- whose lot subaccount name is invalid or conflicting is left unchanged
+-- (treated as an ordinary subaccount) instead of raising an error.
+journalInferBasisFromAccountNames :: Bool -> Journal -> Either String Journal
+journalInferBasisFromAccountNames lenient j = do
   txns' <- mapM processTransaction (jtxns j)
   Right j{jtxns = txns'}
   where
@@ -460,7 +470,11 @@ journalInferBasisFromAccountNames j = do
       ps' <- mapM processPosting (tpostings t)
       Right t{tpostings = ps'}
 
-    processPosting p = case lotSubaccountName (paccount p) of
+    processPosting p
+      | lenient   = Right $ either (const p) id $ inferPosting p
+      | otherwise = inferPosting p
+
+    inferPosting p = case lotSubaccountName (paccount p) of
       Nothing   -> Right p
       Just name -> do
         cb <- first (lotErr p) $ parseLotName parseAmt name
