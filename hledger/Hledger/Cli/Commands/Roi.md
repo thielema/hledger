@@ -63,7 +63,7 @@ $ hledger roi --inv 'term1 term2 term3 ...'
 If any query terms contain spaces themselves, you will need an extra level of nested quoting, eg:
 
 ```cli
-$ hledger roi --inv="'Assets:Test 1'" --pnl="'Equity:Unrealized Profit and Loss'"
+$ hledger roi --inv="'Assets:Test 1' cur:USD" --pnl="'Equity:Unrealized Profit and Loss'"
 ```
 
 ### Semantics of `--inv` and `--pnl`
