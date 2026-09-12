@@ -260,7 +260,9 @@ showLotName CostBasis{cbDate, cbLabel, cbCost} =
     parts = catMaybes
       [ fmap (T.pack . show) cbDate
       , fmap (\l -> "\"" <> l <> "\"") cbLabel
-      , fmap (T.pack . showAmountWith noCostFmt) cbCost
+      -- Show a zero cost with its commodity symbol (eg $0), not as a bare 0:
+      -- the name is the lot's basis of record, and must round-trip faithfully.
+      , fmap (T.pack . showAmountWith noCostFmt{displayZeroCommodity=True}) cbCost
       ]
 
 -- | Apply the journal's canonical commodity styles to a 'CostBasis's cost

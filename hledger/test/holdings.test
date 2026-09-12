@@ -773,3 +773,28 @@ Holdings on 2026-01-31
 --------++-------------------------------------------------------------------------------------------
         ||                                           $100                                            
 
+# ** 44. A zero-cost lot (eg bonus shares / a stock dividend) is fully valued: its name keeps
+# the cost commodity ({..., $0}, not {..., 0}), so its value commodity is
+# known and Price, Value, UGain and the totals appear.
+<
+commodity AAA ; lots:
+
+2025-01-01 buy
+    assets:cash     $-100
+    assets:broker   10 AAA {$10}
+
+2025-02-01 bonus shares
+    assets:broker    5 AAA @@ $0
+    equity:bonus    -5 AAA @@ $0
+
+P 2025-12-31 AAA $11
+
+$ hledger -f- holdings --lots -e 2026-01-02
+Holdings on 2026-01-01
+
+                                 ||       Date   Age   Units  Unit cost  Price  Cost  Value  Weight  UGain  UGain%  RGain   XIRR 
+=================================++==============================================================================================
+ assets:broker:{2025-01-01, $10} || 2025-01-01  1.0y  10 AAA        $10    $11  $100   $110   66.7%    $10   10.0%         10.0% 
+ assets:broker:{2025-02-01, $0}  || 2025-02-01  334d   5 AAA          0    $11     0    $55   33.3%    $55                       
+---------------------------------++----------------------------------------------------------------------------------------------
+                                 ||                                             $100   $165  100.0%    $65   65.0%         65.1% 
