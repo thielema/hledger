@@ -773,3 +773,28 @@ commodity ABC ; lots:
 $ hledger -f- bal --lots -N
                 $-22  assets:cash
                5 ABC  expenses:charity
+
+# ** 41. A multi-lot stock split in one transaction. The equal-quantity
+# priced postings (+20 from one lot, -20 from another) must not be paired
+# as a same-account transfer; priced postings are always dispose/acquire.
+<
+commodity AAA ; lots:
+
+2022-01-01 buy
+    assets:cash          -$100
+    assets:broker      10 AAA @@ $100
+
+2022-02-01 bonus shares
+    assets:broker      20 AAA @@ $0
+    equity:bonus      -20 AAA @@ $0
+
+2022-03-01 2:1 split of both lots
+    assets:broker     -10 AAA {2022-01-01} @@ $100
+    assets:broker      20 AAA {2022-01-01} @@ $100
+    assets:broker     -20 AAA {2022-02-01} @@ $0
+    assets:broker      40 AAA {2022-02-01} @@ $0
+$ hledger -f- bal --lots -N
+              20 AAA  assets:broker:{2022-01-01, "0002", $5}
+              40 AAA  assets:broker:{2022-02-01, "0002", $0}
+               $-100  assets:cash
+             -20 AAA  equity:bonus

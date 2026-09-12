@@ -351,8 +351,11 @@ equity transfers, partial transfers with fees, and cost source inference.
 Classification proceeds in several steps. 
 
 **1. Same-account transfer pairs.**
-Within each account, negative and positive postings with the same commodity
-and exact absolute quantity are paired as transfer-from / transfer-to.
+Within each account, negative and positive unpriced postings with the same
+commodity and exact absolute quantity are paired as transfer-from /
+transfer-to. Priced postings are excluded (a priced posting is a deliberate
+trade, eg a stock split's dispose/re-acquire postings; and lot transfers may
+not be written with a transacted price).
 When there are more of one sign than the other, the excess are left
 unmatched and classified by the rules below.
 

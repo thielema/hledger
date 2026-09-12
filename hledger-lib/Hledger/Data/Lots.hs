@@ -649,9 +649,12 @@ transactionClassifyLotPostings verbosetags lookupAccountType commodityIsLotful a
          && amountsAreLotful amts
 
     -- Same-account transfer pairs: within each account, match positive and negative
-    -- postings with the same commodity and absolute quantity as transfer pairs.
+    -- unpriced postings with the same commodity and absolute quantity as transfer pairs.
     -- When there are more of one sign than the other, the excess are left unmatched
     -- (and will be classified normally as acquire/dispose).
+    -- Priced postings are excluded (a priced posting is a deliberate trade,
+    -- eg a stock split's dispose/re-acquire postings; and lot transfers may
+    -- not have a transacted price, so pairing one would only force an error).
     sameAcctTransferSet :: S.Set Int
     sameAcctTransferSet = S.fromList $ concatMap matchPairs $ M.elems grouped
       where
@@ -662,6 +665,7 @@ transactionClassifyLotPostings verbosetags lookupAccountType commodityIsLotful a
           | not (hasLotRelevantAmount p) = m
           | otherwise = foldl' (addAmt i (lotBaseAccount (paccount p))) m (amountsRaw (pamount p))
         addAmt i acct m a
+          | isJust (acost a) = m
           | q < 0     = M.insertWith mergePair (acct, acommodity a, negate q) ([i], []) m
           | q > 0     = M.insertWith mergePair (acct, acommodity a, q)        ([], [i]) m
           | otherwise = m
