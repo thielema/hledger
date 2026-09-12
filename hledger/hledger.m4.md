@@ -7331,13 +7331,14 @@ Lot ids also record the order in which lots were acquired.
 So if multiple lots of a commodity are acquired on the same date, they must have distinct, sortable labels.
 Eg the time of the event, in `HH:MM` format, could be used.
 Or if no labels are provided, hledger will add sequentially numbered labels starting from `0001`.
+These numbers are not reused, even after a lot has been fully disposed of.
 
 Acquisitions with these cost basis annotations would produce those lot ids:
 
     {2026-01-01, $50}           ; → "2026-01-01"
     {2026-01-02, "12:30", $50}  ; → "2026-01-02 12:30"
     {2026-01-03, $50}           ; → "2026-01-03 0001"
-    {2026-01-03, $50}           ; → "2026-01-04 0002"
+    {2026-01-03, $50}           ; → "2026-01-03 0002"
 
 ### Cost basis vs transacted cost
 

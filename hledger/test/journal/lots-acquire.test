@@ -509,3 +509,24 @@ $ hledger -f- print -a
     assets:broker1:{2026-01-01, $4.34782609}       2.3 ABC {$4.34782609} @@ $10 = 2.3 ABC  ; ptype: acquire
 
 >=
+
+# ** 37. An auto-generated label is not reused after its lot is fully
+# disposed: a later unlabeled acquisition with the same basis date gets the
+# next number ("0002"), keeping the lot history unambiguous.
+<
+commodity ABC ; lots:
+
+2026-01-01 buy
+    assets:cash    $-10
+    assets:broker   2 ABC {$5}
+
+2026-02-01 sell all
+    assets:broker  -2 ABC @ $6
+    assets:cash    $12
+
+2026-03-01 buy again with the same basis date
+    assets:cash    $-10
+    assets:broker   2 ABC {2026-01-01, $5}
+
+$ hledger -f- bal --lots -N assets:broker
+               2 ABC  assets:broker:{2026-01-01, "0002", $5}

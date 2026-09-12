@@ -1709,7 +1709,8 @@ getLotDate t cb = fromMaybe (tdate t) (cbDate cb)
 -- Uses the smallest sequence number, formatted as four (or more) digits
 -- ("0001", "0002", ...), that isn't already a label of an existing same-date
 -- lot. Skipping used numbers avoids colliding with user-provided labels
--- that happen to be in the same format.
+-- that happen to be in the same format. Fully disposed lots remain visible
+-- here as tombstones (see 'reduceLotState'), so their labels are not reused.
 generateLabel :: CommoditySymbol -> Day -> LotState -> T.Text
 generateLabel commodity date lotState = nextFree 1
   where
@@ -2029,7 +2030,11 @@ processAcquirePosting styles j needsLabels txnDate t lotState p = do
             Left _  -> Left $ showPos ++ "lot subaccount " ++ T.unpack (paccount p)
                               ++ " does not match the resolved lot " ++ T.unpack expectedAcct
 
-        when (M.member lotId existingLots) $
+        -- Only a live lot (with account entries) is a duplicate; a tombstone
+        -- (fully disposed lot, see 'reduceLotState') may be revived by an
+        -- explicitly-labelled acquisition, eg re-opening balances after
+        -- close --clopen --lots.
+        when (maybe False (not . M.null) (M.lookup lotId existingLots)) $
           Left $ showPos ++ "duplicate lot id: " ++ T.unpack lotName
                   ++ " for commodity " ++ T.unpack commodity
 
@@ -2626,16 +2631,18 @@ lotMatchesSelector selector a =
 
 -- | Subtract consumed quantities from LotState for a specific account.
 -- Removes lot-account entries whose balance reaches zero.
--- Removes the lot entirely if no accounts remain.
+-- A fully consumed lot's id is kept as a tombstone (a lot with no account
+-- entries), so that its label is never reused by a later same-date
+-- acquisition ('generateLabel'), keeping lot histories unambiguous.
+-- Tombstones are invisible elsewhere: lot selection, transfers, and pool
+-- updates all look only at lots' per-account amounts.
 reduceLotState :: AccountName -> CommoditySymbol -> [(LotId, Quantity)] -> LotState -> LotState
 reduceLotState account commodity consumed = M.adjust adjustCommodity commodity
   where
     adjustCommodity lots = foldl' reduceLot lots consumed
-    reduceLot lots (lotId, qty) = M.update shrinkLot lotId lots
+    reduceLot lots (lotId, qty) = M.adjust shrinkLot lotId lots
       where
-        shrinkLot acctMap =
-          let acctMap' = M.update (shrinkAmt qty) account acctMap
-          in if M.null acctMap' then Nothing else Just acctMap'
+        shrinkLot = M.update (shrinkAmt qty) account
         shrinkAmt q a
           | aquantity a <= q = Nothing
           | otherwise        = Just a{aquantity = aquantity a - q}
