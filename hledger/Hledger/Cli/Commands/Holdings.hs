@@ -467,15 +467,15 @@ holdings opts@CliOpts{rawopts_=rawopts, reportspec_=rspec@ReportSpec{_rsQuery=q,
       guard $ acommodity g == acommodity c && aquantity c /= 0
       Just $ 100 * aquantity g / aquantity c
 
-    -- A row's units of lot-tracked commodities: its balance restricted
-    -- to the commodities of the lots at or beneath it. This excludes other
-    -- commodities (eg cash) from parent account rows in tree mode, and
-    -- strips costs so each commodity appears as one amount.
+    -- A row's units of lot-tracked commodities: the sum of the lots at or
+    -- beneath its account, one amount per commodity. (Not the row's report
+    -- balance: a depth-clipped or pivoted row could also aggregate
+    -- same-commodity balances from non-lot-tracked accounts, which would
+    -- make Units inconsistent with the lot-derived Cost and gain columns.)
     rowUnitAmounts :: PeriodicReportRow DisplayName MixedAmount -> [Amount]
     rowUnitAmounts r =
-      filter (\a -> acommodity a `elem` lotcomms && not (amountLooksZero a)) $
-      amounts $ mixedAmountStripCosts $ prrTotal r
-      where lotcomms = [acommodity a | (a, _) <- lotsUnder $ prrFullName r]
+      filter (not . amountLooksZero) $ sumAmounts $
+      map fst $ lotsUnder $ prrFullName r
 
     -- The lots held at or under the given account, excluding empty ones.
     -- A lot's cost basis comes from its subaccount name; when the name has

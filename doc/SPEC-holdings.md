@@ -229,6 +229,11 @@ Holdings on 2026-03-31
   machinery we need.)
 - Per-lot units are summed from the lot subaccounts' postings
   (amount arithmetic discards cost basis, so balances alone don't suffice).
+- Every column in a row is derived from the lots at or beneath the row's
+  account. In particular Units is the sum of those lots, not the row's
+  report balance, which (in a depth-clipped, pivoted, or tree-mode row)
+  can also include a non-lot-tracked account's units - those are not
+  holdings, and would disagree with the other columns.
   Each lot's cost basis is parsed back from the lot subaccount name, which by
   construction contains the acquisition date and unit cost.
 - Each report row expands to one Holding record per commodity (rowHoldings

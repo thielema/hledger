@@ -752,3 +752,24 @@ Holdings on 2026-01-31
  assets:broker:{2026-01-02, $200} || 2026-01-02  29d   1 MSFT           $200         $200                                            
 ----------------------------------++-------------------------------------------------------------------------------------------------
                                   ||                                                 $300                                            
+
+# ** 43. Assets held in a lots:NONE account do not appear in the holdings report,
+# or affect its aggregated values. Eg assets:ira does not affect this --depth 1 report.
+<
+commodity AAA ; lots:
+account assets:ira  ; lots: NONE
+
+2026-01-01 buy in taxable and tax-sheltered accounts
+    assets:cash      $-200
+    assets:broker    10 AAA {$10}
+    assets:ira       10 AAA @ $10
+
+$ hledger -f- holdings -1 -e 2026-02-01
+Holdings on 2026-01-31
+
+        ||       Date  Age   Units  Avg cost  Price  Cost  Value  Weight  UGain  UGain%  RGain  XIRR 
+========++===========================================================================================
+ assets || 2026-01-01  30d  10 AAA       $10         $100                                            
+--------++-------------------------------------------------------------------------------------------
+        ||                                           $100                                            
+
