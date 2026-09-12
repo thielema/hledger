@@ -265,6 +265,7 @@ module Hledger.Cli.Commands.Balance (
  ,multiBalanceReportTableAsText
  ,multiBalanceReportAsSpreadsheet
  ,multiBalanceReportAsSpreadsheetParts
+ ,multiBalanceReportNumHeaderColumns
  ,multiBalanceHasTotalsColumn
  ,renderPeriodicAcct
  ,addTotalBorders
@@ -773,8 +774,16 @@ multiBalanceReportAsCsv opts@ReportOpts{..} report =
         multiBalanceReportAsSpreadsheetParts machineFmt opts
             (allCommoditiesFromPeriodicReport $ prRows report) report
 
+
+multiBalanceReportNumHeaderColumns :: Layout -> Int
+multiBalanceReportNumHeaderColumns lay =
+    case lay of
+        LayoutBare -> 2
+        LayoutTidy -> 0
+        _ -> 1
+
 -- | Render the Spreadsheet table rows (CSV, ODS, HTML) for a MultiBalanceReport.
--- Returns the heading row, 0 or more body rows, and the totals row if enabled.
+-- Returns the heading rows, 0 or more body rows, and the totals row if enabled.
 multiBalanceReportAsSpreadsheetParts ::
     AmountFormat -> ReportOpts ->
     [CommoditySymbol] -> MultiBalanceReport ->
@@ -845,9 +854,8 @@ multiBalanceReportAsSpreadsheet ropts mbr =
             multiBalanceReportAsSpreadsheetParts oneLineNoCostFmt ropts
                 (allCommoditiesFromPeriodicReport $ prRows mbr) mbr
   in  (if transpose_ ropts then swap *** Ods.transpose else id) $
-      ((case layout_ ropts of LayoutBareWide -> 2; _ -> 1,
-        case layout_ ropts of LayoutWide _ -> 1; _ -> 0),
-            header ++ body ++ total)
+      ((length header, multiBalanceReportNumHeaderColumns (layout_ ropts)),
+       header ++ body ++ total)
 
 
 -- | Render a report title as a text block to prefix to a text report,
