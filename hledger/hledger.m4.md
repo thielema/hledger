@@ -7398,8 +7398,9 @@ Two precision-related cautions:
 
 ## Lot movements
 
-hledger understands three kinds of event involving lots.
-Other real-world lot events can usually be modelled using combinations of these.
+hledger understands three kinds of lot movement: acquire, transfer, and dispose.
+Other real-world lot events can usually be modelled using combinations of these
+(see the next section for examples).
 
 ### Acquire
 
@@ -7420,19 +7421,6 @@ with cost inferred from the transaction's other postings.
 Acquire postings may carry a per-unit (`{}`) or total (`{{{{}}}}`) cost basis annotation,
 and a per-unit (`@`) or total (`@@`) transacted cost.
 See [Cost basis vs transacted cost](#cost-basis-vs-transacted-cost) for the recommended style.
-
-Here is a worked example: an acquisition where the cost basis differs from the
-commodity's current market price. With GOLD currently priced at $5000, you
-receive a gift carrying its original cost basis of $3000/oz:
-```
-P 2026-05-01 GOLD $5000
-
-2026-05-01 gift from Aunt, with carryover basis of $3000
-    income:gifts         $-6000
-    assets:stock              2 GOLD {$3000}
-```
-The transacted cost is $3000 (same as the basis), not $5000.
-And the recorded gift income is $6000 (the gift's current market value is $10000, but remember when you dispose you'll have to declare $2000/oz more capital gain, $4000 more in total).
 
 ### Transfer
 
@@ -7534,7 +7522,75 @@ the sum of `quantity × (B − T)` over the entry's dispose postings.
 Acquire postings in the same entry don't contribute to the inferred gain
 (any acquire-side `B ≠ T` would be rejected at load time anyway, see [Acquire](#acquire) above).
 
-### Cost basis methods
+### Other lot events
+
+Some examples of recording other real-world events using these movements:
+
+#### Gift received
+
+An acquisition's cost basis can differ from the commodity's current market
+price. Eg with GOLD currently priced at $5000, you receive a gift carrying
+its original ("carryover") cost basis of $3000/oz:
+```
+P 2026-05-01 GOLD $5000
+
+2026-05-01 gift received, with carryover basis of $3000
+    income:gifts         $-6000
+    assets:stock              2 GOLD {$3000}
+```
+The transacted cost is $3000 (same as the basis), not $5000.
+And the recorded gift income is $6000 (the gift's current market value is $10000, but remember when you dispose you'll have to declare $2000/oz more capital gain, $4000 more in total).
+
+#### Bonus shares
+
+Extra shares granted for free (a bonus issue or stock dividend) can be recorded as a zero-cost acquisition. 
+Such an entry balances by itself:
+
+```journal
+2026-06-01 bonus shares
+    assets:stock    5 AAPL @@ $0
+```
+
+Or you can add an equity posting for more explicit double entry
+(note that account will then keep an offsetting negative AAPL balance):
+
+```journal
+2026-06-01 bonus shares
+    assets:stock          5 AAPL @@ $0
+    equity:bonus-shares  -5 AAPL @@ $0
+```
+
+A zero cost basis means the full sale proceeds will be counted as capital
+gain at disposal. This matches the tax treatment of bonus shares in some
+jurisdictions - eg India, where their acquisition cost is nil, or the UK,
+where they enter the pool at nil cost, diluting the average cost.
+Other treatments exist, so check your local rules. 
+Eg for US nontaxable stock dividends, 
+the original shares' cost basis is instead spread proportionally 
+across the old and new shares, which can be recorded like a stock split. 
+Or, free shares which are taxable income when received (eg a brokerage promotion)
+would typically be acquired at their market value, balanced by an income posting.
+
+#### Stock splits
+
+A stock split (eg 2:1, doubling the share count and halving the share
+price) can be recorded as a disposal and re-acquisition, preserving the
+original acquisition date and total cost basis. Eg, for 10 AAPL bought
+on 2026-01-01 with cost basis $100/share:
+
+```journal
+2026-06-01 AAPL splits 2:1
+    assets:broker   -10 AAPL {2026-01-01} @@ $1000
+    assets:broker    20 AAPL {2026-01-01} @@ $1000
+```
+
+The old lot is disposed at its cost basis, so there is no gain; the new
+lot keeps the old acquisition date, with the per-unit basis inferred
+from the unchanged total ($1000 / 20 = $50). (Since two acquisitions now
+share the same basis date, hledger will add sequence-number labels to keep their
+[lot ids](#lot-ids) distinct.)
+
+## Cost basis methods
 
 If a lot transfer or a lot disposal doesn't specifically identify the lot(s) involved,
 hledger selects from the available lots automatically, using a *cost basis method*
@@ -7615,7 +7671,7 @@ accounts holding the commodity, so the running cost is a single global value
 and an acquisition in one account updates the cost basis on lots in every
 other account too.
 
-#### Changing the cost basis method
+### Changing the cost basis method
 
 hledger recalculates all lots on each run, using the currently declared methods.
 So changing a declared method also reinterprets past history under the new method.
