@@ -449,7 +449,7 @@ compoundBalanceReportAsSpreadsheet fmt accountLabel maybeBlank ropts cbr =
         & addTotalBorders    -- marking the first row for special styling
 
   in  (title,
-        ((1,1),
+        ((1, multiBalanceReportNumHeaderColumns $ layout_ ropts),
             headerrow :| concatMap subreportrows subreports ++ totalrows))
 
 allCommoditiesFromSubreports ::
