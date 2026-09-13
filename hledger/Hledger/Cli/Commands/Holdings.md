@@ -62,7 +62,6 @@ Holdings on 2023-04-01
                                                          ||                                                 370.00 ₹  15,600.00 ₹  100.0%  15,230.00 ₹  4116.2%  140.00 ₹  4342.1% 
 ```
 
-Query arguments and report flags like `-t/--tree`, `--depth`, `-S/--sort-amount`, `--title` etc. work as usual.
 The columns show:
 
 - each holding's acquisition date (or earlier basis date) and age
@@ -94,6 +93,8 @@ column is left blank for holdings whose cashflows are in a different commodity.
 Amounts are displayed with their commodity's display precision.
 `--round` can select another rounding strategy.
 The percent columns (Weight, UGain%, XIRR) are shown with with the display style configured for the `%` commodity (eg by `-c '0.00 %'`).
+
+Query arguments and report flags like `-t/--tree`, `--depth`, `-S/--sort-amount`, `--title` etc. work as usual.
 
 With `-O html`, an HTML table is produced instead.
 With `-O fods`, a spreadsheet document readable by LibreOffice etc. is produced.
