@@ -3538,7 +3538,7 @@ The following kinds of rule can appear in the rules file, in any order.
 | [**`if` table**](#if-table)                     | conditionally assign values to hledger fields, using compact syntax                            |
 | [**`skip`**](#if)                         | (inside an `if` rule) skip current record(s)                                                   |
 | [**`end`**](#if)                          | (inside an `if` rule) skip all remaining records                                               |
-| [**`merge`**](#merge)                     | combine this record and the next one(s) into a single record (and transaction)                 |
+| [**`merge`**](#merge)                     | combine this record with the next one(s), to be converted to a single transaction              |
 | [**`balance-type`**](#balance-type)             | select which type of balance assertions/assignments to generate                                |
 | [**`include`**](#include)                       | inline another CSV rules file                                                                  |
 
@@ -3966,6 +3966,8 @@ or by the name they were given in the fields list (`%CSVFIELD`),
 and regular expression [match groups](#match-groups) (`\N`).
 You can also write `%(CSVFIELD)` to delimit the field name from adjacent text
 (eg `%(field)suffix`).
+When CSV records have been combined by a [`merge` rule](#merge),
+a `_ROWNUM` suffix (eg `%amt_2`, `%4_2`) references the later rows' fields.
 
 Some examples:
 
@@ -4178,6 +4180,8 @@ There are two kinds of matcher:
 2. A field matcher has a percent-prefixed CSV field number or name before the pattern.\
    Eg: `%3 whole foods` or `%description whole foods`.\
    hledger will try to match the pattern just within the named CSV field.
+   (In records combined by a [`merge` rule](#merge), a `_ROWNUM` suffix
+   selects a later row's field, eg `%description_2`.)
 
 When using these, there's two things to be aware of:
 
@@ -4312,15 +4316,18 @@ so that they can generate a single journal transaction.
 
 When a record matches an `if` block containing `merge N`
 (the word `merge` followed by a number, or no number, meaning 1),
-the next N records are joined onto the matched record:
-their fields are appended, in order, making one wider record.
-Conversion then proceeds as usual, with the combined record generating one transaction.
+the next N records are joined onto the matched record, forming a group of rows.
+Conversion then proceeds as usual, with the whole group generating one transaction.
 
-The combined record's extra fields can be referenced by number (eg `%6`),
-or by names declared with a longer-than-usual [`fields` list](#fields-list).
-(In records which have not been merged, the extra names simply have empty values.
-As always, it's best to choose names which are not
-[hledger field names](#hledger-field-names), to avoid accidental assignments.)
+Fields of the later rows are referenced by adding a `_ROWNUM` suffix
+(row number 2 or greater) to the usual field name or number:
+`%amt_2` or `%4_2` is row 2's `amt`/fourth field.
+Unsuffixed references (`%amt`, `%4`) always mean the first row,
+so the same [`fields` list](#fields-list) describes every row.
+A reference to a row that isn't there (eg in an unmerged record)
+just has an empty value.
+And if you have declared a field name that looks like `NAME_ROWNUM`,
+it keeps its declared meaning; the suffix interpretation is only a fallback.
 
 For example, to convert this two-row currency conversion:
 
@@ -4331,7 +4338,7 @@ For example, to convert this two-row currency conversion:
 ```
 
 ```rules
-fields date, type, desc, amt, cur, date_b, type_b, desc_b, amt_b, cur_b
+fields date, type, desc, amt, cur
 description %desc
 account1 assets:bank:%cur
 amount1  %amt %cur
@@ -4339,8 +4346,8 @@ amount1  %amt %cur
 # a conversion's second row holds the amount received; make it posting 2
 if %type CONVERT
  merge
- account2 assets:bank:%cur_b
- amount2  %amt_b %cur_b
+ account2 assets:bank:%cur_2
+ amount2  %amt_2 %cur_2
 
 if %type PAYMENT
  account2 expenses:unknown
@@ -4361,17 +4368,22 @@ Things to note:
 
 - `merge` can also be used as a top-level rule (unconditionally),
   useful for files where every transaction is exactly N+1 rows.
-- Merging happens early, before transactions are generated
-  (at the same stage as conditional `skip` and `end`; those take precedence
-  if they somehow apply to the same record).
-- After merging, later `if` blocks see the combined record;
-  eg a whole-record matcher can match text from any of the merged rows.
-- The records to be merged must be consecutive in the file,
-  and the merging record must be the first of the group.
+- Merging happens early, before transactions are generated,
+  and after `skip` and `end` rules have been applied -
+  so skipped records don't count toward a merge group.
+- Because of this, the merge-triggering matchers can only usefully reference
+  the first row's fields; a `_ROWNUM` reference there is always empty at that stage,
+  can never trigger the merge, and causes a warning.
+- After merging, later `if` blocks see the whole group;
+  a whole-record matcher can match text from any of its rows,
+  and field matchers can use `_ROWNUM` references.
+- The rows of a group must be consecutive in the file (ignoring skipped records),
+  and the merging record must be the first of them.
 - A merged transaction's source position (shown by `print --location`)
   is the group's full range of file lines.
-- If fewer than N records remain in the file, just those are merged;
-  the extra field names have empty values, as in unmerged records.
+- If fewer than N records remain in the file, just those are merged.
+
+## `balance-type`
 
 Balance assertions generated by [assigning to balanceN](#posting-field-names)
 are of the simple `=` type by default,

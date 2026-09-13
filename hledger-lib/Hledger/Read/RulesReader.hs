@@ -46,7 +46,7 @@ import Control.Applicative (Applicative(..))
 import Control.Concurrent (forkIO)
 import Control.DeepSeq (deepseq)
 import Control.Exception.Safe (catchAny, tryIO)
-import Control.Monad (unless, void, when)
+import Control.Monad (guard, unless, void, when)
 import Control.Monad.Except       (ExceptT(..), liftEither, throwError)
 import Control.Monad.Fail qualified as Fail
 import Control.Monad.IO.Class     (MonadIO, liftIO)
@@ -691,7 +691,7 @@ dbgShowMatcher (FieldMatcher p f r) = unwords [dbgShowMatcherPrefix p, T.unpack 
 -- Four types of rule are allowed inside conditional blocks: field
 -- assignments, skip, end, merge. (A skip, end or merge rule is stored
 -- as if it was a field assignment, and executed in
--- applySkipEndMergeRules. XXX)
+-- applyConditionalSkips/applyMergeRules. XXX)
 data ConditionalBlock = CB {
    cbMatchers    :: [Matcher]
   ,cbAssignments :: [(HledgerFieldName, FieldTemplate)]
@@ -1113,14 +1113,14 @@ csvRule rules = (`getDirective` rules)
 -- | Look up the value template assigned to a hledger field by field
 -- list/field assignment rules, taking into account the current record and
 -- conditional rules.
-hledgerField :: CsvRules -> CsvRecord -> HledgerFieldName -> Maybe FieldTemplate
+hledgerField :: CsvRules -> CsvRecordGroup -> HledgerFieldName -> Maybe FieldTemplate
 hledgerField rules record f = fmap
   (either id (lastCBAssignmentTemplate f))
   (getEffectiveAssignment rules record f)
 
 -- | Look up the final value assigned to a hledger field, with csv field
 -- references and regular expression match group references interpolated.
-hledgerFieldValue :: CsvRules -> CsvRecord -> HledgerFieldName -> Maybe Text
+hledgerFieldValue :: CsvRules -> CsvRecordGroup -> HledgerFieldName -> Maybe Text
 hledgerFieldValue rules record f = (flip fmap) (getEffectiveAssignment rules record f)
   $ either (renderTemplate rules record)
   $ \cb -> let
@@ -1144,7 +1144,7 @@ maybeNegate _   origbool = origbool
 --
 getEffectiveAssignment
   :: CsvRules
-     -> CsvRecord
+     -> CsvRecordGroup
      -> HledgerFieldName
      -> Maybe (Either FieldTemplate ConditionalBlock)
 getEffectiveAssignment rules record f = lastMay assignments
@@ -1167,7 +1167,7 @@ getEffectiveAssignment rules record f = lastMay assignments
       ) ms
 
 -- does this conditional block match the current csv record ?
-isBlockActive :: CsvRules -> CsvRecord -> ConditionalBlock -> Bool
+isBlockActive :: CsvRules -> CsvRecordGroup -> ConditionalBlock -> Bool
 isBlockActive rules record CB{..} = any (all matcherMatches) $ groupedMatchers cbMatchers
   where
     -- Does this individual matcher match the current csv record ?
@@ -1208,16 +1208,16 @@ isBlockActive rules record CB{..} = any (all matcherMatches) $ groupedMatchers c
         (andandnots, rest) = span (\a -> matcherPrefix a `elem` [And, AndNot]) ms
         ands = [matcherSetPrefix p a | a <- andandnots, let p = if matcherPrefix a == AndNot then Not else And]
 
--- | Convert a CSV record to text, for whole-record matching.
--- This will be only an approximation of the original record;
--- values will always be comma-separated,
+-- | Convert a CSV record group to text, for whole-record matching.
+-- This will be only an approximation of the original record(s);
+-- values will always be comma-separated (across all records in the group),
 -- and any enclosing quotes and whitespace outside those quotes will be removed.
-recordAsApproximateText :: CsvRecord -> Text
-recordAsApproximateText = T.intercalate ","
+recordAsApproximateText :: CsvRecordGroup -> Text
+recordAsApproximateText = T.intercalate "," . concat
 
 -- | Render a field assignment's template, possibly interpolating referenced
 -- CSV field values or match groups. Outer whitespace is removed from interpolated values.
-renderTemplate ::  CsvRules -> CsvRecord -> FieldTemplate -> Text
+renderTemplate ::  CsvRules -> CsvRecordGroup -> FieldTemplate -> Text
 renderTemplate rules record t =
   maybe t mconcat $ parseMaybe
     (many
@@ -1246,12 +1246,12 @@ renderTemplate rules record t =
 
 -- | Replace something that looks like a Regex match group reference with the
 -- resulting match group value after applying the Regex.
-replaceRegexGroupReference :: CsvRules -> CsvRecord -> MatchGroupReference -> Text
+replaceRegexGroupReference :: CsvRules -> CsvRecordGroup -> MatchGroupReference -> Text
 replaceRegexGroupReference rules record s = case T.uncons s of
     Just ('\\', group) -> fromMaybe "" $ regexMatchValue rules record group
     _                  -> s
 
-regexMatchValue :: CsvRules -> CsvRecord -> Text -> Maybe Text
+regexMatchValue :: CsvRules -> CsvRecordGroup -> Text -> Maybe Text
 regexMatchValue rules record sgroup = let
   matchgroups  = concatMap (getMatchGroups rules record)
                $ concatMap cbMatchers
@@ -1261,7 +1261,7 @@ regexMatchValue rules record sgroup = let
   group = (read (T.unpack sgroup) :: Int) - 1 -- adjust to 0-indexing
   in atMay matchgroups group
 
-getMatchGroups :: CsvRules -> CsvRecord -> Matcher -> [Text]
+getMatchGroups :: CsvRules -> CsvRecordGroup -> Matcher -> [Text]
 getMatchGroups _ record (RecordMatcher _ regex) =
   regexMatchTextGroups regex $ recordAsApproximateText record  -- groups might be wrong
 getMatchGroups rules record (FieldMatcher _ fieldref regex) =
@@ -1270,7 +1270,7 @@ getMatchGroups rules record (FieldMatcher _ fieldref regex) =
 -- | Replace something that looks like a reference to a csv field ("%date", "%1",
 -- or "%(date)") with that field's value. If it doesn't look like a field reference,
 -- or if we can't find a csv field with that name, return nothing.
-replaceCsvFieldReference :: CsvRules -> CsvRecord -> CsvFieldReference -> Maybe Text
+replaceCsvFieldReference :: CsvRules -> CsvRecordGroup -> CsvFieldReference -> Maybe Text
 replaceCsvFieldReference rules record s = case T.uncons s of
     Just ('%', rest)
       | Just ('(', rest') <- T.uncons rest
@@ -1280,15 +1280,40 @@ replaceCsvFieldReference rules record s = case T.uncons s of
       -> csvFieldValue rules record rest
     _ -> Nothing
 
--- | Get the (whitespace-stripped) value of a CSV field, identified by its name or
--- column number, ("date" or "1"), from the given CSV record, if such a field exists.
-csvFieldValue :: CsvRules -> CsvRecord -> CsvFieldName -> Maybe Text
-csvFieldValue rules record fieldname = do
-  fieldindex <-
-    if T.all isDigit fieldname
-    then readMay $ T.unpack fieldname
-    else lookup (T.toLower fieldname) $ rcsvfieldindexes rules
-  T.strip <$> atMay record (fieldindex-1)
+-- | Get the (whitespace-stripped) value of a CSV field from a group of one
+-- or more merged CSV records. The field is identified by its name or column
+-- number ("date" or "1"), referring to the group's first record; or with a
+-- _ROWNUM suffix ("date_2" or "1_2", where ROWNUM is 2 or greater), referring
+-- to a later record in the group. An explicitly declared field name always
+-- takes precedence over the _ROWNUM interpretation.
+csvFieldValue :: CsvRules -> CsvRecordGroup -> CsvFieldName -> Maybe Text
+csvFieldValue rules rows fieldname =
+  case fieldindex fieldname of
+    Just i  -> valueat 1 i
+    Nothing -> do
+      (base, rownum) <- splitRowSuffix fieldname
+      i <- fieldindex base
+      valueat rownum i
+  where
+    -- the column number of a field referenced by number or declared name, if any
+    fieldindex f
+      | T.all isDigit f = readMay $ T.unpack f
+      | otherwise       = lookup (T.toLower f) $ rcsvfieldindexes rules
+    valueat rownum i = do
+      row <- atMay rows (rownum-1)
+      T.strip <$> atMay row (i-1)
+
+-- | Split a csv field reference of the form NAME_ROWNUM into its parts,
+-- if it looks like one; the row number must be 2 or greater.
+-- Eg "date_2" -> ("date", 2).
+splitRowSuffix :: CsvFieldName -> Maybe (CsvFieldName, Int)
+splitRowSuffix f = do
+  let (base', digits) = T.breakOnEnd "_" f
+  base <- T.stripSuffix "_" base'
+  guard $ not (T.null base) && not (T.null digits) && T.all isDigit digits
+  rownum <- readMay $ T.unpack digits
+  guard $ rownum >= 2
+  return (base, rownum)
 
 _CSV_READING__________________________________________ = undefined
 
@@ -1346,8 +1371,9 @@ readJournalFromCsv rulesfile rules csvfile csvtext sep = do
     -- pair each record with the range of file lines it came from
     let csvrecords1 = dbg9 "locateCsvRecords" $ locateCsvRecords (map fst csvlines2) csvrecords0
     -- remove any records skipped by conditional skip or end rules,
-    -- and combine any records joined by conditional merge rules
-    csvrecords2 <- liftEither $ first ((rulesfile <> ": ") <>) $ applySkipEndMergeRules rules csvrecords1
+    -- then group the records joined by merge rules
+    csvrecords2 <- liftEither $ first ((rulesfile <> ": ") <>) $
+      applyConditionalSkips rules csvrecords1 >>= applyMergeRules rules
     -- and check the remaining records for any obvious problems
     csvrecords <- liftEither $ dbg7 "validateCsv" <$> validateCsv csvrecords2
     dbg6IO "first 3 csv records" $ take 3 csvrecords
@@ -1362,6 +1388,19 @@ readJournalFromCsv rulesfile rules csvfile csvtext sep = do
              show n <> " " <> T.unpack fieldname <> "(s), since journal format can't represent it"
     warnfixed "description" ';' ".,"
     warnfixed "code"        ')' "]"
+
+    -- warn if any if block containing a merge rule matches on a later row's
+    -- field (%FIELD_N): those fields are still empty when merge rules are
+    -- applied, so such a matcher can never trigger a merge
+    let mergeblockrowrefs =
+          [ ref | b <- rconditionalblocks rules
+          , any ((=="merge").fst) $ cbAssignments b
+          , FieldMatcher _ ref _ <- cbMatchers b
+          , isJust $ splitRowSuffix $ T.dropAround (`elem` ("%()"::String)) ref ]
+    unless (null mergeblockrowrefs) $ warnIO $
+      rulesfile <> ": an if block containing a merge rule matches on a later row's field ("
+      <> T.unpack (T.intercalate ", " mergeblockrowrefs)
+      <> "); this can not trigger a merge, since these fields are empty until after merging"
 
     -- XXX identify header lines some day ?
     -- let (headerlines, datalines) = identifyHeaderLines csvrecords'
@@ -1445,9 +1484,21 @@ parseCassava separator path content =
         toListList = toList . fmap toList
         unpackFields  = (fmap . fmap) T.decodeUtf8
 
+-- The lazy tuples in these Located* types are ok to use:
+-- they live only briefly, between parsing and transaction conversion,
+-- where mkPos and a deepseq force the line numbers;
+-- and locateCsvRecords forces each end line to avoid thunk chains.
+
 -- | A CSV record, together with the range of file lines it came from
 -- (first line, last line; 1-based, inclusive).
 type LocatedCsvRecord = ((Int, Int), CsvRecord)
+
+-- | One or more CSV records being converted to a single transaction:
+-- the first is the main record, any others were appended by a merge rule.
+type CsvRecordGroup = [CsvRecord]
+
+-- | A CSV record group, together with the range of file lines it came from.
+type LocatedCsvRecordGroup = ((Int, Int), CsvRecordGroup)
 
 -- | Pair each parsed csv record with the range of file lines it came from.
 -- The first argument is the original file line numbers of the (non-blank,
@@ -1460,55 +1511,67 @@ locateCsvRecords :: [Int] -> [CsvRecord] -> [LocatedCsvRecord]
 locateCsvRecords = go 1
   where
     go _ _ [] = []
-    go nextline linenos (r:rs) = ((l1, l2), r) : go (l2+1) linenos' rs
+    go nextline linenos (r:rs) = l2 `seq` (((l1, l2), r) : go (l2+1) linenos' rs)
       where
         numlines = 1 + sum (map (T.count "\n") r)
         (consumed, linenos') = splitAt numlines linenos
         l1 = headDef nextline consumed
         l2 = lastDef (l1 + numlines - 1) consumed
 
--- | Scan for csv records where a `skip`, `end` or `merge` rule applies
+-- | Scan for csv records where a `skip` or `end` rule applies
+-- (conditionally or unconditionally), and apply that rule,
+-- removing one or more records.
+-- Return an error message if a rule's value can't be parsed as a positive number.
+applyConditionalSkips :: CsvRules -> [LocatedCsvRecord] -> Either String [LocatedCsvRecord]
+applyConditionalSkips _ [] = Right []
+applyConditionalSkips rules (lr@(_, r):rest) = do
+  mskip <- ruleRecordCount rules r "skip"
+  case (hledgerField rules [r] "end", mskip) of
+    (Just _, _)      -> Right []
+    (_, Just cnt)    -> applyConditionalSkips rules $ drop (cnt-1) rest
+    _                -> (lr:) <$> applyConditionalSkips rules rest
+
+-- | Scan for csv records where a `merge` rule applies
 -- (conditionally or unconditionally), and apply that rule:
--- `skip` and `end` remove one or more records,
--- `merge` appends the next N records' fields to the current record,
--- combining them into a single record (and transaction) located at
+-- the next N records are appended to the current record's group,
+-- to be converted to a single transaction located at
 -- the whole group's range of file lines.
 -- If fewer than N records remain in the file, merge just appends those.
 -- Return an error message if a rule's value can't be parsed as a positive number.
-applySkipEndMergeRules :: CsvRules -> [LocatedCsvRecord] -> Either String [LocatedCsvRecord]
-applySkipEndMergeRules _ [] = Right []
-applySkipEndMergeRules rules (lr@((l1,l2), r):rest) = do
-  mskip  <- rulecount "skip"
-  mmerge <- rulecount "merge"
-  case (hledgerField rules r "end", mskip, mmerge) of
-    (Just _, _, _)   -> Right []
-    (_, Just cnt, _) -> applySkipEndMergeRules rules $ drop (cnt-1) rest
-    (_, _, Just cnt) -> (((l1, l2'), concat (r : map snd merged)) :) <$> applySkipEndMergeRules rules rest'
+applyMergeRules :: CsvRules -> [LocatedCsvRecord] -> Either String [LocatedCsvRecordGroup]
+applyMergeRules _ [] = Right []
+applyMergeRules rules (((l1,l2), r):rest) = do
+  mmerge <- ruleRecordCount rules r "merge"
+  case mmerge of
+    Just cnt -> (((l1, l2'), r : map snd merged) :) <$> applyMergeRules rules rest'
       where
         (merged, rest') = splitAt cnt rest
         l2' = lastDef l2 $ map (snd . fst) merged
-    _ -> (lr:) <$> applySkipEndMergeRules rules rest
-  where
-    -- the value of this record's skip or merge rule, if any: a positive record count
-    rulecount name =
-      case hledgerField rules r name of
-        Nothing -> Right Nothing
-        Just "" -> Right $ Just 1
-        Just x  ->
-          case readMay $ T.unpack x of
-            Just n | n >= 1 -> Right $ Just n
-            _ -> Left $ printf "could not parse %s value as a positive number: %s" (T.unpack name) (T.unpack x)
+    Nothing  -> (((l1,l2), [r]) :) <$> applyMergeRules rules rest
+
+-- | The value of this record's skip or merge rule, if any:
+-- a positive record count (with no value meaning 1),
+-- or an error message if the value can't be parsed as a positive number.
+ruleRecordCount :: CsvRules -> CsvRecord -> HledgerFieldName -> Either String (Maybe Int)
+ruleRecordCount rules r name =
+  case hledgerField rules [r] name of
+    Nothing -> Right Nothing
+    Just "" -> Right $ Just 1
+    Just x  ->
+      case readMay $ T.unpack x of
+        Just n | n >= 1 -> Right $ Just n
+        _ -> Left $ printf "could not parse %s value as a positive number: %s" (T.unpack name) (T.unpack x)
 
 -- | Do some validation on the parsed CSV records:
 -- check that they all have at least two fields.
-validateCsv :: [LocatedCsvRecord] -> Either String [LocatedCsvRecord]
+validateCsv :: [LocatedCsvRecordGroup] -> Either String [LocatedCsvRecordGroup]
 validateCsv [] = Right []
 validateCsv rs@(_first:_) =
   case lessthan2 of
-    Just (_,r) -> Left $ printf "CSV record %s has less than two fields" (show r)
-    Nothing    -> Right rs
+    Just r  -> Left $ printf "CSV record %s has less than two fields" (show r)
+    Nothing -> Right rs
   where
-    lessthan2 = headMay $ filter ((<2).length.snd) rs
+    lessthan2 = headMay $ filter ((<2).length) $ concatMap snd rs
 
 -- -- | The highest (0-based) field index referenced in the field
 -- -- definitions, or -1 if no fields are defined.
@@ -1528,7 +1591,7 @@ validateCsv rs@(_first:_) =
 
 --- ** converting csv records to transactions
 
-transactionFromCsvRecord :: Bool -> Maybe TimeZone -> TimeZone -> (SourcePos, SourcePos) -> CsvRules -> CsvRecord -> Transaction
+transactionFromCsvRecord :: Bool -> Maybe TimeZone -> TimeZone -> (SourcePos, SourcePos) -> CsvRules -> CsvRecordGroup -> Transaction
 transactionFromCsvRecord timesarezoned mtzin tzout sourcepospair rules record =
   -- log the record and all the transaction fields from this record
   -- XXX avoid possibly-pessimising deepseq if not needed for debug output ?
@@ -1711,7 +1774,7 @@ parseDateWithCustomOrDefaultFormats timesarezoned mtzin tzout mformat s = locald
 -- For postings 1 or 2 it also looks at "amount", "amount-in", "amount-out".
 -- If more than one of these has a value, it looks for one that is non-zero.
 -- If there's multiple non-zeros, or no non-zeros but multiple zeros, it throws an error.
-getAmount :: CsvRules -> CsvRecord -> Text -> Bool -> Int -> Maybe MixedAmount
+getAmount :: CsvRules -> CsvRecordGroup -> Text -> Bool -> Int -> Maybe MixedAmount
 getAmount rules record currency p1IsVirtual n =
   -- Warning! Many tricky corner cases here.
   -- Keep synced with:
@@ -1771,7 +1834,7 @@ getAmount rules record currency p1IsVirtual n =
         ]
 -- | Figure out the expected balance (assertion or assignment) specified for posting N,
 -- if any (and its parse position).
-getBalance :: CsvRules -> CsvRecord -> Text -> Int -> Maybe (Amount, SourcePos)
+getBalance :: CsvRules -> CsvRecordGroup -> Text -> Int -> Maybe (Amount, SourcePos)
 getBalance rules record currency n = do
   v <- (fieldval ("balance"<> T.pack (show n))
         -- for posting 1, also recognise the old field name
@@ -1789,7 +1852,7 @@ getBalance rules record currency n = do
 -- possibly non-empty currency symbol to prepend,
 -- parse as a hledger MixedAmount (as in journal format), or raise an error.
 -- The whole CSV record is provided for the error message.
-parseAmount :: CsvRules -> CsvRecord -> Text -> Text -> MixedAmount
+parseAmount :: CsvRules -> CsvRecordGroup -> Text -> Text -> MixedAmount
 parseAmount rules record currency s =
     either mkerror mixedAmount $
     runParser (evalStateT (amountp <* eof) journalparsestate) "" $
@@ -1817,7 +1880,7 @@ showRules rules record = T.unlines $ catMaybes
 -- possibly non-empty currency symbol to prepend,
 -- parse as a hledger Amount (as in journal format), or raise an error.
 -- The CSV record and the field's numeric suffix are provided for the error message.
-parseBalanceAmount :: CsvRules -> CsvRecord -> Text -> Int -> Text -> Amount
+parseBalanceAmount :: CsvRules -> CsvRecordGroup -> Text -> Int -> Text -> Amount
 parseBalanceAmount rules record currency n s =
   either (mkerror n s) id $
     runParser (evalStateT (amountp <* eof) journalparsestate) "" $
@@ -1834,7 +1897,7 @@ parseBalanceAmount rules record currency n s =
       ]
 
 -- | Show the approximation of the original CSV record, labelled, for debug output.
-showRecord :: CsvRecord -> Text
+showRecord :: CsvRecordGroup -> Text
 showRecord = ("record: "<>) . recordAsApproximateText
 
 -- Read a valid decimal mark from the decimal-mark rule, if any.
@@ -1851,7 +1914,7 @@ parseDecimalMark rules = do
 -- possibly set by a balance-type rule.
 -- The CSV rules and current record are also provided, to be shown in case
 -- balance-type's argument is bad (XXX refactor).
-mkBalanceAssertion :: CsvRules -> CsvRecord -> (Amount, SourcePos) -> BalanceAssertion
+mkBalanceAssertion :: CsvRules -> CsvRecordGroup -> (Amount, SourcePos) -> BalanceAssertion
 mkBalanceAssertion rules record (amt, pos) = assrt{baamount=amt, baposition=pos}
   where
     assrt =
@@ -1880,7 +1943,7 @@ parseBalanceAssertionType = \case
 -- | Figure out the account name specified for posting N, if any.
 -- And whether it is the default unknown account (which may be
 -- improved later) or an explicitly set account (which may not).
-getAccount :: CsvRules -> CsvRecord -> Maybe MixedAmount -> Maybe (Amount, SourcePos) -> Int -> Maybe (AccountName, Bool)
+getAccount :: CsvRules -> CsvRecordGroup -> Maybe MixedAmount -> Maybe (Amount, SourcePos) -> Int -> Maybe (AccountName, Bool)
 getAccount rules record mamount mbalance n =
   let
     fieldval = hledgerFieldValue rules record :: HledgerFieldName -> Maybe Text
@@ -2053,28 +2116,28 @@ tests_RulesReader = testGroup "RulesReader" [
  ,testGroup "hledgerField" [
     let rules = mkrules $ defrules {rcsvfieldindexes=[("csvdate",1)],rassignments=[("date","%csvdate")]}
 
-    in testCase "toplevel" $ hledgerField rules ["a","b"] "date" @?= (Just "%csvdate")
+    in testCase "toplevel" $ hledgerField rules [["a","b"]] "date" @?= (Just "%csvdate")
 
    ,let rules = mkrules $ defrules{rcsvfieldindexes=[("csvdate",1)], rconditionalblocks=[CB [FieldMatcher Or "%csvdate" $ toRegex' "a"] [("date","%csvdate")]]}
-    in testCase "conditional" $ hledgerField rules ["a","b"] "date" @?= (Just "%csvdate")
+    in testCase "conditional" $ hledgerField rules [["a","b"]] "date" @?= (Just "%csvdate")
 
    ,let rules = mkrules $ defrules{rcsvfieldindexes=[("csvdate",1)], rconditionalblocks=[CB [FieldMatcher Not "%csvdate" $ toRegex' "a"] [("date","%csvdate")]]}
-    in testCase "negated-conditional-false" $ hledgerField rules ["a","b"] "date" @?= (Nothing)
+    in testCase "negated-conditional-false" $ hledgerField rules [["a","b"]] "date" @?= (Nothing)
   
    ,let rules = mkrules $ defrules{rcsvfieldindexes=[("csvdate",1)], rconditionalblocks=[CB [FieldMatcher Not "%csvdate" $ toRegex' "b"] [("date","%csvdate")]]}
-    in testCase "negated-conditional-true" $ hledgerField rules ["a","b"] "date" @?= (Just "%csvdate")
+    in testCase "negated-conditional-true" $ hledgerField rules [["a","b"]] "date" @?= (Just "%csvdate")
 
    ,let rules = mkrules $ defrules{rcsvfieldindexes=[("csvdate",1),("description",2)], rconditionalblocks=[CB [FieldMatcher Or "%csvdate" $ toRegex' "a", FieldMatcher Or "%description" $ toRegex' "b"] [("date","%csvdate")]]}
-    in testCase "conditional-with-or-a" $ hledgerField rules ["a"] "date" @?= (Just "%csvdate")
+    in testCase "conditional-with-or-a" $ hledgerField rules [["a"]] "date" @?= (Just "%csvdate")
 
    ,let rules = mkrules $ defrules{rcsvfieldindexes=[("csvdate",1),("description",2)], rconditionalblocks=[CB [FieldMatcher Or "%csvdate" $ toRegex' "a", FieldMatcher Or "%description" $ toRegex' "b"] [("date","%csvdate")]]}
-    in testCase "conditional-with-or-b" $ hledgerField rules ["_", "b"] "date" @?= (Just "%csvdate")
+    in testCase "conditional-with-or-b" $ hledgerField rules [["_", "b"]] "date" @?= (Just "%csvdate")
 
    ,let rules = mkrules $ defrules{rcsvfieldindexes=[("csvdate",1),("description",2)], rconditionalblocks=[CB [FieldMatcher Or "%csvdate" $ toRegex' "a", FieldMatcher And "%description" $ toRegex' "b"] [("date","%csvdate")]]}
-    in testCase "conditional.with-and" $ hledgerField rules ["a", "b"] "date" @?= (Just "%csvdate")
+    in testCase "conditional.with-and" $ hledgerField rules [["a", "b"]] "date" @?= (Just "%csvdate")
 
    ,let rules = mkrules $ defrules{rcsvfieldindexes=[("csvdate",1),("description",2)], rconditionalblocks=[CB [FieldMatcher Or "%csvdate" $ toRegex' "a", FieldMatcher And "%description" $ toRegex' "b", FieldMatcher Or "%description" $ toRegex' "c"] [("date","%csvdate")]]}
-    in testCase "conditional.with-and-or" $ hledgerField rules ["_", "c"] "date" @?= (Just "%csvdate")
+    in testCase "conditional.with-and-or" $ hledgerField rules [["_", "c"]] "date" @?= (Just "%csvdate")
 
    ]
 
@@ -2090,7 +2153,7 @@ tests_RulesReader = testGroup "RulesReader" [
                                     , cbAssignments=[("account1","account:\\1"), ("comment1","\\1")] }
                                ]
           }
-        record = ["2019-02-01","PREFIX Text 1 - Text 2"]
+        record = [["2019-02-01","PREFIX Text 1 - Text 2"]]
     in [ testCase "scoped match groups forwards" $ hledgerFieldValue rules record "account1" @?= (Just "account:Text 1:Text 2")
        , testCase "scoped match groups backwards" $ hledgerFieldValue rules record "comment1" @?= (Just "Text 1 - Text 2")
        ]

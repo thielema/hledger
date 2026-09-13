@@ -1336,14 +1336,14 @@ $  ./csvtest.sh
 2026-09-02,CONVERT,converted USD to EUR,90.00,EUR
 2026-09-03,PAYMENT,salary,1000.00,USD
 RULES
-fields date, type, desc, amt, cur, date_b, type_b, desc_b, amt_b, cur_b
+fields date, type, desc, amt, cur
 description %desc
 account1 assets:bank:%cur
 amount1  %amt %cur
 if %type CONVERT
  merge 1
- account2 assets:bank:%cur_b
- amount2  %amt_b %cur_b
+ account2 assets:bank:%cur_2
+ amount2  %amt_2 %cur_2
 if %type PAYMENT
  account2 expenses:unknown
 $  ./csvtest.sh
@@ -1367,18 +1367,18 @@ $  ./csvtest.sh
 2026-09-02,TRADE,bought AAPL,4,AAPL
 2026-09-02,TRADE,trade fee,1.00,USD
 RULES
-fields date, type, desc, amt, cur, _b1, _b2, _b3, amt_b, cur_b, _c1, _c2, _c3, amt_c, cur_c
+fields date, type, desc, amt, cur
 description %desc
 account1 assets:broker:cash
 amount1 %amt %cur
 if %type TRADE
  merge 2
- account2 assets:broker:%cur_b
- amount2 %amt_b %cur_b
+ account2 assets:broker:%cur_2
+ amount2 %amt_2 %cur_2
  account3 expenses:fees
- amount3 %amt_c %cur_c
+ amount3 %amt_3 %cur_3
  account4 assets:broker:cash
- amount4 -%amt_c %cur_c
+ amount4 -%amt_3 %cur_3
 $  ./csvtest.sh
 2026-09-02 bought AAPL
     assets:broker:cash                         -1000.00 USD
@@ -1389,20 +1389,21 @@ $  ./csvtest.sh
 >=0
 
 # ** 75. A top-level merge assignment pairs up all records, for CSV files
-# where every transaction is two rows.
+# where every transaction is two rows. Fields can also be referenced by
+# number, with the same _ROWNUM suffix, and with no fields list needed.
 <
 2026-09-02,conversion,-100.00,USD
 2026-09-02,conversion,90.00,EUR
 2026-09-05,conversion,-50.00,USD
 2026-09-05,conversion,44.00,EUR
 RULES
-fields date, desc, amt, cur, _b1, _b2, amt_b, cur_b
 merge 1
-description %desc
-account1 assets:bank:%cur
-amount1 %amt %cur
-account2 assets:bank:%cur_b
-amount2 %amt_b %cur_b
+date %1
+description %2
+account1 assets:bank:%4
+amount1 %3 %4
+account2 assets:bank:%4_2
+amount2 %3_2 %4_2
 $  ./csvtest.sh
 2026-09-02 conversion
     assets:bank:USD                             -100.00 USD
@@ -1442,14 +1443,14 @@ date,type,desc,amt,cur
 2026-09-02,CONVERT,conversion,90.00,EUR
 RULES
 skip 1
-fields date, type, desc, amt, cur, date_b, type_b, desc_b, amt_b, cur_b
+fields date, type, desc, amt, cur
 description %desc
 account1 assets:bank:%cur
 amount1  %amt %cur
 if %type CONVERT
  merge 1
- account2 assets:bank:%cur_b
- amount2  %amt_b %cur_b
+ account2 assets:bank:%cur_2
+ amount2  %amt_2 %cur_2
 if %type PAYMENT
  account2 expenses:unknown
 $  ./csvtest.sh --locations | grep -oE 'csv:[0-9]+-[0-9]+'
@@ -1469,6 +1470,71 @@ if %type CONVERT
 $  ./csvtest.sh
 >2 /could not parse merge value as a positive number: 0/
 >=1
+
+# ** 79. An explicitly declared field name always wins over the _ROWNUM
+# interpretation: here date_2 is a declared name, not a row 2 reference.
+<
+2026-09-01,2026-09-02,coffee,-3.50
+RULES
+fields date, date_2, desc, amt
+description %desc on %date_2
+account1 assets:a
+amount %amt USD
+$  ./csvtest.sh
+2026-09-01 coffee on 2026-09-02
+    assets:a                                      -3.50 USD
+    expenses:unknown                               3.50 USD
+
+>=0
+
+# ** 80. A matcher referencing a later row's field in an if block containing
+# a merge rule can never trigger the merge; a warning is printed.
+<
+2026-09-01,PAYMENT,coffee,-3.50,USD
+2026-09-02,CONVERT,conversion,-100.00,USD
+RULES
+fields date, type, desc, amt, cur
+description %desc
+account1 assets:a
+amount %amt %cur
+if %cur_2 EUR
+ merge 1
+$  ./csvtest.sh
+2026-09-01 coffee
+    assets:a                                      -3.50 USD
+    expenses:unknown                               3.50 USD
+
+2026-09-02 conversion
+    assets:a                                    -100.00 USD
+    expenses:unknown                             100.00 USD
+
+>2 /an if block containing a merge rule matches on a later row's field \(%cur_2\); this can not trigger a merge/
+>=0
+
+# ** 81. skip and end rules are applied before merge rules, so skipped
+# records don't count toward a merge group: here the junk row between the
+# conversion's two legs is skipped, and the legs are merged.
+<
+2026-09-02,CONVERT,conversion,-100.00,USD
+2026-09-02,JUNK,section subtotal,,
+2026-09-02,CONVERT,conversion,90.00,EUR
+RULES
+fields date, type, desc, amt, cur
+description %desc
+account1 assets:bank:%cur
+amount1 %amt %cur
+if %type JUNK
+ skip
+if %type CONVERT
+ merge 1
+ account2 assets:bank:%cur_2
+ amount2 %amt_2 %cur_2
+$  ./csvtest.sh
+2026-09-02 conversion
+    assets:bank:USD                             -100.00 USD
+    assets:bank:EUR                               90.00 EUR
+
+>=0
 
 # ** .
 #<
