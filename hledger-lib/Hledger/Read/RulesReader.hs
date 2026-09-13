@@ -688,9 +688,10 @@ dbgShowMatcher (FieldMatcher p f r) = unwords [dbgShowMatcherPrefix p, T.unpack 
 -- of rules which will be enabled only if one or more of the matchers
 -- succeeds.
 --
--- Three types of rule are allowed inside conditional blocks: field
--- assignments, skip, end. (A skip or end rule is stored as if it was
--- a field assignment, and executed in validateCsv. XXX)
+-- Four types of rule are allowed inside conditional blocks: field
+-- assignments, skip, end, merge. (A skip, end or merge rule is stored
+-- as if it was a field assignment, and executed in
+-- applySkipEndMergeRules. XXX)
 data ConditionalBlock = CB {
    cbMatchers    :: [Matcher]
   ,cbAssignments :: [(HledgerFieldName, FieldTemplate)]
@@ -939,8 +940,9 @@ journalfieldnames =
   ,"date"
   ,"description"
   ,"status"
-  ,"skip" -- skip and end are not really fields, but we list it here to allow conditional rules that skip records
+  ,"skip"  -- skip, end and merge are not really fields, but we list them here to allow conditional rules that skip or merge records
   ,"end"
+  ,"merge"
   ]
 
 assignmentseparatorp :: CsvRulesParser ()
@@ -1340,8 +1342,9 @@ readJournalFromCsv rulesfile rules csvfile csvtext sep = do
     dbg6IO "using separator" separator
     -- parse csv records
     csvrecords0 <- dbg7 "parseCsv" <$> parseCsv separator parsecfilename csvtext1
-    -- remove any records skipped by conditional skip or end rules
-    let csvrecords1 = applyConditionalSkips rules csvrecords0
+    -- remove any records skipped by conditional skip or end rules,
+    -- and combine any records joined by conditional merge rules
+    csvrecords1 <- liftEither $ first ((rulesfile <> ": ") <>) $ applySkipEndMergeRules rules csvrecords0
     -- and check the remaining records for any obvious problems
     csvrecords <- liftEither $ dbg7 "validateCsv" <$> validateCsv csvrecords1
     dbg6IO "first 3 csv records" $ take 3 csvrecords
@@ -1444,21 +1447,34 @@ parseCassava separator path content =
         toListList = toList . fmap toList
         unpackFields  = (fmap . fmap) T.decodeUtf8
 
--- | Scan for csv records where a conditional `skip` or `end` rule applies,
--- and apply that rule, removing one or more following records.
-applyConditionalSkips :: CsvRules -> [CsvRecord] -> [CsvRecord]
-applyConditionalSkips _ [] = []
-applyConditionalSkips rules (r:rest) =
-  case skipnum r of
-    Nothing -> r : applyConditionalSkips rules rest
-    Just cnt -> applyConditionalSkips rules $ drop (cnt-1) rest
+-- | Scan for csv records where a `skip`, `end` or `merge` rule applies
+-- (conditionally or unconditionally), and apply that rule:
+-- `skip` and `end` remove one or more records,
+-- `merge` appends the next N records' fields to the current record,
+-- combining them into a single record (and transaction).
+-- If fewer than N records remain in the file, merge just appends those.
+-- Return an error message if a rule's value can't be parsed as a positive number.
+applySkipEndMergeRules :: CsvRules -> [CsvRecord] -> Either String [CsvRecord]
+applySkipEndMergeRules _ [] = Right []
+applySkipEndMergeRules rules (r:rest) = do
+  mskip  <- rulecount "skip"
+  mmerge <- rulecount "merge"
+  case (hledgerField rules r "end", mskip, mmerge) of
+    (Just _, _, _)   -> Right []
+    (_, Just cnt, _) -> applySkipEndMergeRules rules $ drop (cnt-1) rest
+    (_, _, Just cnt) -> (concat (r:merged) :) <$> applySkipEndMergeRules rules rest'
+      where (merged, rest') = splitAt cnt rest
+    _ -> (r:) <$> applySkipEndMergeRules rules rest
   where
-    skipnum r1 =
-      case (hledgerField rules r1 "end", hledgerField rules r1 "skip") of
-        (Nothing, Nothing) -> Nothing
-        (Just _, _) -> Just maxBound
-        (Nothing, Just "") -> Just 1
-        (Nothing, Just x) -> Just (read $ T.unpack x)
+    -- the value of this record's skip or merge rule, if any: a positive record count
+    rulecount name =
+      case hledgerField rules r name of
+        Nothing -> Right Nothing
+        Just "" -> Right $ Just 1
+        Just x  ->
+          case readMay $ T.unpack x of
+            Just n | n >= 1 -> Right $ Just n
+            _ -> Left $ printf "could not parse %s value as a positive number: %s" (T.unpack name) (T.unpack x)
 
 -- | Do some validation on the parsed CSV records:
 -- check that they all have at least two fields.

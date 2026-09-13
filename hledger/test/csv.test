@@ -1328,6 +1328,123 @@ $  ./csvtest.sh
 >2 /replaced '\)' with '\]' in 1 code/
 >=0
 
+# ** 73. A conditional merge rule combines the next record's fields into the
+# current record, converting eg a two-row currency conversion to one transaction.
+<
+2026-09-01,PAYMENT,coffee,-3.50,USD
+2026-09-02,CONVERT,converted USD to EUR,-100.00,USD
+2026-09-02,CONVERT,converted USD to EUR,90.00,EUR
+2026-09-03,PAYMENT,salary,1000.00,USD
+RULES
+fields date, type, desc, amt, cur, date_b, type_b, desc_b, amt_b, cur_b
+description %desc
+account1 assets:bank:%cur
+amount1  %amt %cur
+if %type CONVERT
+ merge 1
+ account2 assets:bank:%cur_b
+ amount2  %amt_b %cur_b
+if %type PAYMENT
+ account2 expenses:unknown
+$  ./csvtest.sh
+2026-09-01 coffee
+    assets:bank:USD                               -3.50 USD
+    expenses:unknown
+
+2026-09-02 converted USD to EUR
+    assets:bank:USD                             -100.00 USD
+    assets:bank:EUR                               90.00 EUR
+
+2026-09-03 salary
+    assets:bank:USD                             1000.00 USD
+    expenses:unknown
+
+>=0
+
+# ** 74. merge N combines the next N records, eg a three-row trade.
+<
+2026-09-02,TRADE,bought AAPL,-1000.00,USD
+2026-09-02,TRADE,bought AAPL,4,AAPL
+2026-09-02,TRADE,trade fee,1.00,USD
+RULES
+fields date, type, desc, amt, cur, _b1, _b2, _b3, amt_b, cur_b, _c1, _c2, _c3, amt_c, cur_c
+description %desc
+account1 assets:broker:cash
+amount1 %amt %cur
+if %type TRADE
+ merge 2
+ account2 assets:broker:%cur_b
+ amount2 %amt_b %cur_b
+ account3 expenses:fees
+ amount3 %amt_c %cur_c
+ account4 assets:broker:cash
+ amount4 -%amt_c %cur_c
+$  ./csvtest.sh
+2026-09-02 bought AAPL
+    assets:broker:cash                         -1000.00 USD
+    assets:broker:AAPL                             4 AAPL
+    expenses:fees                                  1.00 USD
+    assets:broker:cash                            -1.00 USD
+
+>=0
+
+# ** 75. A top-level merge assignment pairs up all records, for CSV files
+# where every transaction is two rows.
+<
+2026-09-02,conversion,-100.00,USD
+2026-09-02,conversion,90.00,EUR
+2026-09-05,conversion,-50.00,USD
+2026-09-05,conversion,44.00,EUR
+RULES
+fields date, desc, amt, cur, _b1, _b2, amt_b, cur_b
+merge 1
+description %desc
+account1 assets:bank:%cur
+amount1 %amt %cur
+account2 assets:bank:%cur_b
+amount2 %amt_b %cur_b
+$  ./csvtest.sh
+2026-09-02 conversion
+    assets:bank:USD                             -100.00 USD
+    assets:bank:EUR                               90.00 EUR
+
+2026-09-05 conversion
+    assets:bank:USD                              -50.00 USD
+    assets:bank:EUR                               44.00 EUR
+
+>=0
+
+# ** 76. A merge rule wanting more records than remain in the file
+# merges just the remaining ones; the record is still converted normally.
+<
+2026-09-02,CONVERT,conversion,-100.00,USD
+RULES
+fields date, type, desc, amt, cur
+description %desc
+account1 assets:a
+amount %amt %cur
+if %type CONVERT
+ merge 1
+$  ./csvtest.sh
+2026-09-02 conversion
+    assets:a                                    -100.00 USD
+    expenses:unknown                             100.00 USD
+
+>=0
+
+# ** 77. A merge value that is not a positive number is an error.
+<
+2026-09-02,CONVERT,conversion,-100.00,USD
+RULES
+fields date, type, desc, amt, cur
+account1 assets:a
+amount1 %amt %cur
+if %type CONVERT
+ merge 0
+$  ./csvtest.sh
+>2 /could not parse merge value as a positive number: 0/
+>=1
+
 # ** .
 #<
 #$  ./csvtest.sh
