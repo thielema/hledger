@@ -32,7 +32,7 @@ Flags:
 ```
 
 
-This command shows your lot-tracked assets, and their performance, as of the report end date.
+This command shows your lot-tracked assets (see [Lot reporting](#lot-reporting)), and their performance, as of the report end date.
 An example:
 
 ```
@@ -73,7 +73,7 @@ The columns show:
 - the percentage of the portfolio's total value (Weight)
 - the unrealised gain and gain percent (UGain, UGain%)
 - the realised gain from disposals so far (RGain)
-- and the annualised rate of return (XIRR, calculated from the holding's dated cashflows and current value, like roi's IRR; it includes realised gains).
+- and the annualised rate of return, as of the report end date (XIRR, calculated from the holding's dated cashflows and current value, like roi's IRR; it includes realised gains).
 
 Fully disposed commodities and accounts are not shown, unless you add `-E/--empty`.
 (But the RGain and XIRR in the totals row always includes them.)
@@ -98,7 +98,7 @@ Query arguments and report flags like `-t/--tree`, `--depth`, `-S/--sort-amount`
 
 With `-O html`, an HTML table is produced instead.
 With `-O fods`, a spreadsheet document readable by LibreOffice etc. is produced.
-With `-O csv` or `-O tsv`, machine-readable output is produced instead:
+With `-O csv` or `-O tsv`, machine-readable output is produced:
 one record per displayed row, with full account names, age in days,
-bare units and gain percent numbers, gain and gain percent as separate fields, and no totals records.
+bare units and gain percent numbers, and no totals record.
 With `-O json`, a JSON array of holding objects is produced.
