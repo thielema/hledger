@@ -31,10 +31,37 @@ Flags:
                             one of the above formats selects that format.
 ```
 
-This command shows the assets held in lot-tracked accounts (see [Lots](#lots))
-as of the report end date: one row per account and held commodity
-(an account holding several commodities gets several rows, repeating
-its name), or per lot and commodity with `--lots`.
+
+This command shows the assets held in lot-tracked accounts, and their performance, as of the report end date.
+For a full report, market prices should be declared for the commodities.
+With `--lots`, individual lots are shown.
+
+```
+$ hledger holdings
+Holdings on 2023-04-01
+
+                           ||       Date   Age    Units  Avg cost     Price      Cost        Value  Weight        UGain   UGain%     RGain     XIRR 
+===========================++=======================================================================================================================
+ assets:investments:stocks || 2022-04-07  359d  10 INFY    2.00 ₹  100.00 ₹   20.00 ₹   1,000.00 ₹    6.4%     980.00 ₹  4900.0%            5252.4% 
+ assets:investments:stocks ||                   73 LTTS    4.79 ₹  200.00 ₹  350.00 ₹  14,600.00 ₹   93.6%  14,250.00 ₹  4071.4%  140.00 ₹  4290.2% 
+---------------------------++-----------------------------------------------------------------------------------------------------------------------
+                           ||                                                370.00 ₹  15,600.00 ₹  100.0%  15,230.00 ₹  4116.2%  140.00 ₹  4342.1% 
+```
+
+```
+$ hledger --lots
+Holdings on 2023-04-01
+
+                                                         ||       Date   Age    Units  Unit cost     Price      Cost        Value  Weight        UGain   UGain%     RGain     XIRR 
+=========================================================++========================================================================================================================
+ assets:investments:stocks:{2022-04-06, "0002", 10.00 ₹} || 2022-04-06  360d  13 LTTS    10.00 ₹  200.00 ₹  130.00 ₹   2,600.00 ₹   16.7%   2,470.00 ₹  1900.0%  140.00 ₹  3876.1% 
+ assets:investments:stocks:{2022-04-07, 2.00 ₹}          || 2022-04-07  359d  10 INFY     2.00 ₹  100.00 ₹   20.00 ₹   1,000.00 ₹    6.4%     980.00 ₹  4900.0%            5252.4% 
+ assets:investments:stocks:{2022-05-06, "0002", 11.00 ₹} || 2022-05-06  330d  20 LTTS    11.00 ₹  200.00 ₹  220.00 ₹   4,000.00 ₹   25.6%   3,780.00 ₹  1718.2%            5032.7% 
+ assets:investments:stocks:{2022-06-06, "0002", 0.00 ₹}  || 2022-06-06  299d  40 LTTS          0  200.00 ₹         0   8,000.00 ₹   51.3%   8,000.00 ₹                             
+---------------------------------------------------------++------------------------------------------------------------------------------------------------------------------------
+                                                         ||                                                 370.00 ₹  15,600.00 ₹  100.0%  15,230.00 ₹  4116.2%  140.00 ₹  4342.1% 
+```
+
 Fully disposed commodities and accounts are not shown by default;
 with `-E/--empty`, they are shown as zero-units rows, keeping their
 realised gains and realised XIRR visible.
