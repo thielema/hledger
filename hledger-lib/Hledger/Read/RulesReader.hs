@@ -61,7 +61,7 @@ import Data.Csv.Parser.Megaparsec qualified as CassavaMegaparsec
 import Data.Encoding (encodingFromStringExplicit, DynEncoding)
 import Data.Either (fromRight)
 import Data.Functor ((<&>))
-import Data.List (elemIndex, mapAccumL, nub, sortOn, isInfixOf, isPrefixOf)
+import Data.List (elemIndex, nub, sortOn, isInfixOf, isPrefixOf)
 #if !MIN_VERSION_base(4,20,0)
 import Data.List (foldl')
 #endif
@@ -75,7 +75,7 @@ import Data.Text.Encoding qualified as T
 import Data.Text.IO qualified as T
 import Data.Time ( Day, TimeZone, UTCTime, LocalTime, ZonedTime(ZonedTime),
   defaultTimeLocale, getCurrentTimeZone, localDay, parseTimeM, utcToLocalTime, localTimeToUTC, zonedTimeToUTC, utctDay)
-import Safe (atMay, headDef, headMay, lastMay, readMay)
+import Safe (atMay, headDef, headMay, lastDef, lastMay, readMay)
 import System.Directory (canonicalizePath, createDirectoryIfMissing, doesDirectoryExist, doesFileExist, getHomeDirectory, getModificationTime, listDirectory, removeFile)
 import System.Exit      (ExitCode(..))
 import System.FilePath (isAbsolute, splitDirectories, stripExtension, takeBaseName, takeDirectory, takeExtension, (<.>), (</>))
@@ -1311,8 +1311,9 @@ readJournalFromCsv rulesfile rules csvfile csvtext sep = do
 
     dbg6IO "csv rules" rules
 
-    -- convert the csv data to lines and remove all empty/blank lines
-    let csvlines1 = dbg9 "csvlines1" $ filter (not . T.null . T.strip) $ dbg9 "csvlines0" $ T.lines csvtext
+    -- convert the csv data to lines, numbered with their position in the file,
+    -- then remove all empty/blank lines
+    let csvlines1 = dbg9 "csvlines1" $ filter (not . T.null . T.strip . snd) $ zip [1..] $ dbg9 "csvlines0" $ T.lines csvtext
 
     -- if there is a top-level skip rule, skip the specified number of non-empty lines
     skiplines <- case getDirectiveFirstWins "skip" rules of
@@ -1323,7 +1324,7 @@ readJournalFromCsv rulesfile rules csvfile csvtext sep = do
 
     -- convert back to text and parse as csv records
     let
-      csvtext1 = T.unlines csvlines2
+      csvtext1 = T.unlines $ map snd csvlines2
       -- The separator in the rules file takes precedence over the extension or prefix
       separator = case getDirective "separator" rules >>= parseSeparator of
         Just c           -> c
@@ -1342,18 +1343,20 @@ readJournalFromCsv rulesfile rules csvfile csvtext sep = do
     dbg6IO "using separator" separator
     -- parse csv records
     csvrecords0 <- dbg7 "parseCsv" <$> parseCsv separator parsecfilename csvtext1
+    -- pair each record with the range of file lines it came from
+    let csvrecords1 = dbg9 "locateCsvRecords" $ locateCsvRecords (map fst csvlines2) csvrecords0
     -- remove any records skipped by conditional skip or end rules,
     -- and combine any records joined by conditional merge rules
-    csvrecords1 <- liftEither $ first ((rulesfile <> ": ") <>) $ applySkipEndMergeRules rules csvrecords0
+    csvrecords2 <- liftEither $ first ((rulesfile <> ": ") <>) $ applySkipEndMergeRules rules csvrecords1
     -- and check the remaining records for any obvious problems
-    csvrecords <- liftEither $ dbg7 "validateCsv" <$> validateCsv csvrecords1
+    csvrecords <- liftEither $ dbg7 "validateCsv" <$> validateCsv csvrecords2
     dbg6IO "first 3 csv records" $ take 3 csvrecords
 
     -- transactionFromCsvRecord below will replace characters which journal format can't
     -- represent: semicolons in descriptions (#2413), right parentheses in codes.
     -- Warn once per file for each; count the affected records here.
     let warnfixed fieldname badchar replacement =
-          let n = length $ filter (maybe False (T.any (==badchar)) . flip (hledgerFieldValue rules) fieldname) csvrecords
+          let n = length $ filter (maybe False (T.any (==badchar)) . flip (hledgerFieldValue rules) fieldname . snd) csvrecords
           in when (n > 0) $ warnIO $
              csvfile <> ": replaced '" <> [badchar] <> "' with '" <> replacement <> "' in " <>
              show n <> " " <> T.unpack fieldname <> "(s), since journal format can't represent it"
@@ -1372,17 +1375,12 @@ readJournalFromCsv rulesfile rules csvfile csvtext sep = do
                 parseTimeM False defaultTimeLocale "%Z" $ T.unpack s
     let
       -- convert CSV records to transactions, saving the CSV line numbers for error positions
-      txns = dbg7 "csv txns" $ snd $ mapAccumL
-                     (\pos r ->
-                        let
-                          SourcePos name line col = pos
-                          line' = (mkPos . (+1) . unPos) line
-                          pos' = SourcePos name line' col
-                        in
-                          (pos', transactionFromCsvRecord timesarezoned mtzin tzout pos rules r)
-                     )
-                     (initialPos parsecfilename) csvrecords
+      txns = dbg7 "csv txns" $
+             [ transactionFromCsvRecord timesarezoned mtzin tzout (mkpos l1, mkpos $ l2+1) rules r
+             | ((l1,l2), r) <- csvrecords ]
         where
+          -- like journal entries, a record's position ends at the start of the line after its last line
+          mkpos l = SourcePos parsecfilename (mkPos l) (mkPos 1)
           timesarezoned =
             case csvRule rules "date-format" of
               Just f | any (`T.isInfixOf` f) ["%Z","%z","%EZ","%Ez"] -> True
@@ -1447,24 +1445,49 @@ parseCassava separator path content =
         toListList = toList . fmap toList
         unpackFields  = (fmap . fmap) T.decodeUtf8
 
+-- | A CSV record, together with the range of file lines it came from
+-- (first line, last line; 1-based, inclusive).
+type LocatedCsvRecord = ((Int, Int), CsvRecord)
+
+-- | Pair each parsed csv record with the range of file lines it came from.
+-- The first argument is the original file line numbers of the (non-blank,
+-- non-header) lines that were parsed. Each record consumes one of these,
+-- plus one more for each newline embedded in its field values (a quoted
+-- field can span multiple lines). If the line numbers run out (eg when
+-- reading from stdin, whose lines were not counted), continue counting
+-- sequentially from the last known line.
+locateCsvRecords :: [Int] -> [CsvRecord] -> [LocatedCsvRecord]
+locateCsvRecords = go 1
+  where
+    go _ _ [] = []
+    go nextline linenos (r:rs) = ((l1, l2), r) : go (l2+1) linenos' rs
+      where
+        numlines = 1 + sum (map (T.count "\n") r)
+        (consumed, linenos') = splitAt numlines linenos
+        l1 = headDef nextline consumed
+        l2 = lastDef (l1 + numlines - 1) consumed
+
 -- | Scan for csv records where a `skip`, `end` or `merge` rule applies
 -- (conditionally or unconditionally), and apply that rule:
 -- `skip` and `end` remove one or more records,
 -- `merge` appends the next N records' fields to the current record,
--- combining them into a single record (and transaction).
+-- combining them into a single record (and transaction) located at
+-- the whole group's range of file lines.
 -- If fewer than N records remain in the file, merge just appends those.
 -- Return an error message if a rule's value can't be parsed as a positive number.
-applySkipEndMergeRules :: CsvRules -> [CsvRecord] -> Either String [CsvRecord]
+applySkipEndMergeRules :: CsvRules -> [LocatedCsvRecord] -> Either String [LocatedCsvRecord]
 applySkipEndMergeRules _ [] = Right []
-applySkipEndMergeRules rules (r:rest) = do
+applySkipEndMergeRules rules (lr@((l1,l2), r):rest) = do
   mskip  <- rulecount "skip"
   mmerge <- rulecount "merge"
   case (hledgerField rules r "end", mskip, mmerge) of
     (Just _, _, _)   -> Right []
     (_, Just cnt, _) -> applySkipEndMergeRules rules $ drop (cnt-1) rest
-    (_, _, Just cnt) -> (concat (r:merged) :) <$> applySkipEndMergeRules rules rest'
-      where (merged, rest') = splitAt cnt rest
-    _ -> (r:) <$> applySkipEndMergeRules rules rest
+    (_, _, Just cnt) -> (((l1, l2'), concat (r : map snd merged)) :) <$> applySkipEndMergeRules rules rest'
+      where
+        (merged, rest') = splitAt cnt rest
+        l2' = lastDef l2 $ map (snd . fst) merged
+    _ -> (lr:) <$> applySkipEndMergeRules rules rest
   where
     -- the value of this record's skip or merge rule, if any: a positive record count
     rulecount name =
@@ -1478,14 +1501,14 @@ applySkipEndMergeRules rules (r:rest) = do
 
 -- | Do some validation on the parsed CSV records:
 -- check that they all have at least two fields.
-validateCsv :: [CsvRecord] -> Either String [CsvRecord]
+validateCsv :: [LocatedCsvRecord] -> Either String [LocatedCsvRecord]
 validateCsv [] = Right []
 validateCsv rs@(_first:_) =
   case lessthan2 of
-    Just r  -> Left $ printf "CSV record %s has less than two fields" (show r)
-    Nothing -> Right rs
+    Just (_,r) -> Left $ printf "CSV record %s has less than two fields" (show r)
+    Nothing    -> Right rs
   where
-    lessthan2 = headMay $ filter ((<2).length) rs
+    lessthan2 = headMay $ filter ((<2).length.snd) rs
 
 -- -- | The highest (0-based) field index referenced in the field
 -- -- definitions, or -1 if no fields are defined.
@@ -1505,8 +1528,8 @@ validateCsv rs@(_first:_) =
 
 --- ** converting csv records to transactions
 
-transactionFromCsvRecord :: Bool -> Maybe TimeZone -> TimeZone -> SourcePos -> CsvRules -> CsvRecord -> Transaction
-transactionFromCsvRecord timesarezoned mtzin tzout sourcepos rules record =
+transactionFromCsvRecord :: Bool -> Maybe TimeZone -> TimeZone -> (SourcePos, SourcePos) -> CsvRules -> CsvRecord -> Transaction
+transactionFromCsvRecord timesarezoned mtzin tzout sourcepospair rules record =
   -- log the record and all the transaction fields from this record
   -- XXX avoid possibly-pessimising deepseq if not needed for debug output ?
   dbg2Msg (T.unpack $ showRecord record) $ deepseq t
@@ -1615,7 +1638,7 @@ transactionFromCsvRecord timesarezoned mtzin tzout sourcepos rules record =
     -- 4. Build the transaction (and name it, so the postings can reference it).
 
     t = nulltransaction{
-           tsourcepos        = (sourcepos, sourcepos)  -- the CSV line number
+           tsourcepos        = sourcepospair  -- the CSV file line(s) this transaction came from
           ,tdate             = date'
           ,tdate2            = mdate2'
           ,tstatus           = status

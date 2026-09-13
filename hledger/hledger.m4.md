@@ -4368,6 +4368,8 @@ Things to note:
   eg a whole-record matcher can match text from any of the merged rows.
 - The records to be merged must be consecutive in the file,
   and the merging record must be the first of the group.
+- A merged transaction's source position (shown by `print --location`)
+  is the group's full range of file lines.
 - If fewer than N records remain in the file, just those are merged;
   the extra field names have empty values, as in unmerged records.
 

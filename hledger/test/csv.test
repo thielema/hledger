@@ -1432,7 +1432,32 @@ $  ./csvtest.sh
 
 >=0
 
-# ** 77. A merge value that is not a positive number is an error.
+# ** 77. Positions reported by print --location are the records' actual
+# file lines, accounting for header lines, blank lines, and merged records.
+<
+date,type,desc,amt,cur
+2026-09-01,PAYMENT,coffee,-3.50,USD
+
+2026-09-02,CONVERT,conversion,-100.00,USD
+2026-09-02,CONVERT,conversion,90.00,EUR
+RULES
+skip 1
+fields date, type, desc, amt, cur, date_b, type_b, desc_b, amt_b, cur_b
+description %desc
+account1 assets:bank:%cur
+amount1  %amt %cur
+if %type CONVERT
+ merge 1
+ account2 assets:bank:%cur_b
+ amount2  %amt_b %cur_b
+if %type PAYMENT
+ account2 expenses:unknown
+$  ./csvtest.sh --locations | grep -oE 'csv:[0-9]+-[0-9]+'
+csv:2-2
+csv:4-5
+>=0
+
+# ** 78. A merge value that is not a positive number is an error.
 <
 2026-09-02,CONVERT,conversion,-100.00,USD
 RULES
