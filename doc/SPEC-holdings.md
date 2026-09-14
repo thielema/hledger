@@ -112,8 +112,10 @@ Notes:
   (eg by a commodity directive or `-c '0.00 %'`), so their precision and
   symbol placement can be customised. The csv/tsv/json outputs keep
   bare percent numbers.
-- The totals row (shown unless -N) shows only the commodity-independent
-  columns: Cost, Value, Weight (100%), UGain, UGain%, RGain, XIRR.
+- The totals row (shown unless -N) shows the commodity-independent
+  columns: Cost, Value, Weight (100%), UGain, UGain%, RGain, XIRR;
+  and, when the holdings are all in one commodity, the total Units
+  (a multi-commodity total would widen the column for everyone).
 - Possible future columns: a long/short-term capital gains indicator.
 
 ## Valuation

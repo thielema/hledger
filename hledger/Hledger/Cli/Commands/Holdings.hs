@@ -723,15 +723,21 @@ holdings opts@CliOpts{rawopts_=rawopts, reportspec_=rspec@ReportSpec{_rsQuery=q,
       ["account","commodity","date","age","units","unitcost","price","cost","value","weight","ugain","ugainpct","rgain","xirr"]
       : map holdingCsv holdingrecords
 
-    -- Grand totals row (as cell parts, like rowCellParts): the Cost,
-    -- Value and gain columns, summed over the topmost displayed rows
+    -- Grand totals row (as cell parts, like rowCellParts): the Units,
+    -- Cost, Value and gain columns, summed over the topmost displayed rows
     -- (which include everything below them).
+    -- Units is shown only when the holdings are all in one commodity
+    -- (a multi-commodity total would widen the column for everyone).
     -- Value and gains are blank unless all rows have a market price.
     mtotalrowparts :: Maybe [[T.Text]]
     mtotalrowparts
       | no_total_ ropts = Nothing
-      | otherwise = Just [[], [], [], [], [], costparts, valueparts, [weightcell], ugainparts, [ugainpctcell], rgainparts, [xirrcell]]
+      | otherwise = Just [[], [], unitsparts, [], [], costparts, valueparts, [weightcell], ugainparts, [ugainpctcell], rgainparts, [xirrcell]]
       where
+        unitsparts = case filter (not . amountLooksZero) $ sumAmounts $
+                          concatMap (map fst . lotsUnder . prrFullName) toprows of
+          [u] -> [showamt u]
+          _   -> []
         totcosts = concatMap rowLotCosts toprows
         costparts = map showamt $ amounts $ mixed totcosts
         (valueparts, weightcell, ugainparts, ugainpctcell) = case mportfoliovalue of
