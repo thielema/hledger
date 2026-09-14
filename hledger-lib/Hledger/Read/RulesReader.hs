@@ -1961,15 +1961,19 @@ parseAmount rules record currency s =
       ]
 
 -- | Show the values assigned to each journal field.
-showRules rules record = T.unlines $ concatMap showfieldrules journalfieldnames
+showRules rules record = T.unlines $ "hledger field assignment rules:" : concatMap showfieldrules journalfieldnames
   where
     -- the field's effective rule, and below it any earlier-declared rules it overrides
     showfieldrules fld =
       case reverse $ map (either id (lastCBAssignment fld)) $ getEffectiveAssignments rules record fld of
         (a:overridden) ->
-          withRulesPos ("the "<>fld<>" rule is: "<>faTemplate a) (faPos a)
-          : [ withRulesPos ("  (overrides: "<>faTemplate o) (faPos o) <> ")" | o <- overridden ]
+          withRulesPos (fieldlabel <> faTemplate a) (faPos a)
+          : [ withRulesPos ("    (overrides: "<>faTemplate o) (faPos o) <> ")" | o <- overridden ]
         [] -> []
+      where
+        -- indented field name, padded to a standard column (or longer)
+        fieldlabel = T.justifyLeft (fieldColumn - 1) ' ' ("  "<>fld<>":") <> " "
+        fieldColumn = 15
 
 -- | Append a rules file position ("(FILE:LINE)") to a line of text, if known.
 -- The full file path is shown, so editors/IDEs can jump to the location.
@@ -1979,7 +1983,7 @@ withRulesPos :: Text -> Maybe (FilePath, Int) -> Text
 withRulesPos txt =
   maybe txt $ \(f,l) ->
     T.justifyLeft (rulesPosColumn - 2) ' ' txt <> "  ("<>T.pack f<>":"<>T.pack (show l)<>")"
-  where rulesPosColumn = 50
+  where rulesPosColumn = 45
 
 -- XXX unify these ^v
 
