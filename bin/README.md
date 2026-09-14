@@ -44,6 +44,17 @@ Customise it to download bank/brokerage statements (CSV/OFX/etc.) into the worki
 is a helper for hledger's `get` command's prices phase. You can also run it yourself.
 It is a simple, customisable front end for price-fetching tools like pricehist.
 
+### krakencsv
+
+[`krakencsv`](https://github.com/hledgerorg/hledger/blob/main/bin/krakencsv) (python)
+enriches a Kraken ledgers CSV export with derived columns:
+the ISO date, the net amount (amount minus fee), and for cryptocurrency assets,
+the market price on that date and its currency
+(looked up from per-asset files of hledger `P` price directives in a nearby `prices` directory).
+
+Example usage in a CSV [rules file](https://hledger.org/hledger.html#csv):
+`source kraken-spot-ledgers-*.csv | krakencsv`.
+
 ### ledgereval
 
 [ledgereval](https://github.com/hledgerorg/hledger/blob/main/bin/ledgereval)
