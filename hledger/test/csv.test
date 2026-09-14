@@ -1453,8 +1453,8 @@ if %type CONVERT
  amount2  %amt_2 %cur_2
 if %type PAYMENT
  account2 expenses:unknown
-$  ./csvtest.sh --locations | grep -oE 'csv:[0-9]+-[0-9]+'
-csv:2-2
+$  ./csvtest.sh --locations | grep -oE 'csv:[0-9]+(-[0-9]+)?'
+csv:2
 csv:4-5
 >=0
 

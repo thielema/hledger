@@ -141,11 +141,13 @@ dbgparse level msg = when (level <= debugLevel) $ do
   where
     peeklength = 30
 
--- | Render a pair of source positions in human-readable form, only displaying the range of lines.
+-- | Render a pair of source positions in human-readable form, only displaying the range of lines,
+-- or just the one line number if the range is a single line.
 sourcePosPairPretty :: (SourcePos, SourcePos) -> String
 sourcePosPairPretty (SourcePos fp l1 _, SourcePos _ l2 c2) =
-    fp ++ ":" ++ show (unPos l1) ++ "-" ++ show l2'
+    fp ++ ":" ++ show l1' ++ (if l2' > l1' then "-" ++ show l2' else "")
   where
+    l1' = unPos l1
     l2' = if unPos c2 == 1 then unPos l2 - 1 else unPos l2  -- might be at end of file with a final new line
 
 -- | Backtracking choice, use this when alternatives share a prefix.
