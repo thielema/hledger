@@ -3,7 +3,7 @@ $$$ hledger print -f  csvdateformat.csv
 record: a,b
   %1   a
   %2   b
-the date rule is:   %1
+the date rule is:   %1  \(.*rules:2\)
 the date-format is: unspecified
 /
 >>>= 1

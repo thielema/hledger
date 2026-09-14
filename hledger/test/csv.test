@@ -1559,6 +1559,22 @@ record: 2026-09-02,buy,100.00,USD
   %4 cur   USD/
 >=1
 
+# ** 83. Conversion error messages show each effective rule's source
+# position, and any earlier-declared rules it has overridden.
+<
+2026-01-01,shop,badamt
+RULES
+fields date, desc, amt
+account1 assets:a
+account2 expenses:misc
+amount %amt USD
+if shop
+ account2 expenses:shopping
+$  ./csvtest.sh
+>2 /the account2 rule is: expenses:shopping  \(.*rules:6\)
+  \(overrides: expenses:misc  \(.*rules:3\)\)/
+>=1
+
 # ** .
 #<
 #$  ./csvtest.sh

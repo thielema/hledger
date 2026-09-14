@@ -540,7 +540,20 @@ parseAndValidateCsvRules :: FilePath -> [(FilePath, Int)] -> T.Text -> Either St
 parseAndValidateCsvRules rulesfile sourcelines s =
   case parseCsvRules rulesfile s of
     Left err    -> Left $ errorBundlePretty $ fixErrorSourcePosition sourcelines s $ finalizeCustomErrorBundle err
-    Right rules -> first ((rulesfile <> ":\n") <>) $ validateCsvRules rules
+    Right rules -> first ((rulesfile <> ":\n") <>) $ validateCsvRules $ translateRulePositions sourcelines rules
+
+-- | Translate the rules' recorded source positions, which are line numbers
+-- in the include-expanded rules text (see expandIncludes), to positions in
+-- the original rules files, using the line sources returned by expandIncludes.
+translateRulePositions :: [(FilePath, Int)] -> CsvRules -> CsvRules
+translateRulePositions sourcelines rules =
+  rules{ rassignments       = map translate $ rassignments rules
+       , rconditionalblocks = cbs
+       , rblocksassigning   = mkBlocksAssigning cbs
+       }
+  where
+    cbs = [cb{cbAssignments = map translate $ cbAssignments cb} | cb <- rconditionalblocks rules]
+    translate a = a{faPos = faPos a >>= \(_,l) -> atMay sourcelines (l-1)}
 
 -- | Adjust this parse error bundle's position state, using the line sources
 -- returned by expandIncludes, so that the (first) error is reported at the
@@ -595,8 +608,8 @@ data CsvRules' a = CsvRules' {
     -- ^ top-level rules, as (keyword, value) pairs
   rcsvfieldindexes   :: [(CsvFieldName, CsvFieldIndex)],
     -- ^ csv field names and their column number, if declared by a fields list
-  rassignments       :: [(HledgerFieldName, FieldTemplate)],
-    -- ^ top-level assignments to hledger fields, as (field name, value template) pairs
+  rassignments       :: [FieldAssignment],
+    -- ^ top-level assignments to hledger fields
   rconditionalblocks :: [ConditionalBlock],
     -- ^ conditional blocks, which containing additional assignments/rules to apply to matched csv records
   rblocksassigning :: a -- (String -> [ConditionalBlock])
@@ -647,6 +660,22 @@ type HledgerFieldName = Text
 -- containing csv field references to be interpolated.
 type FieldTemplate    = Text
 
+-- | An assignment to a hledger field: the field name, the value template,
+-- and the rules file position where it was written, useful in error messages.
+-- The position is not part of a rule's identity: it is ignored when comparing.
+data FieldAssignment = FieldAssignment {
+   faName     :: HledgerFieldName
+  ,faTemplate :: FieldTemplate
+  ,faPos      :: Maybe (FilePath, Int)  -- ^ rules file and line number, if known
+  } deriving (Show)
+
+instance Eq FieldAssignment where
+  a == b = (faName a, faTemplate a) == (faName b, faTemplate b)
+
+-- | Make a field assignment with unknown source position (used in tests).
+fa :: HledgerFieldName -> FieldTemplate -> FieldAssignment
+fa n t = FieldAssignment n t Nothing
+
 -- | A reference to a regular expression match group. Eg \1.
 type MatchGroupReference = Text
 
@@ -696,7 +725,7 @@ dbgShowMatcher (FieldMatcher p f r) = unwords [dbgShowMatcherPrefix p, T.unpack 
 -- applyConditionalSkips/applyMergeRules. XXX)
 data ConditionalBlock = CB {
    cbMatchers    :: [Matcher]
-  ,cbAssignments :: [(HledgerFieldName, FieldTemplate)]
+  ,cbAssignments :: [FieldAssignment]
   } deriving (Show, Eq)
 
 dbgShowConditionalBlock :: ConditionalBlock -> String
@@ -715,15 +744,21 @@ defrules = CsvRules' {
 mkrules :: CsvRulesParsed -> CsvRules
 mkrules rules =
   let conditionalblocks = reverse $ rconditionalblocks rules
-      maybeMemo = if length conditionalblocks >= 15 then memo else id
   in
     CsvRules' {
     rdirectives=reverse $ rdirectives rules,
     rcsvfieldindexes=rcsvfieldindexes rules,
     rassignments=reverse $ rassignments rules,
     rconditionalblocks=conditionalblocks,
-    rblocksassigning = maybeMemo (\f -> filter (any ((==f).fst) . cbAssignments) conditionalblocks)
+    rblocksassigning = mkBlocksAssigning conditionalblocks
     }
+
+-- | Make the (possibly memoized) function looking up the conditional blocks
+-- which can potentially assign a given field.
+mkBlocksAssigning :: [ConditionalBlock] -> (Text -> [ConditionalBlock])
+mkBlocksAssigning conditionalblocks =
+  maybeMemo (\f -> filter (any ((==f).faName) . cbAssignments) conditionalblocks)
+  where maybeMemo = if length conditionalblocks >= 15 then memo else id
 
 --- *** rules parsers
 _RULES_PARSING__________________________________________ = undefined
@@ -800,11 +835,11 @@ DIGIT: 0-9
 addDirective :: (DirectiveName, Text) -> CsvRulesParsed -> CsvRulesParsed
 addDirective d r = r{rdirectives=d:rdirectives r}
 
-addAssignment :: (HledgerFieldName, FieldTemplate) -> CsvRulesParsed -> CsvRulesParsed
+addAssignment :: FieldAssignment -> CsvRulesParsed -> CsvRulesParsed
 addAssignment a r = r{rassignments=a:rassignments r}
 
-setIndexesAndAssignmentsFromList :: [CsvFieldName] -> CsvRulesParsed -> CsvRulesParsed
-setIndexesAndAssignmentsFromList fs = addAssignmentsFromList fs . setCsvFieldIndexesFromList fs
+setIndexesAndAssignmentsFromList :: Maybe (FilePath, Int) -> [CsvFieldName] -> CsvRulesParsed -> CsvRulesParsed
+setIndexesAndAssignmentsFromList pos fs = addAssignmentsFromList fs . setCsvFieldIndexesFromList fs
   where
     setCsvFieldIndexesFromList :: [CsvFieldName] -> CsvRulesParsed -> CsvRulesParsed
     setCsvFieldIndexesFromList fs' r = r{rcsvfieldindexes=zip fs' [1..]}
@@ -814,7 +849,7 @@ setIndexesAndAssignmentsFromList fs = addAssignmentsFromList fs . setCsvFieldInd
       where
         maybeAddAssignment rules f = (maybe id addAssignmentFromIndex $ elemIndex f fs') rules
           where
-            addAssignmentFromIndex i = addAssignment (f, T.pack $ '%':show (i+1))
+            addAssignmentFromIndex i = addAssignment $ FieldAssignment f (T.pack $ '%':show (i+1)) pos
 
 addConditionalBlock :: ConditionalBlock -> CsvRulesParsed -> CsvRulesParsed
 addConditionalBlock b r = r{rconditionalblocks=b:rconditionalblocks r}
@@ -827,7 +862,8 @@ rulesp = do
   _ <- many $ choice
     [blankorcommentlinep                                                <?> "blank or comment line"
     ,(directivep        >>= modify' . addDirective)                     <?> "directive"
-    ,(fieldnamelistp    >>= modify' . setIndexesAndAssignmentsFromList) <?> "field name list"
+    ,(do pos <- getRulesPos
+         fieldnamelistp >>= modify' . setIndexesAndAssignmentsFromList pos) <?> "field name list"
     ,(fieldassignmentp  >>= modify' . addAssignment)                    <?> "field assignment"
     -- conditionalblockp backtracks because it shares "if" prefix with conditionaltablep.
     ,try (conditionalblockp >>= modify' . addConditionalBlock)          <?> "conditional block"
@@ -901,14 +937,24 @@ quotedfieldnamep =
 barefieldnamep :: CsvRulesParser Text
 barefieldnamep = takeWhile1P Nothing (`notElem` (" \t\n,;#~" :: [Char]))
 
-fieldassignmentp :: CsvRulesParser (HledgerFieldName, FieldTemplate)
+-- | Get the current source position as a rules file position: the file path
+-- and line number. When parsing rules with included files, this is a position
+-- in the expanded text; it should be translated to the original file and line
+-- with translateRulePositions after parsing.
+getRulesPos :: CsvRulesParser (Maybe (FilePath, Int))
+getRulesPos = do
+  SourcePos f l _ <- lift getSourcePos
+  return $ Just (f, unPos l)
+
+fieldassignmentp :: CsvRulesParser FieldAssignment
 fieldassignmentp = do
   lift $ dbgparse 8 "trying fieldassignmentp"
+  pos <- getRulesPos
   f <- journalfieldnamep
   v <- choiceInState [ assignmentseparatorp >> fieldvalp
                      , lift eolof >> return ""
                      ]
-  return (f,v)
+  return $ FieldAssignment f v pos
   <?> "field assignment"
 
 journalfieldnamep :: CsvRulesParser Text
@@ -997,18 +1043,19 @@ conditionaltablep = do
                  ])
   when (null body) $
     customFailure $ parseErrorAt start $ "start of conditional table found, but no assignment rules afterward"
-  return $ flip map body $ \(ms,vs) ->
-    CB{cbMatchers=ms, cbAssignments=zip fields vs}
+  return $ flip map body $ \(ms,vs,pos) ->
+    CB{cbMatchers=ms, cbAssignments=zipWith (\f v -> FieldAssignment f v pos) fields vs}
   <?> "conditional table"
   where
-    bodylinep :: Char -> [Text] -> CsvRulesParser ([Matcher],[FieldTemplate])
+    bodylinep :: Char -> [Text] -> CsvRulesParser ([Matcher],[FieldTemplate],Maybe (FilePath,Int))
     bodylinep sep fields = do
       off <- getOffset
+      pos <- getRulesPos
       ms <- matcherp' (lookAhead . void . char $ sep) `manyTill` char sep
       vs <- T.split (==sep) . T.pack <$> lift restofline
       if (length vs /= length fields)
         then customFailure $ parseErrorAt off $ ((printf "line of conditional table should have %d values, but this one has only %d" (length fields) (length vs)) :: String)
-        else return (ms,vs)
+        else return (ms,vs,pos)
 
 
 -- A single matcher, on one line.
@@ -1112,26 +1159,32 @@ getDirectiveFirstWins directivename = lookup directivename . rdirectives
 csvRule :: CsvRules -> DirectiveName -> Maybe FieldTemplate
 csvRule rules = (`getDirective` rules)
 
+-- | Look up the assignment (name, value template, rules file position)
+-- which is effective for a hledger field, considering field list/field
+-- assignment rules, the current record, and conditional rules.
+hledgerFieldAssignment :: CsvRules -> CsvRecordGroup -> HledgerFieldName -> Maybe FieldAssignment
+hledgerFieldAssignment rules record f = fmap
+  (either id (lastCBAssignment f))
+  (getEffectiveAssignment rules record f)
+
 -- | Look up the value template assigned to a hledger field by field
 -- list/field assignment rules, taking into account the current record and
 -- conditional rules.
 hledgerField :: CsvRules -> CsvRecordGroup -> HledgerFieldName -> Maybe FieldTemplate
-hledgerField rules record f = fmap
-  (either id (lastCBAssignmentTemplate f))
-  (getEffectiveAssignment rules record f)
+hledgerField rules record f = faTemplate <$> hledgerFieldAssignment rules record f
 
 -- | Look up the final value assigned to a hledger field, with csv field
 -- references and regular expression match group references interpolated.
 hledgerFieldValue :: CsvRules -> CsvRecordGroup -> HledgerFieldName -> Maybe Text
 hledgerFieldValue rules record f = (flip fmap) (getEffectiveAssignment rules record f)
-  $ either (renderTemplate rules record)
+  $ either (renderTemplate rules record . faTemplate)
   $ \cb -> let
-      t = lastCBAssignmentTemplate f cb
+      t = faTemplate $ lastCBAssignment f cb
       r = rules { rconditionalblocks = [cb] } -- XXX handle rblocksassigning
       in renderTemplate r record t
 
-lastCBAssignmentTemplate :: HledgerFieldName -> ConditionalBlock -> FieldTemplate
-lastCBAssignmentTemplate f = snd . last . filter ((==f).fst) . cbAssignments
+lastCBAssignment :: HledgerFieldName -> ConditionalBlock -> FieldAssignment
+lastCBAssignment f = last . filter ((==f).faName) . cbAssignments
 
 maybeNegate :: MatcherPrefix -> Bool -> Bool
 maybeNegate Not origbool = not origbool
@@ -1148,16 +1201,26 @@ getEffectiveAssignment
   :: CsvRules
      -> CsvRecordGroup
      -> HledgerFieldName
-     -> Maybe (Either FieldTemplate ConditionalBlock)
-getEffectiveAssignment rules record f = lastMay assignments
+     -> Maybe (Either FieldAssignment ConditionalBlock)
+getEffectiveAssignment rules record f = lastMay $ getEffectiveAssignments rules record f
+
+-- | Like getEffectiveAssignment, but return all the assignments which could
+-- apply to this field for the current record, in declaration order;
+-- the last one is the effective one.
+getEffectiveAssignments
+  :: CsvRules
+     -> CsvRecordGroup
+     -> HledgerFieldName
+     -> [Either FieldAssignment ConditionalBlock]
+getEffectiveAssignments rules record f = assignments
   where
     -- all active assignments to field f, in order
     assignments = toplevelassignments ++ conditionalassignments
     -- all top level field assignments
-    toplevelassignments    = map (Left . snd) $ filter ((==f).fst) $ rassignments rules
+    toplevelassignments    = map Left $ filter ((==f).faName) $ rassignments rules
     -- all conditional blocks assigning to field f and active for the current csv record
     conditionalassignments = map Right
-                           $ filter (any (==f) . map fst . cbAssignments)
+                           $ filter (any ((==f).faName) . cbAssignments)
                            $ dbg'
                            $ filter (isBlockActive rules record)
                            $ (rblocksassigning rules) f
@@ -1399,7 +1462,7 @@ readJournalFromCsv rulesfile rules csvfile csvtext sep = do
     -- applied, so such a matcher can never trigger a merge
     let mergeblockrowrefs =
           [ ref | b <- rconditionalblocks rules
-          , any ((=="merge").fst) $ cbAssignments b
+          , any ((=="merge").faName) $ cbAssignments b
           , FieldMatcher _ ref _ <- cbMatchers b
           , isJust $ splitRowSuffix $ T.dropAround (`elem` ("%()"::String)) ref ]
     unless (null mergeblockrowrefs) $ warnIO $
@@ -1628,7 +1691,6 @@ transactionFromCsvRecord timesarezoned mtzin tzout sourcepospair rules record =
 
     rule     = csvRule           rules        :: DirectiveName    -> Maybe FieldTemplate
     -- ruleval  = csvRuleValue      rules record :: DirectiveName    -> Maybe String
-    field    = hledgerField      rules record :: HledgerFieldName -> Maybe FieldTemplate
     fieldval = hledgerFieldValue rules record :: HledgerFieldName -> Maybe Text
     mdateformat = rule "date-format"
     parseDate = parseDateWithCustomOrDefaultFormats timesarezoned mtzin tzout mdateformat
@@ -1636,7 +1698,9 @@ transactionFromCsvRecord timesarezoned mtzin tzout sourcepospair rules record =
       ["could not parse \""<>datevalue<>"\" as a date using date format "
         <>maybe "\"YYYY/M/D\", \"YYYY-M-D\" or \"YYYY.M.D\"" (T.pack . show) mdateformat'
       ,showRecordFields rules record
-      ,"the "<>datefield<>" rule is:   "<>(fromMaybe "required, but missing" $ field datefield)
+      ,"the "<>datefield<>" rule is:   "<>
+        maybe "required, but missing" (\a -> faTemplate a<>showRulesPos (faPos a))
+          (hledgerFieldAssignment rules record datefield)
       ,"the date-format is: "<>fromMaybe "unspecified" mdateformat'
       ,"you may need to "
         <>"change your "<>datefield<>" rule, "
@@ -1846,9 +1910,11 @@ getAmount rules record currency p1IsVirtual n =
         ,"while calculating amount for posting " <> T.pack (show n)
         ] ++
         ["rule \"" <> f <> " " <>
-          fromMaybe "" (hledgerField rules record f) <>
+          maybe "" faTemplate massignment <>
           "\" assigned value \"" <> wbToText (showMixedAmountB defaultFmt a) <> "\"" -- XXX not sure this is showing all the right info
+          <> maybe "" (showRulesPos.faPos) massignment
           | (f,a) <- fs
+          , let massignment = hledgerFieldAssignment rules record f
         ] ++
         [""
         ,"Multiple non-zero amounts were assigned for an amount field."
@@ -1893,9 +1959,20 @@ parseAmount rules record currency s =
       ]
 
 -- | Show the values assigned to each journal field.
-showRules rules record = T.unlines $ catMaybes
-  [ (("the "<>fld<>" rule is: ")<>) <$>
-    hledgerField rules record fld | fld <- journalfieldnames ]
+showRules rules record = T.unlines $ concatMap showfieldrules journalfieldnames
+  where
+    -- the field's effective rule, and below it any earlier-declared rules it overrides
+    showfieldrules fld =
+      case reverse $ map (either id (lastCBAssignment fld)) $ getEffectiveAssignments rules record fld of
+        (a:overridden) ->
+          ("the "<>fld<>" rule is: "<>faTemplate a<>showRulesPos (faPos a))
+          : [ "  (overrides: "<>faTemplate o<>showRulesPos (faPos o)<>")" | o <- overridden ]
+        [] -> []
+
+-- | Show a rules file position, for appending to a rule display:
+-- "  (FILE:LINE)"; or nothing if the position is unknown.
+showRulesPos :: Maybe (FilePath, Int) -> Text
+showRulesPos = maybe "" (\(f,l) -> "  ("<>T.pack f<>":"<>T.pack (show l)<>")")
 
 -- XXX unify these ^v
 
@@ -2091,12 +2168,12 @@ tests_RulesReader = testGroup "RulesReader" [
 
     ,testCase "assignment with empty value" $
       parseWithState' defrules rulesp "account1 \nif foo\n  account2 foo\n" @?=
-        (Right (mkrules $ defrules{rassignments = [("account1","")], rconditionalblocks = [CB{cbMatchers=[RecordMatcher Or (toRegex' "foo")],cbAssignments=[("account2","foo")]}]}))
+        (Right (mkrules $ defrules{rassignments = [fa "account1" ""], rconditionalblocks = [CB{cbMatchers=[RecordMatcher Or (toRegex' "foo")],cbAssignments=[fa "account2" "foo"]}]}))
    ]
   ,testGroup "conditionalblockp" [
     testCase "space after conditional" $
       parseWithState' defrules conditionalblockp "if a\n account2 b\n \n" @?=
-        (Right $ CB{cbMatchers=[RecordMatcher Or $ toRegexCI' "a"],cbAssignments=[("account2","b")]})
+        (Right $ CB{cbMatchers=[RecordMatcher Or $ toRegexCI' "a"],cbAssignments=[fa "account2" "b"]})
   ],
 
   testGroup "csvfieldreferencep" [
@@ -2149,7 +2226,7 @@ tests_RulesReader = testGroup "RulesReader" [
    ]
 
   , let matchers = [RecordMatcher Or (toRegexCI' "A"), RecordMatcher And (toRegexCI' "B")]
-        assignments = [("account2", "foo"), ("comment2", "bar")]
+        assignments = [fa "account2" "foo", fa "comment2" "bar"]
         block = CB matchers assignments
     in
    testGroup "Combine multiple matchers on the same line" [
@@ -2160,29 +2237,29 @@ tests_RulesReader = testGroup "RulesReader" [
    ]
 
  ,testGroup "hledgerField" [
-    let rules = mkrules $ defrules {rcsvfieldindexes=[("csvdate",1)],rassignments=[("date","%csvdate")]}
+    let rules = mkrules $ defrules {rcsvfieldindexes=[("csvdate",1)],rassignments=[fa "date" "%csvdate"]}
 
     in testCase "toplevel" $ hledgerField rules [["a","b"]] "date" @?= (Just "%csvdate")
 
-   ,let rules = mkrules $ defrules{rcsvfieldindexes=[("csvdate",1)], rconditionalblocks=[CB [FieldMatcher Or "%csvdate" $ toRegex' "a"] [("date","%csvdate")]]}
+   ,let rules = mkrules $ defrules{rcsvfieldindexes=[("csvdate",1)], rconditionalblocks=[CB [FieldMatcher Or "%csvdate" $ toRegex' "a"] [fa "date" "%csvdate"]]}
     in testCase "conditional" $ hledgerField rules [["a","b"]] "date" @?= (Just "%csvdate")
 
-   ,let rules = mkrules $ defrules{rcsvfieldindexes=[("csvdate",1)], rconditionalblocks=[CB [FieldMatcher Not "%csvdate" $ toRegex' "a"] [("date","%csvdate")]]}
+   ,let rules = mkrules $ defrules{rcsvfieldindexes=[("csvdate",1)], rconditionalblocks=[CB [FieldMatcher Not "%csvdate" $ toRegex' "a"] [fa "date" "%csvdate"]]}
     in testCase "negated-conditional-false" $ hledgerField rules [["a","b"]] "date" @?= (Nothing)
   
-   ,let rules = mkrules $ defrules{rcsvfieldindexes=[("csvdate",1)], rconditionalblocks=[CB [FieldMatcher Not "%csvdate" $ toRegex' "b"] [("date","%csvdate")]]}
+   ,let rules = mkrules $ defrules{rcsvfieldindexes=[("csvdate",1)], rconditionalblocks=[CB [FieldMatcher Not "%csvdate" $ toRegex' "b"] [fa "date" "%csvdate"]]}
     in testCase "negated-conditional-true" $ hledgerField rules [["a","b"]] "date" @?= (Just "%csvdate")
 
-   ,let rules = mkrules $ defrules{rcsvfieldindexes=[("csvdate",1),("description",2)], rconditionalblocks=[CB [FieldMatcher Or "%csvdate" $ toRegex' "a", FieldMatcher Or "%description" $ toRegex' "b"] [("date","%csvdate")]]}
+   ,let rules = mkrules $ defrules{rcsvfieldindexes=[("csvdate",1),("description",2)], rconditionalblocks=[CB [FieldMatcher Or "%csvdate" $ toRegex' "a", FieldMatcher Or "%description" $ toRegex' "b"] [fa "date" "%csvdate"]]}
     in testCase "conditional-with-or-a" $ hledgerField rules [["a"]] "date" @?= (Just "%csvdate")
 
-   ,let rules = mkrules $ defrules{rcsvfieldindexes=[("csvdate",1),("description",2)], rconditionalblocks=[CB [FieldMatcher Or "%csvdate" $ toRegex' "a", FieldMatcher Or "%description" $ toRegex' "b"] [("date","%csvdate")]]}
+   ,let rules = mkrules $ defrules{rcsvfieldindexes=[("csvdate",1),("description",2)], rconditionalblocks=[CB [FieldMatcher Or "%csvdate" $ toRegex' "a", FieldMatcher Or "%description" $ toRegex' "b"] [fa "date" "%csvdate"]]}
     in testCase "conditional-with-or-b" $ hledgerField rules [["_", "b"]] "date" @?= (Just "%csvdate")
 
-   ,let rules = mkrules $ defrules{rcsvfieldindexes=[("csvdate",1),("description",2)], rconditionalblocks=[CB [FieldMatcher Or "%csvdate" $ toRegex' "a", FieldMatcher And "%description" $ toRegex' "b"] [("date","%csvdate")]]}
+   ,let rules = mkrules $ defrules{rcsvfieldindexes=[("csvdate",1),("description",2)], rconditionalblocks=[CB [FieldMatcher Or "%csvdate" $ toRegex' "a", FieldMatcher And "%description" $ toRegex' "b"] [fa "date" "%csvdate"]]}
     in testCase "conditional.with-and" $ hledgerField rules [["a", "b"]] "date" @?= (Just "%csvdate")
 
-   ,let rules = mkrules $ defrules{rcsvfieldindexes=[("csvdate",1),("description",2)], rconditionalblocks=[CB [FieldMatcher Or "%csvdate" $ toRegex' "a", FieldMatcher And "%description" $ toRegex' "b", FieldMatcher Or "%description" $ toRegex' "c"] [("date","%csvdate")]]}
+   ,let rules = mkrules $ defrules{rcsvfieldindexes=[("csvdate",1),("description",2)], rconditionalblocks=[CB [FieldMatcher Or "%csvdate" $ toRegex' "a", FieldMatcher And "%description" $ toRegex' "b", FieldMatcher Or "%description" $ toRegex' "c"] [fa "date" "%csvdate"]]}
     in testCase "conditional.with-and-or" $ hledgerField rules [["_", "c"]] "date" @?= (Just "%csvdate")
 
    ]
@@ -2191,12 +2268,12 @@ tests_RulesReader = testGroup "RulesReader" [
  ,testGroup "hledgerFieldValue" $
     let rules = mkrules $ defrules
           { rcsvfieldindexes=[ ("date",1), ("description",2) ]
-          , rassignments=[ ("account2","equity"), ("amount1","1") ]
+          , rassignments=[ fa "account2" "equity", fa "amount1" "1" ]
           -- ConditionalBlocks here are in reverse order: mkrules reverses the list
           , rconditionalblocks=[ CB { cbMatchers=[FieldMatcher Or "%description" (toRegex' "PREFIX (.*) - (.*)")]
-                                    , cbAssignments=[("account1","account:\\1:\\2")] }
+                                    , cbAssignments=[fa "account1" "account:\\1:\\2"] }
                                , CB { cbMatchers=[FieldMatcher Or "%description" (toRegex' "PREFIX (.*)")]
-                                    , cbAssignments=[("account1","account:\\1"), ("comment1","\\1")] }
+                                    , cbAssignments=[fa "account1" "account:\\1", fa "comment1" "\\1"] }
                                ]
           }
         record = [["2019-02-01","PREFIX Text 1 - Text 2"]]

@@ -3,7 +3,7 @@ $$$ hledger check -f  csvbalanceparse.csv
 record: 2022-01-03,badbalance
   %1   2022-01-03
   %2   badbalance
-the balance rule is: %2
-the date rule is: %1
+the balance rule is: %2  \(.*rules:3\)
+the date rule is: %1  \(.*rules:2\)
 /
 >>>= 1
