@@ -7420,7 +7420,7 @@ A lot id is a unique identifier for that lot, used internally by hledger.
 It is the cost basis date, followed by the label if any, with a space between them.
 
 Lot ids also record the order in which lots were acquired.
-So if multiple lots of a commodity are acquired on the same date, they must have distinct, sortable labels.
+So if multiple lots of a commodity are acquired on the same date (even in different accounts), they must have distinct, sortable labels.
 Eg the time of the event, in `HH:MM` format, could be used.
 Or if no labels are provided, hledger will add sequentially numbered labels starting from `0001`.
 These numbers are not reused, even after a lot has been fully disposed of.
