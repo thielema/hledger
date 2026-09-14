@@ -297,3 +297,19 @@ $ hledger -f- print
     b
 
 >=0
+
+# ** 21. A bad regexp in a --alias option is reported with the usual excerpt.
+<
+2021-01-01
+  a  1
+  b
+
+$ hledger -f- --alias '/{202[2-5]/=2022' print
+>2 /hledger: Error: --alias:1:2:
+  \|
+1 \| \/\{202\[2-5\]\/=2022
+  \|  \^\^\^\^\^\^\^\^\^
+
+This regular expression is invalid or unsupported, please correct it: \{202\[2-5\]
+/
+>=1

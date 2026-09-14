@@ -1777,9 +1777,14 @@ bracketeddatetagsp mYear1 = do
 {-# INLINABLE bracketeddatetagsp #-}
 
 -- | Get the account name aliases from options, if any.
+-- A bad alias argument causes a program exit with a parse error message.
 aliasesFromOpts :: InputOpts -> [AccountAlias]
-aliasesFromOpts = map (\a -> fromparse $ runParser accountaliasp ("--alias "++quoteIfNeeded a) $ T.pack a)
-                  . aliases_
+aliasesFromOpts = map parseAliasOpt . aliases_
+  where
+    parseAliasOpt a =
+      case runParser accountaliasp "--alias" (T.pack a) of
+        Right alias -> alias
+        Left e      -> error' $ customErrorBundlePretty e  -- PARTIAL:
 
 accountaliasp :: TextParser m AccountAlias
 accountaliasp = regexaliasp <|> basicaliasp
