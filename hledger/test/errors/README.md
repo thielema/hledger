@@ -145,6 +145,7 @@ Click error names to see an example. The table headings mean:
 | [csvdateparse](#csvdateparse)                         |            |      |        |         |          |
 | [csvdaterule](#csvdaterule)                           |            |      |        |         |          |
 | [csvdecimalmarkparse](#csvdecimalmarkparse)           |            |      |        |         |          |
+| [csvifblocknomatchers](#csvifblocknomatchers)         |            | ✓    | ✓      | ✓       |          |
 | [csvifblocknonempty](#csvifblocknonempty)             |            | ✓    | ✓      | ✓       |          |
 | [csviftablefieldnames](#csviftablefieldnames)         |            | ✓    | ✓      | ✓✓      |          |
 | [csviftablenonempty](#csviftablenonempty)             |            | ✓    | ✓      | ✓       |          |

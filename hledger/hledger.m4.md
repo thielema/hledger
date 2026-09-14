@@ -4140,9 +4140,10 @@ MATCHER
 Comment lines can appear anywhere within an if block,
 and blank lines can also appear among the indented rules;
 these do not end the block.
-(One exception: a matcher on the same line as `if` can begin with a comment character,
-but on the following lines, such lines are read as comments.
-To match a comment character at the start of a record, you can escape it, eg `if \#`.)
+(One exception: a matcher on the same line as `if` can begin with a comment character
+(eg `if #groceries` matches records containing "#groceries");
+but on the lines below `if`, such a line would be read as a comment.
+There, escape the comment character with a backslash, eg `\#groceries`.)
 
 If any of the matchers succeeds, all of the indented rules will be applied.
 The rules are usually [field assignments](#field-assignments),

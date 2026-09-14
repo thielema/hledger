@@ -1018,9 +1018,16 @@ conditionalblockp = do
   -- A matcher on the same line as "if" may begin with a comment character;
   -- on later lines, such lines are comments.
   let matcherlinep = try $ skipMany (try commentlinep) >> matcherp
+  moff <- getOffset
   ms <- if onifline
         then (:) <$> matcherp <*> many matcherlinep
-        else some matcherlinep
+        else many matcherlinep
+  when (null ms) $
+    customFailure $ parseErrorAt moff $
+      "start of conditional block found, but no matchers afterward\n"
+      ++ "(matchers should be on the same line as \"if\", or on the following lines.\n"
+      ++ "Note: a line beginning with a comment character (#, ;, *) is a comment;\n"
+      ++ "to match a leading comment character, escape it, eg \\#)"
   -- one or more indented assignments; with blank lines and comment lines
   -- (indented or not) possibly interspersed
   as <- catMaybes <$>
