@@ -3352,15 +3352,9 @@ we recommend using posting dates instead.
 
 ### Star comments
 
-Lines beginning with `*` (star/asterisk) are also comment lines. 
-This feature allows Emacs users to insert org headings in their journal,
-allowing them to fold/unfold/navigate it like an outline when viewed with org mode.
-
-Downsides: another, unconventional comment syntax to learn.
-Decreases your journal's portability.
-And switching to Emacs org mode just for folding/unfolding meant losing the benefits of ledger mode;
-nowadays you can add outshine mode to ledger mode to get folding
-without losing ledger mode's features.
+Lines beginning with `*` (star/asterisk) are also comment lines, for Ledger compatibility.
+Emacs users can use these as foldable org headings.
+(But it's usually better to use ledger-mode, and add outshine minor mode for org-like folding.)
 
 ### Valuation expressions
 
