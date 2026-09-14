@@ -797,3 +797,32 @@ Holdings on 2026-01-01
  assets:broker:{2025-02-01, $0}  || 2025-02-01  334d   5 AAA          0    $11     0    $55   33.3%    $55                       
 ---------------------------------++----------------------------------------------------------------------------------------------
                                  ||                   15 AAA                    $100   $165  100.0%    $65   65.0%         65.1% 
+
+# ** 45. When lots are held in both an account and its subaccount, list
+# mode shows each row with just its own lots (all columns, including
+# RGain and XIRR, cover only those), and the totals include both.
+<
+commodity AAA ; lots:
+
+2026-01-01 buy in parent
+    assets:broker        2 AAA @ $10
+    assets:cash
+
+2026-02-01 buy in subaccount
+    assets:broker:sub    3 AAA @ $20
+    assets:cash
+
+2026-03-01 sell one from subaccount
+    assets:broker:sub   -1 AAA @ $30
+    assets:cash          $30
+
+P 2026-03-31 AAA $25
+$ hledger -f- holdings -e 2026-04-01
+Holdings on 2026-03-31
+
+                   ||       Date  Age  Units  Avg cost  Price  Cost  Value  Weight  UGain  UGain%  RGain     XIRR 
+===================++=============================================================================================
+ assets:broker     || 2026-01-01  89d  2 AAA       $10    $25   $20    $50   50.0%    $30  150.0%         4196.5% 
+ assets:broker:sub || 2026-02-01  58d  2 AAA       $20    $25   $40    $50   50.0%    $10   25.0%    $10   877.9% 
+-------------------++---------------------------------------------------------------------------------------------
+                   ||                  4 AAA                    $60   $100  100.0%    $40   66.7%    $10  1928.8% 

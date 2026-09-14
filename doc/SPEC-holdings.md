@@ -84,8 +84,8 @@ Notes:
 - Weight is each row's value as a percentage of the portfolio's total
   value; blank unless all displayed holdings are priced in one commodity.
 - RGain sums each dispose posting's proceeds minus the cost basis of the
-  disposed units, for the row's commodity's lots at or under the row's
-  account. Fully disposed lots and commodities have no row of their own
+  disposed units, for the row's commodity's lots in the row's own scope
+  (see below). Fully disposed lots and commodities have no row of their own
   by default (`-E` shows zero-units rows for disposed commodities), but
   their realised gains are included in the totals row, which computes
   RGain and XIRR from the displayed rows' base accounts - consistent
@@ -231,9 +231,14 @@ Holdings on 2026-03-31
   machinery we need.)
 - Per-lot units are summed from the lot subaccounts' postings
   (amount arithmetic discards cost basis, so balances alone don't suffice).
-- Every column in a row is derived from the lots at or beneath the row's
-  account. In particular Units is the sum of those lots, not the row's
-  report balance, which (in a depth-clipped, pivoted, or tree-mode row)
+- Every column in a row is derived from the lots in the row's own scope:
+  the lots at or beneath the row's account, excluding - in list mode -
+  those at or beneath a deeper displayed row, which shows them itself
+  (so when lots are held in both an account and its subaccount, each row
+  shows just its own, and nothing is dropped or double-counted; in tree
+  mode parent rows aggregate as usual). In particular Units is the sum
+  of those lots, not the row's report balance, which (in a depth-clipped,
+  pivoted, or tree-mode row)
   can also include a non-lot-tracked account's units - those are not
   holdings, and would disagree with the other columns.
   Each lot's cost basis is parsed back from the lot subaccount name, which by

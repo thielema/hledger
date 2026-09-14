@@ -270,12 +270,32 @@ holdings opts@CliOpts{rawopts_=rawopts, reportspec_=rspec@ReportSpec{_rsQuery=q,
             costtot  = ub1{aquantity = sum [aquantity a * aquantity ub | (a, ub) <- entries]}
       ]
 
+    -- Which accounts (lot subaccounts, or the keys of the per-lot maps)
+    -- belong to a displayed row's own scope: those at or under the row's
+    -- account - excluding, in list mode, those at or under a deeper
+    -- candidate row, which displays them itself. (In tree mode, and for
+    -- totals, a row includes everything at or under it; see the *Under
+    -- helpers.) This is what makes overlapping list-mode rows disjoint,
+    -- eg when lots are held in both an account and its subaccount (each
+    -- of which then gets its own row).
+    rowScope :: AccountName -> (AccountName -> Bool)
+    rowScope acct = \sub -> covers acct sub && not (any (`covers` sub) deeper)
+      where
+        covers p s = p == s || p `isAccountNamePrefixOf` s
+        deeper | tree = []
+               | otherwise = [c | c <- candaccts, c /= acct, acct `isAccountNamePrefixOf` c]
+
     -- The values in a map whose keys are at or under the given account
     -- (and in the given held commodity, if specified).
     underIn :: M.Map (AccountName, CommoditySymbol) v -> AccountName -> Maybe CommoditySymbol -> [v]
-    underIn m acct mc =
+    underIn m acct = scopedIn m (\sub -> acct == sub || acct `isAccountNamePrefixOf` sub)
+
+    -- The values in a map whose keys satisfy the given account test
+    -- (and are in the given held commodity, if specified).
+    scopedIn :: M.Map (AccountName, CommoditySymbol) v -> (AccountName -> Bool) -> Maybe CommoditySymbol -> [v]
+    scopedIn m intest mc =
       [ v | ((sub, c), v) <- M.toAscList m
-      , acct == sub || acct `isAccountNamePrefixOf` sub
+      , intest sub
       , maybe True (== c) mc
       ]
 
@@ -283,9 +303,17 @@ holdings opts@CliOpts{rawopts_=rawopts, reportspec_=rspec@ReportSpec{_rsQuery=q,
     flowsUnder :: AccountName -> Maybe CommoditySymbol -> [(Day, Amount)]
     flowsUnder acct mc = concat $ underIn flowmap acct mc
 
+    -- The cashflows of the lots in a row account's own scope.
+    flowsOf :: AccountName -> Maybe CommoditySymbol -> [(Day, Amount)]
+    flowsOf acct mc = concat $ scopedIn flowmap (rowScope acct) mc
+
     -- The realised gains of the lots at or under an account, optionally of one held commodity.
     rgainsUnder :: AccountName -> Maybe CommoditySymbol -> [Amount]
     rgainsUnder = underIn rgainmap
+
+    -- The realised gains of the lots in a row account's own scope.
+    rgainsOf :: AccountName -> Maybe CommoditySymbol -> [Amount]
+    rgainsOf acct = scopedIn rgainmap (rowScope acct)
 
     -- A lot subaccount's cost basis, parsed from its name
     -- (which by construction contains the acquisition date and unit cost).
@@ -351,6 +379,11 @@ holdings opts@CliOpts{rawopts_=rawopts, reportspec_=rspec@ReportSpec{_rsQuery=q,
     -- commodity, when they are all priced.
     mvalueUnder :: AccountName -> Maybe [Amount]
     mvalueUnder acct = snd <$> lotsValuation (lotsUnder acct)
+
+    -- The market value of the lots in a row account's own scope, per
+    -- value commodity, when they are all priced.
+    mvalueOf :: AccountName -> Maybe [Amount]
+    mvalueOf acct = snd <$> lotsValuation (lotsOf acct)
 
     -- How to convert cost amounts (Cost, Unit/Avg cost, RGain, and the
     -- cost side of UGain) for display when -V/-X/--value is in effect:
@@ -467,24 +500,32 @@ holdings opts@CliOpts{rawopts_=rawopts, reportspec_=rspec@ReportSpec{_rsQuery=q,
       guard $ acommodity g == acommodity c && aquantity c /= 0
       Just $ 100 * aquantity g / aquantity c
 
-    -- A row's units of lot-tracked commodities: the sum of the lots at or
-    -- beneath its account, one amount per commodity. (Not the row's report
+    -- A row's units of lot-tracked commodities: the sum of the lots in
+    -- its own scope, one amount per commodity. (Not the row's report
     -- balance: a depth-clipped or pivoted row could also aggregate
     -- same-commodity balances from non-lot-tracked accounts, which would
     -- make Units inconsistent with the lot-derived Cost and gain columns.)
     rowUnitAmounts :: PeriodicReportRow DisplayName MixedAmount -> [Amount]
     rowUnitAmounts r =
       filter (not . amountLooksZero) $ sumAmounts $
-      map fst $ lotsUnder $ prrFullName r
+      map fst $ lotsOf $ prrFullName r
 
     -- The lots held at or under the given account, excluding empty ones.
+    lotsUnder :: AccountName -> [(Amount, Maybe CostBasis)]
+    lotsUnder acct = lotsWhere (\sub -> acct == sub || acct `isAccountNamePrefixOf` sub)
+
+    -- The lots in a row account's own scope, excluding empty ones.
+    lotsOf :: AccountName -> [(Amount, Maybe CostBasis)]
+    lotsOf acct = lotsWhere (rowScope acct)
+
+    -- The nonempty lots whose subaccounts satisfy the given test.
     -- A lot's cost basis comes from its subaccount name; when the name has
     -- no cost part (AVERAGE lots' names omit it, staying stable across
     -- re-averaging), the pool's current average cost is filled in instead.
-    lotsUnder :: AccountName -> [(Amount, Maybe CostBasis)]
-    lotsUnder acct =
+    lotsWhere :: (AccountName -> Bool) -> [(Amount, Maybe CostBasis)]
+    lotsWhere intest =
       [ (a, addPoolAvg sub a <$> lotBasis sub) | ((sub, _), a) <- M.toAscList lotmap
-      , acct == sub || acct `isAccountNamePrefixOf` sub
+      , intest sub
       , not $ amountLooksZero a
       ]
       where
@@ -504,24 +545,34 @@ holdings opts@CliOpts{rawopts_=rawopts, reportspec_=rspec@ReportSpec{_rsQuery=q,
                                           ,conversionop_=Just NoConversionOp, value_=Nothing
                                           ,sort_amount_=False}}  -- -S sorts by value/cost below, not by units
         j' = if showlots then j else journalCollapseLotDetail j
-    -- Rows to display: those with lots at or beneath them; with -E/--empty,
+    -- Candidate rows: those with lots at or beneath them; with -E/--empty,
     -- also those with realised gains at or beneath them (fully disposed
-    -- accounts/lots, normally hidden). In list mode,
-    -- also drop rows whose lots all appear in a deeper displayed row
-    -- (eg a base account posted to directly, when its lot subaccounts
-    -- are shown); in tree mode such parent rows are wanted.
-    rows = filter keeprow candidates
+    -- accounts/lots, normally hidden).
+    candidates = filter isholdingrow $ prRows mbr
       where
-        candidates = filter isholdingrow $ prRows mbr
         isholdingrow r = not (null (lotsUnder acct))
                       || (empty_ ropts && hasRgainsUnder acct)
           where acct = prrFullName r
-        keeprow r = tree ||
-          not (any (\r2 -> prrFullName r `isAccountNamePrefixOf` prrFullName r2) candidates)
+    candaccts = map prrFullName candidates
+
+    -- Rows to display: the candidates, except - in list mode - those with
+    -- nothing in their own scope (eg a base account row whose lots all
+    -- appear in displayed lot subaccount rows); in tree mode all are
+    -- wanted. A row holding lots directly is kept even when a deeper row
+    -- also displays; it shows just its own lots (see rowScope).
+    rows = filter keeprow candidates
+      where
+        keeprow r = tree || not (null (lotsOf acct))
+                 || (empty_ ropts && hasRgainsOf acct)
+          where acct = prrFullName r
 
     -- Are there nonzero realised gains at or under this account ?
     hasRgainsUnder :: AccountName -> Bool
     hasRgainsUnder acct = any (not . amountLooksZero) $ rgainsUnder acct Nothing
+
+    -- Are there nonzero realised gains in this row account's own scope ?
+    hasRgainsOf :: AccountName -> Bool
+    hasRgainsOf acct = any (not . amountLooksZero) $ rgainsOf acct Nothing
 
     -- The topmost displayed rows: those not contained in another displayed
     -- row. Totals are computed from these, to avoid double counting.
@@ -540,7 +591,7 @@ holdings opts@CliOpts{rawopts_=rawopts, reportspec_=rspec@ReportSpec{_rsQuery=q,
         keymap = M.fromList [(prrFullName r, Down $ rowSortKey r) | r <- rows]
         keypath r = mapMaybe (`M.lookup` keymap) $ reverse (parentAccountNames a) ++ [a]
           where a = prrFullName r
-        rowSortKey r = case mvalueUnder (prrFullName r) of
+        rowSortKey r = case mvalueOf (prrFullName r) of
           Just val -> sumq val
           Nothing  -> sumq $ rowLotCosts r
           where sumq = sum . map aquantity
@@ -579,7 +630,7 @@ holdings opts@CliOpts{rawopts_=rawopts, reportspec_=rspec@ReportSpec{_rsQuery=q,
     renderacct r = renderPeriodicAcct ropts " " r
 
     rowLotCosts r = [rowCostValuer r $ multiplyAmount (aquantity a) c
-                    | (a, mcb) <- lotsUnder $ prrFullName r, Just c <- [cbCost =<< mcb]]
+                    | (a, mcb) <- lotsOf $ prrFullName r, Just c <- [cbCost =<< mcb]]
 
     -- A holding's cells, each as a list of parts: possibly several in Cost
     -- and RGain (when cost commodities are mixed), at most one elsewhere.
@@ -669,7 +720,7 @@ holdings opts@CliOpts{rawopts_=rawopts, reportspec_=rspec@ReportSpec{_rsQuery=q,
           | otherwise =
               [ nullamt{acommodity=c}
               | c <- nubSort [ c2 | ((sub, c2), g) <- M.toAscList rgainmap
-                                  , acct == sub || acct `isAccountNamePrefixOf` sub
+                                  , rowScope acct sub
                                   , not $ amountLooksZero g ]
               , c `notElem` map acommodity heldamts
               ]
@@ -686,12 +737,12 @@ holdings opts@CliOpts{rawopts_=rawopts, reportspec_=rspec@ReportSpec{_rsQuery=q,
           , hWeight    = weightPct vals
           , hUgain     = gains
           , hUgainPct  = gainPct gains ccosts
-          , hRgain     = sumAmounts $ map (rowCostValuer r) $ rgainsUnder acct (Just c)
+          , hRgain     = sumAmounts $ map (rowCostValuer r) $ rgainsOf acct (Just c)
           , hXirr      = mxirr
           }
           where
             c = acommodity qa
-            clots = filter ((==c) . acommodity . fst) $ lotsUnder acct
+            clots = filter ((==c) . acommodity . fst) $ lotsOf acct
             dates = nubSort [cbDate =<< mcb | (_, mcb) <- clots]
             mdate = case dates of
               [Just dt] -> Just dt
@@ -711,7 +762,7 @@ holdings opts@CliOpts{rawopts_=rawopts, reportspec_=rspec@ReportSpec{_rsQuery=q,
             gains = fromMaybe [] $ gainAmounts vals ccosts
             mxirr = do
               [v] <- Just vals
-              xirrOf (flowsUnder acct (Just c)) v
+              xirrOf (flowsOf acct (Just c)) v
 
     -- Machine-readable records for the csv/tsv/json output, one per
     -- displayed table line. No totals records.
@@ -738,7 +789,8 @@ holdings opts@CliOpts{rawopts_=rawopts, reportspec_=rspec@ReportSpec{_rsQuery=q,
                           concatMap (map fst . lotsUnder . prrFullName) toprows of
           [u] -> [showamt u]
           _   -> []
-        totcosts = concatMap rowLotCosts toprows
+        totcosts = [ rowCostValuer r $ multiplyAmount (aquantity a) c
+                   | r <- toprows, (a, mcb) <- lotsUnder (prrFullName r), Just c <- [cbCost =<< mcb] ]
         costparts = map showamt $ amounts $ mixed totcosts
         (valueparts, weightcell, ugainparts, ugainpctcell) = case mportfoliovalue of
           Nothing -> ([], "", [], "")
