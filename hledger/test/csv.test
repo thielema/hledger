@@ -1571,8 +1571,8 @@ amount %amt USD
 if shop
  account2 expenses:shopping
 $  ./csvtest.sh
->2 /the account2 rule is: expenses:shopping  \(.*rules:6\)
-  \(overrides: expenses:misc  \(.*rules:3\)\)/
+>2 /the account2 rule is: expenses:shopping +\(.*rules:6\)
+  \(overrides: expenses:misc +\(.*rules:3\)\)/
 >=1
 
 # ** .

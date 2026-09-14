@@ -1698,9 +1698,10 @@ transactionFromCsvRecord timesarezoned mtzin tzout sourcepospair rules record =
       ["could not parse \""<>datevalue<>"\" as a date using date format "
         <>maybe "\"YYYY/M/D\", \"YYYY-M-D\" or \"YYYY.M.D\"" (T.pack . show) mdateformat'
       ,showRecordFields rules record
-      ,"the "<>datefield<>" rule is:   "<>
-        maybe "required, but missing" (\a -> faTemplate a<>showRulesPos (faPos a))
-          (hledgerFieldAssignment rules record datefield)
+      ,let ma = hledgerFieldAssignment rules record datefield
+       in withRulesPos
+          ("the "<>datefield<>" rule is:   "<>maybe "required, but missing" faTemplate ma)
+          (faPos =<< ma)
       ,"the date-format is: "<>fromMaybe "unspecified" mdateformat'
       ,"you may need to "
         <>"change your "<>datefield<>" rule, "
@@ -1909,10 +1910,11 @@ getAmount rules record currency p1IsVirtual n =
         ,showRecordFields rules record
         ,"while calculating amount for posting " <> T.pack (show n)
         ] ++
-        ["rule \"" <> f <> " " <>
-          maybe "" faTemplate massignment <>
-          "\" assigned value \"" <> wbToText (showMixedAmountB defaultFmt a) <> "\"" -- XXX not sure this is showing all the right info
-          <> maybe "" (showRulesPos.faPos) massignment
+        [withRulesPos
+          ("rule \"" <> f <> " " <>
+           maybe "" faTemplate massignment <>
+           "\" assigned value \"" <> wbToText (showMixedAmountB defaultFmt a) <> "\"") -- XXX not sure this is showing all the right info
+          (faPos =<< massignment)
           | (f,a) <- fs
           , let massignment = hledgerFieldAssignment rules record f
         ] ++
@@ -1965,14 +1967,19 @@ showRules rules record = T.unlines $ concatMap showfieldrules journalfieldnames
     showfieldrules fld =
       case reverse $ map (either id (lastCBAssignment fld)) $ getEffectiveAssignments rules record fld of
         (a:overridden) ->
-          ("the "<>fld<>" rule is: "<>faTemplate a<>showRulesPos (faPos a))
-          : [ "  (overrides: "<>faTemplate o<>showRulesPos (faPos o)<>")" | o <- overridden ]
+          withRulesPos ("the "<>fld<>" rule is: "<>faTemplate a) (faPos a)
+          : [ withRulesPos ("  (overrides: "<>faTemplate o) (faPos o) <> ")" | o <- overridden ]
         [] -> []
 
--- | Show a rules file position, for appending to a rule display:
--- "  (FILE:LINE)"; or nothing if the position is unknown.
-showRulesPos :: Maybe (FilePath, Int) -> Text
-showRulesPos = maybe "" (\(f,l) -> "  ("<>T.pack f<>":"<>T.pack (show l)<>")")
+-- | Append a rules file position ("(FILE:LINE)") to a line of text, if known.
+-- The full file path is shown, so editors/IDEs can jump to the location.
+-- To visually separate the paths, they are aligned at a standard column
+-- when possible (longer lines push them further right).
+withRulesPos :: Text -> Maybe (FilePath, Int) -> Text
+withRulesPos txt =
+  maybe txt $ \(f,l) ->
+    T.justifyLeft (rulesPosColumn - 2) ' ' txt <> "  ("<>T.pack f<>":"<>T.pack (show l)<>")"
+  where rulesPosColumn = 50
 
 -- XXX unify these ^v
 

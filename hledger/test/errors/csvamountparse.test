@@ -3,7 +3,7 @@ $$$ hledger check -f  csvamountparse.csv
 record: 2022-01-03,badamount
   %1   2022-01-03
   %2   badamount
-the amount rule is: %2  \(.*rules:3\)
-the date rule is: %1  \(.*rules:2\)
+the amount rule is: %2 +\(.*rules:3\)
+the date rule is: %1 +\(.*rules:2\)
 /
 >>>= 1
