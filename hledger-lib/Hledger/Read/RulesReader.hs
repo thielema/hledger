@@ -67,7 +67,7 @@ import Data.List (foldl')
 #endif
 import Data.List.Extra (groupOn)
 import Data.List.NonEmpty qualified as NE
-import Data.Maybe (catMaybes, fromMaybe, isJust)
+import Data.Maybe (catMaybes, fromMaybe, isJust, isNothing)
 import Data.MemoUgly (memo)
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -1012,14 +1012,25 @@ conditionalblockp = do
   lift $ dbgparse 8 "trying conditionalblockp"
   -- "if\nMATCHER" or "if    \nMATCHER" or "if MATCHER"
   start <- getOffset
-  string "if" >> ( (newline >> return Nothing)
-                  <|> (lift skipNonNewlineSpaces1 >> optional newline))
-  ms <- some matcherp
+  onifline <- string "if" >> ( (newline >> return False)
+                              <|> (lift skipNonNewlineSpaces1 >> isNothing <$> optional newline))
+  -- one or more matchers, one per line; with comment lines possibly interspersed.
+  -- A matcher on the same line as "if" may begin with a comment character;
+  -- on later lines, such lines are comments.
+  let matcherlinep = try $ skipMany (try commentlinep) >> matcherp
+  ms <- if onifline
+        then (:) <$> matcherp <*> many matcherlinep
+        else some matcherlinep
+  -- one or more indented assignments; with blank lines and comment lines
+  -- (indented or not) possibly interspersed
   as <- catMaybes <$>
-    many (lift skipNonNewlineSpaces1 >>
-          choice [ lift eolof >> return Nothing
-                 , fmap Just fieldassignmentp
-                 ])
+    many (choice
+          [ blankorcommentlinep >> return Nothing
+          , lift skipNonNewlineSpaces1 >>
+            choice [ lift eolof >> return Nothing
+                   , fmap Just fieldassignmentp
+                   ]
+          ])
   when (null as) $
     customFailure $ parseErrorAt start $  "start of conditional block found, but no assignment rules afterward\n(assignment rules in a conditional block should be indented)"
   return $ CB{cbMatchers=ms, cbAssignments=as}
@@ -1027,8 +1038,9 @@ conditionalblockp = do
 
 -- A conditional table: "if" followed by separator, followed by some field names,
 -- followed by many lines, each of which is either:
--- a comment line, or ...
--- one matcher, followed by field assignments (as many as there were fields in the header)
+-- a comment line (possibly indented), or
+-- one matcher, followed by field assignments (as many as there were fields in the header).
+-- A blank line (possibly containing spaces) or end of file ends the table.
 conditionaltablep :: CsvRulesParser [ConditionalBlock]
 conditionaltablep = do
   lift $ dbgparse 8 "trying conditionaltablep"
@@ -1037,8 +1049,8 @@ conditionaltablep = do
   sep <- lift $ satisfy (\c -> not (isAlphaNum c || isSpace c))
   fields <- journalfieldnamep `sepBy1` (char sep)
   newline
-  body <- catMaybes <$> (flip manyTill (lift eolof) $
-          choice [ commentlinep >> return Nothing
+  body <- catMaybes <$> (flip manyTill (try blanklinep <|> lift eof) $
+          choice [ try commentlinep >> return Nothing
                  , fmap Just $ bodylinep sep fields
                  ])
   when (null body) $

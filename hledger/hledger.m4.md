@@ -4137,6 +4137,13 @@ MATCHER
  RULE
 ```
 
+Comment lines can appear anywhere within an if block,
+and blank lines can also appear among the indented rules;
+these do not end the block.
+(One exception: a matcher on the same line as `if` can begin with a comment character,
+but on the following lines, such lines are read as comments.
+To match a comment character at the start of a record, you can escape it, eg `if \#`.)
+
 If any of the matchers succeeds, all of the indented rules will be applied.
 The rules are usually [field assignments](#field-assignments),
 but the following special rules may also be used within an if block:
@@ -4246,8 +4253,8 @@ if %account1 liabilities:family:(expenses:.*)
   then one or more [hledger field names](#hledger-field-names).
 - The following lines begin with a matcher expression,
   then values to assign to each of those hledger fields.
-- Comment lines, beginning with `;` or `#`, are also allowed.
-- An empty line ends the table.
+- Comment lines, beginning with `;`, `#` or `*` (indented or not), are also allowed.
+- A blank line (or the end of the file) ends the table.
 
 Eg:
 

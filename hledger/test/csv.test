@@ -1575,6 +1575,79 @@ $  ./csvtest.sh
     \(overrides: expenses:misc +\(.*rules:3\)\)/
 >=1
 
+# ** 84. Comment lines can appear within an if block, among the matchers
+# or the indented rules; blank lines can appear among the indented rules
+# without ending the block. A later non-indented rule does end the block.
+<
+2026-01-01,groceries,5
+2026-01-02,fuel,7
+RULES
+fields date, desc, amt
+description %desc
+amount %amt USD
+account1 assets:bank
+
+if
+; a comment between matchers
+groceries
+# another comment
+fuel
+ ; an indented comment before the rules
+ account2 expenses:stuff
+
+ comment  found:
+ # a trailing indented comment
+
+account1 assets:cash
+$  ./csvtest.sh
+2026-01-01 groceries  ; found:
+    assets:cash                                    5 USD
+    expenses:stuff                                -5 USD
+
+2026-01-02 fuel  ; found:
+    assets:cash                                    7 USD
+    expenses:stuff                                -7 USD
+
+>=0
+
+# ** 85. A matcher on the same line as "if" can still begin with a
+# comment character.
+<
+2026-01-01,#special,5
+RULES
+fields date, desc, amt
+description %desc
+amount %amt USD
+account1 assets:bank
+if #special
+ account2 expenses:hash
+$  ./csvtest.sh
+2026-01-01 #special
+    assets:bank                                    5 USD
+    expenses:hash                                 -5 USD
+
+>=0
+
+# ** 86. Comment lines, indented or not, can appear within an if table.
+<
+2026-01-01,fuel,7
+RULES
+fields date, desc, amt
+description %desc
+amount %amt USD
+account1 assets:bank
+
+if|account2|comment
+; a comment row
+fuel|expenses:fuel|vroom
+  ; an indented comment row
+$  ./csvtest.sh
+2026-01-01 fuel  ; vroom
+    assets:bank                                    7 USD
+    expenses:fuel                                 -7 USD
+
+>=0
+
 # ** .
 #<
 #$  ./csvtest.sh
