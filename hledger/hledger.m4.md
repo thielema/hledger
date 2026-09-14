@@ -3518,7 +3518,7 @@ and a larger collection at <https://github.com/hledgerorg/hledger/tree/main/exam
 ## CSV rules cheatsheet
 
 The following kinds of rule can appear in the rules file, in any order.
-(Blank lines and lines beginning with `#` or `;` or `*` are ignored.)
+(Blank lines and lines beginning with `#` or `;` are ignored.)
 
 |                                                 |                                                                                                |
 |-------------------------------------------------|------------------------------------------------------------------------------------------------|
@@ -4254,7 +4254,7 @@ if %account1 liabilities:family:(expenses:.*)
   then one or more [hledger field names](#hledger-field-names).
 - The following lines begin with a matcher expression,
   then values to assign to each of those hledger fields.
-- Comment lines, beginning with `;`, `#` or `*` (indented or not), are also allowed.
+- Comment lines, beginning with `;` or `#` (indented or not), are also allowed.
 - A blank line (or the end of the file) ends the table.
 
 Eg:

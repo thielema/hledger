@@ -816,7 +816,7 @@ VALUE: SPACE? ( CHAR* ) SPACE?
 
 COMMENT: SPACE? COMMENT-CHAR VALUE
 
-COMMENT-CHAR: # | ; | *
+COMMENT-CHAR: # | ;
 
 NONSPACE: any CHAR not a SPACE-CHAR
 
@@ -883,7 +883,7 @@ commentlinep :: CsvRulesParser ()
 commentlinep = lift skipNonNewlineSpaces >> commentcharp >> lift restofline >> return () <?> "comment line"
 
 commentcharp :: CsvRulesParser Char
-commentcharp = oneOf (";#*" :: [Char])
+commentcharp = oneOf (";#" :: [Char])
 
 directivep :: CsvRulesParser (DirectiveName, Text)
 directivep = (do
@@ -1026,7 +1026,7 @@ conditionalblockp = do
     customFailure $ parseErrorAt moff $
       "start of conditional block found, but no matchers afterward\n"
       ++ "(matchers should be on the same line as \"if\", or on the following lines.\n"
-      ++ "Note: a line beginning with a comment character (#, ;, *) is a comment;\n"
+      ++ "Note: a line beginning with a comment character (# or ;) is a comment;\n"
       ++ "to match a leading comment character, escape it, eg \\#)"
   -- one or more indented assignments; with blank lines and comment lines
   -- (indented or not) possibly interspersed
