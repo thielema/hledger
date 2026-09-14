@@ -161,14 +161,14 @@ makePostingErrorExcerpt p findpostingerrorcolumns =
         errrelline = case mpindex of
           Nothing -> 0
           Just pindex ->
-            commentExtraLines (tcomment t) + 
+            commentExtraLines (tcomment t) +
             sum (map postingLines $ take pindex $ tpostings t)
             where
               -- How many lines are used to render this posting ?
               postingLines p' = 1 + commentExtraLines (pcomment p')
               -- How many extra lines does this comment add to a transaction or posting rendering ?
               commentExtraLines c = max 0 (length (T.lines c) - 1)
-        errabsline = unPos tl + errrelline
+        errabsline = clampToTransactionLines t $ unPos tl + errrelline
         txntxt = showTransaction t & textChomp & (<>"\n")
         merrcols = findpostingerrorcolumns p t txntxt
         ex = decoratePostingErrorExcerpt errabsline errrelline merrcols txntxt
@@ -208,9 +208,22 @@ makePostingErrorExcerptByIndex t idx mcols = (f, errabsline, mcols, ex)
       where
         postingLines p' = 1 + commentExtraLines (pcomment p')
         commentExtraLines c = max 0 (length (T.lines c) - 1)
-    errabsline = unPos tl + errrelline
+    errabsline = clampToTransactionLines t $ unPos tl + errrelline
     txntxt = showTransaction t & textChomp & (<>"\n")
     ex = decoratePostingErrorExcerpt errabsline errrelline mcols txntxt
+
+-- | Clamp a calculated error line number to this transaction's source line
+-- range. Calculated posting line numbers count the lines of the rendered
+-- entry, which can have more lines than the source region that produced it
+-- (notably with CSV, where a one-line record can produce a many-line entry);
+-- don't let them point beyond the entry's recorded source lines.
+clampToTransactionLines :: Transaction -> Int -> Int
+clampToTransactionLines t = max startline . min lastline
+  where
+    (SourcePos _ l1 _, SourcePos _ l2 c2) = tsourcepos t
+    startline = unPos l1
+    -- the end position is usually the start of the line after the entry
+    lastline  = max startline $ unPos l2 - if unPos c2 == 1 then 1 else 0
 
 -- | Find the 1-based index of the first posting in this transaction
 -- satisfying the given predicate.

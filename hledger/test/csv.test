@@ -1536,6 +1536,29 @@ $  ./csvtest.sh
 
 >=0
 
+# ** 82. When a converted entry is rejected later, eg by transaction
+# balancing, the error message also shows the CSV record it came from.
+<
+2026-09-02,buy,100.00,USD
+RULES
+fields date, desc, amt, cur
+description %desc
+account1 assets:a
+amount1 %amt %cur
+account2 assets:b
+amount2 -90 %cur
+$  ./csvtest.sh
+>2 /This transaction is unbalanced.
+The real postings' sum should be 0 but is 10.00 USD
+  100.00 USD  \+  -90 USD  =  10.00 USD
+this entry was converted from:
+record: 2026-09-02,buy,100.00,USD
+  %1 date  2026-09-02
+  %2 desc  buy
+  %3 amt   100.00
+  %4 cur   USD/
+>=1
+
 # ** .
 #<
 #$  ./csvtest.sh

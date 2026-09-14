@@ -47,7 +47,7 @@ import Control.Concurrent (forkIO)
 import Control.DeepSeq (deepseq)
 import Control.Exception.Safe (catchAny, tryIO)
 import Control.Monad (guard, unless, void, when)
-import Control.Monad.Except       (ExceptT(..), liftEither, throwError)
+import Control.Monad.Except       (ExceptT(..), liftEither, throwError, withExceptT)
 import Control.Monad.Fail qualified as Fail
 import Control.Monad.IO.Class     (MonadIO, liftIO)
 import Control.Monad.State.Strict (StateT, get, modify', evalStateT)
@@ -283,15 +283,17 @@ parse iopts rulesfile h = do
   --  gives: journal
 
   j <- do
-    readJournalFromCsv rulesfile rules (fromMaybe "(cmd)" mdatafile) cleandata Nothing
+    (j1, adderrorcontext) <- readJournalFromCsv rulesfile rules (fromMaybe "(cmd)" mdatafile) cleandata Nothing
     -- apply any command line account aliases. Can fail with a bad replacement pattern.
-    >>= liftEither . journalApplyAliases (aliasesFromOpts iopts)
+    j2 <- liftEither $ journalApplyAliases (aliasesFromOpts iopts)
         -- journalFinalise assumes the journal's items are
         -- reversed, as produced by JournalReader's parser.
         -- But here they are already properly ordered. So we'd
         -- better preemptively reverse them once more. XXX inefficient
-        . journalReverse
-    >>= journalFinalise iopts{balancingopts_=(balancingopts_ iopts){ignore_assertions_=True}} rulesfile ""
+        $ journalReverse j1
+    -- if finalisation fails, show also the CSV record which generated the failing entry
+    withExceptT adderrorcontext $
+      journalFinalise iopts{balancingopts_=(balancingopts_ iopts){ignore_assertions_=True}} rulesfile "" j2
 
   -- 7. if non-empty, successfully read and converted, and we're doing a non-dry-run
   --  archiving import: archive the data, then consume the source file.
@@ -1328,9 +1330,12 @@ _CSV_READING__________________________________________ = undefined
 --
 -- 3. Convert the CSV records to hledger transactions using the rules.
 --
--- 4. Return the transactions as a Journal.
+-- 4. Return the transactions as a Journal, along with an error context adder:
+--    a function which, given a later error message (eg from journal
+--    finalisation) mentioning a position in this CSV file, appends the
+--    corresponding CSV record's field values to it.
 --
-readJournalFromCsv :: FilePath -> CsvRules -> FilePath -> Text -> Maybe SepFormat -> ExceptT String IO Journal
+readJournalFromCsv :: FilePath -> CsvRules -> FilePath -> Text -> Maybe SepFormat -> ExceptT String IO (Journal, String -> String)
 readJournalFromCsv rulesfile rules csvfile csvtext sep = do
     -- for now, correctness is the priority here, efficiency not so much
 
@@ -1449,7 +1454,26 @@ readJournalFromCsv rulesfile rules csvfile csvtext sep = do
       -- this will hopefully refine any good ordering done by steps 1 and 2.
       txns3 = dbg7 "date-sorted csv txns" $ sortOn tdate txns2
 
-    return nulljournal{jtxns=txns3}
+      -- The error context adder returned along with the journal:
+      -- if the given error message (eg from journal finalisation) mentions
+      -- a position in this CSV data file, append the corresponding record's
+      -- field values to it, to help troubleshoot the conversion rules.
+      adderrorcontext errmsg = maybe errmsg addrecord mgroup
+        where
+          addrecord g = errmsg <> "\nthis entry was converted from:\n" <> T.unpack (showRecordFields rules g)
+          -- the record group whose line range contains the error's line.
+          -- (Error positions can't point outside the group's range:
+          -- they are clamped to the entry's source lines, see Errors.hs.)
+          mgroup = do
+            n <- mlineno
+            headMay [g | ((l1,l2),g) <- csvrecords, l1 <= n, n <= l2]
+          mlineno =
+            case T.breakOn (T.pack $ parsecfilename <> ":") (T.pack errmsg) of
+              (_, rest) | not $ T.null rest ->
+                readMay $ T.unpack $ T.takeWhile isDigit $ T.drop (length parsecfilename + 1) rest
+              _ -> Nothing
+
+    return (nulljournal{jtxns=txns3}, adderrorcontext)
 
 -- | Parse special separator names TAB and SPACE, or return the first
 -- character. Return Nothing on empty string
@@ -1611,7 +1635,7 @@ transactionFromCsvRecord timesarezoned mtzin tzout sourcepospair rules record =
     mkdateerror datefield datevalue mdateformat' = T.unpack $ T.unlines
       ["could not parse \""<>datevalue<>"\" as a date using date format "
         <>maybe "\"YYYY/M/D\", \"YYYY-M-D\" or \"YYYY.M.D\"" (T.pack . show) mdateformat'
-      ,showRecord record
+      ,showRecordFields rules record
       ,"the "<>datefield<>" rule is:   "<>(fromMaybe "required, but missing" $ field datefield)
       ,"the date-format is: "<>fromMaybe "unspecified" mdateformat'
       ,"you may need to "
@@ -1818,7 +1842,7 @@ getAmount rules record currency p1IsVirtual n =
       [(f,a)] -> Just $ negateIfOut f a
       fs      -> error' . T.unpack . textChomp . T.unlines $
         ["in CSV rules:"
-        ,"While processing " <> showRecord record
+        ,showRecordFields rules record
         ,"while calculating amount for posting " <> T.pack (show n)
         ] ++
         ["rule \"" <> f <> " " <>
@@ -1861,7 +1885,7 @@ parseAmount rules record currency s =
     journalparsestate = nulljournal{jparsedecimalmark=parseDecimalMark rules}
     mkerror e = error' . T.unpack $ T.unlines
       ["could not parse \"" <> s <> "\" as an amount"
-      ,showRecord record
+      ,showRecordFields rules record
       ,showRules rules record
       -- ,"the default-currency is: "++fromMaybe "unspecified" (getDirective "default-currency" rules)
       ,"the parse error is:      " <> T.pack (customErrorBundlePretty e)
@@ -1890,7 +1914,7 @@ parseBalanceAmount rules record currency n s =
     journalparsestate = nulljournal{jparsedecimalmark=parseDecimalMark rules}
     mkerror n' s' e = error' . T.unpack $ T.unlines
       ["could not parse \"" <> s' <> "\" as balance"<> T.pack (show n') <> " amount"
-      ,showRecord record
+      ,showRecordFields rules record
       ,showRules rules record
       -- ,"the default-currency is: "++fromMaybe "unspecified" mdefaultcurrency
       ,"the parse error is:      "<> T.pack (customErrorBundlePretty e)
@@ -1899,6 +1923,28 @@ parseBalanceAmount rules record currency n s =
 -- | Show the approximation of the original CSV record, labelled, for debug output.
 showRecord :: CsvRecordGroup -> Text
 showRecord = ("record: "<>) . recordAsApproximateText
+
+-- | Show a CSV record like showRecord (whose whole-record view helps
+-- troubleshoot whole-record matchers), and below it the field values one
+-- per line, each with its CSV field number and its field name if one was
+-- declared with a fields list; to help troubleshoot rules.
+-- A merged record group's rows are shown in turn, with the later rows'
+-- references shown with their _ROWNUM suffix.
+showRecordFields :: CsvRules -> CsvRecordGroup -> Text
+showRecordFields rules rows = T.stripEnd $ T.unlines $ showRecord rows : concatMap showrow (zip [1..] rows)
+  where
+    showrow (rownum, row) = heading ++ map showfield (zip [1..] row)
+      where
+        heading = if length rows > 1 then ["row " <> tshow rownum <> ":"] else []
+        suffix  = if (rownum::Int) > 1 then "_" <> tshow rownum else ""
+        showfield (i, v) =
+          "  " <> T.justifyLeft (numwidth + 1 + T.length suffix) ' ' ("%" <> tshow i <> suffix)
+          <> " " <> T.justifyLeft (namewidth + T.length suffix) ' ' (maybe "" (<> suffix) $ mfieldname i)
+          <> "  " <> v
+    tshow = T.pack . show :: Int -> Text
+    mfieldname i = lookup i [(ix,n) | (n,ix) <- rcsvfieldindexes rules, not $ T.null n]
+    numwidth  = length $ show $ maximum $ 1 : map length rows
+    namewidth = maximum $ 0 : [T.length n | (n,_) <- rcsvfieldindexes rules, not $ T.null n]
 
 -- Read a valid decimal mark from the decimal-mark rule, if any.
 -- If the rule is present with an invalid argument, raise an error.
@@ -1925,7 +1971,7 @@ mkBalanceAssertion rules record (amt, pos) = assrt{baamount=amt, baposition=pos}
             Just (total, inclusive) -> nullassertion{batotal=total, bainclusive=inclusive}
             Nothing -> error' . T.unpack $ T.unlines  -- PARTIAL:
               [ "balance-type \"" <> x <>"\" is invalid. Use =, ==, =* or ==*."
-              , showRecord record
+              , showRecordFields rules record
               , showRules rules record
               ]
 
