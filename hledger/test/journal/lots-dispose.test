@@ -417,18 +417,20 @@ $ hledger -f- print --lots -x desc:sell
 
 >=
 
-# ** 24. Insufficient lots error shows reduction method.
+# ** 24. SPECID errors show the method's source (here, a commodity tag).
 <
+commodity AAPL  ; lots: SPECID
+
 2026-01-15 buy
-    assets:stocks    10 AAPL {$50}
+    assets:stocks    10 AAPL @ $50
     assets:checking
 
-2026-02-01 sell too many
-    assets:stocks   -15 AAPL {$50} @ $55
-    assets:cash      $825
+2026-02-01 sell without a lot selector
+    assets:stocks    -5 AAPL @ $55
+    assets:cash       $275
 
-$ hledger -f- bal assets:stocks --lots
->2 /Using FIFO \(default\)/
+$ hledger -f- check
+>2 /Using SPECID \(from commodity tag on AAPL\)/
 >=1
 
 # ** 25. Insufficient lots error shows review hint.
@@ -445,28 +447,45 @@ $ hledger -f- check
 >2 /need 15 but only 10 available/
 >=1
 
-# ** 26. No lots available error shows commodity tag as method source.
+# ** 26. Also when the method comes from an account tag.
 <
-commodity AAPL  ; lots: LIFO
+commodity AAPL  ; lots:
+account assets:stocks  ; lots: SPECID
 
-2026-02-01 sell without buying
-    assets:stocks    -5 AAPL {$50} @ $55
+2026-01-15 buy
+    assets:stocks    10 AAPL @ $50
+    assets:checking
+
+2026-02-01 sell without a lot selector
+    assets:stocks    -5 AAPL @ $55
     assets:cash       $275
 
-$ hledger -f- bal assets:stocks --lots
->2 /Using LIFO \(from commodity tag on AAPL\)/
+$ hledger -f- check
+>2 /Using SPECID \(from account tag on assets:stocks\)/
 >=1
 
-# ** 27. Error shows account tag as method source.
+# ** 27. The ambiguous lot selector error also shows the method's source.
 <
-account assets:stocks  ; lots: LIFO
+commodity AAPL  ; lots: SPECID
 
-2026-02-01 sell without buying
-    assets:stocks    -5 AAPL {$50} @ $55
+2026-01-15 buy
+    assets:stocks    10 AAPL @ $50
+    assets:checking
+
+2026-01-15 buy again, same date
+    assets:stocks    10 AAPL @ $50
+    assets:checking
+
+2026-02-01 sell with an ambiguous selector
+    assets:stocks    -5 AAPL {2026-01-15} @ $55
     assets:cash       $275
 
-$ hledger -f- bal assets:stocks --lots
->2 /Using LIFO \(from account tag on assets:stocks\)/
+$ hledger -f- check
+>2 /lot selector is ambiguous, matches 2 lots in account assets:stocks:
+  \{2026-01-15, "0001", \$50\}  10
+  \{2026-01-15, "0002", \$50\}  10
+  Total: 20 AAPL
+Using SPECID \(from commodity tag on AAPL\)\./
 >=1
 
 # ** 28. Lot error highlights the posting line, not the transaction line.

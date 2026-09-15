@@ -1828,8 +1828,7 @@ reduceLotTransferToEquity j t ls p =
             qty       = negate (aquantity a)
             acct      = lotBaseAccount (paccount p)
             (method, methodSource) = resolveReductionMethodWithSource j p commodity
-        selected <- first (enrichLotError method methodSource)
-                  $ selectLots method (postingErrPrefix p) "transfer" (tdate t) acct commodity qty cb ls
+        selected <- selectLots (method, methodSource) (postingErrPrefix p) "transfer" (tdate t) acct commodity qty cb ls
         let consumed = [(lotId, qty') | (lotId, _, qty') <- selected]
         return $ lotDbg t ("equity-transfer " ++ show qty ++ " " ++ T.unpack commodity
                            ++ " from " ++ T.unpack acct
@@ -2109,9 +2108,9 @@ processDisposePosting styles verbosetags j t lotState p = do
 
         when (isBare && method == SPECID) $
           Left $ showPos ++ "SPECID requires a lot selector on dispose postings"
+                 ++ "\nUsing SPECID (" ++ methodSource ++ ")."
 
-        selected <- first (enrichLotError method methodSource)
-                  $ selectLots method (postingErrPrefix p) "disposal" (tdate t) scopeAcct commodity posQty cb lotState
+        selected <- selectLots (method, methodSource) (postingErrPrefix p) "disposal" (tdate t) scopeAcct commodity posQty cb lotState
 
         let baseAcct = lotBaseAccount (paccount p)
             hasExplicitLotAcct = baseAcct /= paccount p
@@ -2235,8 +2234,7 @@ processTransferGroup styles verbosetags j t lotState0 (commodity, ifroms, itos) 
           -- Transfers are always per-account (scoped to source), but ordering follows the method.
           (method, methodSource) = resolveReductionMethodWithSource j fromP commodity
           fromBaseAcct = lotBaseAccount (paccount fromP)
-      selected <- first (enrichLotError method methodSource)
-                $ selectLots method (postingErrPrefix fromP) "transfer" (tdate t) fromBaseAcct commodity fromQty fromCb st
+      selected <- selectLots (method, methodSource) (postingErrPrefix fromP) "transfer" (tdate t) fromBaseAcct commodity fromQty fromCb st
       let st' = reduceLotState fromBaseAcct commodity [(lid, qty) | (lid, _, qty) <- selected] st
       return $ lotDbg t ("transferred out " ++ show fromQty ++ " " ++ T.unpack commodity
                           ++ " from " ++ T.unpack fromBaseAcct
@@ -2387,10 +2385,6 @@ addLotState commodity lotId account amt =
     (M.singleton lotId (M.singleton account amt))
   where addQty a1 a2 = a1{aquantity = aquantity a1 + aquantity a2}
 
--- | Enrich a selectLots error with reduction method info.
-enrichLotError :: ReductionMethod -> String -> String -> String
-enrichLotError method methodSource err =
-  err ++ "\nUsing " ++ show method ++ " (" ++ methodSource ++ ")."
 
 -- | Select lots to consume using the given reduction method.
 -- All methods select from the specified account only.
@@ -2404,12 +2398,12 @@ enrichLotError method methodSource err =
 -- An all-Nothing selector (from @{}@) matches all lots.
 -- Returns a list of (lot id, lot amount, quantity consumed from this lot).
 -- Errors if total available quantity in matching lots is insufficient.
-selectLots :: ReductionMethod -> String -> String -> Day -> AccountName -> CommoditySymbol
+selectLots :: (ReductionMethod, String) -> String -> String -> Day -> AccountName -> CommoditySymbol
            -> Quantity -> CostBasis -> LotState
            -> Either String [(LotId, Amount, Quantity)]
-selectLots method posStr operation date account commodity qty selector lotState = do
+selectLots (method, methodSource) posStr operation date account commodity qty selector lotState = do
     when (method == SPECID && isWildcardSelector selector) $
-      Left $ posStr ++ "SPECID requires an explicit lot selector"
+      Left $ posStr ++ "SPECID requires an explicit lot selector" ++ methodline
     let allLots = M.findWithDefault M.empty commodity lotState
         -- Flatten to (LotId, Amount) pairs, taking only the specified account's balance.
         flatLots = M.mapMaybe (M.lookup account) allLots
@@ -2430,7 +2424,7 @@ selectLots method posStr operation date account commodity qty selector lotState 
     when (method == SPECID && M.size matchingLots > 1) $
       Left $ posStr ++ "lot selector is ambiguous, matches " ++ show (M.size matchingLots)
               ++ " lots in account " ++ T.unpack account ++ ":"
-              ++ showLotList matchingLots
+              ++ showLotList matchingLots ++ methodline
     let available = sum [aquantity a | a <- M.elems matchingLots]
     when (available < qty) $
       Left $ posStr ++ "Insufficient lots for commodity " ++ T.unpack commodity
@@ -2452,9 +2446,14 @@ selectLots method posStr operation date account commodity qty selector lotState 
           _       -> M.toAscList matchingLots  -- unreachable after methodBaseOrdering
         selected = go qty orderedLots
     when (methodIsGlobal method) $
+      first (++ methodline) $
       validateGlobalCompliance method posStr account commodity qty selector lotState selected
     Right selected
   where
+    -- The reduction method and where it came from; appended to the errors
+    -- where the method matters (the availability errors omit it).
+    methodline = "\nUsing " ++ show method ++ " (" ++ methodSource ++ ")."
+
     go 0 _ = []
     go _ [] = []  -- shouldn't happen after the check above
     go remaining ((lotId, lotAmt):rest)

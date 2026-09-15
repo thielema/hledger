@@ -234,7 +234,6 @@ no lots matching {2021-03-08, "0001", $5} for commodity ABC in account assets:br
 Available lots in this account:
   {2021-03-08, $5}  2
   Total: 2 ABC
-Using FIFO (default).
 >=1
 
 # ** 15. A transfer-like entry whose lotful-commodity quantities don't add
@@ -400,7 +399,6 @@ hledger: Error: -:51:
 
 Postings were read as: dispose, unclassified.
 Insufficient lots for commodity ADA in account assets:wallet: need 60 but only 24 available
-Using FIFO (default).
 >=1
 
 # ** 19. Disposing from an account with no lots shows a compact per-account
@@ -470,7 +468,6 @@ Postings were read as: dispose, unclassified.
 no ADA lots available for disposal from account assets:exchange on 2026-02-01
 Lots of ADA in other accounts:
   assets:wallet: 24 ADA in 12 lots
-Using FIFO (default).
 >=1
 
 # ** 20. With an explicit lot selector, the same error also lists the
@@ -550,5 +547,4 @@ Lots matching {2026-01-01}:
   {2026-01-01, "0010", $0.50}  2
   ...and 2 more lots
   Total: 24 ADA
-Using FIFO (default).
 >=1
