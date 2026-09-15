@@ -21,7 +21,6 @@ If not, see <https://www.gnu.org/licenses/>.
 {-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE MultiWayIf #-}
 
 module Hledger.UI.Main where
 
@@ -212,14 +211,17 @@ uiInitialState uopts0@UIOpts{uoCliOpts=copts@CliOpts{reportspec_=rspec@ReportSpe
     -- Note the previous screens list is ordered nearest-first, with the top-most (menu) screen last.
     -- Keep all of this synced with msNew.
     rawopts = rawopts_ $ uoCliOpts $ uopts
+    -- The screen-selecting flag given last wins, so eg a config file's choice
+    -- can be overridden on the command line.
+    mscreenflag = choiceopt (\n -> if n `elem` ["cash","bs","is","all","register"] then Just n else Nothing) rawopts
     (prevscrs, currscr) =
       dbg1With (showScreenStack "initial" showScreenSelection . uncurry2 (uiState defuiopts nulljournal)) $
-      if
+      case mscreenflag of
         -- An accounts screen is specified. Its previous screen will be the menu screen with it selected.
-        | boolopt "cash" rawopts -> ([msSetSelectedScreen csItemIndex menuscr], csacctsscr)
-        | boolopt "bs"   rawopts -> ([msSetSelectedScreen bsItemIndex menuscr], bsacctsscr)
-        | boolopt "is"   rawopts -> ([msSetSelectedScreen isItemIndex menuscr], isacctsscr)
-        | boolopt "all"  rawopts -> ([msSetSelectedScreen asItemIndex menuscr], allacctsscr)
+        Just "cash" -> ([msSetSelectedScreen csItemIndex menuscr], csacctsscr)
+        Just "bs"   -> ([msSetSelectedScreen bsItemIndex menuscr], bsacctsscr)
+        Just "is"   -> ([msSetSelectedScreen isItemIndex menuscr], isacctsscr)
+        Just "all"  -> ([msSetSelectedScreen asItemIndex menuscr], allacctsscr)
 
         -- A register screen is specified with --register=ACCT. The initial screen stack will be:
         --
@@ -227,7 +229,7 @@ uiInitialState uopts0@UIOpts{uoCliOpts=copts@CliOpts{reportspec_=rspec@ReportSpe
         --    ACCTSSCR (the accounts screen containing ACCT), with ACCT selected
         --     register screen for ACCT
         --
-        | Just apat <- uoRegister uopts ->
+        Just "register" | Just apat <- uoRegister uopts ->
           let
             -- the account being requested
             acct = fromMaybe (error' $ "--register "++apat++" did not match any account")  -- PARTIAL:
@@ -264,7 +266,7 @@ uiInitialState uopts0@UIOpts{uoCliOpts=copts@CliOpts{reportspec_=rspec@ReportSpe
           in ([acctsscr, menuscr'], regscr)
 
         -- Otherwise, start on the menu screen.
-        | otherwise -> ([], menuscr)
+        _ -> ([], menuscr)
 
         where
           menuscr     = msNew

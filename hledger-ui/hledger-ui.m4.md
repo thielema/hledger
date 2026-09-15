@@ -72,7 +72,7 @@ Flags:
   -t --tree                 show accounts as a tree
 ```
 
-and also supports many of hledger's [general options](hledger.md#options):
+hledger-ui also supports many of hledger's [general options](hledger.md#options):
 
 _generaloptions_
 

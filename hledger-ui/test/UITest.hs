@@ -139,6 +139,19 @@ tests = testGroup "hledger-ui"
           (hasText "assets:stocks transactions" && not (hasText "{2026-01-01"))
         assertBool "the register should show the transaction, selected"
           (hasText "buy" && hasText "(1/1)")
+  , testCase "the last screen-selecting flag wins" $
+      withJournalFile fixture $ \path -> do
+        j <- readJournalFile' path
+        let startingscreens args = do
+              uopts <- withDay (fromGregorian 2024 6 1) <$> uiOptsForArgs (["-f", path] ++ args)
+              (states, _) <- driveUI uopts j []
+              return $ screenPath (last states)
+        startingscreens ["--bs", "--all"] >>= (@?= "MA")
+        startingscreens ["--all", "--bs"] >>= (@?= "MB")
+        -- register wins over an earlier accounts flag; checking is a balance sheet account
+        startingscreens ["--all", "--register", "checking"] >>= (@?= "MBR")
+        -- and an accounts flag wins over an earlier register flag
+        startingscreens ["--register", "checking", "--is"] >>= (@?= "MI")
   ]
 
 -- | Run an action with a freshly loaded fixture journal and matching startup
