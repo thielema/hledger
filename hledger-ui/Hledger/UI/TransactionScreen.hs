@@ -14,11 +14,12 @@ module Hledger.UI.TransactionScreen
 
 import Brick
 import Brick.Widgets.Edit (editorText, renderEditor)
-import Brick.Widgets.List (listMoveTo)
+import Brick.Widgets.List (listElements)
 import Control.Monad.IO.Class (liftIO)
 import Data.List
 import Data.Maybe
 import Data.Text qualified as T
+import Data.Vector qualified as V
 import Graphics.Vty (Event(..),Key(..),Modifier(..), Button (BLeft))
 import System.Exit (ExitCode (..))
 
@@ -37,7 +38,7 @@ tsDraw TSS{_tssTransaction=(i,t')
           ,_tssTransactions=nts
           ,_tssAccount=acct
           }
-       UIState{aopts=UIOpts{uoCliOpts=copts@CliOpts{reportspec_=rspec@ReportSpec{_rsReportOpts=ropts}}}
+       UIState{aopts=uopts@UIOpts{uoCliOpts=copts@CliOpts{reportspec_=rspec@ReportSpec{_rsReportOpts=ropts}}}
               ,ajournal=j
               ,aMode=mode
               } =
@@ -72,7 +73,7 @@ tsDraw TSS{_tssTransaction=(i,t')
           <+> str (" of "++show (length nts))
           <+> togglefilters
           <+> borderQueryStr (unwords . map (quoteIfNeeded . T.unpack) $ querystring_ ropts)
-          <+> str (" in "++T.unpack (replaceHiddenAccountsNameWith "All" acct)++")")
+          <+> str (" in "++T.unpack (replaceHiddenAccountsNameWith "All" $ uiDisplayAccount uopts acct)++")")
           <+> (if ignore_assertions_ . balancingopts_ $ inputopts_ copts then withAttr (attrName "border" <> attrName "query") (str " ignoring balance assertions") else str "")
           where
             togglefilters =
@@ -203,7 +204,10 @@ tsSelect i t ui@UIState{aScreen=TS sst} = case aPrevScreens ui of
   where ui' = ui{aScreen=TS sst{_tssTransaction=(i,t)}}
 tsSelect _ _ ui = ui
 
--- | Select the nth item on the register screen.
+-- | Select the nth item on the register screen; or if it has no real items
+-- (eg its account is a lot subaccount and lot display was just toggled off),
+-- clear the selection, so no blank item appears selected.
 rsSelect :: Integer -> Screen -> Screen
-rsSelect i (RS sst@RSS{..}) = RS sst{_rssList=listMoveTo (fromInteger $ i-1) _rssList}
+rsSelect i (RS sst@RSS{..}) = RS sst{_rssList=listMoveToIfDisplayItems (fromInteger $ i-1) nonblanks _rssList}
+  where nonblanks = V.toList $ V.takeWhile (not . T.null . rsItemDate) $ listElements _rssList
 rsSelect _ scr = scr

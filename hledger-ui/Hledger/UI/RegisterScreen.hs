@@ -46,7 +46,7 @@ import Hledger.UI.Editor
 import Hledger.UI.ErrorScreen (uiReload, uiReloadIfFileChanged, uiToggleBalanceAssertions)
 
 rsDraw :: RegisterScreenState -> UIState -> [Widget Name]
-rsDraw RSS{..} UIState{aopts=_uopts@UIOpts{uoCliOpts=copts@CliOpts{reportspec_=rspec}}
+rsDraw RSS{..} UIState{aopts=uopts@UIOpts{uoCliOpts=copts@CliOpts{reportspec_=rspec}}
               ,aMode=mode
               } = dbgui "rsDraw" $
   case mode of
@@ -103,7 +103,7 @@ rsDraw RSS{..} UIState{aopts=_uopts@UIOpts{uoCliOpts=copts@CliOpts{reportspec_=r
         -- inclusive = tree_ ropts || rsForceInclusive
 
         toplabel =
-              withAttr (attrName "border" <> attrName "bold") (str $ T.unpack $ replaceHiddenAccountsNameWith "All" _rssAccount)
+              withAttr (attrName "border" <> attrName "bold") (str $ T.unpack $ replaceHiddenAccountsNameWith "All" $ uiDisplayAccount uopts _rssAccount)
 --           <+> withAttr ("border" <> "query") (str $ if inclusive then "" else " exclusive")
           <+> togglefilters
           <+> str " transactions"

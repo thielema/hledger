@@ -113,6 +113,32 @@ tests = testGroup "hledger-ui"
             assertBool "L reveals the lot subaccount" (or lotShown)
             -- ... and L again collapses it, proving the toggle is reversible without re-reading
             assertBool "L again collapses the lot subaccount" (not (last lotShown))
+  , testCase "L on a lot subaccount's transaction screen keeps showing the entry" $
+      withJournalFile lotsFixture $ \path -> do
+        uopts <- withDay (fromGregorian 2026 6 1) <$> uiOptsForArgs ["-f", path, "--all"]
+        j <- readJournalFile' path
+        -- uncollapse lots, select the lot subaccount, drill into its transaction,
+        -- then collapse lots again (making this screen's account vanish)
+        (states, frames) <- driveUI uopts j [key 'L', keyDown, keyRight, keyRight, key 'L']
+        activeScreenTag (last states) @?= "T"
+        let hasText t = any (T.isInfixOf t) $ renderText region (last frames)
+        assertBool "the transaction screen should still show the entry, in collapsed form"
+          (hasText "10 AAPL")
+        assertBool "the transaction screen should not show a blank transaction"
+          (not $ hasText "0000-01-01")
+  , testCase "after collapsing lots, the lot subaccount's register shows the base account" $
+      withJournalFile lotsFixture $ \path -> do
+        uopts <- withDay (fromGregorian 2026 6 1) <$> uiOptsForArgs ["-f", path, "--all"]
+        j <- readJournalFile' path
+        -- as in the previous test, but also return to the register screen: with lot
+        -- detail collapsed, it should show the base account's register, not an empty one
+        (states, frames) <- driveUI uopts j [key 'L', keyDown, keyRight, keyRight, key 'L', keyLeft]
+        activeScreenTag (last states) @?= "R"
+        let hasText t = any (T.isInfixOf t) $ renderText region (last frames)
+        assertBool "the register title should show the base account, not the lot subaccount"
+          (hasText "assets:stocks transactions" && not (hasText "{2026-01-01"))
+        assertBool "the register should show the transaction, selected"
+          (hasText "buy" && hasText "(1/1)")
   ]
 
 -- | Run an action with a freshly loaded fixture journal and matching startup

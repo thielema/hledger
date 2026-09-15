@@ -32,6 +32,8 @@ module Hledger.UI.UIScreens
 ,rsUpdate
 ,tsNew
 ,tsUpdate
+,listMoveToIfDisplayItems
+,uiDisplayAccount
 )
 where
 
@@ -274,13 +276,27 @@ rsUpdate uopts d j rss@RSS{_rssAccount, _rssForceInclusive, _rssList=oldlist} =
                   [(abs $ diffDays (tdate t) prevseld, abs (tindex t - prevselidx), tindex t) | t <- ts])
                 ts = map rsItemTransaction displayitems
 
+-- | The account a register-like screen should display: normally the screen's stored
+-- account, but when that is a lot subaccount and lot detail is collapsed (so the
+-- account doesn't exist in the display journal), its base account, where the
+-- collapsed postings now appear. Keep the collapse condition synced with uiDisplayJournal.
+uiDisplayAccount :: UIOpts -> AccountName -> AccountName
+uiDisplayAccount uopts a
+  | boolopt "lots" ro        = a
+  | boolopt "ignore-lots" ro = a
+  | otherwise                = lotBaseAccount a
+  where ro = rawopts_ $ uoCliOpts uopts
+
 -- | The rendered register items (one per transaction) for an account's register,
 -- from these options, reporting date, journal, account name, and whether to include
 -- subaccount transactions. Shared by the register screen and the transaction screen
 -- so they show the same set of transactions.
+-- The account is remapped with uiDisplayAccount, so a lot subaccount's register
+-- shows its base account's transactions while lot detail is collapsed.
 registerScreenDisplayItems :: UIOpts -> Day -> Journal -> AccountName -> Bool -> [RegisterScreenItem]
-registerScreenDisplayItems uopts d j acct forceinclusive = map displayitem items'
+registerScreenDisplayItems uopts d j acct0 forceinclusive = map displayitem items'
   where
+    acct = uiDisplayAccount uopts acct0
     UIOpts{uoCliOpts=copts@CliOpts{reportspec_=rspec@ReportSpec{_rsReportOpts=ropts}}} = uopts
     inclusive = tree_ ropts || forceinclusive
     thisacctq = Acct $ mkregex acct
@@ -344,15 +360,23 @@ tsNew acct forceinclusive nts nt =
 tsUpdate :: UIOpts -> Day -> Journal -> TransactionScreenState -> TransactionScreenState
 tsUpdate uopts d j tss@TSS{_tssAccount, _tssForceInclusive, _tssTransaction=(oldpos, oldtxn)} =
   dbgui "tsUpdate" $
-  length numberedtxns `seq` selected `seq`
-  tss{_tssTransactions=numberedtxns, _tssTransaction=selected}
+  length nts `seq` selected `seq`
+  tss{_tssTransactions=nts, _tssTransaction=selected}
   where
     displayitems = registerScreenDisplayItems uopts d j _tssAccount _tssForceInclusive
     numberedtxns = zipWith (\i item -> (i, rsItemTransaction item)) [(1::Integer)..] displayitems
-    selected     = fromMaybe fallback $ find ((== tindex oldtxn) . tindex . snd) numberedtxns
-    fallback     = case numberedtxns of
-      [] -> (0, nulltransaction)
-      _  -> fromMaybe (last numberedtxns) $ (\t -> (oldpos, t)) <$> lookup oldpos numberedtxns
+    (nts, selected)
+      -- the same transaction is still in this account's register: keep it selected
+      | Just sel <- find ((== tindex oldtxn) . tindex . snd) numberedtxns = (numberedtxns, sel)
+      -- the register is now empty, eg because this screen's account was a lot subaccount
+      -- and lot display was just toggled off: if the entry still exists in the journal,
+      -- keep showing it (in its current form); otherwise show a blank transaction
+      | null numberedtxns = case journalTransactionAt j (tindex oldtxn) of
+          Just t  -> ([(1, t)], (1, t))
+          Nothing -> ([], (0, nulltransaction))
+      -- the transaction is gone but the register is not empty, eg after a file change:
+      -- fall back to the transaction at the same position, or the last one
+      | otherwise = (numberedtxns, fromMaybe (last numberedtxns) $ (\t -> (oldpos, t)) <$> lookup oldpos numberedtxns)
 
 -- | Set selected index of a list if there are displayitems.
 -- If there are no displayitems, remove the selected index of the list.
