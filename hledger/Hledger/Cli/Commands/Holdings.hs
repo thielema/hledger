@@ -775,20 +775,26 @@ holdings opts@CliOpts{rawopts_=rawopts, reportspec_=rspec@ReportSpec{_rsQuery=q,
       : map holdingCsv holdingrecords
 
     -- Grand totals row (as cell parts, like rowCellParts): the Units,
-    -- Cost, Value and gain columns, summed over the topmost displayed rows
-    -- (which include everything below them).
-    -- Units is shown only when the holdings are all in one commodity
-    -- (a multi-commodity total would widen the column for everyone).
+    -- Avg cost, Cost, Value and gain columns, summed over the topmost
+    -- displayed rows (which include everything below them).
+    -- Units, and the average cost per unit, are shown only when the
+    -- holdings are all in one commodity (a multi-commodity total would
+    -- widen the column for everyone, and a multi-commodity average is
+    -- not meaningful); the average also needs a single cost commodity.
     -- Value and gains are blank unless all rows have a market price.
     mtotalrowparts :: Maybe [[T.Text]]
     mtotalrowparts
       | no_total_ ropts = Nothing
-      | otherwise = Just [[], [], unitsparts, [], [], costparts, valueparts, [weightcell], ugainparts, [ugainpctcell], rgainparts, [xirrcell]]
+      | otherwise = Just [[], [], unitsparts, avgcostparts, [], costparts, valueparts, [weightcell], ugainparts, [ugainpctcell], rgainparts, [xirrcell]]
       where
-        unitsparts = case filter (not . amountLooksZero) $ sumAmounts $
-                          concatMap (map fst . lotsUnder . prrFullName) toprows of
+        totunits = filter (not . amountLooksZero) $ sumAmounts $
+                   concatMap (map fst . lotsUnder . prrFullName) toprows
+        unitsparts = case totunits of
           [u] -> [showamt u]
           _   -> []
+        avgcostparts = case (totunits, sumAmounts totcosts) of
+          ([u], [c]) -> [showamt $ avgcost u c]
+          _          -> []
         totcosts = [ rowCostValuer r $ multiplyAmount (aquantity a) c
                    | r <- toprows, (a, mcb) <- lotsUnder (prrFullName r), Just c <- [cbCost =<< mcb] ]
         costparts = map showamt $ amounts $ mixed totcosts

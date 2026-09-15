@@ -115,7 +115,11 @@ Notes:
 - The totals row (shown unless -N) shows the commodity-independent
   columns: Cost, Value, Weight (100%), UGain, UGain%, RGain, XIRR;
   and, when the holdings are all in one commodity, the total Units
-  (a multi-commodity total would widen the column for everyone).
+  (a multi-commodity total would widen the column for everyone)
+  and the overall average cost per unit (which additionally requires a
+  single cost commodity; a multi-commodity average is not meaningful).
+  The totals Price cell stays blank: within one commodity it would just
+  repeat the market price shown on every row.
 - Possible future columns: a long/short-term capital gains indicator.
 
 ## Valuation
