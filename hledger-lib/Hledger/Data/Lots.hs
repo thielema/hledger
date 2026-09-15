@@ -2458,22 +2458,32 @@ selectLots method posStr operation date account commodity qty selector lotState 
       | otherwise           = [(lotId, lotAmt, remaining)]
       where lotBal = aquantity lotAmt
 
+    -- Show lots one per line, at most 10; a final line counts any more.
     showLotList :: M.Map LotId Amount -> String
-    showLotList lots = concatMap fmt (M.toAscList lots)
-      where fmt (lid, a) = "\n  " ++ T.unpack (showLotName (lotIdToCb lid a))
-                            ++ "  " ++ show (aquantity a)
+    showLotList lots = concatMap fmt shown ++ more
+      where
+        (shown, rest) = splitAt 10 (M.toAscList lots)
+        fmt (lid, a) = "\n  " ++ T.unpack (showLotName (lotIdToCb lid a))
+                        ++ "  " ++ show (aquantity a)
+        more = case length rest of
+          0 -> ""
+          1 -> "\n  ...and 1 more lot"
+          n -> "\n  ...and " ++ show n ++ " more lots"
 
+    -- Summarise this commodity's lots in accounts other than the specified
+    -- one: for each account, the total quantity and number of lots.
     showOtherAccountLots :: M.Map LotId (M.Map AccountName Amount) -> String
     showOtherAccountLots allLots' =
-      let others = [(acct, lid, a) | (lid, acctMap) <- M.toAscList allLots'
-                                    , (acct, a) <- M.toList acctMap, acct /= account]
-          byAcct = M.fromListWith (++) [(acct, [(lid, a)]) | (acct, lid, a) <- others]
+      let others = [(acct, a) | (_, acctMap) <- M.toAscList allLots'
+                              , (acct, a) <- M.toList acctMap, acct /= account]
+          byAcct = M.fromListWith (\(q1, n1) (q2, n2) -> (q1 + q2, n1 + n2))
+                     [(acct, (aquantity a, 1 :: Int)) | (acct, a) <- others]
       in if M.null byAcct then ""
          else "\nLots of " ++ T.unpack commodity ++ " in other accounts:"
            ++ concatMap fmtAcct (M.toAscList byAcct)
-      where fmtAcct (acct, lots) = "\n  " ++ T.unpack acct ++ ": "
-              ++ intercalate ", " [T.unpack (showLotName (lotIdToCb lid a)) ++ " " ++ show (aquantity a)
-                                  | (lid, a) <- lots]
+      where fmtAcct (acct, (q, n)) = "\n  " ++ T.unpack acct ++ ": "
+              ++ show q ++ " " ++ T.unpack commodity
+              ++ " in " ++ show n ++ (if n == 1 then " lot" else " lots")
 
 -- | Extract the per-unit cost quantity from a lot entry, for HIFO sorting.
 lotPerUnitCost :: (LotId, Amount) -> Quantity
