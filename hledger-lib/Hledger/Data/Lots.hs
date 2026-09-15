@@ -1403,14 +1403,23 @@ journalCollapseLotDetail j
       | otherwise = Just p
           { paccount          = newAcct
           , pamount           = mapMixedAmount stripInferredBasis (pamount p)
-          -- A lot-subaccount balance assertion was checked against the
-          -- pre-collapse paccount during journalFinalise; drop it here so the
-          -- collapsed view isn't re-validated against the parent total.
+          -- An assertion originally written on the base account (eg by CSV
+          -- balanceN rules) targets the parent, which is what this collapsed
+          -- posting shows again; keep it, so writing out the collapsed view
+          -- (eg by import) preserves it. But an assertion the user wrote on
+          -- the lot subaccount itself asserts that lot's balance, which was
+          -- checked against the pre-collapse paccount during journalFinalise;
+          -- drop it here so the collapsed view isn't re-validated against
+          -- the parent total.
           , pbalanceassertion =
-              if newAcct == paccount p then pbalanceassertion p else Nothing
+              if newAcct == paccount p || originalAcct == newAcct
+              then pbalanceassertion p
+              else Nothing
           }
       where
         newAcct = lotBaseAccount (paccount p)
+        -- The account the user actually wrote (before lot processing).
+        originalAcct = paccount (originalPosting p)
         -- Preserve acostbasis the user wrote explicitly on poriginal; strip any
         -- acostbasis added later by lot processing.
         origHasBasis = case poriginal p of
