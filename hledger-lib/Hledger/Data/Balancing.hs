@@ -48,7 +48,7 @@ import Data.Maybe (fromJust, fromMaybe, isJust, isNothing, mapMaybe)
 import Data.STRef (STRef, newSTRef, readSTRef, modifySTRef')
 import Data.Set qualified as S
 import Data.Text qualified as T
-import Data.Time.Calendar (fromGregorian)
+import Data.Time.Calendar (addDays, fromGregorian)
 import Data.Map qualified as M
 import Safe (headErr)
 import Text.Printf (printf)
@@ -873,7 +873,7 @@ checkBalanceAssertionOneCommodityB p@Posting{paccount=assertedacct} assertedcomm
         "but the calculated balance is:  %s",
         "(difference: %s)",
         "To troubleshoot, check this account's running balance with assertions disabled, eg:",
-        "hledger reg -E --ignore-assertions '%s'%s%s"
+        "hledger reg -E --ignore-assertions '%s'%s%s -e %s"
       ])
 
       (sourcePosPretty pos)  -- position
@@ -888,6 +888,7 @@ checkBalanceAssertionOneCommodityB p@Posting{paccount=assertedacct} assertedcomm
         <> if debugLevel >= 2 then " (with costs: " <> T.pack (showMixedAmountWith fmt actualcommbal) <> ")" else ""
       )
       diffstr  -- their difference
+      (show $ addDays 1 $ postingDate p)  -- exclusive end date just after the assertion's date
       (T.unpack (regexEscape (paccount p)) ++ if isinclusive then "" else "$")  -- query matching the account(s) postings
       (if istotal then "" else (" cur:" ++ quoteForCommandLine (T.unpack (regexEscape (assertedcomm)))))  -- query matching the commodity(ies)
       lotSubHint  -- lot subaccount hint (empty for non-lot accounts)
