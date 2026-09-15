@@ -82,6 +82,20 @@ tests = testGroup "hledger-ui"
           assertBool "the error screen should show its 'Oops' header"
             (any (T.isInfixOf "Oops") (renderText region (last frames)))
 
+  , testCase "transaction screen shows the whole entry despite a cur: query" $
+      withJournalFile multicurFixture $ \path -> do
+        uopts <- withDay (fromGregorian 2026 6 1) <$> uiOptsForArgs ["-f", path, "--register", "aaa", "cur:USD"]
+        j <- readJournalFile' path
+        (states, frames) <- driveUI uopts j [keyRight]
+        activeScreenTag (last states) @?= "T"
+        let hasText t = any (T.isInfixOf t) $ renderText region (last frames)
+        -- the register report excludes the EUR amounts per cur:USD, but the
+        -- transaction screen should show the original entry in full
+        assertBool "the transaction screen should show the matched USD amount"
+          (hasText "10 USD")
+        assertBool "the transaction screen should also show the EUR amount excluded by cur:USD"
+          (hasText "20 EUR")
+
   , testCase "L toggles lot detail on the accounts screen, reversibly in memory" $
       withJournalFile lotsFixture $ \path -> do
         uopts <- withDay (fromGregorian 2026 6 1) <$> uiOptsForArgs ["-f", path, "--all"]
@@ -134,6 +148,16 @@ brokenFixture = T.unlines
   , "    equity:opening"
   , ""
   , "this is not a valid journal line"
+  ]
+
+-- A journal with a multi-commodity transaction, for testing cur: query filtering.
+multicurFixture :: Text
+multicurFixture = T.unlines
+  [ "2026-01-01 multi"
+  , "    aaa    10 USD"
+  , "    aaa    20 EUR"
+  , "    bbb   -10 USD"
+  , "    bbb   -20 EUR"
   ]
 
 -- A journal with a lot-tracked commodity, so accounts have lot subaccounts to show or hide.

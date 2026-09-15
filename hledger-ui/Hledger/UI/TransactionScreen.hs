@@ -47,8 +47,13 @@ tsDraw TSS{_tssTransaction=(i,t')
   where
     maincontent = Widget Greedy Greedy $ render $ defaultLayout toplabel bottomlabel txneditor
       where
+        -- The stored transaction, coming from accountTransactionsReport, may have had
+        -- amounts excluded by a cur:/amt: query, or valued. This screen should always
+        -- show the whole journal entry as written (with any valuation applied by showTxn
+        -- below), so look up the original transaction in the journal by its index.
+        torig = fromMaybe t' $ journalTransactionAt j (tindex t')
         -- as with print, show amounts with all of their decimal places
-        t = transactionMapPostingAmounts mixedAmountSetFullPrecision t'
+        t = transactionMapPostingAmounts mixedAmountSetFullPrecision torig
 
         -- XXX would like to shrink the editor to the size of the entry,
         -- so handler can more easily detect clicks below it
