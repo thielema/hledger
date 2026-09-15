@@ -119,7 +119,7 @@ commodity AAPL  ; lots: FIFO
     assets:cash       $400
 
 $ hledger -f- bal assets:broker --lots
->2 /insufficient lots/
+>2 /Insufficient lots/
 >=1
 
 # ** 7. LIFO disposal with multiple accounts: per-account scope, newest first.

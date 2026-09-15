@@ -43,7 +43,7 @@ $ hledger -f - check lots
     assets:cash       $825
 
 $ hledger -f - check lots
->2 /insufficient lots/
+>2 /Insufficient lots/
 >=1
 
 # ** 5. check lots fails when the written realised gain doesn't match the cost-basis residual

@@ -71,7 +71,7 @@ journalCalculateLots:
   "no X lots available for transfer/disposal from account Y on DATE",
   "no lots matching {...} for commodity X in account Y on DATE",
   "lot selector is ambiguous, matches N lots in account Y",
-  "insufficient lots for commodity X in account Y"
+  "Insufficient lots for commodity X in account Y"
 
 * validateGlobalCompliance:
   "METHOD: lot(s) on other account(s) have higher priority than the lots in ACCT"
@@ -2433,10 +2433,14 @@ selectLots method posStr operation date account commodity qty selector lotState 
               ++ showLotList matchingLots
     let available = sum [aquantity a | a <- M.elems matchingLots]
     when (available < qty) $
-      Left $ posStr ++ "insufficient lots for commodity " ++ T.unpack commodity
+      Left $ posStr ++ "Insufficient lots for commodity " ++ T.unpack commodity
               ++ " in account " ++ T.unpack account
               ++ ": need " ++ show qty ++ " but only " ++ show available ++ " available"
-              ++ "\nAvailable lots in this account:" ++ showLotList matchingLots
+              -- with an explicit lot selector, show what it matched;
+              -- for a generic outflow the lot details wouldn't help
+              ++ (if isWildcardSelector selector then ""
+                  else "\nLots matching " ++ T.unpack (showLotName selector) ++ ":"
+                        ++ showLotList matchingLots)
               ++ showOtherAccountLots allLots
     let base = methodBaseOrdering method
         orderedLots = case base of
@@ -2458,9 +2462,10 @@ selectLots method posStr operation date account commodity qty selector lotState 
       | otherwise           = [(lotId, lotAmt, remaining)]
       where lotBal = aquantity lotAmt
 
-    -- Show lots one per line, at most 10; a final line counts any more.
+    -- Show lots one per line, at most 10; a final line counts any more,
+    -- and another shows the total quantity.
     showLotList :: M.Map LotId Amount -> String
-    showLotList lots = concatMap fmt shown ++ more
+    showLotList lots = concatMap fmt shown ++ more ++ totalline
       where
         (shown, rest) = splitAt 10 (M.toAscList lots)
         fmt (lid, a) = "\n  " ++ T.unpack (showLotName (lotIdToCb lid a))
@@ -2469,18 +2474,26 @@ selectLots method posStr operation date account commodity qty selector lotState 
           0 -> ""
           1 -> "\n  ...and 1 more lot"
           n -> "\n  ...and " ++ show n ++ " more lots"
+        totalline = "\n  Total: " ++ show (sum (map aquantity (M.elems lots)))
+                     ++ " " ++ T.unpack commodity
 
     -- Summarise this commodity's lots in accounts other than the specified
-    -- one: for each account, the total quantity and number of lots.
+    -- one: for each account, the total quantity and number of lots; and
+    -- when there are several accounts, the total quantity overall.
     showOtherAccountLots :: M.Map LotId (M.Map AccountName Amount) -> String
     showOtherAccountLots allLots' =
       let others = [(acct, a) | (_, acctMap) <- M.toAscList allLots'
                               , (acct, a) <- M.toList acctMap, acct /= account]
           byAcct = M.fromListWith (\(q1, n1) (q2, n2) -> (q1 + q2, n1 + n2))
                      [(acct, (aquantity a, 1 :: Int)) | (acct, a) <- others]
+          totalline
+            | M.size byAcct < 2 = ""
+            | otherwise = "\n  Total: " ++ show (sum [q | (q, _) <- M.elems byAcct])
+                           ++ " " ++ T.unpack commodity
       in if M.null byAcct then ""
          else "\nLots of " ++ T.unpack commodity ++ " in other accounts:"
            ++ concatMap fmtAcct (M.toAscList byAcct)
+           ++ totalline
       where fmtAcct (acct, (q, n)) = "\n  " ++ T.unpack acct ++ ": "
               ++ show q ++ " " ++ T.unpack commodity
               ++ " in " ++ show n ++ (if n == 1 then " lot" else " lots")

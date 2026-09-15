@@ -77,7 +77,7 @@ $ hledger -f- bal assets:stocks --lots -N
     assets:cash      $825
 
 $ hledger -f- bal assets:stocks --lots
->2 /insufficient lots/
+>2 /Insufficient lots/
 >=1
 
 # ** 6. Disposing when there's no lots at all gives a different error, apparently. ?
