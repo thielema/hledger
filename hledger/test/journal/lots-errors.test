@@ -548,3 +548,30 @@ Lots matching {2026-01-01}:
   ...and 2 more lots
   Total: 24 ADA
 >=1
+
+# ** 21. When a journal has both a lot error and a failing balance
+# assertion, the lot error is reported first (assertion failures are
+# deferred until the lot stages have run), even when the assertion
+# comes earlier in the journal.
+<
+commodity ADA ; lots:
+
+2026-01-01 buy
+    assets:wallet    2 ADA @ $1
+    assets:cash     -$2
+
+2026-01-02 wrong assertion
+    assets:cash      $0 = $-5
+
+2026-01-03 sell too much
+    assets:wallet   -5 ADA @ $1
+    assets:cash      $5
+$ hledger -f- check
+>2 /Insufficient lots for commodity ADA/
+>=1
+
+# ** 22. With --ignore-lots (but not -I, which also ignores assertions),
+# the same journal reports the assertion failure.
+$ hledger -f- check --ignore-lots
+>2 /Balance assertion failed in assets:cash/
+>=1

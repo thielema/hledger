@@ -43,6 +43,7 @@ These important checks are performed by default, by almost all hledger commands:
   This check is on by default, but if it gets in your way, you can disable it temporarily
   with `-I` or `--ignore-assertions`, or as a default by adding that flag to your config file.
   If you put it in your config file, you can override that with `-s`/`--strict` or `hledger check lots`.
+  When a journal has both kinds of problem, lot errors are reported before assertion failures.
 
 - **lots** - all [lot](#lot-reporting) entries are valid.
   Checks lot posting classifications, lot movements, and that any user-written

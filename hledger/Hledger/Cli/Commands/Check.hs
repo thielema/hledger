@@ -56,7 +56,7 @@ data Check =
   -- done always
     Parseable
   | Autobalanced
-  | Assertions  -- unless -I is used
+  | Assertions  -- unless -I is used; failures are reported after any lot errors (see journalFinalise)
   -- done when --strict is used, or when specified with the check command
   | Balanced
   | Commodities

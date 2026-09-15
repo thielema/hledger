@@ -68,8 +68,12 @@ journalFinalise
                                          -- (pre-balancer, so the ordinary balancer accepts the paired disposal)
 
   -- Transaction balancing (main)
-  13. journalBalanceTransactions         -- infer remaining balancing amounts, balancing costs, and balance assignment amounts;
+  13. journalBalanceTransactionsAndDeferAssertions
+                                        -- infer remaining balancing amounts, balancing costs, and balance assignment amounts;
                                         -- and check transactions balanced and (unless --ignore-assertions) balance assertions satisfied.
+                                        -- A balance assertion failure is not raised here: the first one is recorded and
+                                        -- re-raised only after the stages below have run without error, so lot errors
+                                        -- (usually the more fundamental problem) are reported before assertion failures.
                                         -- Lot-aware in both modes (lotful commodities guide cost inference, lot fees are auto-split);
                                         -- with --ignore-lots (lenient_lots_), the lot quantity mismatch veto on
                                         -- balancing cost inference is skipped, so mismatched transfers load.
@@ -99,6 +103,9 @@ journalFinalise
                                        -- gain amount against the disposal gain
   27. journalStripBalancerCopiedBases  -- always: remove balancer-copied basis annotations,
                                        -- kept until now as classification evidence
+
+  28. (re-raise deferred assertion failure)  -- if step 13 recorded a balance assertion failure
+                                       -- and no later stage errored, report it now
 ```
 
 ## Sequencing constraints

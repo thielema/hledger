@@ -23,6 +23,7 @@ module Hledger.Data.Balancing
 , transactionCheckAssertions
   -- * journal balancing
 , journalBalanceTransactions
+, journalBalanceTransactionsAndDeferAssertions
   -- * tests
 , tests_Balancing
 )
@@ -30,8 +31,7 @@ where
 
 import Control.Applicative ((<|>))
 import Control.Monad (forM, forM_, when, unless)
-import Control.Monad.Except (ExceptT(..), runExceptT, throwError)
-import "extra" Control.Monad.Extra (whenM)
+import Control.Monad.Except (ExceptT(..), runExceptT, throwError, catchError)
 import Control.Monad.Reader as R (ReaderT, reader, runReaderT, ask, asks)
 import Control.Monad.ST (ST, runST)
 import Control.Monad.Trans.Class (lift)
@@ -45,6 +45,7 @@ import Data.HashTable.ST.Cuckoo qualified as H
 import Data.List (partition, sortOn, intercalate)
 import Data.List.Extra (nubSort)
 import Data.Maybe (fromJust, fromMaybe, isJust, isNothing, mapMaybe)
+import Data.STRef (STRef, newSTRef, readSTRef, modifySTRef')
 import Data.Set qualified as S
 import Data.Text qualified as T
 import Data.Time.Calendar (fromGregorian)
@@ -550,12 +551,22 @@ costInferrerFor lenientlots lotfulcomms t pt = maybe id infercost inferFromAndTo
 -- If you see a way, let us know.
 type Balancing s = ReaderT (BalancingState s) (ExceptT String (ST s))
 
+-- | Whether and how to check balance assertions while balancing:
+-- not at all; erroring at the first failure; or checking but deferring
+-- a failure - recording the first one in the given mutable slot and
+-- continuing, so it can be reported later
+-- (see journalBalanceTransactionsAndDeferAssertions).
+data AssertionsMode s
+  = DontCheckAssertions
+  | CheckAssertions
+  | DeferAssertions (STRef s (Maybe String))
+
 -- | The state used while balancing a sequence of transactions.
 data BalancingState s = BalancingState {
    -- read only
    bsStyles       :: Maybe (M.Map CommoditySymbol AmountStyle)  -- ^ commodity display styles
   ,bsUnassignable :: S.Set AccountName                          -- ^ accounts where balance assignments may not be used (because of auto posting rules)
-  ,bsAssrt        :: Bool                                       -- ^ whether to check balance assertions
+  ,bsAssrt        :: AssertionsMode s                           -- ^ whether/how to check balance assertions
   ,bsAccountTypes :: M.Map AccountName AccountType              -- ^ account type map (for excluding Gain postings from balancing)
   ,bsLotfulCommodities :: S.Set CommoditySymbol                 -- ^ commodities declared lotful (for guiding balancing cost inference)
   ,bsVerboseTags  :: Bool                                       -- ^ make tags added by balancing helpers (eg lot fee splits) visible in comments ?
@@ -624,7 +635,17 @@ updateTransactionB t = withRunningBalance $ \BalancingState{bsTransactions}  ->
 -- assignments, balance assertions and posting dates are interdependent.
 --
 journalBalanceTransactions :: BalancingOpts -> Journal -> Either String Journal
-journalBalanceTransactions bopts' j' =
+journalBalanceTransactions bopts j = fst <$> journalBalanceTransactionsHelper False bopts j
+
+-- | Like journalBalanceTransactions, but instead of erroring at the first
+-- failed balance assertion, keep going and also return the first assertion
+-- failure's error message, if any. This lets callers (journalFinalise) run
+-- further checks, eg the lot stages, and report their errors first.
+journalBalanceTransactionsAndDeferAssertions :: BalancingOpts -> Journal -> Either String (Journal, Maybe String)
+journalBalanceTransactionsAndDeferAssertions = journalBalanceTransactionsHelper True
+
+journalBalanceTransactionsHelper :: Bool -> BalancingOpts -> Journal -> Either String (Journal, Maybe String)
+journalBalanceTransactionsHelper deferassertions bopts' j' =
   let
     -- ensure transactions are numbered, so we can store them by number
     j@Journal{jtxns=ts} = journalNumberTransactions j'
@@ -646,6 +667,12 @@ journalBalanceTransactions bopts' j' =
     -- Not strictly necessary but avoids a sort at the end I think.
     runST $ do
       balancedtxns <- newListArray (1, toInteger $ length ts) ts
+      -- Holds the first deferred balance assertion failure, if any.
+      massertionerr <- newSTRef Nothing
+      let assertionsmode
+            | ignore_assertions_ bopts = DontCheckAssertions
+            | deferassertions          = DeferAssertions massertionerr
+            | otherwise                = CheckAssertions
 
       -- Process all transactions, or short-circuit with an error.
       runExceptT $ do
@@ -665,15 +692,17 @@ journalBalanceTransactions bopts' j' =
         -- 2. Step through these items in date order (and preserved same-day order),
         -- keeping running balances for all accounts.
         runningbals <- lift $ H.newSized (length $ journalAccountNamesUsed j)
-        flip runReaderT (BalancingState styles autopostingaccts (not $ ignore_assertions_ bopts) (account_types_ bopts) (lotful_commodities_ bopts) (verbose_balancing_tags_ bopts) runningbals balancedtxns) $ do
+        flip runReaderT (BalancingState styles autopostingaccts assertionsmode (account_types_ bopts) (lotful_commodities_ bopts) (verbose_balancing_tags_ bopts) runningbals balancedtxns) $ do
           -- On encountering any not-yet-balanced transaction with a balance assignment,
           -- enact the balance assignment then finish balancing the transaction.
           -- And, check any balance assertions encountered along the way.
           void $ mapM' balanceTransactionAndCheckAssertionsB $ sortOn (either postingDate tdate) psandts
 
-        -- Return the now fully-balanced and checked transactions.
+        -- Return the now fully-balanced and checked transactions,
+        -- and any deferred balance assertion failure.
         ts' <- lift $ getElems balancedtxns
-        return j{jtxns=ts'}
+        merr <- lift $ readSTRef massertionerr
+        return (j{jtxns=ts'}, merr)
 
 -- Before #2039: "Costs are removed, which helps eg assertions.test: 15. Mix different commodities and assignments."
 
@@ -737,7 +766,7 @@ addOrAssignAmountAndCheckAssertionB (i,p@Posting{paccount=acc, pamount=amt, pbal
   -- an explicit posting amount
   | hasAmount p = do
       newbal <- addToRunningBalanceB acc amt
-      whenM (R.reader bsAssrt) $ checkBalanceAssertionB p newbal
+      checkOrDeferBalanceAssertionB p newbal
       return (i,p)
 
   -- no explicit posting amount, but there is a balance assignment
@@ -751,7 +780,7 @@ addOrAssignAmountAndCheckAssertionB (i,p@Posting{paccount=acc, pamount=amt, pbal
                      return $ maAddAmount oldbalothercommodities baamount
       diff <- (if bainclusive then setInclusiveRunningBalanceB else setRunningBalanceB) acc newbal
       let p' = p{pamount=filterMixedAmount (not . amountIsZero) diff, poriginal=Just $ originalPosting p}
-      whenM (R.reader bsAssrt) $ checkBalanceAssertionB p' newbal
+      checkOrDeferBalanceAssertionB p' newbal
       return (i,p')
 
   -- no explicit posting amount, no balance assignment
@@ -765,9 +794,19 @@ addOrAssignAmountAndCheckAssertionB (i,p@Posting{paccount=acc, pamount=amt, pbal
 addAmountAndCheckAssertionB :: Posting -> Balancing s Posting
 addAmountAndCheckAssertionB p | hasAmount p = do
   newbal <- addToRunningBalanceB (paccount p) $ pamount p
-  whenM (R.reader bsAssrt) $ checkBalanceAssertionB p newbal
+  checkOrDeferBalanceAssertionB p newbal
   return p
 addAmountAndCheckAssertionB p = return p
+
+-- | Check the posting's balance assertion (if any) against the given balance,
+-- per the current assertions mode: not at all; erroring immediately on a
+-- failure; or recording the first failure and continuing.
+checkOrDeferBalanceAssertionB :: Posting -> MixedAmount -> Balancing s ()
+checkOrDeferBalanceAssertionB p newbal = R.reader bsAssrt >>= \case
+  DontCheckAssertions -> return ()
+  CheckAssertions     -> checkBalanceAssertionB p newbal
+  DeferAssertions ref -> checkBalanceAssertionB p newbal `catchError` \e ->
+    lift . lift $ modifySTRef' ref (<|> Just e)
 
 -- | Check a posting's balance assertion against the given actual balance, and
 -- return an error if the assertion is not satisfied.

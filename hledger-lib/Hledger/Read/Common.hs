@@ -386,40 +386,49 @@ journalFinalise iopts@InputOpts{auto_,balancingopts_,ignore_lots_,infer_costs_,i
 
       -- Transaction balancing
       >>= (\j -> if checkordereddates then journalCheckOrdereddates j $> j else Right j)     -- maybe check that journal entries are in date order
-      >>= (\j -> journalBalanceTransactions                                                  -- infer balance assignments/amounts, maybe check balance assertions
-            (balancingopts_{ignore_assertions_=not checkassertions, account_types_ = jaccounttypes j
-                           ,lotful_commodities_ = journalLotfulCommodities j
-                           ,account_lots_tags_ = journalAccountLotsTags j
-                           ,lenient_lots_ = lenientlots
-                           ,verbose_balancing_tags_ = verbose_tags_}) j)
+      >>= (\j -> do
+        -- Infer balance assignments/amounts, and maybe check balance assertions.
+        -- An assertion failure is not raised immediately: it is deferred until
+        -- the stages below have run without error, so lot errors (usually the
+        -- more fundamental problem) are reported first.
+        (j2, massertionerr) <- journalBalanceTransactionsAndDeferAssertions
+              (balancingopts_{ignore_assertions_=not checkassertions, account_types_ = jaccounttypes j
+                             ,lotful_commodities_ = journalLotfulCommodities j
+                             ,account_lots_tags_ = journalAccountLotsTags j
+                             ,lenient_lots_ = lenientlots
+                             ,verbose_balancing_tags_ = verbose_tags_}) j
+        j3 <- Right j2
 
-      -- Lot classification
-      -- Runs after balancing, when all posting amounts are known (inferred
-      -- amounts included), so every entry shape classifies the same way as
-      -- if its amounts had been written explicitly (#2686, #2690, #2692).
-      <&> (if checklots then journalClassifyLotPostings verbose_tags_ else id)  -- detect and classify lot postings (acquire/dispose/transfer..), maybe with visible tags
+          -- Lot classification
+          -- Runs after balancing, when all posting amounts are known (inferred
+          -- amounts included), so every entry shape classifies the same way as
+          -- if its amounts had been written explicitly (#2686, #2690, #2692).
+          <&> (if checklots then journalClassifyLotPostings verbose_tags_ else id)  -- detect and classify lot postings (acquire/dispose/transfer..), maybe with visible tags
 
-      -- Post-balancing enrichment
-      >>= journalInferCommodityStyles                                             -- infer commodity styles once more now that all posting amounts are present
-      <&> journalPostingsAddCommodityTags                                         -- propagate amounts' commodity tags to postings (queryable but hidden)
+          -- Post-balancing enrichment
+          >>= journalInferCommodityStyles                                             -- infer commodity styles once more now that all posting amounts are present
+          <&> journalPostingsAddCommodityTags                                         -- propagate amounts' commodity tags to postings (queryable but hidden)
 
-      -- Cost/equity inference
-      >>= (if infer_costs_  then journalTagCostsAndEquityAndMaybeInferCosts verbose_tags_ True else pure)   -- maybe infer costs from equity postings
-      <&> (if infer_equity_ then journalInferEquityFromCosts verbose_tags_ else id)                         -- maybe infer equity postings from costs
+          -- Cost/equity inference
+          >>= (if infer_costs_  then journalTagCostsAndEquityAndMaybeInferCosts verbose_tags_ True else pure)   -- maybe infer costs from equity postings
+          <&> (if infer_equity_ then journalInferEquityFromCosts verbose_tags_ else id)                         -- maybe infer equity postings from costs
 
-      -- Market prices and renumbering
-      <&> journalInferMarketPricesFromTransactions                                -- infer market prices from commodity-exchanging transactions
-      >>= journalInferAliasPrices                                                -- inject 1:1 bridges for any alias: tags on commodity directives
-      <&> journalRenumberAccountDeclarations                                      -- renumber account declarations for consistent ordering
+          -- Market prices and renumbering
+          <&> journalInferMarketPricesFromTransactions                                -- infer market prices from commodity-exchanging transactions
+          >>= journalInferAliasPrices                                                -- inject 1:1 bridges for any alias: tags on commodity directives
+          <&> journalRenumberAccountDeclarations                                      -- renumber account declarations for consistent ordering
 
-      -- Lot and capital gains calculation/checking
-      -- (skipped by --ignore-lots or -I; forced back on by --strict or `hledger check lots`)
-      >>= (if checklots then journalCheckLotsTagValues                   else pure)  -- validate lots: tag values on commodity/account declarations
-      >>= (if checklots then journalCheckLotsMethodCoherence             else pure)  -- reject a global (*ALL) method mixed with other methods for one commodity
-      >>= (if checklots then journalCalculateLots verbose_tags_          else pure)  -- evaluate lot selectors, calculate lot balances, add lot subaccounts
-      >>= (if checkbasis then journalCheckAcquireBasis                   else pure)  -- if `hledger check basis`, error on any acquire with cost basis ≠ transacted cost
-      >>= (if checklots then journalAddOrCheckGainPostings verbose_tags_ else pure)  -- in disposal transactions, add the realised-gain + unrealised-gain posting pair
-      <&> journalStripBalancerCopiedBases                                            -- remove balancer-copied basis annotations, kept until now as classification evidence
+          -- Lot and capital gains calculation/checking
+          -- (skipped by --ignore-lots or -I; forced back on by --strict or `hledger check lots`)
+          >>= (if checklots then journalCheckLotsTagValues                   else pure)  -- validate lots: tag values on commodity/account declarations
+          >>= (if checklots then journalCheckLotsMethodCoherence             else pure)  -- reject a global (*ALL) method mixed with other methods for one commodity
+          >>= (if checklots then journalCalculateLots verbose_tags_          else pure)  -- evaluate lot selectors, calculate lot balances, add lot subaccounts
+          >>= (if checkbasis then journalCheckAcquireBasis                   else pure)  -- if `hledger check basis`, error on any acquire with cost basis ≠ transacted cost
+          >>= (if checklots then journalAddOrCheckGainPostings verbose_tags_ else pure)  -- in disposal transactions, add the realised-gain + unrealised-gain posting pair
+          <&> journalStripBalancerCopiedBases                                            -- remove balancer-copied basis annotations, kept until now as classification evidence
+
+        -- Now report any balance assertion failure detected above.
+        maybe (Right j3) Left massertionerr)
 
 -- | Apply any auto posting rules to generate extra postings on this journal's transactions.
 -- With a true first argument, adds visible tags to generated postings and modified transactions.
