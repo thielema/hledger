@@ -8439,7 +8439,7 @@ A typical workflow:
 
 Tip: instead of the register command, use hledger-ui to see a
 live-updating register while you edit the journal:
-`hledger-ui --watch --register checking -C`
+`hledger-ui --register checking -C`
 
 After reconciling, it could be a good time to mark the reconciled
 transactions' status as "cleared and confirmed", if you want to track

@@ -47,7 +47,8 @@ binaryinfo = fromRight nullbinaryinfo $ parseHledgerVersion prognameandversion
 
 
 uiflags = [
-   flagNone ["watch","w"] (setboolopt "watch") "watch for data and date changes and reload automatically"
+   flagNone ["watch","w"] (setboolopt "watch") "watch for data and date changes and reload automatically (default)"
+  ,flagNone ["no-watch"] (setboolopt "no-watch") "don't watch; reload only with the g key"
   ,flagReq  ["theme"] (\s opts -> Right $ setopt "theme" s opts) "THEME" ("use this custom display theme ("++intercalate ", " themeNames++")")
   ,flagNone ["cash"] (setboolopt "cash") "start in: the cash accounts screen"
   ,flagNone ["bs"] (setboolopt "bs") "start in: the balance sheet accounts screen"
@@ -95,7 +96,7 @@ data UIOpts = UIOpts
   } deriving (Show)
 
 defuiopts = UIOpts
-  { uoWatch    = False
+  { uoWatch    = True
   , uoTheme    = Nothing
   , uoRegister = Nothing
   , uoCliOpts  = defcliopts
@@ -108,12 +109,16 @@ rawOptsToUIOpts rawopts = do
   cliopts <- set balanceaccum accum <$> rawOptsToCliOpts rawopts
   return
     defuiopts {
-       uoWatch    = boolopt "watch" rawopts
+       uoWatch    = fromMaybe True $ choiceopt watchflag rawopts
       ,uoTheme    = checkTheme <$> maybestringopt "theme" rawopts
       ,uoRegister = maybestringopt "register" rawopts
       ,uoCliOpts  = cliopts
       }
   where
+    -- watch mode is enabled by default; the rightmost --watch/--no-watch flag wins
+    watchflag "watch"    = Just True
+    watchflag "no-watch" = Just False
+    watchflag _          = Nothing
     -- show historical balance by default (unlike hledger)
     accum = fromMaybe Historical $ balanceAccumulationOverride rawopts
     checkTheme t = let t' = if t == "default" then "light" else t  -- "default" is a deprecated alias for "light"
