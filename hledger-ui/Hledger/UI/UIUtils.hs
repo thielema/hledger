@@ -53,7 +53,7 @@ import Brick.Widgets.Border
 import Brick.Widgets.Border.Style
 import Brick.Widgets.Dialog
 import Brick.Widgets.Edit
-import Brick.Widgets.List (List, listSelectedL, listNameL, listItemHeightL, listSelected, listMoveDown, listMoveUp, GenericList, listElements)
+import Brick.Widgets.List (List, listSelectedL, listNameL, listItemHeightL, listSelected, listMoveTo, listElements)
 import Control.Concurrent.STM (atomically, writeTChan)  -- GHC only
 import Control.Monad.IO.Class
 import Data.Bifunctor (second)
@@ -75,7 +75,6 @@ import Hledger.Cli.DocFiles
 -- import Hledger.UI.UIOptions (UIOpts(uoCliOpts))
 import Hledger.UI.UITypes
 
-import Data.Vector (Vector)
 import Data.Vector qualified as V
 
 -- | On posix platforms, send the system STOP signal to suspend the
@@ -464,26 +463,28 @@ reportSpecSetFutureAndForecast fcast rspec =
         ,Not generatedTransactionTag
       ]
 
--- Vertically scroll the named list's viewport with the given number of non-empty items
--- by the given positive or negative number of items (usually 1 or -1).
--- The selection will be moved when necessary to keep it visible and allow the scroll.
-listScrollPushingSelection :: Name -> Int -> Int -> EventM Name (Brick.Widgets.List.List Name item) (GenericList Name Vector item)
-listScrollPushingSelection name listheight scrollamt = do
-  list <- get
-  viewportScroll name `vScrollBy` scrollamt
-  mvp <- lookupViewport name
-  case mvp of
+-- Vertically scroll the named list's viewport, which shows the given number of
+-- non-blank items, by the given positive or negative number of items (usually 1 or -1).
+-- Scrolling stops with the first item at the top or the last item at the bottom,
+-- ignoring the blank items that pad the list out to the window height.
+-- The selection is pushed along when necessary to keep it within the viewport;
+-- without this, brick's list would keep pulling the viewport back to the selection,
+-- stopping the scroll as soon as the selection reached the viewport's edge.
+-- The (possibly moved) selection is left in the event handler's state.
+listScrollPushingSelection :: Name -> Int -> Int -> EventM Name (Brick.Widgets.List.List Name item) ()
+listScrollPushingSelection name listheight scrollamt =
+  lookupViewport name >>= \case
+    Nothing -> return ()
     Just VP{_vpTop, _vpSize=(_,vpheight)} -> do
-      let mselidx = listSelected list
-      case mselidx of
-        Just selidx -> return $ pushsel list
-          where
-            pushsel 
-              | scrollamt > 0, selidx <= _vpTop                && selidx < (listheight-1) = listMoveDown
-              | scrollamt < 0, selidx >= _vpTop + vpheight - 1 && selidx > 0              = listMoveUp
-              | otherwise = id
-        _ -> return list
-    _ -> return list
+      let
+        lastitem = listheight - 1
+        top    = min (max 0 $ listheight - vpheight) $ max 0 $ _vpTop + scrollamt  -- new first visible item
+        bottom = min lastitem $ top + vpheight - 1                                 -- new last visible item
+      viewportScroll name `vScrollBy` (top - _vpTop)
+      modify $ \list -> case listSelected list of
+        Just selidx | selidx < top    -> listMoveTo top list
+                    | selidx > bottom -> listMoveTo bottom list
+        _ -> list
 
 -- | A debug logging helper for hledger-ui code: at any debug level >= 1,
 -- logs the string to hledger-ui.log before returning the second argument.
