@@ -818,11 +818,15 @@ holdings opts@CliOpts{rawopts_=rawopts, reportspec_=rspec@ReportSpec{_rsQuery=q,
         showamt = T.pack . showAmountWith noCostFmt
         showamtz = T.pack . showAmountWith noCostFmt{displayZeroCommodity=True}
 
-    -- An average cost: total cost / total units, showing significant
-    -- decimal digits up to the cost commodity's display precision
-    -- (at least 2), without trailing zeros.
-    avgcost qtya costa = amountSetPrecision (Precision (min pdiv (max 2 pstyle))) avg
+    -- An average cost: total cost / total units, shown like other amounts
+    -- in the cost commodity's display precision - but with at least 2
+    -- decimal digits when the division is inexact and the display
+    -- precision is less, so eg an average of $56.666... is not shown as
+    -- the misleading $57.
+    avgcost qtya costa = amountSetPrecision (Precision p) avg
       where
         avg  = divideAmountAndUpdatePrecision (aquantity qtya) costa
+        p = clamp pstyle (max 2 pstyle) pdiv
+        clamp lo hi = max lo . min hi
         pdiv = case asprecision (astyle avg) of Precision n -> n; _ -> defaultMaxDisplayPrecision
         pstyle = case asprecision (astyle costa) of Precision n -> n; _ -> 2

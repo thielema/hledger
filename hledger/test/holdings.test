@@ -859,3 +859,30 @@ Holdings on 2026-02-28
  assets:broker:{2026-01-01, $33.33333333} || 2026-01-01  58d  2 AAA  $33.33333333         $66.66666666                                $16.66666667       
 ------------------------------------------++-------------------------------------------------------------------------------------------------------------
                                           ||                  2 AAA  $33.33333333         $66.66666666                                $16.66666667       
+
+# ** 48. Avg cost is shown with the cost commodity's display precision,
+# like the other amounts, and adds up to 2 decimal digits beyond it when
+# the average is inexact (so eg $100.333.. is not shown as $100).
+<
+commodity AAA ; lots:
+commodity $1,000.00
+
+2026-01-01 buys averaging exactly $100
+    assets:even    5 AAA @ $90
+    assets:even    5 AAA @ $110
+    assets:cash
+
+2026-02-01 buys averaging $100.333..
+    assets:odd     5 AAA @ $90
+    assets:odd     5 AAA @ $110
+    assets:odd     5 AAA @ $101
+    assets:cash
+$ hledger -f- holdings -e 2026-03-01
+Holdings on 2026-02-28
+
+             ||       Date  Age   Units  Avg cost  Price       Cost  Value  Weight  UGain  UGain%  RGain  XIRR 
+=============++================================================================================================
+ assets:even || 2026-01-01  58d  10 AAA   $100.00         $1,000.00                                            
+ assets:odd  || 2026-02-01  27d  15 AAA   $100.33         $1,505.00                                            
+-------------++------------------------------------------------------------------------------------------------
+             ||                  25 AAA   $100.20         $2,505.00                                            
