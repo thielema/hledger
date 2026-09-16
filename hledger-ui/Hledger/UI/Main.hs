@@ -39,6 +39,16 @@ import Data.Maybe (fromMaybe)
 import Data.Text qualified as T
 import Graphics.Vty (Event (EvKey), Mode (Mouse), Vty (outputIface), Output (setMode))
 import Graphics.Vty.CrossPlatform (mkVty)
+#ifndef mingw32_HOST_OS
+import Control.Exception (throwIO)
+import Graphics.Vty.Platform.Unix (mkVtyWithSettings)
+import Graphics.Vty.Platform.Unix.Settings (UnixSettings(..), VtyUnixConfigurationError(..))
+import System.Environment (lookupEnv)
+import System.IO.Error (catchIOError)
+import System.Posix.IO (OpenMode(ReadOnly), OpenFileFlags(..), defaultFileFlags, openFd, stdOutput)
+import System.Posix.Terminal (getTerminalName, queryTerminal)
+import System.Posix.Types (Fd)
+#endif
 import Lens.Micro ((^.))
 import System.Directory (canonicalizePath)
 import System.Environment (withProgName)
@@ -54,7 +64,7 @@ import Hledger.UI.Theme
 import Hledger.UI.UIOptions
 import Hledger.UI.UITypes
 import Hledger.UI.UIState (uiState, uiDisplayJournal)
-import Hledger.UI.UIUtils (dbguiEv, showScreenStack, showScreenSelection, uiInstallWarningCollector, uiTakeWarnings)
+import Hledger.UI.UIUtils (dbguiEv, journalIsFromStdin, showScreenStack, showScreenSelection, uiInstallWarningCollector, uiTakeWarnings)
 import Hledger.UI.MenuScreen
 import Hledger.UI.AccountsScreen
 import Hledger.UI.RegisterScreen
@@ -133,6 +143,42 @@ hledgerUiMain = handleExit $ withGhcDebug' $ withProgName "hledger-ui.log" $ do 
           in runBrickUi opts' j
 
   when (ghcDebugMode == GDPauseAtEnd) $ ghcDebugPause'
+
+-- | Make an action like @mkVty mempty@, but reading keyboard input from the
+-- controlling terminal's device rather than from stdin. Used when the journal data
+-- was read from stdin, which leaves that handle consumed and closed.
+-- The terminal is opened once, here; the returned action can be run repeatedly
+-- (eg when resuming after a suspend). Unix only; on Windows this is just mkVty.
+ttyVtyMaker :: IO (IO Vty)
+#ifdef mingw32_HOST_OS
+ttyVtyMaker = return $ mkVty mempty
+#else
+ttyVtyMaker = do
+  term  <- lookupEnv "TERM" >>= maybe (throwIO MissingTermEnvVar) return
+  ttyfd <- openTerminal
+  return $ mkVtyWithSettings mempty UnixSettings
+    { settingVmin      = 1
+    , settingVtime     = 100
+    , settingInputFd   = ttyfd
+    , settingOutputFd  = stdOutput
+    , settingTermName  = term
+    }
+
+-- | Open the controlling terminal for reading, without making it our controlling
+-- terminal if we have none, and not inherited by child processes.
+-- Prefer the terminal's real device path (eg /dev/ttys003) over /dev/tty:
+-- macOS's kqueue can't wait on the latter, so vty's input thread would block
+-- in read() and shutdown would hang until the next key press.
+-- Fall back to /dev/tty if the device can't be opened (eg after su).
+openTerminal :: IO Fd
+openTerminal = do
+  isterm <- queryTerminal stdOutput
+  mdev   <- if isterm then Just <$> getTerminalName stdOutput else return Nothing
+  let open p = openFd p ReadOnly defaultFileFlags{noctty = True, cloexec = True}
+  case mdev of
+    Nothing  -> open "/dev/tty"
+    Just dev -> open dev `catchIOError` \_ -> open "/dev/tty"
+#endif
 
 -- | Build hledger-ui's startup state: normalise the options, choose the initial
 -- screen, and set up the stack of previous screens as if the user had navigated
@@ -289,9 +335,14 @@ runBrickUi uopts0 j =
   -- print (length (show ui)) >> exitSuccess  -- show any debug output to this point & quit
 
   let
+  -- how to make a Vty terminal controller: the usual way, or when the journal
+  -- came from stdin, reading keys from the terminal device instead
+  mkvty <- if journalIsFromStdin j then ttyVtyMaker else return (mkVty mempty)
+
+  let
     -- helper: make a Vty terminal controller with mouse support enabled
     makevty = do
-      v <- mkVty mempty
+      v <- mkvty
       setMode (outputIface v) Mouse True
       return v
 
@@ -330,7 +381,7 @@ runBrickUi uopts0 j =
       -- with Debounce at the default 1ms it clears transient errors itself
       -- but gets tied up for ages
       withManager $ \mgr -> do
-        fs <- mapM canonicalizePath $ journalAllFilePaths j
+        fs <- mapM canonicalizePath $ filter (/= "-") $ journalAllFilePaths j
         let directories = nubSort $ map takeDirectory fs
         dbg1IO "files" fs
         dbg1IO "directories to watch" directories

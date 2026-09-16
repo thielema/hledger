@@ -33,6 +33,7 @@ endPosition = Just (-1, Nothing)
 -- and return the exit code; or raise an error.
 -- hledger-iadd is an alternative to the built-in add command.
 runIadd :: FilePath -> IO ExitCode
+runIadd "-" = return ExitSuccess  -- journal was read from stdin; there is no file to add to
 runIadd f = runCommand ("hledger-iadd -f " ++ shellQuoteIfNeeded f) >>= waitForProcess
 
 -- | Run the user's preferred text editor (or try a default editor),
@@ -40,6 +41,7 @@ runIadd f = runCommand ("hledger-iadd -f " ++ shellQuoteIfNeeded f) >>= waitForP
 -- code; or raise an error. If a text position is provided, the editor
 -- will be focussed at that position in the file, if we know how.
 runEditor :: Maybe TextPosition -> FilePath -> IO ExitCode
+runEditor _ "-" = return ExitSuccess  -- journal was read from stdin; there is no file to edit
 runEditor mpos f = editFileAtPositionCommand mpos f >>= runCommand >>= waitForProcess
 
 -- | Get a shell command line to open the user's preferred text editor

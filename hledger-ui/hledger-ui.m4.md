@@ -45,6 +45,9 @@ sometimes quicker and more convenient than the web interface.
 
 Like hledger, it _inputfileswithptr_
 
+On unix-like systems, it can also read from standard input (`-f-`).
+In that case the data can't be re-read or edited, so the `g`, `a`, `A` and `E` keys and watch mode have no effect.
+
 Unlike hledger, hledger-ui hides all future-dated transactions by default.
 They can be revealed, along with any rule-generated periodic transactions,
 by pressing the F key (or starting with --forecast) to enable "forecast mode".
@@ -345,7 +348,5 @@ Default: `$HOME/.hledger.journal`.
 _reportbugs_
 
 Some known issues:
-
-`-f-` doesn't work (hledger-ui can't read from stdin).
 
 If reloading large files on a slow computer, there could be a noticeable pause, during which the UI is unresponsive.

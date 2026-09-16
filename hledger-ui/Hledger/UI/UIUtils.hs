@@ -31,6 +31,7 @@ module Hledger.UI.UIUtils (
   ,redraw
   ,uiInstallWarningCollector
   ,uiTakeWarnings
+  ,journalIsFromStdin
   ,reportSpecAddQuery
   ,reportSpecSetFutureAndForecast
   ,listScrollPushingSelection
@@ -495,6 +496,11 @@ dbgui = dbg1Msg
 -- | Like dbgui, but convenient to use in IO.
 dbguiIO :: String -> IO ()
 dbguiIO = dbg1MsgIO
+
+-- | Was this journal's main file read from standard input ?
+-- If so it can't be re-read, edited, or watched for changes.
+journalIsFromStdin :: Journal -> Bool
+journalIsFromStdin j = journalFilePath j == "-"
 
 -- | Like dbgui, but convenient to use in EventM handlers.
 dbguiEv :: String -> EventM Name s ()

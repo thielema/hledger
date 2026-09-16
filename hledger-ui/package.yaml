@@ -102,7 +102,9 @@ library:
       then:
         dependencies: vty-windows >= 0.2.0.1
       else:
-        dependencies: unix
+        dependencies:
+        - unix
+        - vty-unix >= 0.2.0.0
 
 executables:
   hledger-ui:

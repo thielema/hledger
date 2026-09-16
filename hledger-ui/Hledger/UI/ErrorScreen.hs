@@ -171,7 +171,9 @@ uiReload copts d ui0 = do
   ej <- liftIO $
     let copts1   = uiAdjustOpts (astartupopts ui0) copts
         loadopts = copts1{rawopts_ = setboolopt "lots" (rawopts_ copts1)}  -- keep lot detail; the UI collapses it for display
-    in catchLoadErrors $ runExceptT $ journalTransform loadopts <$> journalReload loadopts
+    in if journalIsFromStdin (ajournal ui0)
+       then return $ Right $ auncollapsedjournal ui0  -- stdin can't be re-read; keep the journal as loaded
+       else catchLoadErrors $ runExceptT $ journalTransform loadopts <$> journalReload loadopts
   -- dbg1IO "uiReload before reload" (map tdescription $ jtxns $ ajournal ui0)
   -- show any warnings collected during the reload (until the next keypress)
   ui <- liftIO $ (\ws -> ui0{aWarnings=ws}) <$> uiTakeWarnings

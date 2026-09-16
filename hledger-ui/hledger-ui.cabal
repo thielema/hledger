@@ -107,6 +107,7 @@ library
   else
     build-depends:
         unix
+      , vty-unix >=0.2.0.0
 
 executable hledger-ui
   main-is: hledger-ui.hs
