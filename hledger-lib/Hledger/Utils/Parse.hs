@@ -79,6 +79,7 @@ module Hledger.Utils.Parse (
   finalFancyFailure,
   finalFail,
   finalCustomFailure,
+  finalMessageFailure,
 
   -- *** Pretty-printing "final" parse errors
   finalErrorBundlePretty,
@@ -455,12 +456,15 @@ finalizeCustomErrorBundle errBundle =
 -- file and re-throw it in the context of the parent file, and
 -- (3) the pretty-printing of "final" parse errors should be consistent
 -- with that of ordinary parse errors, but should also report the stack of
--- parent files when errors are thrown from included files.
+-- parent files when errors are thrown from included files, and
+-- (4) readers of non-journal formats (like CSV), which produce complete
+-- error messages rather than parse errors, should be able to throw those
+-- as "final" parse errors too, so they get the same include file stack.
 --
 -- In order to pretty-print a "final" parse error (goal 3), it must be
 -- bundled with include filepaths and its full source text. When a "final"
 -- parse error is thrown from within a parser, we do not have access to
--- the full source, so we must hold the parse error ('FinalParseError') 
+-- the full source, so we must hold the parse error ('FinalParseError')
 -- until it can be combined with the full source (and any parent file paths)
 -- by the parser's caller ('FinalParseErrorBundle').
 
@@ -471,6 +475,8 @@ data FinalParseError' e
   | FinalBundle          (ParseErrorBundle Text e)
   -- a parse error thrown from an include file
   | FinalBundleWithStack (FinalParseErrorBundle' e)
+  -- a complete error message from a non-megaparsec reader (eg for CSV), shown without a source excerpt
+  | FinalMessage         String
   deriving (Show)
 
 type FinalParseError = FinalParseError' HledgerParseErrorData
@@ -494,9 +500,9 @@ instance Monoid (FinalParseError' e) where
 --
 -- Megaparsec's 'ParseErrorBundle' type already bundles a parse error with
 -- its full source text and filepath, so we just add a stack of include
--- files.
+-- files. Or, it can hold a complete error message instead (see 'FinalMessage').
 data FinalParseErrorBundle' e = FinalParseErrorBundle'
-  { finalErrorBundle :: ParseErrorBundle Text e
+  { finalErrorBundle :: Either String (ParseErrorBundle Text e)
   , includeFileStack :: [FilePath]
   } deriving (Show)
 
@@ -525,6 +531,11 @@ finalFail = finalFancyFailure . S.singleton . ErrorFail
 finalCustomFailure :: (MonadParsec e s m, MonadError (FinalParseError' e) m) => e -> m a
 finalCustomFailure = finalFancyFailure . S.singleton . ErrorCustom
 
+-- | Throw a complete error message, eg from a non-megaparsec reader, as a "final" parse error.
+-- It will be shown with the include file stack, but without a source excerpt.
+finalMessageFailure :: MonadError (FinalParseError' e) m => String -> m a
+finalMessageFailure = throwError . FinalMessage
+
 
 --- * Pretty-printing "final" parse errors
 
@@ -534,7 +545,7 @@ finalCustomFailure = finalFancyFailure . S.singleton . ErrorCustom
 finalErrorBundlePretty :: FinalParseErrorBundle' HledgerParseErrorData -> String
 finalErrorBundlePretty bundle =
      concatMap showIncludeFilepath (includeFileStack bundle)
-  <> customErrorBundlePretty (finalErrorBundle bundle)
+  <> either id customErrorBundlePretty (finalErrorBundle bundle)
   where
     showIncludeFilepath path = "in file included from " <> path <> ",\n"
 
@@ -550,19 +561,24 @@ attachSource filePath sourceText finalParseError = case finalParseError of
           { bundleErrors = err NE.:| []
           , bundlePosState = initialPosState filePath sourceText }
     in  FinalParseErrorBundle'
-          { finalErrorBundle = bundle
+          { finalErrorBundle = Right bundle
           , includeFileStack  = [] }
 
   -- A 'ParseErrorBundle' already has the appropriate source and filepath
   -- and so needs neither.
   FinalBundle peBundle -> FinalParseErrorBundle'
-    { finalErrorBundle = peBundle
+    { finalErrorBundle = Right peBundle
     , includeFileStack = [] }
 
   -- A parse error from a 'FinalParseErrorBundle' was thrown from an
   -- include file, so we add the filepath to the stack.
   FinalBundleWithStack fpeBundle -> fpeBundle
     { includeFileStack = filePath : includeFileStack fpeBundle }
+
+  -- A complete error message needs neither source nor filepath.
+  FinalMessage msg -> FinalParseErrorBundle'
+    { finalErrorBundle = Left msg
+    , includeFileStack = [] }
 
 
 --- * Handling parse errors from include files with "final" parse errors

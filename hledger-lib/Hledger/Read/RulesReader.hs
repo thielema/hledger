@@ -34,6 +34,7 @@ module Hledger.Read.RulesReader (
   readRules,
   rulesEncoding,
   readJournalFromCsv,
+  readParsedJournalFromCsv,
   parseBalanceAssertionType,
   -- * Tests
   tests_RulesReader,
@@ -88,7 +89,7 @@ import Text.Printf (printf)
 
 import Hledger.Data
 import Hledger.Utils
-import Hledger.Read.Common (aliasesFromOpts, Reader(..), InputOpts(..), amountp, statusp, journalFinalise, accountnamep, transactioncommentp, postingcommentp )
+import Hledger.Read.Common (aliasesFromOpts, Reader(..), InputOpts(..), amountp, statusp, includeFileParser, journalFinalise, accountnamep, transactioncommentp, postingcommentp )
 import Hledger.Write.Csv
 
 --- ** doctest setup
@@ -104,7 +105,9 @@ reader = Reader
   {rFormat     = Rules
   ,rExtensions = ["rules"]
   ,rReadFn     = parse
-  ,rParser     = const $ fail "sorry, rules files can't be included yet"
+  -- When included by a journal file, the data is read as usual but not finalised;
+  -- the including journal's finalisation handles that.
+  ,rParser     = \iopts -> includeFileParser $ \f -> readRulesFileWith iopts f (const pure)
   }
 
 getDownloadDir = do
@@ -112,9 +115,24 @@ getDownloadDir = do
   return $ home </> "Downloads"  -- XXX
 
 -- | Read, parse and post-process a "Journal" from the given rules file, or give an error.
--- This particular reader also provides some extra features like data cleaning/generating commands and data archiving.
+-- See 'readRulesFileWith' for details. This ignores the provided input file handle.
+parse :: InputOpts -> FilePath -> Handle -> ExceptT String IO Journal
+parse iopts rulesfile h = do
+  lift $ hClose h -- We don't need it (XXX why ?)
+  readRulesFileWith iopts rulesfile $ \adderrorcontext j -> do
+    -- apply any command line account aliases. Can fail with a bad replacement pattern.
+    j' <- liftEither $ journalApplyAliases (aliasesFromOpts iopts) j
+    -- if finalisation fails, show also the CSV record which generated the failing entry
+    withExceptT adderrorcontext $
+      journalFinalise iopts{balancingopts_=(balancingopts_ iopts){ignore_assertions_=True}} rulesfile "" j'
+
+-- | Read the given rules file and the data it specifies, convert the data to an unfinalised journal,
+-- post-process that with the given action (which also receives the error context adder described
+-- in 'readJournalFromCsv', useful for annotating finalisation errors), and then archive the data if appropriate.
+-- This is the core of the rules reader; it is also used when a rules file is included by a journal file.
+-- It provides some extra features like data cleaning/generating commands and data archiving.
 --
--- Unlike CsvReader, this reader ignores the provided input file handle (and the --rules option).
+-- Unlike CsvReader, this ignores the --rules option.
 -- Instead, it reads a data file (or data-generating command) specified by the @source@ rule,
 -- or if there is no @source@ rule, it raises an error.
 --
@@ -153,11 +171,11 @@ getDownloadDir = do
 -- (or when the source is a data-generating command: the current date and the ".csv" extension).
 -- 2. import will prefer the oldest file matched by a glob pattern (not the newest).
 --
--- Balance assertions are not checked by this reader.
+-- Balance assertions are not checked when the rules file is read directly;
+-- when it is included by a journal file, they are checked along with the rest of the journal.
 --
-parse :: InputOpts -> FilePath -> Handle -> ExceptT String IO Journal
-parse iopts rulesfile h = do
-  lift $ hClose h -- We don't need it (XXX why ?)
+readRulesFileWith :: InputOpts -> FilePath -> ((String -> String) -> ParsedJournal -> ExceptT String IO Journal) -> ExceptT String IO Journal
+readRulesFileWith iopts rulesfile postprocess = do
 
   -- The rules reader does a lot; we must be organised.
 
@@ -278,22 +296,16 @@ parse iopts rulesfile h = do
     (Nothing, _, Nothing) -> -- trace "no file pattern or data generating command" $
       error' $ rulesfile ++ " source rule must specify a file pattern or a command"
 
-  -- 6. convert the clean data to a (possibly empty) journal
-  --  needs: clean data, rules, data file if any
+  -- 6. convert the clean data to a (possibly empty) journal, and post-process it
+  --  needs: clean data, rules, data file if any, rules files
   --  gives: journal
 
   j <- do
-    (j1, adderrorcontext) <- readJournalFromCsv rulesfile rules (fromMaybe "(cmd)" mdatafile) cleandata Nothing
-    -- apply any command line account aliases. Can fail with a bad replacement pattern.
-    j2 <- liftEither $ journalApplyAliases (aliasesFromOpts iopts)
-        -- journalFinalise assumes the journal's items are
-        -- reversed, as produced by JournalReader's parser.
-        -- But here they are already properly ordered. So we'd
-        -- better preemptively reverse them once more. XXX inefficient
-        $ journalReverse j1
-    -- if finalisation fails, show also the CSV record which generated the failing entry
-    withExceptT adderrorcontext $
-      journalFinalise iopts{balancingopts_=(balancingopts_ iopts){ignore_assertions_=True}} rulesfile "" j2
+    -- Note the other files this journal's data came from - the included rules files,
+    -- and the data file if any - so that changes to them can be detected when reloading.
+    let auxfiles = rulesfiles <> maybe [] pure mexistingdatafile
+    (j1, adderrorcontext) <- readParsedJournalFromCsv rulesfile rules auxfiles (fromMaybe "(cmd)" mdatafile) cleandata Nothing
+    postprocess adderrorcontext j1
 
   -- 7. if non-empty, successfully read and converted, and we're doing a non-dry-run
   --  archiving import: archive the data, then consume the source file.
@@ -312,9 +324,7 @@ parse iopts rulesfile h = do
     -- and lets a later run advance to the next (newer) glob-matched file.
     maybe (return ()) removeFile mdatafile
 
-  -- Note the other files this journal's data came from - the included rules files,
-  -- and the data file if any - so that changes to them can be detected when reloading.
-  return j{jauxfiles = rulesfiles <> maybe [] pure mexistingdatafile}
+  return j
 
 -- | For the given rules file, run the given shell command, in the rules file's directory.
 -- If the command fails, raise an error and show its error output;
@@ -1400,6 +1410,17 @@ splitRowSuffix f = do
   return (base, rownum)
 
 _CSV_READING__________________________________________ = undefined
+
+-- | Like 'readJournalFromCsv', but returns an unfinalised journal ready for 'journalFinalise':
+-- its lists are reversed, as that expects (readJournalFromCsv produces them in normal order,
+-- unlike JournalReader's parser; XXX inefficient), and the given auxiliary files
+-- (the rules files, and a data file if any) are noted in jauxfiles,
+-- so that changes to them can be detected when reloading.
+readParsedJournalFromCsv :: FilePath -> CsvRules -> [FilePath] -> FilePath -> Text -> Maybe SepFormat
+                         -> ExceptT String IO (ParsedJournal, String -> String)
+readParsedJournalFromCsv rulesfile rules auxfiles csvfile csvtext sep = do
+  (j, adderrorcontext) <- readJournalFromCsv rulesfile rules csvfile csvtext sep
+  return ((journalReverse j){jauxfiles = auxfiles}, adderrorcontext)
 
 -- | Read a Journal from the given CSV data (and filename, used for error
 -- messages), or return an error. Proceed as follows:

@@ -30,6 +30,8 @@ Some of these might belong in Hledger.Read.JournalReader or Hledger.Read.
 --- ** exports
 module Hledger.Read.Common (
   Reader (..),
+  readerReadsOwnInput,
+  includeFileParser,
   PrefixedFilePath,
   isStdin,
   InputOpts(..),
@@ -130,7 +132,8 @@ where
 import Control.Applicative.Permutations (runPermutation, toPermutationWithDefault)
 import Control.Monad (foldM, liftM2, when, unless, (>=>), (<=<))
 import Control.Monad.Fail qualified as Fail (fail)
-import Control.Monad.Except (ExceptT(..), liftEither, withExceptT)
+import Control.Exception.Safe (tryIO)
+import Control.Monad.Except (ExceptT(..), liftEither, runExceptT, withExceptT)
 import Control.Monad.IO.Class (MonadIO, liftIO)
 import Control.Monad.State.Strict (MonadState, evalStateT, modify', get, put)
 import Control.Monad.Trans.Class (lift)
@@ -190,10 +193,36 @@ data Reader m = Reader {
     -- It accepts input options, a file path to show in error messages, and a handle to read data from.
   ,rReadFn :: InputOpts -> FilePath -> Handle -> ExceptT String IO Journal
     -- The megaparsec parser called by the above, provided separately for parsing included files.
+    -- It is given the included file's text as input, or empty text if the reader reads its own input
+    -- (see readerReadsOwnInput).
   ,rParser :: MonadIO m => InputOpts -> ErroringJournalParser m ParsedJournal
   }
 
 instance Show (Reader m) where show r = show (rFormat r) ++ " reader"
+
+-- | Does this reader's rParser read the included file itself, ignoring the text it is given ?
+-- The CSV and rules readers do, since their data may be in a non-UTF-8 encoding declared by
+-- the rules file, or (for rules files) in a separate data file.
+readerReadsOwnInput :: Reader m -> Bool
+readerReadsOwnInput r = case rFormat r of
+  Sep _ -> True
+  Rules -> True
+  _     -> False
+
+-- | Make an include file parser (see rParser) from an IO action which reads the file
+-- at the given path and converts it to an unfinalised journal, with lists in reverse order
+-- as journalFinalise expects. This is for readers of non-journal formats like CSV.
+-- The megaparsec input is ignored; the file path is taken from the parse state's include file stack.
+-- The account aliases in effect (from alias directives and --alias options) are applied to the result,
+-- as they would be for inlined journal entries.
+-- Any error, including an IO error, is rethrown as a final parse error showing the include file stack.
+includeFileParser :: MonadIO m => (FilePath -> ExceptT String IO ParsedJournal) -> ErroringJournalParser m ParsedJournal
+includeFileParser readfn = do
+  j <- get
+  f <- maybe (finalMessageFailure "includeFileParser: no include file in parse state") (pure . fst) $
+       listToMaybe $ jparseincludefilestack j
+  ej <- liftIO $ tryIO $ runExceptT $ readfn f >>= liftEither . journalApplyAliases (jparsealiases j)
+  either (finalMessageFailure . show) (either finalMessageFailure pure) ej
 
 -- | A file path optionally prefixed by a reader name and colon (journal:, csv:, timedot:, etc.).
 -- The file path part can also be - meaning standard input.

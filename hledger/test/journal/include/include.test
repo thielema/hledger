@@ -180,3 +180,159 @@ $  touch /tmp/unreadable.$$ && chmod -r /tmp/unreadable.$$ && hledger -f /tmp/un
 # ** 21. But I did find this possibly related regression in 1.50.4 & 1.51 [#2503].
 $ hledger -f symlink-to-relative-include.j files
 > //
+
+# ** 22. CSV (or SSV/TSV) files can be included. The rules file is FILE.rules, as usual.
+# The CSV's transactions are placed as if inlined, and finalised along with the rest of the journal.
+<
+2016-01-01 before
+  (x)  1
+include b.csv
+2016-01-04 after
+  (x)  1
+$ hledger -f - print
+2016-01-01 before
+    (x)                                            1
+
+2016-01-02 b csv one
+    assets:b                                       1
+    income:b                                      -1
+
+2016-01-03 b csv two
+    assets:b                                       2
+    income:b                                      -2
+
+2016-01-04 after
+    (x)                                            1
+
+>=
+
+# ** 23. CSV rules files can be included. Their data comes from the file specified by their source rule.
+<
+include c.csv.rules
+$ hledger -f - print
+2016-01-02 b csv one
+    assets:b                                       1
+    income:b                                      -1
+
+2016-01-03 b csv two
+    assets:b                                       2
+    income:b                                      -2
+
+>=
+
+# ** 24. files lists the included CSV/rules files (but not the rules files used by a CSV file).
+<
+include b.csv
+include c.csv.rules
+$ hledger -f - files | sed 's|.*/||'
+-
+b.csv
+c.csv.rules
+
+# ** 25. A file type prefix works with include, as usual.
+<
+include csv:b.dat
+$ hledger -f - print
+2016-01-02 b csv one
+    assets:b                                       1
+    income:b                                      -1
+
+2016-01-03 b csv two
+    assets:b                                       2
+    income:b                                      -2
+
+>=
+
+# ** 26. Account aliases in effect (from alias directives, or --alias) are applied to included CSV data.
+<
+alias assets:b = assets:bank
+include b.csv
+$ hledger -f - print --alias income:b=income:cli
+2016-01-02 b csv one
+    assets:bank                                    1
+    income:cli                                    -1
+
+2016-01-03 b csv two
+    assets:bank                                    2
+    income:cli                                    -2
+
+>=
+
+# ** 27. Other parse-affecting directives, like apply account, do not affect included CSV data.
+<
+apply account top
+include b.csv
+$ hledger -f - print
+2016-01-02 b csv one
+    assets:b                                       1
+    income:b                                      -1
+
+2016-01-03 b csv two
+    assets:b                                       2
+    income:b                                      -2
+
+>=
+
+# ** 28. Balance assertions generated from included CSV data are checked, like any others.
+# They pass when the journal provides the right opening balance..
+<
+2016-01-01 opening
+  assets:b  100
+  equity
+include bal.csv
+$ hledger -f - print
+2016-01-01 opening
+    assets:b                                     100
+    equity
+
+2016-01-02 bal csv
+    assets:b                                       1 = 101
+    income:b                                      -1
+
+>=
+
+# ** 29. ..and fail otherwise (unlike when reading the CSV file directly, where they are ignored).
+<
+include bal.csv
+$ hledger -f - print
+>2 /Balance assertion failed in assets:b/
+>=1
+
+# ** 30. The --rules option does not affect included CSV files.
+<
+include b.csv
+$ hledger -f - print --rules bad.csv.rules
+2016-01-02 b csv one
+    assets:b                                       1
+    income:b                                      -1
+
+2016-01-03 b csv two
+    assets:b                                       2
+    income:b                                      -2
+
+>=
+
+# ** 31. An encoding rule is respected when including a CSV file.
+<
+include latin1.csv
+$ hledger -f - print
+2016-01-06 café
+    assets:latin1                                  6
+    income:unknown                                -6
+
+>=
+
+# ** 32. A CSV conversion error in an included file shows the include file stack, like other errors.
+<
+include nested/sub.j
+$ hledger -f - print 2>&1 | sed 's|/.*/||'
+hledger: Error: in file included from -,
+in file included from sub.j,
+bad.csv.rules: could not parse skip value: badval
+
+# ** 33. A missing rules file for an included CSV file is an error.
+<
+include norules.csv
+$ hledger -f - print 2>&1 | sed 's|/.*/||'
+hledger: Error: in file included from -,
+norules.csv.rules: openFile: does not exist (No such file or directory)

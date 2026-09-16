@@ -165,7 +165,7 @@ You can specify multiple `-f` options, to read multiple files as one big journal
 - [Balance assertions](#balance-assertions) will not see the effect of transactions in previous files. (Usually this doesn't matter as each file will set the corresponding opening balances.)
 - Some [directives](#directives) will not affect previous or subsequent files.
 
-If needed, you can work around these by using a single parent file which [includes](#include-directive) the others, or concatenating the files into one, eg: `cat a.journal b.journal | hledger -f- CMD`.
+If needed, you can work around these by using a single parent file which [includes](#include-directive) the others (this works with CSV files too), or concatenating the files into one, eg: `cat a.journal b.journal | hledger -f- CMD`.
 
 ## Strict mode
 
@@ -2827,7 +2827,20 @@ include SOMEFILE
 This has the same effect as if SOMEFILE's content was inlined at this point.
 (With any include directives in SOMEFILE processed similarly, recursively.)
 
-Only journal files can include other files. They can include journal, timeclock or timedot files, but not CSV files.
+Only journal files can include other files.
+They can include journal, timeclock, timedot, CSV/SSV/TSV, or CSV rules files.
+
+When a CSV file is included, its [rules file](#csv) is `FILE.rules` alongside it, as usual;
+the `--rules` option is not used here.
+To use a different rules file, or a data file located elsewhere (eg in your downloads directory),
+include a rules file which has a [source](#source) rule instead.
+Transactions generated from included CSV data are treated like inlined journal entries:
+they are placed at this point, any [account aliases](#alias-directive) in effect are applied to them,
+and their [balance assertions](#balance-assertions) are checked along with the rest of the journal
+(unlike when reading a CSV file directly, where balance assertions are ignored).
+Other directives which affect journal parsing (like `Y`, `D`, `decimal-mark`, `apply account`) do not affect CSV data.
+Note that if you include a CSV file in your main journal, you should not also [import](#import) it,
+or its transactions would be duplicated.
 
 If the file path begins with a tilde, that means your home directory: `include ~/main.journal`.
 
@@ -3482,7 +3495,8 @@ attributes.
 By default, hledger expects this rules file to be named like the CSV file, 
 with an extra `.rules` extension added, in the same directory. 
 Eg when asked to read `foo/FILE.csv`, hledger looks for `foo/FILE.csv.rules`. 
-You can specify a different rules file with the `--rules` option.
+You can specify a different rules file with the `--rules` option
+(for CSV files specified on the command line; not for ones [included](#include-directive) by a journal file).
 
 At minimum, the rules file must identify the date and amount fields,
 and often it also specifies the date format and how many header lines
@@ -4493,6 +4507,9 @@ If you use multiple `-f` options to read multiple CSV files at once,
 hledger will look for a correspondingly-named rules file for each CSV file.
 But if you specify a rules file with `--rules`, that rules file will be used for all the CSV files.
 
+Alternatively, a journal file can [include](#include-directive) CSV files (or rules files).
+In this case each CSV file always uses its correspondingly-named rules file; `--rules` has no effect.
+
 ### Reading files specified by rule
 
 Instead of specifying a CSV file in the command line, you can specify
@@ -4500,6 +4517,7 @@ a rules file, as in `hledger -f foo.csv.rules CMD`.
 By default this will read data from foo.csv in the same directory,
 but you can add a [source](#source) rule to specify a different data file,
 perhaps located in your web browser's download directory.
+(A rules file can also be [included](#include-directive) by a journal file.)
 
 This feature helps remove some of the busywork of managing CSV downloads.
 Most of your financial institutions's default CSV filenames are

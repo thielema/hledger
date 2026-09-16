@@ -445,17 +445,20 @@ includedirectivep iopts = do
     parseIncludedFile iopts1 off prefixedpath = do
       let (_mprefix,filepath) = splitReaderPrefix prefixedpath
 
-      -- Read the file's content, or throw an error
-      childInput <- lift $ readFilePortably filepath & handleIOError off "failed to read a file"
-      cfilepath <- liftIO $ canonicalizePath filepath
-      parentj <- get
-      let initChildj = newJournalWithParseStateFrom filepath cfilepath parentj
-
       -- Choose a reader based on the file path prefix or file extension,
       -- defaulting to JournalReader. Duplicating readJournal a bit here.
       let r = fromMaybe reader $ findReader Nothing (Just prefixedpath)
           parser = (rParser r) iopts1
       dbg7IO "parseIncludedFile: trying reader" (rFormat r)
+
+      -- Read the file's content, or throw an error.
+      -- Readers which read their own input (CSV, rules) are given empty text instead.
+      childInput <-
+        if readerReadsOwnInput r then pure ""
+        else lift $ readFilePortably filepath & handleIOError off "failed to read a file"
+      cfilepath <- liftIO $ canonicalizePath filepath
+      parentj <- get
+      let initChildj = newJournalWithParseStateFrom filepath cfilepath parentj
 
       -- Parse the file (and its own includes, if any) to a Journal
       -- with file path and source text attached. Or throw an error.
