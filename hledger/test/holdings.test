@@ -826,3 +826,36 @@ Holdings on 2026-03-31
  assets:broker:sub || 2026-02-01  58d  2 AAA       $20    $25   $40    $50   50.0%    $10   25.0%    $10   877.9% 
 -------------------++---------------------------------------------------------------------------------------------
                    ||                  4 AAA       $15          $60   $100  100.0%    $40   66.7%    $10  1928.8% 
+
+# ** 46. RGain is shown with the cost commodity's display style, even when
+# the cost basis it is derived from has more precision (here from an
+# inferred per-unit cost).
+<
+commodity AAA ; lots:
+commodity $1,000.00
+
+2026-01-01 buy, with an inferred per-unit cost of $33.33333333
+    assets:broker   3 AAA @@ $100
+    assets:cash
+
+2026-02-01 sell
+    assets:broker  -1 AAA {} @ $50
+    assets:cash
+$ hledger -f- holdings -e 2026-03-01 --lots
+Holdings on 2026-02-28
+
+                                          ||       Date  Age  Units  Unit cost  Price    Cost  Value  Weight  UGain  UGain%   RGain  XIRR 
+==========================================++==============================================================================================
+ assets:broker:{2026-01-01, $33.33333333} || 2026-01-01  58d  2 AAA     $33.33         $66.67                                $16.67       
+------------------------------------------++----------------------------------------------------------------------------------------------
+                                          ||                  2 AAA     $33.33         $66.67                                $16.67       
+
+# ** 47. --round=none keeps the unrounded RGain, like the other cost columns.
+$ hledger -f- holdings -e 2026-03-01 --lots --round=none
+Holdings on 2026-02-28
+
+                                          ||       Date  Age  Units     Unit cost  Price          Cost  Value  Weight  UGain  UGain%         RGain  XIRR 
+==========================================++=============================================================================================================
+ assets:broker:{2026-01-01, $33.33333333} || 2026-01-01  58d  2 AAA  $33.33333333         $66.66666666                                $16.66666667       
+------------------------------------------++-------------------------------------------------------------------------------------------------------------
+                                          ||                  2 AAA  $33.33333333         $66.66666666                                $16.66666667       

@@ -230,8 +230,11 @@ holdings opts@CliOpts{rawopts_=rawopts, reportspec_=rspec@ReportSpec{_rsQuery=q,
     -- Each lot subaccount's realised gains, in the cost commodity:
     -- for each dispose posting (negative, with a transacted price and a
     -- cost basis), the proceeds minus the cost basis of the disposed units.
+    -- The gains get their commodity's display style, since the cost bases
+    -- they are derived from can have more precision (eg from inferred
+    -- per-unit costs).
     rgainmap :: M.Map (AccountName, CommoditySymbol) Amount
-    rgainmap = M.fromListWith (+)
+    rgainmap = M.map (styleAmounts styles) $ M.fromListWith (+)
       [ (k, proceeds - basis)
       | (k, (_, a)) <- lotpostings
       , aquantity a < 0
