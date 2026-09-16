@@ -4384,19 +4384,17 @@ Things to note:
 
 - `merge` can also be used as a top-level rule (unconditionally),
   useful for files where every transaction is exactly N+1 rows.
-- Merging happens early, before transactions are generated,
-  and after `skip` and `end` rules have been applied -
-  so skipped records don't count toward a merge group.
-- Because of this, the merge-triggering matchers can only usefully reference
-  the first row's fields; a `_ROWNUM` reference there is always empty at that stage,
-  can never trigger the merge, and causes a warning.
-- After merging, later `if` blocks see the whole group;
-  a whole-record matcher can match text from any of its rows,
-  and field matchers can use `_ROWNUM` references.
+- `skip` and `end` rules are applied before row merging -
+  skipped records don't count toward a merge group.
 - The rows of a group must be consecutive in the file (ignoring skipped records),
   and the merging record must be the first of them.
-- A merged transaction's source position (shown by `print --location`)
-  is the group's full range of file lines.
+- Matchers which (if successful) will trigger a `merge` rule,
+  can only usefully reference the first row's fields -
+  the other row fields will be empty at this stage.
+- But once a `merge` rule has been evaluated, later `if` blocks 
+  can see the whole group; eg
+  a whole-record matcher will see all of its rows combined as one,
+  and field matchers can use `%FIELD_ROWNUM` references.
 - If fewer than N records remain in the file, just those are merged.
 
 ## `balance-type`
