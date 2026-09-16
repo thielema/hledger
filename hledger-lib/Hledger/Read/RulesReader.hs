@@ -1819,7 +1819,7 @@ transactionFromCsvRecord timesarezoned mtzin tzout sourcepospair rules record =
                              ,paccount          = accountNameWithoutPostingType acct'
                              ,pamount           = fromMaybe missingmixedamt mamount
                              ,ptransaction      = Just t
-                             ,pbalanceassertion = mkBalanceAssertion rules record <$> mbalance
+                             ,pbalanceassertion = mkBalanceAssertion rules record (fst sourcepospair) <$> mbalance
                              ,pcomment          = cmt
                              ,ptags             = tags
                              ,preal             = accountNamePostingType acct
@@ -1964,19 +1964,15 @@ getAmount rules record currency p1IsVirtual n =
         ,"See also: https://hledger.org/hledger.html#setting-amounts"
         ,"(hledger manual -> CSV format -> Tips -> Setting amounts)"
         ]
--- | Figure out the expected balance (assertion or assignment) specified for posting N,
--- if any (and its parse position).
-getBalance :: CsvRules -> CsvRecordGroup -> Text -> Int -> Maybe (Amount, SourcePos)
+-- | Figure out the expected balance (assertion or assignment) specified for posting N, if any.
+getBalance :: CsvRules -> CsvRecordGroup -> Text -> Int -> Maybe Amount
 getBalance rules record currency n = do
   v <- (fieldval ("balance"<> T.pack (show n))
         -- for posting 1, also recognise the old field name
         <|> if n==1 then fieldval "balance" else Nothing)
   case v of
     "" -> Nothing
-    s  -> Just (
-            parseBalanceAmount rules record currency n s
-           ,initialPos ""  -- parse position to show when assertion fails,
-           )               -- XXX the csv record's line number would be good
+    s  -> Just $ parseBalanceAmount rules record currency n s
   where
     fieldval = fmap T.strip . hledgerFieldValue rules record :: HledgerFieldName -> Maybe Text
 
@@ -2088,8 +2084,9 @@ parseDecimalMark rules = do
 -- possibly set by a balance-type rule.
 -- The CSV rules and current record are also provided, to be shown in case
 -- balance-type's argument is bad (XXX refactor).
-mkBalanceAssertion :: CsvRules -> CsvRecordGroup -> (Amount, SourcePos) -> BalanceAssertion
-mkBalanceAssertion rules record (amt, pos) = assrt{baamount=amt, baposition=pos}
+-- The position of the CSV record is also provided, to be shown if the assertion fails.
+mkBalanceAssertion :: CsvRules -> CsvRecordGroup -> SourcePos -> Amount -> BalanceAssertion
+mkBalanceAssertion rules record pos amt = assrt{baamount=amt, baposition=pos}
   where
     assrt =
       case getDirective "balance-type" rules of
@@ -2117,7 +2114,7 @@ parseBalanceAssertionType = \case
 -- | Figure out the account name specified for posting N, if any.
 -- And whether it is the default unknown account (which may be
 -- improved later) or an explicitly set account (which may not).
-getAccount :: CsvRules -> CsvRecordGroup -> Maybe MixedAmount -> Maybe (Amount, SourcePos) -> Int -> Maybe (AccountName, Bool)
+getAccount :: CsvRules -> CsvRecordGroup -> Maybe MixedAmount -> Maybe Amount -> Int -> Maybe (AccountName, Bool)
 getAccount rules record mamount mbalance n =
   let
     fieldval = hledgerFieldValue rules record :: HledgerFieldName -> Maybe Text

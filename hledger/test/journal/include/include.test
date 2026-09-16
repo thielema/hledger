@@ -292,11 +292,12 @@ $ hledger -f - print
 >=
 
 # ** 29. ..and fail otherwise (unlike when reading the CSV file directly, where they are ignored).
+# The error cites the CSV file and record line.
 <
 include bal.csv
-$ hledger -f - print
->2 /Balance assertion failed in assets:b/
->=1
+$ hledger -f - print 2>&1 | sed 's|/.*/||' | grep -E '^hledger: Error|assertion failed'
+hledger: Error: bal.csv:1:1:
+Balance assertion failed in assets:b
 
 # ** 30. The --rules option does not affect included CSV files.
 <
