@@ -158,7 +158,7 @@ Click error names to see an example. The table headings mean:
 
 
 <!-- GENERATED: -->
-hledger 1.99-g104c6d384-20260915 error messages:
+hledger 1.99-g13c2753d8-20260915 error messages:
 
 ### accounts
 ```
@@ -212,7 +212,7 @@ hledger: Error: /Users/simon/src/hledger/hledger/test/errors/./balanced.j:5-7:
   |     b                                             -1 B
 
 This multi-commodity transaction is unbalanced.
-Automatic commodity conversion is not enabled.
+Automatic commodity conversion is disabled by strict mode or the balanced check.
 The real postings' sum should be 0 but is 1 A, -1 B
   1 A  +  -1 B  =  1 A, -1 B
 ```

@@ -255,7 +255,7 @@ balanceTransactionHelper bopts t = do
       where
         ismulticommodity = (length $ transactionCommodities t') > 1
         errs' =
-          [ "Automatic commodity conversion is not enabled."
+          [ "Automatic commodity conversion is disabled by strict mode or the balanced check."
           | ismulticommodity && not (infer_balancing_costs_ bopts)
           ] ++
           errs
