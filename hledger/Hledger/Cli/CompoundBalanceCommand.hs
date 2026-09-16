@@ -420,7 +420,7 @@ compoundBalanceReportAsSpreadsheet fmt accountLabel maybeBlank ropts cbr =
         accountCell =
             (Spr.defaultCell subreporttitle) {
                 Spr.cellStyle = Spr.Body Spr.Total,
-                Spr.cellClass = Spr.Class "account"
+                Spr.cellClass = accountClass
             }
         titleRows
           | T.null subreporttitle = []
@@ -444,7 +444,7 @@ compoundBalanceReportAsSpreadsheet fmt accountLabel maybeBlank ropts cbr =
                              -- make a table of rendered lines of the report totals row
         & map (map (fmap wbToText))
         & Spr.addRowSpanHeader
-            ((Spr.defaultCell "Net:") {Spr.cellClass = Spr.Class "account"})
+            ((Spr.defaultCell "Net:") {Spr.cellClass = accountClass})
                              -- insert a headings column, with Net: on the first line only
         & addTotalBorders    -- marking the first row for special styling
 

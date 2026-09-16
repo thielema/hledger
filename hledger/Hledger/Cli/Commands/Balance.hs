@@ -273,6 +273,7 @@ module Hledger.Cli.Commands.Balance (
  ,tidyColumnLabels
  ,nbsp
  ,RowClass(..)
+ ,accountClass
   -- ** Tests
  ,tests_Balance
 ) where
@@ -448,6 +449,9 @@ balance opts@CliOpts{reportspec_=rspec} j = case balancecalc_ ropts of
     fmt         = outputFormatFromOpts opts
 
 -- Rendering
+
+accountClass :: Ods.Class
+accountClass = Ods.Class "account"
 
 data RowClass = Value | Total
     deriving (Eq, Ord, Enum, Bounded, Show)
@@ -794,9 +798,8 @@ multiBalanceReportAsSpreadsheetParts fmt opts@ReportOpts{..}
   allCommodities (PeriodicReport colspans items tr) =
     (allHeaders, concatMap fullRowAsTexts items, addTotalBorders totalrows)
   where
-    accountCell label =
-        (Ods.defaultCell label) {Ods.cellClass = Ods.Class "account"}
-    hCell cls label = (headerCell label) {Ods.cellClass = Ods.Class cls}
+    accountCell label = (Ods.defaultCell label) {Ods.cellClass = accountClass}
+    hCell cls label = (headerCell label) {Ods.cellClass = cls}
     allHeaders =
       case layout_ of
       LayoutBareWide ->
@@ -807,7 +810,7 @@ multiBalanceReportAsSpreadsheetParts fmt opts@ReportOpts{..}
       _ -> [headers]
     headers =
       addHeaderBorders $
-      hCell "account" "account" :
+      hCell accountClass "account" :
       case layout_ of
       LayoutTidy -> map headerCell tidyColumnLabels
       LayoutBareWide -> dateHeaders >> map headerCell allCommodities
@@ -815,8 +818,8 @@ multiBalanceReportAsSpreadsheetParts fmt opts@ReportOpts{..}
       _          -> dateHeaders
     dateHeaders =
       (if not summary_only_ then map (headerDateSpanCell period_titles_ balance_base_url_ querystring_) colspans  else [] )++
-      [hCell "rowtotal" "total" | multiBalanceHasTotalsColumn opts] ++
-      [hCell "rowaverage" "average" | average_]
+      [hCell (Ods.Class "rowtotal") "total" | multiBalanceHasTotalsColumn opts] ++
+      [hCell (Ods.Class "rowaverage") "average" | average_]
     fullRowAsTexts row =
         addRowSpanHeader anchorCell $
         rowAsText Value (dateSpanCell period_titles_ balance_base_url_ querystring_ acctName) row
