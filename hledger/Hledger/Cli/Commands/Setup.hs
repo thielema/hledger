@@ -450,9 +450,20 @@ setupJournal meconf = do
       else p N (show (length undeclaredcommodities) <> " undeclared commodities")
 
       let
-        accttypes = [minBound .. maxBound]
-        typesdeclaredorinferred = nub $ M.elems jaccounttypes
-        typesnotfound = filter (not.(`elem` typesdeclaredorinferred)) accttypes
+        -- The basic types which the bs/bse/is/cf reports depend on
+        -- (subtypes like Cash also count as their parent type, as in those reports),
+        -- and the reports which will be empty when a type has no accounts.
+        basictypes = [Asset, Liability, Equity, Revenue, Expense, Cash]
+        typesdetected = nub $ M.elems jaccounttypes
+        hastype t = any (`isAccountSubtypeOf` t) typesdetected
+        typesnotfound = filter (not . hastype) basictypes
+        missing = any (`elem` typesnotfound)
+        reportsaffected = concat
+          [ ["bs"  | missing [Asset, Liability]]  -- and bse, implied
+          , ["bse" | missing [Equity], not $ missing [Asset, Liability]]
+          , ["is"  | missing [Revenue, Expense]]
+          , ["cf"  | missing [Cash]]
+          ]
         acctswithdeclaredorinferredtype = nub (M.keys jaccounttypes)
         numaccts = length $ journalAccountNames j
         untypedaccts = journalAccountNames j \\ acctswithdeclaredorinferredtype
@@ -500,10 +511,12 @@ setupJournal meconf = do
       pdesc "all accounts have types ?"
       if null untypedaccts then p Y "" else i N (show (length untypedaccts) <> " accounts without types")
 
-      pdesc "accounts of all types exist ?"
+      pdesc "accounts of all basic types exist ?"
       if null typesnotfound
-      then p Y (concatMap show accttypes <> " accounts detected")
-      else i N ("no " <> concatMap show typesnotfound <> " accounts found")
+      then p Y (concatMap show basictypes <> " accounts detected")
+      else i N (intercalate "/" reportsaffected
+                <> (if length reportsaffected == 1 then " needs " else " need ")
+                <> concatMap show typesnotfound <> " accounts")
 
       let strict = isJust $ conflookup (\a -> any (==a) ["-s", "--strict"])
 

@@ -57,7 +57,7 @@ journal
 * all commodities are declared ?           yes  10
 * all accounts are declared ?              yes  160
 * all accounts have types ?                 no  14 untyped
-* accounts of each type were detected ?    yes  ALERXCV
+* accounts of all basic types exist ?      yes  ALERXC accounts detected
 * commodities/accounts are checked ?        no  use -s to check commodities/accounts
 * balance assertions are checked ?         yes  use -I to ignore assertions
 ```
