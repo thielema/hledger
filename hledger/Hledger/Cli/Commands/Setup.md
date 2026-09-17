@@ -35,6 +35,8 @@ hledger
 * the config file is readable ?            yes  /Users/simon/src/hledger/hledger.conf
 
 terminal
+* the TERM variable is defined ?           yes  xterm-256color
+* the terminal supports ANSI color ?       yes  256 colors
 * the NO_COLOR variable is defined ?        no  
 * --color is configured by config file ?    no  
 * hledger will use color by default ?      yes  

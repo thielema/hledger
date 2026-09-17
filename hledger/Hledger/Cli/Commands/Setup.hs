@@ -79,7 +79,8 @@ import Hledger
 import Hledger.Cli.CliOptions
 import Hledger.Cli.Conf
 import Hledger.Cli.Version
-import System.IO (localeEncoding, stdout, hFlush)
+import System.Console.ANSI (hSupportsANSIColor)
+import System.IO (localeEncoding, stdout, hFlush, hIsTerminalDevice)
 
 
 setupmode = hledgerCommandMode
@@ -253,6 +254,23 @@ setupTerminal meconf = do
       Just (Right conf) -> find predicate $ reverse $ confLookup "general" conf
       _ -> Nothing
 
+  pdesc "the TERM variable is defined ?"
+  mterm <- lookupEnv "TERM"
+  let dumbterminal = (map toLower <$> mterm) == Just "dumb"
+  case mterm of
+    Nothing -> i N "terminal type is unknown"
+    Just v  -> i Y $ v <> if dumbterminal then " (color and styles will not be used)" else ""
+
+  pdesc "the terminal supports ANSI color ?"
+  isterminal <- hIsTerminalDevice stdout
+  supportscolor <- hSupportsANSIColor stdout
+  truecolor <- supportsTrueColor
+  if not supportscolor then i N $ if isterminal then "" else "stdout is not a terminal"
+  else i Y $ if
+    | truecolor -> "24-bit color (COLORTERM is set)"
+    | "256color" `isInfixOf` fromMaybe "" mterm -> "256 colors"
+    | otherwise -> "16 colors"
+
   pdesc "the NO_COLOR variable is defined ?"
   mnocolor <- lookupEnv "NO_COLOR"
   case mnocolor of
@@ -270,12 +288,23 @@ setupTerminal meconf = do
           arg = reverse $ takeWhile (`notElem` ['=',' ']) $ reverse a
         return $ Just $ parseYNA arg
 
+  -- Use the same logic as the rest of hledger, and explain a negative result.
+  -- (The config file is not applied to setup itself, so its --color is checked here.)
   pdesc "hledger will use color by default ?"
-  case (meconfigcolor, isJust mnocolor) of
-    (Just (Right Yes), _)     -> p Y ""
-    (Just (Right No),  _)     -> i N ""
-    (_,                True)  -> i N ""
-    (_,                False) -> p Y ""
+  usecolor <- case meconfigcolor of
+    Just (Right Yes) -> return True
+    Just (Right No)  -> return False
+    _                -> useColorOnStdout
+  coloropt <- colorOption
+  if usecolor then p Y ""
+  else i N $ if
+    | meconfigcolor == Just (Right No) -> "disabled by config file"
+    | coloropt == No                   -> "disabled by --color"
+    | isJust mnocolor                  -> "disabled by NO_COLOR"
+    | dumbterminal                     -> "disabled by TERM=dumb"
+    | not isterminal                   -> "stdout is not a terminal"
+    | not supportscolor                -> "the terminal does not support ANSI color"
+    | otherwise                        -> ""
 
   pdesc "the PAGER variable is defined ?"
   mv <- lookupEnv "PAGER"
