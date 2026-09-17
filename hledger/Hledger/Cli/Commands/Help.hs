@@ -89,7 +89,7 @@ manual opts mtopic
       <> "Run `hledger help manual` to list all topics, or `hledger help` for the quick reference."
     ambiguousHeading
       | null topic = titleLine "HLEDGER MANUAL TOPICS"
-      | otherwise  = "\"" <> topic <> "\" matches several manual sections; please be more specific:"
+      | otherwise  = "\"" <> topic <> "\" matches several manual sections, try a more specific topic:"
     matchingHeading
       | null topic = titleLine "HLEDGER MANUAL TOPICS"
       | otherwise  = "manual topics matching \"" <> topic <> "\":"
