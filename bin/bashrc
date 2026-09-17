@@ -51,6 +51,7 @@ alias roi='hledger roi'
 alias run='hledger run'
 alias stats='hledger stats'
 alias tags='hledger tags'
+alias tx='hledger tx'
 alias ui='hledger ui'
 alias web='hledger web'
 
