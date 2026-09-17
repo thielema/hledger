@@ -14,9 +14,9 @@ or you can run any of them on demand by providing them as arguments to the `chec
 Eg:
 
 ```cli
-hledger check                      # run basic checks
-hledger check -s                   # run basic and strict checks
-hledger check ordereddates payees  # run basic checks and two others
+hledger check                      # run default checks
+hledger check -s                   # run default and strict checks
+hledger check ordereddates payees  # run default checks and two others
 ```
 
 If you are an Emacs user, you can also configure flycheck-hledger to run these checks,
@@ -25,7 +25,7 @@ providing instant feedback as you edit the journal.
 Here are the checks currently available.
 They are generally checked in the order they are shown here, and only the first failure will be reported.
 
-### Basic checks
+### Default checks
 
 These important checks are performed by default, by almost all hledger commands:
 
