@@ -505,11 +505,7 @@ setupJournal meconf = do
       then p Y (concatMap show accttypes <> " accounts detected")
       else i N ("no " <> concatMap show typesnotfound <> " accounts found")
 
-      pdesc "strict checks are run by default ?"
       let strict = isJust $ conflookup (\a -> any (==a) ["-s", "--strict"])
-      if strict
-      then i Y "commodities and accounts must be declared"
-      else i N "you can add -s to run them"
 
       pdesc "balance assertions checked by default ?"
       let ignoreassertions = isJust $ conflookup (\a -> any (==a) ["-I", "--ignore-assertions"])
@@ -524,6 +520,11 @@ setupJournal meconf = do
         | ignorelots && not strict -> i N "you can add -s to check them"
         | not strict -> i Y "you can add -I to ignore them"
         | otherwise -> i Y "and can't be ignored, because strict checks are enabled"
+
+      pdesc "strict checks checked by default ?"
+      if strict
+      then i Y "commodities and accounts must be declared"
+      else i N "you can add -s to run them"
 
 ------------------------------------------------------------------------------
 
