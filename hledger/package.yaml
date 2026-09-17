@@ -85,6 +85,7 @@ extra-source-files:
 - Hledger/Cli/Commands/Stats.txt
 - Hledger/Cli/Commands/Tags.txt
 - Hledger/Cli/Commands/Test.txt
+- Hledger/Cli/Commands/Transactions.txt
 
 flags:
   debug:
@@ -206,6 +207,7 @@ library:
   # - Hledger.Cli.Commands.Setup
   # - Hledger.Cli.Commands.Stats
   # - Hledger.Cli.Commands.Tags
+  # - Hledger.Cli.Commands.Transactions
   # - Hledger.Cli.CompoundBalanceCommand
   # - Hledger.Cli.Conf
   # - Hledger.Cli.DocFiles

@@ -38,6 +38,7 @@ _command_({{Payees}})
 _command_({{Prices}})
 _command_({{Stats}})
 _command_({{Tags}})
+_command_({{Transactions}})
 
 # Standard report commands
 

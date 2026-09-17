@@ -57,6 +57,7 @@ module Hledger.Cli.Commands (
   ,module Hledger.Cli.Commands.Setup
   ,module Hledger.Cli.Commands.Stats
   ,module Hledger.Cli.Commands.Tags
+  ,module Hledger.Cli.Commands.Transactions
 ) 
 where
 
@@ -109,6 +110,7 @@ import Hledger.Cli.Commands.Run
 import Hledger.Cli.Commands.Setup
 import Hledger.Cli.Commands.Stats
 import Hledger.Cli.Commands.Tags
+import Hledger.Cli.Commands.Transactions
 import Hledger.Cli.Utils (tests_Cli_Utils, openBrowserOn)
 import Hledger.Cli.Commands.Quickref (showQuickref)
 import Hledger.Cli.DocFiles (runTldrForPage)
@@ -151,6 +153,7 @@ builtinCommands = [
   ,(setupmode              , setup)
   ,(statsmode              , stats)
   ,(tagsmode               , tags)
+  ,(transactionsmode       , transactions)
   ,(testmode               , testcmd)
   ]
 
@@ -314,6 +317,7 @@ commandsListSections = [
   ," prices                   show market prices"
   ," stats                    show journal statistics"
   ," tags                     show tag names"
+  ," transactions (tx)        show transactions, one per line"
   ])
     -----------------------------------------80-------------------------------------
  ,("STANDARD REPORTS",

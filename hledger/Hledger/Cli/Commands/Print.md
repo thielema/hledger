@@ -67,6 +67,11 @@ $ hledger print -f examples/sample.journal date:200806
 
 ```
 
+With `--oneline`, print shows only each transaction's first line
+(the date, status, code, description, and any same-line comment), for a compact overview.
+This affects the default `txt` output only.
+The [`transactions`](#transactions) command is a shortcut for this.
+
 ### print explicitness
 
 Normally, whether posting amounts are implicit or explicit is preserved.
@@ -182,10 +187,6 @@ If there is no similar-enough match,
 no transaction will be shown and the program exit code will be non-zero.
 
 With `--locations`, print adds the source file and line number to every transaction, as a tag.
-
-With `--oneline`, print shows only each transaction's first line
-(the date, status, code, description, and any same-line comment),
-This gives a compact overview. It affects the default `txt` output only.
 
 ### print output format
 
