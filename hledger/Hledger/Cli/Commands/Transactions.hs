@@ -1,6 +1,6 @@
 {-|
 
-The @transactions@ command lists transactions one per line, like @print --oneline@.
+The @transactions@ command lists transactions one per line.
 
 -}
 
@@ -15,7 +15,8 @@ import System.Console.CmdArgs.Explicit
 
 import Hledger
 import Hledger.Cli.CliOptions
-import Hledger.Cli.Commands.Print (print')
+import Hledger.Cli.Utils (withTitle, writeOutputLazyText)
+import Hledger.Cli.Commands.Print (journalApplyMatchOpt, entriesReportAsTextHelper)
 
 
 -- | Command line options for this command.
@@ -30,6 +31,11 @@ transactionsmode = hledgerCommandMode
   hiddenflags
   ([], Just $ argsFlag "[QUERY]")
 
--- | The transactions command: print's one-line view of each transaction.
+-- | The transactions command: show each transaction's first line only.
 transactions :: CliOpts -> Journal -> IO ()
-transactions opts = print' opts{rawopts_ = setboolopt "oneline" $ rawopts_ opts}
+transactions opts@CliOpts{reportspec_=rspec} =
+  writeOutputLazyText opts
+  . withTitle (_rsReportOpts rspec)
+  . entriesReportAsTextHelper showTransactionOneLine
+  . entriesReport rspec
+  . journalApplyMatchOpt opts

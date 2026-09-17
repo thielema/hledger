@@ -10,6 +10,8 @@ A ledger-compatible @print@ command.
 module Hledger.Cli.Commands.Print (
   printmode
  ,print'
+ ,journalApplyMatchOpt
+ ,entriesReportAsTextHelper
  ,roundFlag
  ,roundFromRawOpts
  ,amountStylesSetRoundingFromRawOpts
@@ -51,8 +53,7 @@ import Hledger.Write.Beancount (commodityToBeancount, tagsToBeancountMetadata)
 printmode = hledgerCommandMode
   $(embedFileRelative "Hledger/Cli/Commands/Print.txt")
   ([
-   flagNone ["oneline"] (setboolopt "oneline") "show transaction dates and descriptions only"
-  ,flagNone ["all","a"] (setboolopt "explicit" . setboolopt "lots" . setboolopt "verbose-tags")
+   flagNone ["all","a"] (setboolopt "explicit" . setboolopt "lots" . setboolopt "verbose-tags")
     "show all details (--explicit --lots --verbose-tags)"
   ,flagNone ["explicit","x"] (setboolopt "explicit") "show all inferred info explicitly"
   ,flagNone ["verbose-tags"] (setboolopt "verbose-tags") "add tags indicating generated/modified data"
@@ -149,13 +150,18 @@ print' opts@CliOpts{rawopts_=rawopts} j = do
       -- & dbg9With (lbl "amounts after  setting full precision: ".showJournalPostingAmountsDebug)
       & if boolopt "locations" rawopts then journalMapTransactions addLocationTag else id
 
+  printEntries opts $ journalApplyMatchOpt opts j'
+
+-- | With --match DESC, keep only the one recent transaction whose description
+-- is most similar to DESC, erroring if there is none. Otherwise, return the journal unchanged.
+-- XXX should match similarly to register --match
+journalApplyMatchOpt :: CliOpts -> Journal -> Journal
+journalApplyMatchOpt opts j =
   case maybestringopt "match" $ rawopts_ opts of
-    Nothing   -> printEntries opts j'
-    Just desc -> 
-      -- match mode, prints one recent transaction most similar to given description
-      -- XXX should match similarly to register --match
-      case journalSimilarTransaction opts j' (dbg1 "finding best match for description" $ T.pack desc) of
-        Just t  -> printEntries opts j'{jtxns=[t]}
+    Nothing   -> j
+    Just desc ->
+      case journalSimilarTransaction opts j (dbg1 "finding best match for description" $ T.pack desc) of
+        Just t  -> j{jtxns=[t]}
         Nothing -> error' $ "no transactions found with descriptions like " <> show desc
 
 printEntries :: CliOpts -> Journal -> IO ()
@@ -170,9 +176,7 @@ printEntries opts@CliOpts{rawopts_=rawopts, reportspec_=rspec} j =
     baseUrl = balance_base_url_ $ _rsReportOpts rspec
     query = querystring_ $ _rsReportOpts rspec
     postinglayout = layoutFromRawOpts rawopts
-    oneline = boolopt "oneline" rawopts
-    showtxn = if oneline then showTransactionOneLine else showTransactionWithLayout postinglayout
-    render | fmt=="txt"       = withTitle (_rsReportOpts rspec) . entriesReportAsTextHelper showtxn . styleAmounts styles . map maybeoriginalamounts
+    render | fmt=="txt"       = withTitle (_rsReportOpts rspec) . entriesReportAsTextHelper (showTransactionWithLayout postinglayout) . styleAmounts styles . map maybeoriginalamounts
            | fmt=="ledger"   = withTitle (_rsReportOpts rspec) . entriesReportAsTextHelper showTransactionLedger . styleAmounts styles . map maybeoriginalamounts
            | fmt=="beancount" = entriesReportAsBeancount (jdeclaredaccounttags j) styledPrices . styleAmounts styles . map fillBalanceAssignments
            | fmt=="csv"       = printCSV . entriesReportAsCsv . styleAmounts styles

@@ -4,7 +4,6 @@ Show transactions' journal entries, or export journal data to another
 format.
 
 Flags:
-     --oneline              show transaction dates and descriptions only
   -a --all                  show all details (--explicit --lots
                             --verbose-tags)
   -x --explicit             show all inferred info explicitly
@@ -62,10 +61,8 @@ $ hledger print -f examples/sample.journal date:200806
     expenses:supplies            $1
     assets:cash                 $-2
 
-With --oneline, print shows only each transaction's first line (the
-date, status, code, description, and any same-line comment), for a
-compact overview. This affects the default txt output only. The
-transactions command is a shortcut for this.
+For a compact one-line-per-transaction overview, see the transactions
+command.
 
 print explicitness
 

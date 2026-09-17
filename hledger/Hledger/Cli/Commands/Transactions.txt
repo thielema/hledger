@@ -10,8 +10,8 @@ Flags:
 
 This command shows each transaction's first line only (the date, status,
 code, description, and any same-line comment), giving a compact overview
-of a journal, in the manner of git log --oneline. It is equivalent to
-print --oneline. You can add a query to select a subset of transactions.
+of a journal, in the manner of git log --oneline. You can add a query to
+select a subset of transactions.
 
 Example:
 

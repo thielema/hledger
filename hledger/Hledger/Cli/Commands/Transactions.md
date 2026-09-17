@@ -13,8 +13,8 @@ Flags:
 This command shows each transaction's first line only
 (the date, status, code, description, and any same-line comment),
 giving a compact overview of a journal, in the manner of `git log --oneline`.
-It is equivalent to [`print --oneline`](#print).
 You can add a query to select a subset of transactions.
+(To see full journal entries, use the [`print`](#print) command.)
 
 Example:
 ```cli

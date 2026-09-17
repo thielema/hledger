@@ -186,7 +186,7 @@ showTransactionOneLineAmounts :: Transaction -> Text
 showTransactionOneLineAmounts = TL.toStrict . TB.toLazyText . showTransactionHelper True defaultPostingLayout
 
 -- | Show only a transaction's first line: date, status, code, description,
--- and same-line comment, without any comment lines or postings. Used by print --oneline.
+-- and same-line comment, without any comment lines or postings. Used by the transactions command.
 -- (Distinct from 'showTransactionOneLineAmounts', which shows the whole transaction
 -- but with multi-commodity amounts on one line.)
 showTransactionOneLine :: Transaction -> Text
