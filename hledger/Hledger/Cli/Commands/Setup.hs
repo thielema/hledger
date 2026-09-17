@@ -399,6 +399,7 @@ setupJournal meconf = do
   mf <- lookupEnv journalEnvVar
   let
     (ok, msg) = case mf of
+      Just ""  -> (N, "defined, but with a null value")
       Just f  -> (Y, f)
       Nothing -> (N, "")
   i ok msg
