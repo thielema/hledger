@@ -579,7 +579,7 @@ pgroup s = putStrLn $ -- "\n" <>
 
 -- | Print a setup test's description, formatting and padding it to a fixed width.
 pdesc :: String -> IO ()
-pdesc s = printf "* %-40s" s
+pdesc s = printf "  %-40s" s
 
 -- | Probe the journal file's directory to confirm it honors O_APPEND,
 -- ie that 'hledger add' will be safe there. Reports the result as a
