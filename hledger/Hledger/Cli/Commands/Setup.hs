@@ -109,26 +109,27 @@ setup :: CliOpts -> Journal -> IO ()
 setup _opts@CliOpts{rawopts_=_rawopts, reportspec_=_rspec} _ignoredj = do
   -- This command is not given a journal and should not use _ignoredj;
   -- instead read it ourselves when we are ready.
-  putStrLn "Checking your hledger setup.."
-  color <- useColorOnStdout
-  when color $ 
-    putStrLn $ "Legend: " <> intercalate ", " [
-       good    "good"
-      ,neutral "neutral"
-      ,warning "unknown"
-      ,bad     "warning"
-      ]
-  meconf <- setupHledger
+  putStrLn "Checking your setup (and contacting hledger.org to find out the current release):"
+  -- color <- useColorOnStdout
+  -- when color $ 
+  --   putStrLn $ "Legend: " <> intercalate ", " [
+  --      good    "good"
+  --     ,neutral "neutral"
+  --     ,warning "unknown"
+  --     ,bad     "warning"
+  --     ]
+  elatestversionnumstr <- getLatestHledgerVersion
+  meconf <- setupHledger elatestversionnumstr
   setupTerminal meconf
   setupJournal meconf
-  putStr "\n"
+  -- putStr "\n"
 
 ------------------------------------------------------------------------------
 
 -- Returns Nothing if no config file was found,
 -- or Just the read error or config if it was found.
-setupHledger :: IO (Maybe (Either String Conf))
-setupHledger = do
+setupHledger :: Either String String -> IO (Maybe (Either String Conf))
+setupHledger elatestversionnumstr = do
   pgroup "hledger"
 
   let
@@ -158,7 +159,6 @@ setupHledger = do
   else i N prognameandversion
 
   pdesc "is up to date ? checking latest..." >> hFlush stdout
-  elatestversionnumstr <- getLatestHledgerVersion
   case elatestversionnumstr of
     Left e -> p U ("couldn't read " <> latestHledgerVersionUrlStr <> " " <> e)
     Right latestversionnumstr ->
@@ -564,7 +564,8 @@ i ok msg = putStrLn $ unwords ["", showInfo ok, "", msg]
 
 -- | Print a setup test groups heading.
 pgroup :: String -> IO ()
-pgroup s = putStrLn $ "\n" <> bold' s
+pgroup s = putStrLn $ -- "\n" <> 
+            bold' s
 
 -- | Print a setup test's description, formatting and padding it to a fixed width.
 pdesc :: String -> IO ()
