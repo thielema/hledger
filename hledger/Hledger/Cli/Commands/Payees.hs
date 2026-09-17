@@ -58,5 +58,5 @@ payees opts@CliOpts{rawopts_=rawopts, reportspec_=ReportSpec{_rsQuery=query, _rs
     Just Declared   -> matcheddeclared
     Just Undeclared -> matchedundeclared
     Just Unused     -> matchedunused
-    Just Find       -> [found]
+    Just FindFirst  -> [found]
 

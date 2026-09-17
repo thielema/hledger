@@ -88,7 +88,7 @@ tags opts@CliOpts{rawopts_=rawopts, reportspec_=rspec@ReportSpec{_rsQuery=_q, _r
         Just Declared   -> declared'
         Just Undeclared -> undeclared
         Just Unused     -> unused
-        Just Find       -> [found]
+        Just FindFirst  -> [found]
 
     results =
       (if parsed then id else nubSort)

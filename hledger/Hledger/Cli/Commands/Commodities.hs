@@ -85,4 +85,4 @@ commodities opts@CliOpts{rawopts_=rawopts, reportspec_=ReportSpec{_rsQuery=query
       (False, Just Declared)   -> filt declared'
       (False, Just Undeclared) -> filt undeclared
       (False, Just Unused)     -> filt unused
-      (False, Just Find)       -> [found]
+      (False, Just FindFirst)  -> [found]

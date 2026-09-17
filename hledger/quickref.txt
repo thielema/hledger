@@ -17,7 +17,7 @@ Output formats  txt html journal csv tsv fods ledger beancount sql json
 Account types   ALERX  (Asset Liability Equity     Revenue Expense)
    & subtypes   C VG   (Cash            Conversion Gain           )
 Query prefixes  acct: amt: code: cur: sym: desc: date: depth: note: payee:
-                real: status: type: tag: not: expr: any: all:
+                real: status: type: tag: not: expr: any: all: find: ::
 Basic checks    parseable autobalanced assertions lots
 Strict checks   balanced commodities accounts
 Other checks    tags payees ordereddates recentassertions uniqueleafnames basis

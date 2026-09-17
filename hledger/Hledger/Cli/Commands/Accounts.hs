@@ -92,7 +92,7 @@ accounts opts@CliOpts{rawopts_=rawopts, reportspec_=ReportSpec{_rsQuery=query,_r
           Just Declared   -> matcheddeclared
           Just Undeclared -> matchedundeclared
           Just Unused     -> matchedunused
-          Just Find       -> [found]
+          Just FindFirst  -> [found]
 
   -- 2. sort them by declaration order (then undeclared accounts alphabetically)
   -- within each group of siblings

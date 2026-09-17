@@ -98,6 +98,7 @@ $if elem ViewPermission perms
                 <li> <code>date:PERIODEXP</code> - match dates
                 <li> <code>status:*</code>, <code>status:!</code>, <code>status:</code> - match status
                 <li> <code>code:REGEX</code> - match transaction codes
+                <li> <code>find:REGEX</code> or <code>::REGEX</code> - match any visible field (account, amount, comment, description, code), or a date if REGEX is also a period expression
                 <li> <code>desc:REGEX</code> - match transaction descriptions
                 <li> <code>payee:REGEX</code> - match payee part of descriptions
                 <li> <code>note:REGEX</code> - match note part of descriptions

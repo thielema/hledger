@@ -905,7 +905,7 @@ data DeclarablesSelector
   | Declared
   | Undeclared
   | Unused
-  | Find
+  | FindFirst  -- ^ the first item matched by the first argument (--find)
   deriving (Show, Eq)
 
 -- Get the flag of this kind from opts, or raise an error if there's more than one.
@@ -922,7 +922,7 @@ declarablesSelectorFromOpts CliOpts{rawopts_=rawopts} =
     (False, True,  False, False, False) -> Just Declared
     (False, False, True,  False, False) -> Just Undeclared
     (False, False, False, True,  False) -> Just Unused
-    (False, False, False, False, True ) -> Just Find
+    (False, False, False, False, True ) -> Just FindFirst
     _ -> error' "please pick at most one of --used, --declared, --undeclared, --unused, --find"
 
 -- | A helper for the --find mode offered by commands like accounts, commodities, payees, tags (see also 'DeclarablesSelector').

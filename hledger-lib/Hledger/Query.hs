@@ -40,6 +40,7 @@ module Hledger.Query (
   queryIsDesc,
   queryIsTag,
   queryIsAcct,
+  queryIsFind,
   queryIsType,
   queryIsDepth,
   queryIsReal,
@@ -97,7 +98,7 @@ import Hledger.Utils hiding (words')
 import Hledger.Data.Types
 import Hledger.Data.AccountName
 import Hledger.Data.AccountType
-import Hledger.Data.Amount (amountsRaw, mixedAmount, nullamt, usd)
+import Hledger.Data.Amount (amountsRaw, mixedAmount, nullamt, showMixedAmountOneLine, usd)
 import Hledger.Data.Dates
 import Hledger.Data.Posting
 import Hledger.Data.Transaction
@@ -125,6 +126,7 @@ data Query =
   | Amt OrdPlus Quantity      -- ^ match if the amount's numeric quantity is less than/greater than/equal to/unsignedly equal to some value
   | Sym Regexp           -- ^ match if the commodity symbol is fully matched by this regexp.
   | Cur Regexp                -- ^ match if the commodity symbol, or any symbol in its alias group, is fully matched by this regexp. Alias awareness is applied by 'queryExpandCurForAliases' once a Journal is available.
+  | Find Regexp (Maybe DateSpan) -- ^ match if any visible text field (account, amount, comment, description, code) is infix-matched by this regexp, or if the date is within this span (present when the pattern also parses as a period expression)
   -- compound queries (expr:)
   | Not Query                 -- ^ negate this match
   | And [Query]               -- ^ match if all of these match
@@ -282,7 +284,9 @@ queryprefixes = map (<>":") [
     ,"expr"
     ,"any"
     ,"all"
+    ,"find"
     ]
+    ++ ["::"]  -- short form of find:
 
 defaultprefix :: T.Text
 defaultprefix = "acct"
@@ -311,6 +315,8 @@ parseQueryTerm _ (T.stripPrefix "desc:" -> Just s) = (,[]) . Desc <$> toRegexCI 
 parseQueryTerm _ (T.stripPrefix "payee:" -> Just s) = (,[]) <$> payeeTag (Just s)
 parseQueryTerm _ (T.stripPrefix "note:" -> Just s) = (,[]) <$> noteTag (Just s)
 parseQueryTerm _ (T.stripPrefix "acct:" -> Just s) = (,[]) . Acct <$> toRegexCI s
+parseQueryTerm d (T.stripPrefix "find:" -> Just s) = (,[]) <$> parseFindQuery d s
+parseQueryTerm d (T.stripPrefix "::" -> Just s) = (,[]) <$> parseFindQuery d s
 parseQueryTerm d (T.stripPrefix "date2:" -> Just s) =
         case parsePeriodExpr d s of Left e                   -> Left $ "\"date2:"++T.unpack s++"\" gave a "++showDateParseError e
                                     Right (_         , spn)  -> Right (Date2 spn, [])
@@ -445,6 +451,17 @@ parseBooleanQuery d t =
                                 -- Any of the combinator keywords used above (not/and/or), terminated by a space.
                                 keywordP :: SimpleTextParser T.Text
                                 keywordP = choice' (string' <$> ["not ", "and ", "or "])
+
+-- | Parse the argument of a find: (or ::) query: a case-insensitive regexp
+-- to be matched against any text field, and, if the argument also parses
+-- as a period expression with a start or end date, a date span to be
+-- matched against dates.
+parseFindQuery :: Day -> T.Text -> Either RegexError Query
+parseFindQuery d s = Find <$> toRegexCI s <*> pure mspan
+  where
+    mspan = case parsePeriodExpr d s of
+      Right (_, spn) | spn /= nulldatespan -> Just spn
+      _                                    -> Nothing
 
 -- | Parse the argument of an amt query term ([OP][SIGN]NUM), to an
 -- OrdPlus and a Quantity, or if parsing fails, an error message. OP
@@ -719,6 +736,10 @@ queryIsAcct :: Query -> Bool
 queryIsAcct (Acct _) = True
 queryIsAcct _ = False
 
+queryIsFind :: Query -> Bool
+queryIsFind (Find _ _) = True
+queryIsFind _ = False
+
 queryIsType :: Query -> Bool
 queryIsType (Type _) = True
 queryIsType _ = False
@@ -872,6 +893,7 @@ inAccountQuery (QueryOptInterval _   : rest) = inAccountQuery rest
 matchesCommodity :: Query -> CommoditySymbol -> Bool
 matchesCommodity (Cur r)          s = regexMatchText r s
 matchesCommodity (Sym r)     s = regexMatchText r s
+matchesCommodity (Find r _)       s = regexMatchText r s
 matchesCommodity (Any)            _ = True
 matchesCommodity (None)           _ = False
 matchesCommodity (Or qs)          s = any (`matchesCommodity` s) qs
@@ -937,6 +959,7 @@ matchesAccount (And ms) a = all (`matchesAccount` a) ms
 matchesAccount (AnyPosting  qs) a = all (`matchesAccount` a) qs
 matchesAccount (AllPostings qs) a = all1 (`matchesAccount` a) qs
 matchesAccount (Acct r) a = regexMatchText r a
+matchesAccount (Find r _) a = regexMatchText r a
 matchesAccount (Depth d) a = accountNameLevel a <= d
 matchesAccount (DepthAcct r d) a = accountNameLevel a <= d || not (regexMatchText r a)
 matchesAccount _ _ = False
@@ -996,6 +1019,7 @@ matchesPosting (AllPostings qs) p = matchesSiblingPostings all1 matchesPosting q
 matchesPosting (Code r) p = maybe False (regexMatchText r . tcode) $ ptransaction p
 matchesPosting (Desc r) p = maybe False (regexMatchText r . tdescription) $ ptransaction p
 matchesPosting (Acct r) p = matches p || maybe False matches (poriginal p) where matches = regexMatchText r . paccount
+matchesPosting (Find r mspan) p = findMatchesPosting r mspan p
 matchesPosting (Date spn) p = spn `spanContainsDate` postingDate p
 matchesPosting (Date2 spn) p = spn `spanContainsDate` postingDate2 p
 matchesPosting (StatusQ s) p = postingStatus p == s
@@ -1044,6 +1068,7 @@ matchesTransaction (AllPostings qs) t = all1 (\p -> all (`matchesPosting` p) qs)
 matchesTransaction (Code r) t = regexMatchText r $ tcode t
 matchesTransaction (Desc r) t = regexMatchText r $ tdescription t
 matchesTransaction q@(Acct _) t = any (q `matchesPosting`) $ tpostings t
+matchesTransaction (Find r mspan) t = findMatchesTransaction r mspan t
 matchesTransaction (Date spn) t = spanContainsDate spn $ tdate t
 matchesTransaction (Date2 spn) t = spanContainsDate spn $ transactionDate2 t
 matchesTransaction (StatusQ s) t = tstatus t == s
@@ -1083,7 +1108,42 @@ matchesPayee (And qs) p         = all (`matchesPayee` p) qs
 matchesPayee (AnyPosting  qs) p = all (`matchesPayee` p) qs
 matchesPayee (AllPostings qs) p = all1 (`matchesPayee` p) qs
 matchesPayee (Tag n (Just v)) p | reString n == "payee" = regexMatchText v p  -- handles payee: and tag:payee= queries
+matchesPayee (Find r _) p       = regexMatchText r p
 matchesPayee _ _                = False
+
+-- | Does a find: query match this posting ? It does if its regexp matches any of
+-- the posting's text fields or its parent transaction's text fields (see
+-- 'postingFindTexts', 'transactionFindTexts'), or if its date span, if any,
+-- contains the posting's date.
+findMatchesPosting :: Regexp -> Maybe DateSpan -> Posting -> Bool
+findMatchesPosting r mspan p =
+  maybe False (`spanContainsDate` postingDate p) mspan
+  || any (regexMatchText r) (postingFindTexts p ++ maybe [] transactionFindTexts (ptransaction p))
+
+-- | Does a find: query match this transaction ? It does if its regexp matches any of
+-- the transaction's text fields or any of its postings' text fields (see
+-- 'transactionFindTexts', 'postingFindTexts'), or if its date span, if any,
+-- contains the transaction's date.
+findMatchesTransaction :: Regexp -> Maybe DateSpan -> Transaction -> Bool
+findMatchesTransaction r mspan t =
+  maybe False (`spanContainsDate` tdate t) mspan
+  || any (regexMatchText r) (transactionFindTexts t ++ concatMap postingFindTexts (tpostings t))
+
+-- | The text fields of a posting which a find: query searches:
+-- the account name (and the original account name, if the posting has been transformed),
+-- the comment, and the amount as displayed on one line.
+-- These are the posting's visible texts; tags are searched only as part of the comment,
+-- so hidden tags and tags inherited from account declarations are not matched.
+-- The amount is last, since rendering it costs the most.
+postingFindTexts :: Posting -> [Text]
+postingFindTexts p =
+  paccount p : maybe [] (pure . paccount) (poriginal p)
+  ++ [pcomment p, T.pack $ showMixedAmountOneLine $ pamount p]
+
+-- | The text fields of a transaction (not including its postings) which a find: query searches:
+-- the description, code and comment.
+transactionFindTexts :: Transaction -> [Text]
+transactionFindTexts t = [tdescription t, tcode t, tcomment t]
 
 -- | Do this name regex and optional value regex match the name and value of any of these tags ?
 patternsMatchTags :: Regexp -> Maybe Regexp -> [Tag] -> Bool
@@ -1140,6 +1200,10 @@ tests_Query = testGroup "Query" [
      parseQuery nulldate "desc:'x x'"                                  @?= Right (Desc $ toRegexCI' "x x", [])
      parseQuery nulldate "'a a' 'b"                                    @?= Right (Or [Acct $ toRegexCI' "a a",Acct $ toRegexCI' "'b"], [])
      parseQuery nulldate "\""                                          @?= Right (Acct $ toRegexCI' "\"", [])
+     parseQuery nulldate "find:a"                                      @?= Right (Find (toRegexCI' "a") Nothing, [])
+     parseQuery nulldate "::a ::b"                                     @?= Right (And [Find (toRegexCI' "a") Nothing, Find (toRegexCI' "b") Nothing], [])
+     parseQuery nulldate "not:::'a b'"                                 @?= Right (Not $ Find (toRegexCI' "a b") Nothing, [])
+     parseQuery nulldate "::2024" @?= Right (Find (toRegexCI' "2024") (Just $ DateSpan (Just $ Flex $ fromGregorian 2024 1 1) (Just $ Flex $ fromGregorian 2025 1 1)), [])
 
   ,testCase "parseBooleanQuery" $ do
      parseBooleanQuery nulldate "(tag:'atag=a')"     @?= Right (Tag (toRegexCI' "atag") (Just $ toRegexCI' "a"), [])
