@@ -518,32 +518,12 @@ setupJournal meconf = do
         | not strict -> i Y "you can add -I to ignore them"
         | otherwise -> i Y "and can't be ignored, because strict checks are enabled"
 
-      let
-        lotaccts = filter (isJust . lotSubaccountName) $ journalAccountNames j
-        costbasispostings =
-          [p | t <- jtxns, p <- tpostings t
-             , any (isJust . acostbasis) (amountsRaw (pamount p))]
-        lotcommodities =
-          [c | (c, tags) <- M.toList jdeclaredcommoditytags
-             , any ((== "lots") . T.toLower . fst) tags]
-        lottagaccts =
-          [(a, tags) | (a, tags) <- M.toList jdeclaredaccounttags
-                     , any ((== "lots") . T.toLower . fst) tags]
-
-      pdesc "it contains lots: tags ?"
-      if null lotcommodities && null lottagaccts
-      then i N ""
-      else i Y ("on " <> show (length lotcommodities) <> " commodities, " <> show (length lottagaccts) <> " accounts")
-
-      pdesc "it contains cost basis annotations ?"
-      if null costbasispostings
-      then i N ""
-      else i Y ("on " <> show (length costbasispostings) <> " postings")
-
-      pdesc "it contains lot-named accounts ?"
-      if null lotaccts
-      then i N ""
-      else i Y (show (length lotaccts) <> " explicit lots")
+      pdesc "lot movements checked by default ?"
+      let ignorelots = isJust $ conflookup (\a -> any (==a) ["-I", "--ignore-lots"])
+      if
+        | ignorelots && not strict -> i N "you can add -s to check them"
+        | not strict -> i Y "you can add -I to ignore them"
+        | otherwise -> i Y "and can't be ignored, because strict checks are enabled"
 
 ------------------------------------------------------------------------------
 
