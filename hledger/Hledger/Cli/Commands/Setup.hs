@@ -538,7 +538,7 @@ setupJournal meconf = do
       pdesc "strict checks checked by default ?"
       if strict
       then i Y "commodities and accounts must be declared"
-      else i N "you can add -s to run them"
+      else i N "you can add -s to check them"
 
 ------------------------------------------------------------------------------
 
