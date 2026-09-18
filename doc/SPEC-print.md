@@ -11,6 +11,28 @@ except for alignment. And it shows entries in date-then-parse order.
 Comment lines immediately preceding an entry (with no blank line between) are part of it
 (`tprecedingcomment`) and are shown before it, verbatim.
 
+### `--export`
+
+Reproduces the journal file(s) rather than a date-sorted list of entries.
+The journal reader records every top-level item verbatim and in order in `jitems`
+(see `JournalItem` in Types.hs); export walks those items, emitting directives,
+comment lines, comment blocks and blank lines as written, and replacing each transaction
+placeholder with print's normal rendering of that transaction (looked up in `jtxns` by
+source position, so filtering and processing of `jtxns` are respected). Details:
+
+- `include` lines are dropped; the included file's items follow inline.
+  (A future `--export=file` mode could keep the include line and omit them.)
+- `apply account`/`alias` and their `end` forms are dropped: their effect is baked into
+  the stored account names. Hence an `account` declaration inside an `apply account` block
+  is reproduced without its prefix.
+- `!`/`@` prefixes and the Ledger-only directives hledger ignores are dropped.
+- Transactions tagged `_generated-transaction` and postings tagged `_generated-posting` are dropped,
+  so `--forecast`, `--auto`, `--infer-equity` have no effect.
+- Transactions with no placeholder (from non-journal files, eg an included CSV) are appended at the end.
+- A `decimal-mark`, `D` or `Y` directive inside an included file, once inlined, also affects
+  later entries of the parent file. Known limitation.
+- txt output format only.
+
 ### `--round`
 
 Controls rounding/padding of displayed amounts:

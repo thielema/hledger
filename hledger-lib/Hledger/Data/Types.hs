@@ -715,7 +715,8 @@ data Journal = Journal {
 -- | One top-level item of a journal file, recorded in file order so that
 -- the file can be reproduced (by print --export). Transactions are
 -- represented by a placeholder; the transaction itself is in jtxns.
--- Text fields hold verbatim source text, including the trailing newline.
+-- Text fields hold verbatim source text, normally including the trailing newline
+-- (when a directive parser doesn't consume its newline, that follows as a JIBlank item).
 -- Fields are strict so that recording items doesn't retain parse-time thunks.
 data JournalItem
   = JITransaction !SourcePos      -- ^ a transaction: the one in jtxns whose tsourcepos starts here

@@ -775,6 +775,7 @@ applyaccountdirectivep = do
 endapplyaccountdirectivep :: JournalParser m ()
 endapplyaccountdirectivep = do
   keywordsp "end apply account" <?> "end apply account directive"
+  lift restofline
   popParentAccount
 
 aliasdirectivep :: JournalParser m ()
@@ -787,6 +788,7 @@ aliasdirectivep = do
 endaliasesdirectivep :: JournalParser m ()
 endaliasesdirectivep = do
   keywordsp "end aliases" <?> "end aliases directive"
+  lift restofline
   clearAccountAliases
 
 tagdirectivep :: JournalParser m ()

@@ -163,6 +163,7 @@ library:
   # - Hledger.Read.TimeclockReader
   # - Hledger.Write.Beancount
   # - Hledger.Write.Csv
+  # - Hledger.Write.Journal
   # - Hledger.Write.Ledger
   # - Hledger.Write.Ods
   # - Hledger.Write.Html
