@@ -413,18 +413,22 @@ mainfile = headDef ("(unknown)", "") . jfiles
 addTransaction :: Transaction -> Journal -> Journal
 addTransaction t j = j { jtxns = t : jtxns j }
 
+-- | Add a journal item, evaluated first (its fields are strict) so no parse-time thunks are retained.
 addJournalItem :: JournalItem -> Journal -> Journal
-addJournalItem i j = j { jitems = i : jitems j }
+addJournalItem i j = i `seq` j { jitems = i : jitems j }
 
 -- | Add a transaction parsed from a journal file, and a placeholder item for it.
 -- Any comment lines immediately preceding it (the JIComment items on top of jitems)
 -- are moved into the transaction's tprecedingcomment.
 addTransactionItem :: Transaction -> Journal -> Journal
 addTransactionItem t j@Journal{jitems=is} =
-  addJournalItem (JITransaction $ fst $ tsourcepos t) $ addTransaction t' j{jitems=rest}
+  -- strict pattern matching here, to avoid leaving thunks in jitems
+  case span isCommentItem is of
+    ([], _)    -> addTransactionAndItem t j
+    (cs, rest) -> rest `seq` addTransactionAndItem t' j{jitems=rest}
+      where t' = txnTieKnot t{tprecedingcomment = T.concat $ reverse [c | JIComment c <- cs]}
   where
-    (precedingcomments, rest) = span isCommentItem is
-    t' = txnTieKnot t{tprecedingcomment = T.concat $ reverse [c | JIComment c <- precedingcomments]}
+    addTransactionAndItem t' = addJournalItem (JITransaction $ fst $ tsourcepos t') . addTransaction t'
     isCommentItem JIComment{} = True
     isCommentItem _           = False
 

@@ -261,8 +261,17 @@ addJournalItemP iopts =
 -- | Run a parser, also recording the text it consumed as a journal item of the given kind.
 recordItem :: (Text -> JournalItem) -> JournalParser m a -> JournalParser m a
 recordItem mkitem p = do
-  (txt, a) <- match p
-  modify' $ addJournalItem $ mkitem txt
+  -- This is like megaparsec's `match`, but written out; `match` was found to allocate
+  -- ~20KB per item here, costing ~9% of total run time on a 100k-transaction journal.
+  -- Note T.take does not copy bytes: it returns a small Text value (array pointer, offset, length)
+  -- viewing the same byte array as the remaining input, which is the whole file's text, already
+  -- kept in jfiles. So each jitems entry costs a few words, however long its text is,
+  -- and jitems adds little memory even though it holds every directive and comment line verbatim.
+  o <- getOffset
+  s <- getInput
+  a <- p
+  o' <- getOffset
+  modify' $ addJournalItem $ mkitem $ T.take (o' - o) s
   return a
 
 --- *** directives
