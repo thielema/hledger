@@ -36,13 +36,22 @@ author's grouping is preserved. Details:
 - Transactions with no placeholder (from non-journal files, eg an included CSV) are appended at the end.
 - A `decimal-mark`, `D` or `Y` directive inside an included file, once inlined, also affects
   later entries of the parent file. Known limitation.
-- Output formats: txt (the default) and ledger. With `-O ledger`, `ledgerItemRenderer`
+- Output formats: txt (the default), ledger and beancount. With `-O ledger`, `ledgerItemRenderer`
   (Write/Ledger.hs) renders transactions with Ledger lot syntax and comments out directives
   it can detect as Ledger-incompatible (decimal-mark; one-line `commodity` with an amount;
   `~` rule with a description; `=` rule with `*N` multipliers), preceded by
-  `; not supported by Ledger:`. Comments pass through (`;`, `#`, `*` and `comment` blocks are
+  `; not supported as-is:`. Comments pass through (`;`, `#`, `*` and `comment` blocks are
   all Ledger syntax). Other incompatibilities (hledger query syntax in `=` rules, `==`/`=*`
   assertions, trailing decimal marks, `date:` tags) are not detected.
+- With `-O beancount`, `beancountDirectives` (Write/Beancount.hs) synthesises a header from the
+  Journal: tolerance option, operating_currency options (cost currencies), `commodity` directives
+  (declared commodities, tags as metadata), `open` directives (declared and used accounts, each on
+  its earliest posting date or else the earliest transaction date; account tags as metadata, `lots:`
+  as booking method), and `price` directives sorted by date. Then `beancountItemRenderer` renders
+  the items: directive items are dropped (no in-place translation, since Beancount directives are
+  dated and order-independent), `#`/`*` comment lines and comment blocks become `;` comments,
+  transactions use showTransactionBeancount (which also renders preceding comments).
+  Plain `print -O beancount` outputs only transactions (the header moved to --export).
 
 ### `--round`
 

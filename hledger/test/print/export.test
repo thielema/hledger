@@ -182,7 +182,7 @@ $ hledger -f export-inc.csv print --export
 
 >= 0
 
-# ** 7. Only the txt and ledger output formats are supported.
+# ** 7. Only the txt, ledger and beancount output formats are supported.
 $ hledger -f export-main.j print --export -O csv
->2 /print --export supports only the txt and ledger output formats/
+>2 /print --export supports only the txt, ledger and beancount output formats/
 >= 1

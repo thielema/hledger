@@ -42,11 +42,11 @@ $ hledger -f - print --export -O ledger -I
 * an org heading
 
 account assets:investment  ; type:A
-; not supported by Ledger:
+; not supported as-is:
 ; commodity $1,000.00
 commodity AAPL
   format 1,000.00 AAPL
-; not supported by Ledger:
+; not supported as-is:
 ; decimal-mark .
 D $1,000.00
 Y 2026
@@ -54,12 +54,12 @@ payee Broker
 tag lot
 P 2026-01-01 AAPL $150
 
-; not supported by Ledger:
+; not supported as-is:
 ; ~ monthly  forecast
 ;     (assets:cash)  10
 ~ monthly
     (assets:cash)  10
-; not supported by Ledger:
+; not supported as-is:
 ; = assets:investment
 ;     (expenses:fees)  *0.01
 = assets:investment

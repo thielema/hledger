@@ -7,6 +7,9 @@ Helpers for beancount output.
 module Hledger.Write.Beancount (
   showTransactionBeancount,
   showPriceDirectiveBeancount,
+  beancountTransactions,
+  beancountDirectives,
+  beancountItemRenderer,
   -- postingsAsLinesBeancount,
   -- postingAsLinesBeancount,
   -- showAccountNameBeancount,
@@ -40,13 +43,16 @@ import Hledger.Data.AccountName
 import Hledger.Data.Amount
 import Hledger.Data.Currency (currencySymbolToCode)
 import Hledger.Data.Dates (showDate)
-import Hledger.Data.Posting (renderCommentLines, showBalanceAssertion, postingIndent)
+import Hledger.Data.Posting (renderCommentLines, showBalanceAssertion, postingIndent, isReal, postingHasTag, conversionPostingTagName)
 import Hledger.Data.Transaction (payeeAndNoteFromDescription')
+import Hledger.Write.Journal (ItemRenderer(..), journalItemRenderer)
 import Data.Function ((&))
-import Data.List.Extra (groupOnKey)
+import Data.List.Extra (groupOnKey, nubSort)
 import Data.Bifunctor (first)
-import Data.List (intersperse, sort)
-import Data.Maybe (catMaybes)
+import Data.List (intersperse, sort, sortOn)
+import Data.Map qualified as M
+import Data.Maybe (catMaybes, fromMaybe, isJust)
+import Safe (minimumDef)
 
 --- ** doctest setup
 -- $setup
@@ -57,7 +63,8 @@ showTransactionBeancount :: Transaction -> Text
 showTransactionBeancount t =
   -- https://beancount.github.io/docs/beancount_language_syntax.html
   -- similar to showTransactionHelper, but I haven't bothered with Builder
-     firstline <> nl
+     T.unlines (map beancountCommentLine $ T.lines $ tprecedingcomment t)
+  <> firstline <> nl
   <> foldMap ((<> nl).postingIndent.showBeancountMetadata (Just maxmdnamewidth)) mds
   <> foldMap ((<> nl)) newlinecomments
   <> foldMap ((<> nl)) (postingsAsLinesBeancount $ tpostings t)
@@ -79,6 +86,91 @@ showTransactionBeancount t =
     (samelinecomment, newlinecomments) =
       case renderCommentLines (tcomment t) of []   -> ("",[])
                                               c:cs -> (c,cs)
+
+-- | Prepare transactions for Beancount output: remove virtual postings,
+-- and remove conversion postings which are redundant with costs
+-- (Beancount doesn't allow both; costs are more useful to it).
+-- Assumes at most one cost + conversion postings group per transaction.
+beancountTransactions :: [Transaction] -> [Transaction]
+beancountTransactions ts =
+  [ t{tpostings = filter (\p -> not $ isredundantconvp p) ps}
+  | t <- ts
+  , let ps = filter isReal $ tpostings t
+  , let hascost = any (any (isJust . acost) . amounts . pamount) ps
+  , let isredundantconvp p = hascost && postingHasTag conversionPostingTagName p
+  ]
+
+-- | Options and directives for a Beancount export of this journal and these
+-- (Beancount-prepared, possibly filtered) transactions:
+-- a sample tolerance option (commented out);
+-- operating_currency options for the currencies used in costs;
+-- commodity directives for declared commodities, with their tags as metadata;
+-- open directives for declared and used accounts, each dated on its earliest posting
+-- (or the earliest date overall), with account tags as metadata and a lots: tag as booking method;
+-- and price directives, sorted by date.
+-- Blank lines separate the sections; the result ends with a newline (or is empty if all sections are empty).
+beancountDirectives :: Journal -> [Transaction] -> TL.Text
+beancountDirectives j ts =
+  TL.fromStrict $ T.intercalate "\n" $ filter (not . T.null) [toleranceoptions, operatingcurrencyoptions, commodities, opens, prices]
+  where
+    -- https://beancount.github.io/docs/precision_tolerances.html#configuration-for-default-tolerances
+    toleranceoptions = ";option \"inferred_tolerance_default\" \"*:0.005\"\n"
+
+    -- "A list of currencies that we single out during reporting and create dedicated columns for ...
+    -- This is used to indicate the main currencies that you work with in real life"
+    -- We use: all currencies used in costs.
+    operatingcurrencyoptions = T.unlines
+      [ "option \"operating_currency\" \"" <> commodityToBeancount c <> "\"" | c <- costcurrencies ]
+      where
+        costcurrencies = nubSort [ acommodity $ costAmount c | t <- ts, p <- tpostings t, a <- amounts $ pamount p, Just c <- [acost a] ]
+        costAmount (UnitCost a)  = a
+        costAmount (TotalCost a) = a
+
+    -- The earliest transaction date, or failing that the earliest price date, or an arbitrary early date.
+    firstdate = minimumDef (minimumDef (fromGregorian 1900 1 1) $ map pddate pricedirs) $ map tdate ts
+
+    -- "DATE commodity CURRENCY": optional in Beancount, but preserves the declarations and their metadata.
+    commodities = T.unlines
+      [ withMetadata (showDate firstdate <> " commodity " <> commodityToBeancount c) tags
+      | (c, tags) <- M.toList $ M.union (jdeclaredcommoditytags j) (M.map (const []) $ jdeclaredcommodities j)
+      ]
+
+    -- "all account names that receive postings to them will eventually have to have
+    -- a corresponding Open directive with a date that precedes all transactions posted to the account"
+    opens = T.unlines
+      [ withMetadata (showDate d <> " open " <> accountNameToBeancount a <> bookingmethod) (filter (not . islotstag) tags)
+      | a <- nubSort $ map fst (jdeclaredaccounts j) <> M.keys firstpostingdates
+      , let d = fromMaybe firstdate $ M.lookup a firstpostingdates
+      , let tags = fromMaybe [] $ M.lookup a $ jdeclaredaccounttags j
+      , let bookingmethod = maybe "" (\v -> " \"" <> v <> "\"") $ lookup "lots" $ map (first T.toLower) tags
+      ]
+      where
+        firstpostingdates = M.fromListWith min [ (paccount p, tdate t) | t <- ts, p <- tpostings t ]
+        islotstag = (== "lots") . T.toLower . fst
+
+    prices = T.unlines $ map showPriceDirectiveBeancount $ sortOn pddate pricedirs
+    pricedirs = jpricedirectives j
+
+    -- A directive line, followed by any tags as indented metadata lines.
+    withMetadata line tags = T.intercalate "\n" $ line : map (postingIndent . showBeancountMetadata (Just maxwidth)) mds
+      where
+        mds = tagsToBeancountMetadata tags
+        maxwidth = maximum' $ map (T.length . fst) mds
+
+-- | An item renderer for Beancount output (print --export -O beancount).
+-- Transactions are rendered with showTransactionBeancount.
+-- Directives are dropped: those with Beancount equivalents are generated by beancountDirectives instead.
+-- Comment lines and comment blocks are converted to Beancount (;) comments.
+beancountItemRenderer :: ItemRenderer
+beancountItemRenderer = (journalItemRenderer showTransactionBeancount)
+  { irDirective    = const Nothing
+  , irComment      = beancountCommentLine
+  , irCommentBlock = T.unlines . map ("; " <>) . filter (not . T.isPrefixOf "end comment") . drop 1 . T.lines
+  }
+
+-- | Convert a journal comment line (starting with ; # or *) to a Beancount comment line (starting with ;).
+beancountCommentLine :: Text -> Text
+beancountCommentLine l = if ";" `T.isPrefixOf` T.stripStart l then l else "; " <> l
 
 -- | Render a PriceDirective in Beancount format: DATE price COMMODITY AMOUNT
 showPriceDirectiveBeancount :: PriceDirective -> Text

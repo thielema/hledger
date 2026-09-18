@@ -183,10 +183,6 @@ $ hledger -f- print -O json | grep -E '"cbCost"|"_ptype"|"acquire"' | head -3
     assets:cash
 
 $ hledger -f- print -O beancount
-;option "inferred_tolerance_default" "*:0.005"
-2026-01-01 open Assets:Cash
-2026-01-01 open Assets:Investment
-
 2026-01-01 * "Buy stocks with full lot info"
     Assets:Investment    10 AAPL {150 USD, 2026-01-01, "lot1"}
     Assets:Cash
@@ -205,7 +201,7 @@ $ hledger -f- print -O beancount
 
 >=
 
-# ** 15. In beancount output, an account's lots: tag value becomes the account's booking method
+# ** 15. In beancount export output, an account's lots: tag value becomes the account's booking method
 <
 account assets:broker  ; lots: FIFO
 
@@ -213,8 +209,9 @@ account assets:broker  ; lots: FIFO
     assets:broker     10 AAPL {$100}
     assets:cash     -$1000
 
-$ hledger -f- print -O beancount
+$ hledger -f- print -O beancount --export
 ;option "inferred_tolerance_default" "*:0.005"
+
 2026-01-08 open Assets:Broker "FIFO"
 2026-01-08 open Assets:Cash
 
@@ -231,10 +228,6 @@ $ hledger -f- print -O beancount
     assets:cash    = 2000 USD
 
 $ hledger -f- print -O beancount
-;option "inferred_tolerance_default" "*:0.005"
-2026-01-01 open Assets:Cash
-2026-01-01 open Equity:Opening
-
 2026-01-01 * "opening balances"
     Equity:Opening
     Assets:Cash           2000 USD

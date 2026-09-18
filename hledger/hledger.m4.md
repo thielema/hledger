@@ -883,6 +883,9 @@ This is [Beancount's journal format][beancount journal], supported by the `print
 You can use this to export your hledger data to [Beancount], eg to use the [Fava] web app.
 
 hledger will try to adjust your data to suit Beancount, automatically.
+By default only transactions are converted; with [`print --export`](#print-export-mode),
+the options and `commodity`, `open` and `price` directives Beancount needs are generated too,
+and top-level comments are converted, so the output can be read by Beancount directly.
 Be cautious and check the conversion until you are confident it is good.
 If you plan to export to Beancount often, you may want to follow its [conventions], for a cleaner conversion:
 
@@ -951,16 +954,24 @@ Currently we support at most one cost + conversion postings group per transactio
 The 1:1 price directives which hledger infers from [commodity aliases](#commodity-aliases)
 are normally dated `0000-01-01`; in Beancount output they are dated `0001-01-01` instead.
 
+#### Beancount directives
+
+With `print --export`, hledger generates a `commodity` directive for each declared commodity,
+and an `open` directive for each declared or used account, dated on the account's earliest posting
+(or the earliest transaction date). Account and commodity tags are converted to metadata on these directives,
+and an account's `lots:` tag becomes its Beancount booking method.
+Other hledger directives have no Beancount equivalent and are dropped.
+
 #### Beancount tolerance
 
-A sample `inferred_tolerance_default` option is provided (commented out).
+With `print --export`, a sample `inferred_tolerance_default` option is provided (commented out).
 If Beancount complains that transactions aren't balanced, 
 this is an easy way to work around it.
 
 #### Beancount operating currency
 
 Declaring an operating currency (or several) improves Beancount and Fava reports.
-Currently hledger will declare each currency used in cost amounts as an operating currency.
+With `print --export`, hledger will declare each currency used in cost amounts as an operating currency.
 If needed, replace these with your own declaration, like
 ```beancount
 option "operating_currency" "USD"
