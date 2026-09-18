@@ -41,14 +41,14 @@ CD
 TK
 TL
 
-# ** 2b. priced (in P directives).
+# ** 3. priced (in P directives).
 $ hledger -f - commodities --priced
 CA
 CB
 PI
 PJ
 
-# ** 3. declared
+# ** 4. declared
 $ hledger -f - commodities --declared
 CA
 CB
@@ -56,24 +56,24 @@ CC
 CD
 CE
 
-# ** 4. undeclared
+# ** 5. undeclared
 $ hledger -f - commodities --undeclared
 PI
 PJ
 TK
 TL
 
-# ** 5. unused
+# ** 6. unused
 $ hledger -f - commodities --unused
 CE
 
-# ** 6. with a query
+# ** 7. with a query
 $ hledger -f - commodities --priced expr:"cur:CA or cur:'P.*'"
 CA
 PI
 PJ
 
-# ** 7. date: queries filter transactions and price directives by date.
+# ** 8. date: queries filter transactions and price directives by date.
 <
 commodity 1. DA
 commodity 1. DB
@@ -94,12 +94,12 @@ PA
 PB
 UA
 
-# ** 8. --declared ignores date: (declarations have no date).
+# ** 9. --declared ignores date: (declarations have no date).
 $ hledger -f - commodities --declared date:2099
 DA
 DB
 
-# ** 9. all digit group separators can be used in commodity directives
+# ** 10. all digit group separators can be used in commodity directives
 <
 commodity 1,000.0 comma
 commodity 1.000,0 dot
@@ -129,7 +129,7 @@ space
 thin_space
 underscore
 
-# ** 10. --directives shows commodity directives declaring each commodity's display style,
+# ** 11. --directives shows commodity directives declaring each commodity's display style,
 # declared or inferred, using a sample amount. A decimal mark is always included.
 <
 commodity 1.000,00 EUR

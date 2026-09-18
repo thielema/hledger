@@ -32,7 +32,7 @@ t5
 t6
 t7
 
-# ** . used
+# ** 3. used
 $ hledger -f- tags --used
 t1
 t2
@@ -41,24 +41,24 @@ t4
 t5
 t6
 
-# ** . declared
+# ** 4. declared
 $ hledger -f- tags --declared
 t1
 t3
 t4
 t7
 
-# ** . undeclared
+# ** 5. undeclared
 $ hledger -f- tags --undeclared
 t2
 t5
 t6
 
-# ** . unused
+# ** 6. unused
 $ hledger -f- tags --unused
 t7
 
-# ** . show (non empty) values
+# ** 7. show (non empty) values
 $ hledger -f- tags --values
 v1
 v2
@@ -66,14 +66,14 @@ v3
 v4
 v6
 
-# ** . show tags matching a regex
+# ** 8. show tags matching a regex
 $ hledger -f- tags '[1-4]'
 t1
 t2
 t3
 t4
 
-# ** . show tags matching (a regex and) a hledger query.
+# ** 9. show tags matching (a regex and) a hledger query.
 # If the query is applicable to both transactions and account declarations,
 # both are searched for tags.
 $ hledger -f- tags . b c
@@ -81,7 +81,7 @@ t2
 t5
 t6
 
-# ** . If the query involves transaction attributes,
+# ** 10. If the query involves transaction attributes,
 # only the matched transactions and accounts they use will contribute tags.
 $ hledger -f- tags . date:2000/1/1
 t1
