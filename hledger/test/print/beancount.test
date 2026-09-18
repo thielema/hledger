@@ -375,3 +375,13 @@ $ hledger -f- print -O beancount --export
     Equity:Opening
 
 >=
+
+# ** 18. When the conversion fails, no output file is written.
+<
+2000-01-01
+  other        0 ABC
+
+$ rm -f beancount-18.tmp; hledger -f- print -O beancount -o beancount-18.tmp; test -e beancount-18.tmp && echo EXISTS || echo MISSING
+MISSING
+>2 /bad top-level account/
+>= 0

@@ -31,7 +31,7 @@ module Hledger.Cli.Utils
     )
 where
 
-import Control.Exception (IOException, try)
+import Control.Exception (IOException, evaluate, try)
 import Control.Monad.Except (ExceptT)
 import Control.Monad.IO.Class (liftIO)
 import Data.List
@@ -190,8 +190,10 @@ maybeObfuscate opts =
 -- If the file exists it will be overwritten.
 writeOutput :: CliOpts -> String -> IO ()
 writeOutput opts s = do
-  f <- outputFileFromOpts opts
-  (maybe putStr writeFile f) s
+  mf <- outputFileFromOpts opts
+  case mf of
+    Nothing -> putStr s
+    Just f  -> evaluate (length s) >> writeFile f s  -- generate all output first, see writeOutputLazyText
 
 -- | Write some output, to a file specified by --output-file if any,
 -- otherwise to stdout.
@@ -200,7 +202,11 @@ writeOutput opts s = do
 writeOutputLazyText :: CliOpts -> TL.Text -> IO ()
 writeOutputLazyText opts s = do
   mf <- outputFileFromOpts opts
-  maybe (runPager . TL.unpack) TL.writeFile mf s
+  case mf of
+    Nothing -> runPager $ TL.unpack s
+    -- Generate all of the output before opening the file, so that an error while generating it
+    -- doesn't leave an empty or truncated file.
+    Just f  -> evaluate (TL.length s) >> TL.writeFile f s
 
 -- | Prepend the effective report heading (followed by a blank line) to a
 -- report's lazy text output, if non-empty. Used by reports whose default
