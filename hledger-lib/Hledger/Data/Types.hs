@@ -695,7 +695,9 @@ data Journal = Journal {
   ,jtxnmodifiers            :: [TransactionModifier]                  -- ^ Auto posting rules declared in the journal.
   ,jperiodictxns            :: [PeriodicTransaction]                  -- ^ Periodic transaction rules declared in the journal.
   ,jtxns                    :: [Transaction]                          -- ^ Transactions recorded in the journal. The important bit.
-  ,jfinalcommentlines       :: Text                                   -- ^ any final trailing comments in the (main) journal file
+  ,jitems                   :: [JournalItem]                          -- ^ All top-level items of the journal file(s), in parse order,
+                                                                      --   including directives, comment lines and blank lines as written.
+                                                                      --   Used to reproduce the journal (print --export).
   ,jfiles                   :: [(FilePath, Text)]                     -- ^ the file path and raw text of the main and
                                                                       --   any included journal files. The main file is first,
                                                                       --   followed by any included files in the order encountered.
@@ -709,6 +711,23 @@ data Journal = Journal {
   -- NOTE: after adding new fields, eg involving account names, consider updating
   -- the Anon instance in Hleger.Cli.Anon
   } deriving (Eq, Generic)
+
+-- | One top-level item of a journal file, recorded in file order so that
+-- the file can be reproduced (by print --export). Transactions are
+-- represented by a placeholder; the transaction itself is in jtxns.
+-- Text fields hold verbatim source text, including the trailing newline.
+data JournalItem
+  = JITransaction SourcePos      -- ^ a transaction: the one in jtxns whose tsourcepos starts here
+  | JIComment Text               -- ^ a single top-level comment line (starting with ; # or *)
+  | JICommentBlock Text          -- ^ a comment ... end comment block
+  | JIDirective Text             -- ^ a directive which should be reproduced when exporting
+                                 --   (including P, ~ and = rules), without any ! or @ prefix
+  | JINonExportedDirective Text  -- ^ a directive which should not be reproduced when exporting:
+                                 --   apply account, alias and their end forms, whose effect is
+                                 --   already applied to the data; and the Ledger directives hledger ignores
+  | JIInclude Text               -- ^ an include directive line; the included file's items follow it
+  | JIBlank Text                 -- ^ a blank line
+  deriving (Eq, Generic, Show)
 
 -- | A journal in the process of being parsed, not yet finalised.
 -- The data is partial, and list fields are in reverse order.
@@ -850,6 +869,7 @@ instance NFData DigitGroupStyle
 instance NFData EFDay
 instance NFData Interval
 instance NFData Journal
+instance NFData JournalItem
 instance NFData LotId
 instance NFData MarketPrice
 instance NFData ReductionMethod

@@ -193,9 +193,11 @@ showTransactionOneLine :: Transaction -> Text
 showTransactionOneLine t = transactionFirstLine t <> "\n"
 
 -- | Helper for showTransaction*.
+-- Any preceding comment lines (tprecedingcomment, already newline-terminated) are shown first.
 showTransactionHelper :: Bool -> PostingLayout -> Transaction -> TB.Builder
 showTransactionHelper onelineamounts layout t =
-      TB.fromText (transactionFirstLine t) <> newline
+      TB.fromText (tprecedingcomment t)
+    <> TB.fromText (transactionFirstLine t) <> newline
     <> foldMap ((<> newline) . TB.fromText) newlinecomments
     <> foldMap ((<> newline) . TB.fromText) (postingsAsLinesWithLayout defaultFmt onelineamounts layout $ tpostings t)
     <> newline

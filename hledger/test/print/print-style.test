@@ -52,6 +52,9 @@ commodity B1000.00
 # ** 1. By default, print shows all amounts with original precisions
 # (like 1.31)
 $ hledger -f- print
+; a amounts have 1 significant digit
+; b amounts have 1 significant digit and 2 zeros
+; c amounts have 3 significant digits
 2023-01-01
     (a)                                           A0.1 @ B0.1     = A0.1 @ B0.1
     (b)                                           A0.100 @ B0.100 = A0.100 @ B0.100
@@ -63,6 +66,9 @@ $ hledger -f- print
 # (like 1.30 but more thorough, also affects balance assertion amounts,
 # also does basic styling of balance assertion costs)
 $ hledger -f- print --round=soft
+; a amounts have 1 significant digit
+; b amounts have 1 significant digit and 2 zeros
+; c amounts have 3 significant digits
 2023-01-01
     (a)                                           A0.10 @ B0.1    = A0.10 @ B0.1
     (b)                                           A0.10 @ B0.100  = A0.10 @ B0.100
@@ -72,6 +78,9 @@ $ hledger -f- print --round=soft
 
 # ** 3. With --round=hard, print rounds non-cost amounts.
 $ hledger -f- print --round=hard
+; a amounts have 1 significant digit
+; b amounts have 1 significant digit and 2 zeros
+; c amounts have 3 significant digits
 2023-01-01
     (a)                                           A0.10 @ B0.1   = A0.10 @ B0.1
     (b)                                           A0.10 @ B0.100 = A0.10 @ B0.100
@@ -81,6 +90,9 @@ $ hledger -f- print --round=hard
 
 # ** 4. with --round=all, print rounds all amounts.
 $ hledger -f- print --round=all
+; a amounts have 1 significant digit
+; b amounts have 1 significant digit and 2 zeros
+; c amounts have 3 significant digits
 2023-01-01
     (a)                                           A0.10 @ B0.10 = A0.10 @ B0.10
     (b)                                           A0.10 @ B0.10 = A0.10 @ B0.10

@@ -78,7 +78,7 @@ import Control.Monad.IO.Class (MonadIO, liftIO)
 import Control.Monad.Except (ExceptT(..), runExceptT)
 import Control.Monad.State.Strict (evalStateT,get,modify',put)
 import Control.Monad.Trans.Class (lift)
-import Data.Char (toLower)
+import Data.Char (isSpace, toLower)
 import Data.Either (isRight, lefts)
 import Data.Functor ((<&>))
 import Data.Map.Strict qualified as M
@@ -241,23 +241,34 @@ journalp iopts = do
 
 -- | A side-effecting parser; parses any kind of journal item
 -- and updates the parse state accordingly.
+-- Every item is also recorded in jitems, so the file can be reproduced.
 addJournalItemP :: MonadIO m => InputOpts -> ErroringJournalParser m ()
 addJournalItemP iopts =
   -- all journal line types can be distinguished by the first
   -- character, can use choice without backtracking
   choice [
       directivep iopts
-    , transactionp          >>= modify' . addTransaction
-    , transactionmodifierp  >>= modify' . addTransactionModifier
-    , periodictransactionp  >>= modify' . addPeriodicTransaction
-    , marketpricedirectivep >>= modify' . addPriceDirective
-    , void (lift emptyorcommentlinep)
-    , void (lift multilinecommentp)
+    , transactionp >>= modify' . addTransactionItem
+    , recordItem JIDirective transactionmodifierp  >>= modify' . addTransactionModifier
+    , recordItem JIDirective periodictransactionp  >>= modify' . addPeriodicTransaction
+    , recordItem JIDirective marketpricedirectivep >>= modify' . addPriceDirective
+    , recordItem commentOrBlankItem $ lift emptyorcommentlinep
+    , recordItem JICommentBlock $ lift multilinecommentp
     ] <?> "transaction or directive"
+  where
+    commentOrBlankItem txt = if T.all isSpace txt then JIBlank txt else JIComment txt
+
+-- | Run a parser, also recording the text it consumed as a journal item of the given kind.
+recordItem :: (Text -> JournalItem) -> JournalParser m a -> JournalParser m a
+recordItem mkitem p = do
+  (txt, a) <- match p
+  modify' $ addJournalItem $ mkitem txt
+  return a
 
 --- *** directives
 
--- | Parse any journal directive and update the parse state accordingly.
+-- | Parse any journal directive and update the parse state accordingly,
+-- and record it as a journal item (exported or not by print --export).
 -- Cf http://hledger.org/hledger.html#directives,
 -- http://ledger-cli.org/3.0/doc/ledger3.html#Command-Directives
 directivep :: MonadIO m => InputOpts -> ErroringJournalParser m ()
@@ -265,35 +276,44 @@ directivep iopts = (do
   optional $ oneOf ['!','@']
   choice [
     includedirectivep iopts
-   ,aliasdirectivep
-   ,endaliasesdirectivep
-   ,accountdirectivep
-   ,applyaccountdirectivep
-   ,applyfixeddirectivep
-   ,applytagdirectivep
-   ,assertdirectivep
-   ,bucketdirectivep
-   ,capturedirectivep
-   ,checkdirectivep
-   ,commandlineflagdirectivep
-   ,commoditydirectivep
-   ,commodityconversiondirectivep
-   ,decimalmarkdirectivep
-   ,defaultyeardirectivep
-   ,defaultcommoditydirectivep
-   ,definedirectivep
-   ,endapplyaccountdirectivep
-   ,endapplyfixeddirectivep
-   ,endapplytagdirectivep
-   ,endapplyyeardirectivep
-   ,endtagdirectivep
-   ,evaldirectivep
-   ,exprdirectivep
-   ,ignoredpricecommoditydirectivep
-   ,payeedirectivep
-   ,pythondirectivep
-   ,tagdirectivep
-   ,valuedirectivep
+   -- directives which print --export reproduces
+   ,recordItem JIDirective $ choice [
+     accountdirectivep
+    ,commoditydirectivep
+    ,decimalmarkdirectivep
+    ,defaultyeardirectivep
+    ,defaultcommoditydirectivep
+    ,payeedirectivep
+    ,tagdirectivep
+    ]
+   -- directives which print --export does not reproduce:
+   -- those whose effect is already applied to the parsed data,
+   -- and the Ledger directives which hledger ignores.
+   -- (endtagdirectivep consumes "end" before failing, so it must come after the other end directives.)
+   ,recordItem JINonExportedDirective $ choice [
+     aliasdirectivep
+    ,endaliasesdirectivep
+    ,applyaccountdirectivep
+    ,endapplyaccountdirectivep
+    ,applyfixeddirectivep
+    ,applytagdirectivep
+    ,assertdirectivep
+    ,bucketdirectivep
+    ,capturedirectivep
+    ,checkdirectivep
+    ,commandlineflagdirectivep
+    ,commodityconversiondirectivep
+    ,definedirectivep
+    ,endapplyfixeddirectivep
+    ,endapplytagdirectivep
+    ,endapplyyeardirectivep
+    ,endtagdirectivep
+    ,evaldirectivep
+    ,exprdirectivep
+    ,ignoredpricecommoditydirectivep
+    ,pythondirectivep
+    ,valuedirectivep
+    ]
    ]
   ) <?> "directive"
 
@@ -308,15 +328,16 @@ includedirectivep iopts = do
   pos <- getSourcePos
   let errorNoArg = customFailure $ parseErrorAt eoff "include needs a file path or glob pattern argument"
 
-  -- parse the directive
-  string "include"
-  -- notFollowedBy newline <?> "a file path or glob pattern argument"
-  prefixedglob <- (do
-    lift skipNonNewlineSpaces1
-    prefixedglob <- rstrip . T.unpack <$> takeWhileP Nothing (`notElem` [';','\n'])
-    lift followingcommentp
-    return prefixedglob
-    ) <|> errorNoArg
+  -- parse the directive, and record it as a journal item (before the included files' items)
+  prefixedglob <- recordItem JIInclude $ do
+    string "include"
+    -- notFollowedBy newline <?> "a file path or glob pattern argument"
+    (do
+      lift skipNonNewlineSpaces1
+      prefixedglob <- rstrip . T.unpack <$> takeWhileP Nothing (`notElem` [';','\n'])
+      lift followingcommentp
+      return prefixedglob
+      ) <|> errorNoArg
 
   let (mprefix,path) = splitReaderPrefix prefixedglob
   parentf <- sourcePosFilePath pos

@@ -1301,6 +1301,9 @@ end comment
 Some hledger entries can have same-line comments attached to them, from ; (semicolon) to end of line.
 See Transaction comments, Posting comments, and Account comments below.
 
+Comment lines immediately preceding a transaction (with no blank line in between)
+are attached to that transaction, and are shown before it, as written, in `print` output.
+
 ## Transactions
 
 Transactions are the main unit of information in a journal file.

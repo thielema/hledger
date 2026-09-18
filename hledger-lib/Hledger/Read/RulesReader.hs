@@ -1787,7 +1787,6 @@ transactionFromCsvRecord timesarezoned mtzin tzout sourcepospair rules record =
     textToFollowingComment = T.stripStart . T.unlines . map (" ;"<>) . T.lines
 
     ttags       = fromRight [] $ fmap snd $ rtp transactioncommentp $ textToFollowingComment comment
-    precomment  = maybe "" unescapeNewlines $ fieldval "precomment"
 
     singleline' = T.unwords . filter (not . T.null) . map T.strip . T.lines
     unescapeNewlines = T.intercalate "\n" . T.splitOn "\\n"
@@ -1838,7 +1837,7 @@ transactionFromCsvRecord timesarezoned mtzin tzout sourcepospair rules record =
           ,tdescription      = description
           ,tcomment          = comment
           ,ttags             = ttags
-          ,tprecedingcomment = precomment
+          ,tprecedingcomment = ""
           ,tpostings         = ps
           }
 

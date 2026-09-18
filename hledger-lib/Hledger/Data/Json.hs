@@ -185,7 +185,6 @@ journalKV j =
     , "jtxnmodifiers"            .= jtxnmodifiers j
     , "jperiodictxns"            .= jperiodictxns j
     , "jtxns"                    .= jtxns j
-    , "jfinalcommentlines"       .= jfinalcommentlines j
     , "jfiles"                   .= jfiles j
     , "jlastreadtime"            .= jlastreadtime j
     ]

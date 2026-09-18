@@ -115,13 +115,18 @@ makePriceDirectiveErrorExcerpt pd _finderrorcolumns = (file, line, merrcols, exc
 -- Returns the file path, line number, column(s) if known,
 -- and the rendered excerpt, or as much of these as is possible.
 -- The returned columns will be accurate for the rendered error message but not for the original journal data.
+-- | Render a transaction for an error excerpt: without its preceding comment lines
+-- (which are not part of the entry, and would shift the line numbering), chomped and newline-terminated.
+showTransactionForExcerpt :: Transaction -> Text
+showTransactionForExcerpt t = showTransaction t{tprecedingcomment=""} & textChomp & (<>"\n")
+
 makeTransactionErrorExcerpt :: Transaction -> (Transaction -> Maybe (Int, Maybe Int)) -> (FilePath, Int, Maybe (Int, Maybe Int), Text)
 makeTransactionErrorExcerpt t findtxnerrorcolumns = (f, tl, merrcols, ex)
   -- XXX findtxnerrorcolumns is awkward, I don't think this is the final form
   where
     SourcePos f tpos _ = fst $ tsourcepos t
     tl = unPos tpos
-    txntxt = showTransaction t & textChomp & (<>"\n")
+    txntxt = showTransactionForExcerpt t
     merrcols = findtxnerrorcolumns t
     ex = decorateTransactionErrorExcerpt tl merrcols txntxt
 
@@ -169,7 +174,7 @@ makePostingErrorExcerpt p findpostingerrorcolumns =
               -- How many extra lines does this comment add to a transaction or posting rendering ?
               commentExtraLines c = max 0 (length (T.lines c) - 1)
         errabsline = clampToTransactionLines t $ unPos tl + errrelline
-        txntxt = showTransaction t & textChomp & (<>"\n")
+        txntxt = showTransactionForExcerpt t
         merrcols = findpostingerrorcolumns p t txntxt
         ex = decoratePostingErrorExcerpt errabsline errrelline merrcols txntxt
 
@@ -209,7 +214,7 @@ makePostingErrorExcerptByIndex t idx mcols = (f, errabsline, mcols, ex)
         postingLines p' = 1 + commentExtraLines (pcomment p')
         commentExtraLines c = max 0 (length (T.lines c) - 1)
     errabsline = clampToTransactionLines t $ unPos tl + errrelline
-    txntxt = showTransaction t & textChomp & (<>"\n")
+    txntxt = showTransactionForExcerpt t
     ex = decoratePostingErrorExcerpt errabsline errrelline mcols txntxt
 
 -- | Clamp a calculated error line number to this transaction's source line

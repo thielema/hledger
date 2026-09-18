@@ -27,7 +27,8 @@ ledgerFmt = defaultFmt{displayLedgerLotSyntax = True}
 showTransactionLedger :: Transaction -> Text
 showTransactionLedger t =
   TL.toStrict . TB.toLazyText $
-      TB.fromText descriptionline <> newline
+      TB.fromText (tprecedingcomment t)
+    <> TB.fromText descriptionline <> newline
     <> foldMap ((<> newline) . TB.fromText) newlinecomments
     <> foldMap ((<> newline) . TB.fromText) (postingsAsLines ledgerFmt False $ tpostings t)
     <> newline

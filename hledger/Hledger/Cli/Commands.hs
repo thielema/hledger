@@ -593,7 +593,7 @@ tests_Commands = testGroup "Commands" [
   ,testGroup "apply account directive" [
      testCase "works" $ do
         let
-          ignoresourcepos j = j{jtxns=map (\t -> t{tsourcepos=nullsourcepospair}) (jtxns j)}
+          ignoresourcepos j = j{jtxns=map (\t -> t{tsourcepos=nullsourcepospair}) (jtxns j), jitems=[]}
           sameParse str1 str2 = do
             j1 <- ignoresourcepos <$> readJournal'' str1  -- PARTIAL:
             j2 <- ignoresourcepos <$> readJournal'' str2  -- PARTIAL:

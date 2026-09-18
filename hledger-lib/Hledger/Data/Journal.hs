@@ -20,6 +20,8 @@ module Hledger.Data.Journal (
   ErroringJournalParser,
   addPriceDirective,
   addTransactionModifier,
+  addJournalItem,
+  addTransactionItem,
   addPeriodicTransaction,
   addTransaction,
   journalDbg,
@@ -243,7 +245,7 @@ journalDbg j@Journal{..} = chomp $ unlines $
   ,"jtxnmodifiers: "             <> shw jtxnmodifiers
   -- ,"jperiodictxns: "          <> shw jperiodictxns
   ,"jtxns: "                     <> shw jtxns
-  ,"jfinalcommentlines: "        <> shw jfinalcommentlines
+  ,"jitems: "                    <> shw (length jitems)
   ,"jfiles: "                    <> shw jfiles
   ,"jauxfiles: "                 <> shw jauxfiles
   ,"jlastreadtime: "             <> shw jlastreadtime
@@ -326,7 +328,7 @@ journalConcat j1 j2 =
     ,jtxnmodifiers              = jtxnmodifiers              j1 <> jtxnmodifiers              j2
     ,jperiodictxns              = jperiodictxns              j1 <> jperiodictxns              j2
     ,jtxns                      = jtxns                      j1 <> jtxns                      j2
-    ,jfinalcommentlines         = jfinalcommentlines j2  -- XXX discards j1's ?
+    ,jitems                     = jitems                     j1 <> jitems                     j2
     ,jfiles                     = jfiles                     j1 <> jfiles                     j2
     ,jauxfiles                  = jauxfiles                  j1 <> jauxfiles                  j2
     ,jlastreadtime              = max (jlastreadtime j1) (jlastreadtime j2)
@@ -387,7 +389,7 @@ nulljournal = Journal {
   ,jtxnmodifiers              = []
   ,jperiodictxns              = []
   ,jtxns                      = []
-  ,jfinalcommentlines         = ""
+  ,jitems                     = []
   ,jfiles                     = []
   ,jauxfiles                  = []
   ,jlastreadtime              = 0
@@ -410,6 +412,21 @@ mainfile = headDef ("(unknown)", "") . jfiles
 
 addTransaction :: Transaction -> Journal -> Journal
 addTransaction t j = j { jtxns = t : jtxns j }
+
+addJournalItem :: JournalItem -> Journal -> Journal
+addJournalItem i j = j { jitems = i : jitems j }
+
+-- | Add a transaction parsed from a journal file, and a placeholder item for it.
+-- Any comment lines immediately preceding it (the JIComment items on top of jitems)
+-- are moved into the transaction's tprecedingcomment.
+addTransactionItem :: Transaction -> Journal -> Journal
+addTransactionItem t j@Journal{jitems=is} =
+  addJournalItem (JITransaction $ fst $ tsourcepos t) $ addTransaction t' j{jitems=rest}
+  where
+    (precedingcomments, rest) = span isCommentItem is
+    t' = txnTieKnot t{tprecedingcomment = T.concat $ reverse [c | JIComment c <- precedingcomments]}
+    isCommentItem JIComment{} = True
+    isCommentItem _           = False
 
 addTransactionModifier :: TransactionModifier -> Journal -> Journal
 addTransactionModifier mt j = j { jtxnmodifiers = mt : jtxnmodifiers j }
@@ -1181,6 +1198,7 @@ journalReverse j =
   j {jfiles            = reverse $ jfiles j
     ,jdeclaredaccounts = reverse $ jdeclaredaccounts j
     ,jtxns             = reverse $ jtxns j
+    ,jitems            = reverse $ jitems j
     ,jtxnmodifiers     = reverse $ jtxnmodifiers j
     ,jperiodictxns     = reverse $ jperiodictxns j
     ,jpricedirectives  = reverse $ jpricedirectives j

@@ -8,6 +8,8 @@ Notes on some of print's behaviour.
 
 By default, print tries to show each entry as it is written in the journal file,
 except for alignment. And it shows entries in date-then-parse order.
+Comment lines immediately preceding an entry (with no blank line between) are part of it
+(`tprecedingcomment`) and are shown before it, verbatim.
 
 ### `--round`
 

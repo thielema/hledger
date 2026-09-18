@@ -239,6 +239,7 @@ $ hledger -f- print cur:A1 amt:2
   (a)   A1 2
 
 $ hledger -f- print cur:A amt:12
+; A 12
 2021-01-01
     (a)                                         A1 2.
 
@@ -251,6 +252,7 @@ $ hledger -f- print cur:A amt:12
   (a)   1 2A
 
 $ hledger -f- print cur:A amt:12
+; intended 1 "2A", parses as 12 A
 2021-01-01
     (a)                                          1 2.A
 
@@ -265,6 +267,7 @@ $ hledger -f- print cur:A amt:12
   (a)   A1E2
 
 $ hledger -f- print cur:A amt:100
+; intended "A1E" 2, parses as A 1E2
 2021-01-01
     (a)                                         A100
 
@@ -279,6 +282,7 @@ $ hledger -f- print cur:A amt:100
   (a)   1e2e
 
 $ hledger -f- print cur:e amt:100
+; intended 1 "e2e", parses as 1e2 e
 2021-01-01
     (a)                                          100e
 
@@ -292,6 +296,7 @@ $ hledger -f- print cur:e amt:100
   (a)   111 2
 
 $ hledger -f- print cur: amt:1112
+; intended "111" 2, parses as 1112.
 2021-01-01
     (a)                                        111 2.
 

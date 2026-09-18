@@ -18,6 +18,7 @@ comment
 
 # ** 1. normal unvalued output
 $ hledger -f- print -x
+; a transaction with both amounts in B
 2019-06-01
     a                                              1 B
     b                                             -1 B
@@ -26,6 +27,7 @@ $ hledger -f- print -x
 
 # ** 2. current market value in default valuation commodity
 $ hledger -f- print -x -V
+; a transaction with both amounts in B
 2019-06-01
     a                                             10 A
     b                                            -10 A
@@ -34,6 +36,7 @@ $ hledger -f- print -x -V
 
 # ** 3. same as above, but request commodity A explicitly
 $ hledger -f- print -x --value=now,A
+; a transaction with both amounts in B
 2019-06-01
     a                                             10 A
     b                                            -10 A
@@ -42,6 +45,7 @@ $ hledger -f- print -x --value=now,A
 
 # ** 4. request commodity B - no effect
 $ hledger -f- print -x --value=now,B
+; a transaction with both amounts in B
 2019-06-01
     a                                              1 B
     b                                             -1 B
@@ -50,6 +54,7 @@ $ hledger -f- print -x --value=now,B
 
 # ** 5. request commodity we don't have prices for - no effect, and a warning
 $ hledger -f- print -x --value=now,Z
+; a transaction with both amounts in B
 2019-06-01
     a                                              1 B
     b                                             -1 B
@@ -63,6 +68,7 @@ Warning: no conversion prices to "Z" can be found.
 # but the precision is increased to show all significant decimal digits
 # (otherwise it would show C0).
 $ hledger -f- print -x --value=now,C
+; a transaction with both amounts in B
 2019-06-01
     a                                             C0.5
     b                                            C-0.5
@@ -71,6 +77,7 @@ $ hledger -f- print -x --value=now,C
 
 # ** 7. request commodity D - chains B->A, A->D prices
 $ hledger -f- print -x --value=now,D
+; a transaction with both amounts in B
 2019-06-01
     a                                           1000 D
     b                                          -1000 D
@@ -81,6 +88,7 @@ $ hledger -f- print -x --value=now,D
 # As with C above, E gets the default display style, but with the precision
 # increased to show the decimal digits, but no more than 8.
 $ hledger -f- print -x --value=now,E
+; a transaction with both amounts in B
 2019-06-01
     a                                           E333.33333333
     b                                          E-333.33333333

@@ -30,6 +30,7 @@ class Anon a where
 instance Anon Journal where
     -- Apply the anonymisation transformation on a journal after finalisation
     anon j = j { jtxns = map anon . jtxns $ j
+               , jitems = []  -- verbatim source text, may contain anything
                , jparseparentaccounts  = map anonAccount $ jparseparentaccounts j
                , jparsealiases         = []  -- already applied
                , jdeclaredaccounts     = map (first anon) $ jdeclaredaccounts j
@@ -49,6 +50,7 @@ instance Anon Transaction where
                                 , tdescription = anon . tdescription $ txn
                                 , tcode = anon . tcode $ txn
                                 , tcomment = T.empty
+                                , tprecedingcomment = T.empty
                                 }
 
 -- | Anonymize account name preserving hierarchy

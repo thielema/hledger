@@ -43,7 +43,8 @@ from the journal file, sorted by date
 (or with `--date2`, by [secondary date](#secondary-dates)).
 (For a compact one-line-per-transaction overview, see the [`transactions`](#transactions) command.)
 
-Directives and inter-transaction comments are not shown, currently.
+Directives and inter-transaction comments are not shown, currently
+(except for comment lines immediately preceding a transaction, which are shown with it).
 This means the print command is somewhat lossy, and if you are using it to
 reformat/regenerate your journal you should take care to also copy over 
 the directives and inter-transaction comments.
