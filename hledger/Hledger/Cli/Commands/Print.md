@@ -237,9 +237,10 @@ The `beancount` format tries to produce Beancount-compatible output, as follows:
 - Commodity symbols are converted to upper case, and a small number of currency symbols
   like `$` are converted to the corresponding currency names.
 - Account name parts are capitalised and unsupported characters are replaced with `-`.
-  If an account name part does not begin with a letter, or if the first part
-  is not Assets, Liabilities, Equity, Income, or Expenses, an error is raised.
-  (Use `--alias` options to bring your accounts into compliance.)
+  The first part must be one of Assets, Liabilities, Equity, Income or Expenses;
+  if it is not, but the account's [type](#account-types) is known (declared or inferred),
+  the corresponding one of those is prepended; otherwise an error is raised.
+  (Or, use `--alias` options to bring your accounts into compliance.)
 - Balance assignments are converted to explicit amounts.
 - Virtual and balanced virtual postings are dropped.
 

@@ -385,3 +385,30 @@ $ rm -f beancount-18.tmp; hledger -f- print -O beancount -o beancount-18.tmp; te
 MISSING
 >2 /bad top-level account/
 >= 0
+
+# ** 19. An account whose top-level name is not one of Beancount's, but whose account type is known
+# (declared, or inherited from a parent), is prefixed with the corresponding Beancount top-level account,
+# in transactions and (with --export) in open directives. Accounts of unknown type are an error (see 1).
+<
+account bonds        ; type:A
+account bank loans   ; type:L
+
+2000-01-01
+  bonds:treasury     10 USD
+  bank loans:car    -10 USD
+
+$ hledger -f- print -O beancount --export
+;option "inferred_tolerance_default" "*:0.005"
+
+2000-01-01 open Assets:Bonds
+    type: "A"
+2000-01-01 open Assets:Bonds:Treasury
+2000-01-01 open Liabilities:Bank-loans
+    type: "L"
+2000-01-01 open Liabilities:Bank-loans:Car
+
+2000-01-01 *
+    Assets:Bonds:Treasury               10 USD
+    Liabilities:Bank-loans:Car         -10 USD
+
+>=

@@ -8,6 +8,7 @@ module Hledger.Write.Beancount (
   showTransactionBeancount,
   showPriceDirectiveBeancount,
   beancountTransactions,
+  beancountRenameAccounts,
   beancountDirectives,
   beancountItemRenderer,
   -- postingsAsLinesBeancount,
@@ -44,7 +45,8 @@ import Hledger.Data.Amount
 import Hledger.Data.Currency (currencySymbolToCode)
 import Hledger.Data.Dates (showDate)
 import Hledger.Data.Posting (renderCommentLines, showBalanceAssertion, postingIndent, isReal, postingHasTag, conversionPostingTagName)
-import Hledger.Data.Transaction (payeeAndNoteFromDescription')
+import Hledger.Data.Transaction (payeeAndNoteFromDescription', transactionMapPostings)
+import Hledger.Data.Journal (journalAccountType)
 import Hledger.Write.Journal (ItemRenderer(..), journalItemRenderer)
 import Data.Function ((&))
 import Data.List.Extra (groupOnKey, nubSort)
@@ -99,6 +101,43 @@ beancountTransactions ts =
   , let hascost = any (any (isJust . acost) . amounts . pamount) ps
   , let isredundantconvp p = hascost && postingHasTag conversionPostingTagName p
   ]
+
+-- | Rename accounts for Beancount output, in these transactions' postings and in the journal's
+-- account declarations: an account whose top-level name is not one of Beancount's required ones
+-- is prefixed with the Beancount top-level account corresponding to its hledger account type,
+-- if that is known (declared or inferred). Eg with "account bonds  ; type:A", bonds:treasury
+-- becomes Assets:bonds:treasury (and then Assets:Bonds:Treasury when rendered).
+-- Accounts of unknown type are left unchanged, and will raise an error when rendered.
+beancountRenameAccounts :: Journal -> [Transaction] -> (Journal, [Transaction])
+beancountRenameAccounts j ts =
+  ( j{ jdeclaredaccounts    = map (first rename) $ jdeclaredaccounts j
+     , jdeclaredaccounttags = M.mapKeys rename $ jdeclaredaccounttags j
+     }
+  , map (transactionMapPostings $ \p -> p{paccount = rename $ paccount p}) ts
+  )
+  where
+    rename a
+      | hasBeancountTopLevelAccount a = a
+      | otherwise = maybe a (\t -> beancountTopLevelAccountFor t <> ":" <> a) $ journalAccountType j a
+
+-- | Does this hledger account name's top-level part convert to one of Beancount's required top-level accounts ?
+hasBeancountTopLevelAccount :: AccountName -> Bool
+hasBeancountTopLevelAccount a = case accountNameComponents a of
+  c:_ -> beancountTopLevelComponent c `elem` beancountTopLevelAccounts
+  []  -> False
+
+-- | The Beancount top-level account corresponding to a hledger account type.
+beancountTopLevelAccountFor :: AccountType -> BeancountAccountName
+beancountTopLevelAccountFor t = case t of
+  Asset          -> "Assets"
+  Cash           -> "Assets"
+  Liability      -> "Liabilities"
+  Equity         -> "Equity"
+  Conversion     -> "Equity"
+  UnrealisedGain -> "Equity"
+  Revenue        -> "Income"
+  Gain           -> "Income"
+  Expense        -> "Expenses"
 
 -- | Options and directives for a Beancount export of this journal and these
 -- (Beancount-prepared, possibly filtered) transactions:
@@ -365,27 +404,31 @@ type BeancountAccountNameComponent = AccountName
 accountNameToBeancount :: AccountName -> BeancountAccountName
 accountNameToBeancount a = b
   where
-    cs1 =
-      map accountNameComponentToBeancount $ accountNameComponents $
-      dbg9 "hledger account name  " a
-    cs1' = case cs1 of
-      (c:cs) | T.toLower c `elem` ["revenue", "revenues"] -> "Income":cs
-      cs -> cs
+    cs1 = case accountNameComponents $ dbg9 "hledger account name  " a of
+      c:cs -> beancountTopLevelComponent c : map accountNameComponentToBeancount cs
+      []   -> []
     cs2 =
-      case cs1' of
+      case cs1 of
         c:_ | c `notElem` beancountTopLevelAccounts -> error' e
           where
             e = T.unpack $ T.unlines [
               "bad top-level account: " <> c
               ,"in beancount account name:           " <> accountNameFromComponents cs1
               ,"converted from hledger account name: " <> a
-              ,"For Beancount, top-level accounts must be (or be --alias'ed to)"
-              ,"one of " <> T.intercalate ", " beancountTopLevelAccounts <> "."
-              -- ,"and not: " <> b
+              ,"For Beancount, top-level accounts must be one of " <> T.intercalate ", " beancountTopLevelAccounts <> "."
+              ,"Declare this account's type (eg: account " <> a <> "  ; type:A) so that hledger can add the right one,"
+              ,"or use --alias to rename it."
               ]
         [c] -> [c, "A"]
         cs  -> cs
     b = dbg9 "beancount account name" $ accountNameFromComponents cs2
+
+-- | Convert a hledger account name's top-level part for Beancount:
+-- "revenue" or "revenues" (case insensitive) become "Income", otherwise it is converted like any other part.
+beancountTopLevelComponent :: AccountName -> BeancountAccountNameComponent
+beancountTopLevelComponent c
+  | T.toLower c `elem` ["revenue", "revenues"] = "Income"
+  | otherwise = accountNameComponentToBeancount c
 
 accountNameComponentToBeancount :: AccountName -> BeancountAccountNameComponent
 accountNameComponentToBeancount acctpart =

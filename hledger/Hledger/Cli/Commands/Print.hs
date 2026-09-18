@@ -35,7 +35,7 @@ import Safe (lastMay, readMay)
 import System.Console.CmdArgs.Explicit
 
 import Hledger
-import Hledger.Write.Beancount (showTransactionBeancount, beancountTransactions, beancountDirectives, beancountItemRenderer)
+import Hledger.Write.Beancount (showTransactionBeancount, beancountTransactions, beancountRenameAccounts, beancountDirectives, beancountItemRenderer)
 import Hledger.Write.Ledger (showTransactionLedger, ledgerItemRenderer)
 import Hledger.Write.Journal (journalItemRenderer, journalItemsAsText)
 import Hledger.Write.Csv (CSV, printCSV, printTSV)
@@ -187,8 +187,8 @@ printEntries opts@CliOpts{rawopts_=rawopts, reportspec_=rspec} j =
       | fmt=="txt"    = exportWith (journalItemRenderer $ showTransactionWithLayout postinglayout)
       | fmt=="ledger" = exportWith ledgerItemRenderer
       | fmt=="beancount" = \ts ->
-          let ts' = beancountTransactions $ styleAmounts styles $ dropGenerated $ map fillBalanceAssignments ts
-          in beancountDirectives j{jpricedirectives=styledPrices} ts' <> "\n" <> journalItemsAsText beancountItemRenderer (jitems j) ts'
+          let (j', ts') = beancountRenameAccounts j{jpricedirectives=styledPrices} $ beancountTransactions $ styleAmounts styles $ dropGenerated $ map fillBalanceAssignments ts
+          in beancountDirectives j' ts' <> "\n" <> journalItemsAsText beancountItemRenderer (jitems j') ts'
       | otherwise     = error' "print --export supports only the txt, ledger and beancount output formats"  -- PARTIAL:
       where
         exportWith renderer = journalItemsAsText renderer (jitems j) . styleAmounts styles . dropGenerated . map maybeoriginalamounts
@@ -198,7 +198,7 @@ printEntries opts@CliOpts{rawopts_=rawopts, reportspec_=rspec} j =
 
     render | fmt=="txt"       = withTitle (_rsReportOpts rspec) . entriesReportAsTextHelper (showTransactionWithLayout postinglayout) . styleAmounts styles . map maybeoriginalamounts
            | fmt=="ledger"   = withTitle (_rsReportOpts rspec) . entriesReportAsTextHelper showTransactionLedger . styleAmounts styles . map maybeoriginalamounts
-           | fmt=="beancount" = entriesReportAsTextHelper showTransactionBeancount . beancountTransactions . styleAmounts styles . map fillBalanceAssignments
+           | fmt=="beancount" = entriesReportAsTextHelper showTransactionBeancount . snd . beancountRenameAccounts j . beancountTransactions . styleAmounts styles . map fillBalanceAssignments
            | fmt=="csv"       = printCSV . entriesReportAsCsv . styleAmounts styles
            | fmt=="tsv"       = printTSV . entriesReportAsCsv . styleAmounts styles
            | fmt=="json"      = toJsonText                    . styleAmounts styles
