@@ -874,6 +874,8 @@ This is a Ledger-specific journal format supported by the `print` command.
 It is currently identical to hledger's default `print` output
 except that cost basis annotations will use [Ledger's syntax](#ledger-cost-basis),
 (`{COST} [DATE] (NOTE)`), not hledger's (`{DATE, "LABEL", COST}`).
+With [`print --export`](#print-export-mode), directives and comments are also reproduced,
+and directives which Ledger does not support are commented out.
 
 ### Beancount output
 

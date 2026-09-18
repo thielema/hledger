@@ -36,7 +36,13 @@ author's grouping is preserved. Details:
 - Transactions with no placeholder (from non-journal files, eg an included CSV) are appended at the end.
 - A `decimal-mark`, `D` or `Y` directive inside an included file, once inlined, also affects
   later entries of the parent file. Known limitation.
-- txt output format only.
+- Output formats: txt (the default) and ledger. With `-O ledger`, `ledgerItemRenderer`
+  (Write/Ledger.hs) renders transactions with Ledger lot syntax and comments out directives
+  it can detect as Ledger-incompatible (decimal-mark; one-line `commodity` with an amount;
+  `~` rule with a description; `=` rule with `*N` multipliers), preceded by
+  `; not supported by Ledger:`. Comments pass through (`;`, `#`, `*` and `comment` blocks are
+  all Ledger syntax). Other incompatibilities (hledger query syntax in `=` rules, `==`/`=*`
+  assertions, trailing decimal marks, `date:` tags) are not detected.
 
 ### `--round`
 
