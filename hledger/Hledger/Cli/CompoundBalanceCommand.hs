@@ -158,8 +158,7 @@ compoundBalanceCommandWithCatalog CompoundBalanceCommandSpec{..} opts@CliOpts{re
     msg = Msg.getText maybeCat
 
     title =
-         maybe "" (<>" ") mintervalstr
-      <> msg cbctitle
+         mainTitle
       <> " "
       <> titledatestr
       <> maybe "" (" "<>) mtitleclarification
@@ -178,7 +177,12 @@ compoundBalanceCommandWithCatalog CompoundBalanceCommandSpec{..} opts@CliOpts{re
             enddates = map (addDays (-1)) . mapMaybe spanEnd $ cbrDates cbr  -- these spans will always have a definite end date
             requestedspan = fst $ reportSpan j rspec
 
-        mintervalstr = showInterval interval_
+        mainTitle =
+            maybe ""
+                (\iv -> Msg.getInflected maybeCat iv (Msg.getGenus maybeCat cbctitle))
+                (intervalMsg interval_)
+            <>
+            msg cbctitle
 
         -- when user overrides, add an indication to the report title
         -- Do we need to deal with overridden BalanceCalculation?
@@ -254,22 +258,22 @@ applySubreportTitles ropts cbr@CompoundPeriodicReport{cbrSubreports=subs} =
           in  cbr{cbrSubreports = zipWith replace [0..] subs}
 
 -- | Show a simplified description of an Interval.
-showInterval :: Interval -> Maybe T.Text
-showInterval = \case
+intervalMsg :: Interval -> Maybe Msg.Interval
+intervalMsg = \case
   NoInterval -> Nothing
-  Days 1     -> Just "Daily"
-  Weeks 1    -> Just "Weekly"
-  Weeks 2    -> Just "Biweekly"
-  Months 1   -> Just "Monthly"
-  Months 2   -> Just "Bimonthly"
-  Months 3   -> Just "Quarterly"
-  Months 6   -> Just "Half-yearly"
-  Months 12  -> Just "Yearly"
-  Quarters 1 -> Just "Quarterly"
-  Quarters 2 -> Just "Half-yearly"
-  Years 1    -> Just "Yearly"
-  Years 2    -> Just "Biennial"
-  _          -> Just "Periodic"
+  Days 1     -> Just Msg.Days1
+  Weeks 1    -> Just Msg.Weeks1
+  Weeks 2    -> Just Msg.Weeks2
+  Months 1   -> Just Msg.Months1
+  Months 2   -> Just Msg.Months2
+  Months 3   -> Just Msg.Months3
+  Months 6   -> Just Msg.Months6
+  Months 12  -> Just Msg.Years1
+  Quarters 1 -> Just Msg.Months3
+  Quarters 2 -> Just Msg.Months6
+  Years 1    -> Just Msg.Years1
+  Years 2    -> Just Msg.Years2
+  _          -> Just Msg.Periodic
 
 -- | Summarise one or more (inclusive) end dates, in a way that's
 -- visually different from showDateSpan, suggesting discrete end dates
