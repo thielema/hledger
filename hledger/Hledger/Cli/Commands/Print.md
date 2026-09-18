@@ -10,6 +10,8 @@ Flags:
      --verbose-tags         add tags indicating generated/modified data
      --invert               display all amounts with reversed sign
      --locations            add tags showing file paths and line numbers
+     --export               reproduce the whole journal, with directives and
+                            comments preserved and included files inlined
   -m --match=DESC           fuzzy search for one recent transaction with
                             description closest to DESC
      --new                  show only newer-dated transactions added in each

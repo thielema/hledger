@@ -15,6 +15,8 @@ Flags:
      --values               list tag values instead of tag names
      --parsed               show them in the order they were parsed (mostly),
                             including duplicates
+     --directives           show tag names as tag directives, for use in
+                            journals
 ```
 
 This command lists tag names -

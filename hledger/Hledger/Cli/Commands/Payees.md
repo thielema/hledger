@@ -10,6 +10,7 @@ Flags:
      --unused               list payees declared but not used
      --find                 list the first payee matched by the first
                             argument (a case-insensitive infix regexp)
+     --directives           show as payee directives, for use in journals
 ```
 
 This command lists unique payee/payer names -

@@ -12,9 +12,14 @@ Flags:
      --unused               list commodities declared but not used or priced
      --find                 list the first commodity matched by the first
                             argument (a case-insensitive infix regexp)
+     --directives           show as commodity directives (with their display
+                            styles), for use in journals
 
-Most of these flags can be combined. Some kinds of query argument are
-supported: cur:, tag:, and date: (also -b/-e/-p report period options).
+Most of these flags can be combined. With --directives, it shows valid
+commodity directives, declaring each commodity's (declared or inferred)
+display style, which could be pasted into a journal file. Some kinds of
+query argument are supported: cur:, tag:, and date: (also -b/-e/-p
+report period options).
 
 Providing a date query will affect which commodities are reported, as
 follows:

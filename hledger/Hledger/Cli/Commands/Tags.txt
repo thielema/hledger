@@ -12,6 +12,8 @@ Flags:
      --values               list tag values instead of tag names
      --parsed               show them in the order they were parsed (mostly),
                             including duplicates
+     --directives           show tag names as tag directives, for use in
+                            journals
 
 This command lists tag names - all of them by default, or just the ones
 which have been used on transactions/postings/accounts, or declared with
@@ -32,6 +34,9 @@ With -E/--empty, blank/empty values are also shown.
 With --parsed, tags or values are shown in the order they were parsed,
 with duplicates included. (Except, tags from account declarations are
 always shown first.)
+
+With --directives, tag names are shown as valid tag directives, which
+could be pasted into a journal file.
 
 Remember that accounts also acquire tags from their parents; postings
 also acquire tags from their account and transaction; and transactions

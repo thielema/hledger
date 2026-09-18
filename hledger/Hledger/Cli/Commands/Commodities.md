@@ -13,6 +13,8 @@ Flags:
      --unused               list commodities declared but not used or priced
      --find                 list the first commodity matched by the first
                             argument (a case-insensitive infix regexp)
+     --directives           show as commodity directives (with their display
+                            styles), for use in journals
 ```
 
 Most of these flags can be combined.
