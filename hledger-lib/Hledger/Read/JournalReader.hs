@@ -256,7 +256,7 @@ addJournalItemP iopts =
     , recordItem JICommentBlock $ lift multilinecommentp
     ] <?> "transaction or directive"
   where
-    commentOrBlankItem txt = if T.all isSpace txt then JIBlank txt else JIComment txt
+    commentOrBlankItem txt = if T.all isSpace txt then JIBlank else JIComment txt
 
 -- | Run a parser, also recording the text it consumed as a journal item of the given kind.
 recordItem :: (Text -> JournalItem) -> JournalParser m a -> JournalParser m a
@@ -827,7 +827,9 @@ defaultyeardirectivep :: JournalParser m ()
 defaultyeardirectivep = do
   (string "Y" <|> string "year" <|> string "apply year") <?> "default year"
   lift skipNonNewlineSpaces
-  setYear =<< lift yearp
+  y <- lift yearp
+  lift restofline
+  setYear y
 
 defaultcommoditydirectivep :: JournalParser m ()
 defaultcommoditydirectivep = do

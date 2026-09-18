@@ -166,9 +166,11 @@ So any time you are reading from standard input with `-f-`, consider adding `-I`
 ### print export mode
 
 With `--export`, print reproduces the whole journal in its original order,
-with directives, top-level comment lines, `comment` blocks and blank lines preserved verbatim,
+with directives, top-level comment lines and `comment` blocks preserved verbatim,
 and with each transaction shown as print normally shows it
 (so `-x`, `--round`, `--layout` etc. still apply).
+Blank lines are normalised: there is one blank line between transactions,
+and between groups of directive or comment lines.
 The output can be read by hledger as an equivalent journal,
 so this is the mode to use when reformatting or regenerating a journal file.
 Some details:

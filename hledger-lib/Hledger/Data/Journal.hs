@@ -414,7 +414,9 @@ addTransaction :: Transaction -> Journal -> Journal
 addTransaction t j = j { jtxns = t : jtxns j }
 
 -- | Add a journal item, evaluated first (its fields are strict) so no parse-time thunks are retained.
+-- Consecutive blank line items are collapsed into one.
 addJournalItem :: JournalItem -> Journal -> Journal
+addJournalItem JIBlank j@Journal{jitems=JIBlank:_} = j
 addJournalItem i j = i `seq` j { jitems = i : jitems j }
 
 -- | Add a transaction parsed from a journal file, and a placeholder item for it.

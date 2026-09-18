@@ -16,9 +16,14 @@ Comment lines immediately preceding an entry (with no blank line between) are pa
 Reproduces the journal file(s) rather than a date-sorted list of entries.
 The journal reader records every top-level item verbatim and in order in `jitems`
 (see `JournalItem` in Types.hs); export walks those items, emitting directives,
-comment lines, comment blocks and blank lines as written, and replacing each transaction
+comment lines and comment blocks as written, and replacing each transaction
 placeholder with print's normal rendering of that transaction (looked up in `jtxns` by
-source position, so filtering and processing of `jtxns` are respected). Details:
+source position, so filtering and processing of `jtxns` are respected).
+Blank lines are normalised, as in ordinary print output: transactions, and groups of
+adjacent directive/comment lines (as delimited by blank lines in the source), are output
+as blocks separated by exactly one blank line, and a final transaction is followed by a
+blank line. Each run of blank lines is recorded as a single `JIBlank` separator, so the
+author's grouping is preserved. Details:
 
 - `include` lines are dropped; the included file's items follow inline.
   (A future `--export=file` mode could keep the include line and omit them.)

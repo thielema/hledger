@@ -715,8 +715,9 @@ data Journal = Journal {
 -- | One top-level item of a journal file, recorded in file order so that
 -- the file can be reproduced (by print --export). Transactions are
 -- represented by a placeholder; the transaction itself is in jtxns.
--- Text fields hold verbatim source text, normally including the trailing newline
--- (when a directive parser doesn't consume its newline, that follows as a JIBlank item).
+-- Text fields hold verbatim source text, including the trailing newline.
+-- Blank lines are recorded only as separators (one JIBlank for each run of them),
+-- since print --export normalises blank lines.
 -- Fields are strict so that recording items doesn't retain parse-time thunks.
 data JournalItem
   = JITransaction !SourcePos      -- ^ a transaction: the one in jtxns whose tsourcepos starts here
@@ -728,7 +729,7 @@ data JournalItem
                                   --   apply account, alias and their end forms, whose effect is
                                   --   already applied to the data; and the Ledger directives hledger ignores
   | JIInclude !Text               -- ^ an include directive line; the included file's items follow it
-  | JIBlank !Text                 -- ^ a blank line
+  | JIBlank                       -- ^ one or more blank lines
   deriving (Eq, Generic, Show)
 
 -- | A journal in the process of being parsed, not yet finalised.
