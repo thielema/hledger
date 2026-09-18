@@ -25,7 +25,8 @@ as blocks separated by exactly one blank line, and a final transaction is follow
 blank line. Each run of blank lines is recorded as a single `JIBlank` separator, so the
 author's grouping is preserved. Details:
 
-- `include` lines are dropped; the included file's items follow inline.
+- `include` lines are dropped; the included file's items follow inline, starting a new block
+  (so adjacent included files' entries are separated by a blank line).
   (A future `--export=file` mode could keep the include line and omit them.)
 - `apply account`/`alias` and their `end` forms are dropped: their effect is baked into
   the stored account names. Hence an `account` declaration inside an `apply account` block

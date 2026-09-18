@@ -47,7 +47,9 @@ journalItemRenderer showtxn = ItemRenderer
 --
 -- Directive, comment line and comment block items are rendered as the item renderer specifies
 -- (verbatim, for hledger's journal format).
--- Non-exported directives and include lines are dropped (an included file's items follow inline).
+-- Non-exported directives are dropped. Include lines are dropped too, and the included file's
+-- items follow inline, beginning a new block (so eg there is a blank line between the entries
+-- of adjacent included files).
 -- Each transaction placeholder is replaced by the rendering of the next given transaction
 -- with that source position, or by nothing if there is none (eg it was filtered out).
 -- Any transactions not matching a placeholder (eg from non-journal files) are added at the end,
@@ -82,7 +84,7 @@ journalItemsAsText ItemRenderer{..} items txns =
       JICommentBlock t         -> (m, [linesBlock $ irCommentBlock t])
       JIDirective t            -> (m, map linesBlock $ maybe [] pure $ irDirective t)
       JINonExportedDirective _ -> (m, [])
-      JIInclude _              -> (m, [])
+      JIInclude _              -> (m, [Break])  -- the included file's items begin a new block
 
 -- | An output block: a group of directive/comment lines, a transaction, or a break between groups.
 data Block = Lines TB.Builder | Txn TB.Builder | Break
