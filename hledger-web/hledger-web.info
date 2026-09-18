@@ -153,7 +153,7 @@ General input flags:
                             hledger-ui, also make future-dated transactions
                             visible at startup.
      --ignore-assertions    don't check balance assertions by default
-     --ignore-lots          don't check lot entries by default
+     --ignore-lots          don't do lot tracking or checking by default
   -I                        shortcut for --ignore-assertions --ignore-lots
      --txn-balancing=...    how to check that transactions are balanced:
                             'old':   - use global display precision
@@ -536,13 +536,13 @@ We welcome bug reports in the hledger issue tracker
 Tag Table:
 Node: Top223
 Node: OPTIONS2528
-Node: PERMISSIONS12685
-Node: EDITING UPLOADING DOWNLOADING13940
-Node: RELOADING14867
-Node: JSON API15448
-Node: DEBUG OUTPUT21097
-Node: ENVIRONMENT21639
-Node: BUGS21875
+Node: PERMISSIONS12695
+Node: EDITING UPLOADING DOWNLOADING13950
+Node: RELOADING14877
+Node: JSON API15458
+Node: DEBUG OUTPUT21107
+Node: ENVIRONMENT21649
+Node: BUGS21885
 
 End Tag Table
 

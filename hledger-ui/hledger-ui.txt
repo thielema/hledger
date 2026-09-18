@@ -30,6 +30,10 @@ DESCRIPTION
      files,  timedot  files,  or  any  CSV/SSV/TSV file with a date field.  (See
      hledger(1) -> Input for details.)
 
+     On unix-like systems, it can also read from standard input (-f-).  In  that
+     case  the  data  can't  be re-read or edited, so the g, a, A and E keys and
+     watch mode have no effect.
+
      Unlike hledger, hledger-ui hides all future-dated transactions by  default.
      They  can be revealed, along with any rule-generated periodic transactions,
      by pressing the F key (or starting with  --forecast)  to  enable  "forecast
@@ -41,7 +45,8 @@ OPTIONS
 
             Flags:
               -w --watch                watch for data and date changes and reload
-                                        automatically
+                                        automatically (default)
+                 --no-watch             don't watch; reload only with the g key
                  --theme=THEME          use this custom display theme (light,
                                         dark, terminal, greenterm)
                  --cash                 start in the cash accounts screen
@@ -54,7 +59,7 @@ OPTIONS
               -l --flat                 show accounts as a flat list (default)
               -t --tree                 show accounts as a tree
 
-     and also supports many of hledger's general options:
+     hledger-ui also supports many of hledger's general options:
 
             General input flags:
               -f --file=[FMT:]FILE      Use this as the journal file (- means stdin). If
@@ -80,7 +85,7 @@ OPTIONS
                                         hledger-ui, also make future-dated transactions
                                         visible at startup.
                  --ignore-assertions    don't check balance assertions by default
-                 --ignore-lots          don't check lot entries by default
+                 --ignore-lots          don't do lot tracking or checking by default
               -I                        shortcut for --ignore-assertions --ignore-lots
                  --txn-balancing=...    how to check that transactions are balanced:
                                         'old':   - use global display precision
@@ -202,12 +207,12 @@ KEYS
      Pressing SHIFT-DOWN narrows the report period, and  pressing  SHIFT-UP  ex-
      pands  it  again.  When narrowed, the current report period is displayed in
      the header line, pressing SHIFT-LEFT or SHIFT-RIGHT moves to  the  previous
-     or  next period, and pressing T sets the period to "today".  If you are us-
-     ing -w/--watch and viewing a narrowed period  containing  today,  the  view
-     will follow any changes in system date (moving to the period containing the
-     new  date).   (These  keys  work  only  with  the  standard Julian calendar
-     year/quarter/month/week/day periods; they are not affected by a custom  re-
-     port interval specified at the command line.)
+     or  next  period, and pressing T sets the period to "today".  If you are in
+     watch mode (the default) and viewing a narrowed  period  containing  today,
+     the  view will follow any changes in system date (moving to the period con-
+     taining the new date).  (These keys work only with the standard Julian cal-
+     endar year/quarter/month/week/day periods; they are not affected by a  cus-
+     tom report interval specified at the command line.)
 
      You  can  also  specify  a non-standard period with / and a date: query; in
      this case, the period is not movable with the arrow keys.
@@ -387,43 +392,25 @@ SCREENS
      ter a reload, until the next key press.
 
 WATCH MODE
-     One  of  hledger-ui's  best features is the auto-reloading -w/--watch mode.
-     With this flag, it will update the display automatically  whenever  changes
-     are saved to the data files.
+     hledger-ui  immediately shows the effect of any file changes, reloading au-
+     tomatically.  (This is enabled by default since 1.99.5.)
 
-     This  is  very  useful  when  reconciling.  A good workflow is to have your
-     bank's online register open in a browser window, for reference; the journal
-     file open in an editor window; and hledger-ui in watch mode in  a  terminal
-     window, eg:
+     If you don't want this - eg because your data is very large  or  constantly
+     changing,  or  because  file notifications don't work well on your system -
+     you can disable it with --no-watch, and reload manually with the g key  in-
+     stead.
 
-            $ hledger-ui --watch --register checking -C
+     Watch  mode  is  very  useful when reconciling.  A good workflow is to have
+     your bank's online register open in a browser window,  for  reference;  the
+     journal file open in an editor window; and hledger-ui in a terminal window,
+     eg:
+
+            $ hledger-ui --register checking -C
 
      As  you  mark  things cleared in the editor, you can see the effect immedi-
      ately without having to context switch.  This leaves more mental  bandwidth
      for your accounting.  Of course you can still interact with hledger-ui when
      needed, eg to toggle cleared mode, or to explore the history.
-
-   --watch problems
-     However. There are limitations/unresolved bugs with --watch:
-
-     * It  may not work at all for you, depending on platform or system configu-
-       ration.  On some unix systems, increasing fs.inotify.max_user_watches  or
-       fs.file-max parameters in /etc/sysctl.conf might help.  (#836)
-
-     * It  may  not detect changes made from outside a virtual machine, ie by an
-       editor running on the host system.
-
-     * It may not detect file changes on certain less common filesystems.
-
-     Tips/workarounds:
-
-     * If --watch won't work for you, press g to reload data manually instead.
-
-     * When running hledger-ui inside a VM, also make file  changes  inside  the
-       VM.
-
-     * When  working with files mounted from another machine, make sure the sys-
-       tem clocks on both machines are roughly in agreement.
 
 ENVIRONMENT
      LEDGER_FILE The main journal file to use when not specified with -f/--file.
@@ -431,17 +418,13 @@ ENVIRONMENT
 
 BUGS
      We    welcome    bug    reports    in    the    hledger    issue    tracker
-     (https://bugs.hledger.org),   or   on   the   hledger  chat  or  mail  list
+     (https://bugs.hledger.org),  or  on  the  hledger   chat   or   mail   list
      (https://hledger.org/support).
 
      Some known issues:
 
-     -f- doesn't work (hledger-ui can't read from stdin).
-
-     --watch is not robust, especially with large files (see WATCH MODE above).
-
-     If you press g with large files, there could be a noticeable pause with the
-     UI unresponsive.
+     If  reloading  large  files on a slow computer, there could be a noticeable
+     pause, during which the UI is unresponsive.
 
 
 
@@ -461,4 +444,4 @@ LICENSE
 SEE ALSO
      hledger(1), hledger-ui(1), hledger-web(1), ledger(1)
 
-hledger-ui-1.99                    August 2026                     HLEDGER-UI(1)
+hledger-ui-1.99                  September 2026                    HLEDGER-UI(1)

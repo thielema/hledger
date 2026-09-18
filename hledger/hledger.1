@@ -246,7 +246,8 @@ opening balances.)
 Some directives will not affect previous or subsequent files.
 .PP
 If needed, you can work around these by using a single parent file which
-includes the others, or concatenating the files into one, eg:
+includes the others (this works with CSV files too), or concatenating
+the files into one, eg:
 \f[CR]cat a.journal b.journal | hledger \-f\- CMD\f[R].
 .SS Strict mode
 hledger checks input files for valid data.
@@ -375,7 +376,7 @@ General input flags:
                             hledger\-ui, also make future\-dated transactions
                             visible at startup.
      \-\-ignore\-assertions    don\(aqt check balance assertions by default
-     \-\-ignore\-lots          don\(aqt check lot entries by default
+     \-\-ignore\-lots          don\(aqt do lot tracking or checking by default
   \-I                        shortcut for \-\-ignore\-assertions \-\-ignore\-lots
      \-\-txn\-balancing=...    how to check that transactions are balanced:
                             \(aqold\(aq:   \- use global display precision
@@ -1338,6 +1339,9 @@ It is currently identical to hledger\(aqs default \f[CR]print\f[R]
 output except that cost basis annotations will use Ledger\(aqs syntax,
 (\f[CR]{COST} [DATE] (NOTE)\f[R]), not hledger\(aqs
 (\f[CR]{DATE, \(dqLABEL\(dq, COST}\f[R]).
+With \f[CR]print \-\-export\f[R], directives and comments are also
+reproduced, and directives which Ledger does not support are commented
+out.
 .SS Beancount output
 This is Beancount\(aqs journal format, supported by the \f[CR]print\f[R]
 command.
@@ -1345,6 +1349,11 @@ You can use this to export your hledger data to Beancount, eg to use the
 Fava web app.
 .PP
 hledger will try to adjust your data to suit Beancount, automatically.
+By default only transactions are converted; with
+\f[CR]print \-\-export\f[R], the options and \f[CR]commodity\f[R],
+\f[CR]open\f[R] and \f[CR]price\f[R] directives Beancount needs are
+generated too, and top\-level comments are converted, so the output can
+be read by Beancount directly.
 Be cautious and check the conversion until you are confident it is good.
 If you plan to export to Beancount often, you may want to follow its
 conventions, for a cleaner conversion:
@@ -1357,17 +1366,18 @@ use cost notation instead of equity conversion postings
 .IP \(bu 2
 avoid virtual postings, balance assignments, and secondary dates.
 .PP
-There is one big adjustment you must handle yourself: for Beancount, the
-top level account names must be \f[CR]Assets\f[R],
-\f[CR]Liabilities\f[R], \f[CR]Equity\f[R], \f[CR]Income\f[R], and/or
-\f[CR]Expenses\f[R].
-.PP
+There is one big adjustment: for Beancount, the top level account names
+must be \f[CR]Assets\f[R], \f[CR]Liabilities\f[R], \f[CR]Equity\f[R],
+\f[CR]Income\f[R], and/or \f[CR]Expenses\f[R].
 A top level hledger account named \f[CR]revenue\f[R] or
 \f[CR]revenues\f[R] (case insensitive) will be converted to
-\f[CR]Income\f[R] for Beancount.
-To adjust other top level account names, you should use
-\f[CR]\-\-alias\f[R] (see Account aliases, or this
-hledger2beancount.conf file).
+\f[CR]Income\f[R].
+Any other top level account whose account type is known (declared or
+inferred) will have the corresponding Beancount top level account
+prepended; eg with \f[CR]account bonds  ; type:A\f[R],
+\f[CR]bonds:treasury\f[R] becomes \f[CR]Assets:Bonds:Treasury\f[R].
+Otherwise, you should use \f[CR]\-\-alias\f[R] (see Account aliases, or
+this hledger2beancount.conf file).
 .SS Beancount account names
 Aside from the top\-level names, hledger will adjust your account names
 to make valid Beancount account names, by capitalising each part,
@@ -1421,16 +1431,26 @@ transaction.
 The 1:1 price directives which hledger infers from commodity aliases are
 normally dated \f[CR]0000\-01\-01\f[R]; in Beancount output they are
 dated \f[CR]0001\-01\-01\f[R] instead.
+.SS Beancount directives
+With \f[CR]print \-\-export\f[R], hledger generates a
+\f[CR]commodity\f[R] directive for each declared commodity, and an
+\f[CR]open\f[R] directive for each declared or used account, dated on
+the account\(aqs earliest posting (or the earliest transaction date).
+Account and commodity tags are converted to metadata on these
+directives, and an account\(aqs \f[CR]lots:\f[R] tag becomes its
+Beancount booking method.
+Other hledger directives have no Beancount equivalent and are dropped.
 .SS Beancount tolerance
-A sample \f[CR]inferred_tolerance_default\f[R] option is provided
-(commented out).
+With \f[CR]print \-\-export\f[R], a sample
+\f[CR]inferred_tolerance_default\f[R] option is provided (commented
+out).
 If Beancount complains that transactions aren\(aqt balanced, this is an
 easy way to work around it.
 .SS Beancount operating currency
 Declaring an operating currency (or several) improves Beancount and Fava
 reports.
-Currently hledger will declare each currency used in cost amounts as an
-operating currency.
+With \f[CR]print \-\-export\f[R], hledger will declare each currency
+used in cost amounts as an operating currency.
 If needed, replace these with your own declaration, like
 .IP
 .EX
@@ -1744,6 +1764,10 @@ end comment
 Some hledger entries can have same\-line comments attached to them, from
 ; (semicolon) to end of line.
 See Transaction comments, Posting comments, and Account comments below.
+.PP
+Comment lines immediately preceding a transaction (with no blank line in
+between) are attached to that transaction, and are shown before it, as
+written, in \f[CR]print\f[R] output.
 .SS Transactions
 Transactions are the main unit of information in a journal file.
 They represent events, typically a movement of some quantity of
@@ -3710,7 +3734,25 @@ point.
 recursively.)
 .PP
 Only journal files can include other files.
-They can include journal, timeclock or timedot files, but not CSV files.
+They can include journal, timeclock, timedot, CSV/SSV/TSV, or CSV rules
+files.
+.PP
+When a CSV file is included, its rules file is \f[CR]FILE.rules\f[R]
+alongside it, as usual; the \f[CR]\-\-rules\f[R] option is not used
+here.
+To use a different rules file, or a data file located elsewhere (eg in
+your downloads directory), include a rules file which has a source rule
+instead.
+Transactions generated from included CSV data are treated like inlined
+journal entries: they are placed at this point, any account aliases in
+effect are applied to them, and their balance assertions are checked
+along with the rest of the journal (unlike when reading a CSV file
+directly, where balance assertions are ignored).
+Other directives which affect journal parsing (like \f[CR]Y\f[R],
+\f[CR]D\f[R], \f[CR]decimal\-mark\f[R], \f[CR]apply account\f[R]) do not
+affect CSV data.
+Note that if you include a CSV file in your main journal, you should not
+also import it, or its transactions would be duplicated.
 .PP
 If the file path begins with a tilde, that means your home directory:
 \f[CR]include \(ti/main.journal\f[R].
@@ -4288,16 +4330,10 @@ So secondary dates are officially deprecated in hledger, remaining only
 as a Ledger compatibility aid; we recommend using posting dates instead.
 .SS Star comments
 Lines beginning with \f[CR]*\f[R] (star/asterisk) are also comment
-lines.
-This feature allows Emacs users to insert org headings in their journal,
-allowing them to fold/unfold/navigate it like an outline when viewed
-with org mode.
-.PP
-Downsides: another, unconventional comment syntax to learn.
-Decreases your journal\(aqs portability.
-And switching to Emacs org mode just for folding/unfolding meant losing
-the benefits of ledger mode; nowadays you can add outshine mode to
-ledger mode to get folding without losing ledger mode\(aqs features.
+lines, for Ledger compatibility.
+Emacs users can use these as foldable org headings.
+(But it\(aqs usually better to use ledger\-mode, and add outshine minor
+mode for org\-like folding.)
 .SS Valuation expressions
 Ledger allows a valuation function or value to be written in double
 parentheses after an amount.
@@ -4446,7 +4482,8 @@ directory.
 Eg when asked to read \f[CR]foo/FILE.csv\f[R], hledger looks for
 \f[CR]foo/FILE.csv.rules\f[R].
 You can specify a different rules file with the \f[CR]\-\-rules\f[R]
-option.
+option (for CSV files specified on the command line; not for ones
+included by a journal file).
 .PP
 At minimum, the rules file must identify the date and amount fields, and
 often it also specifies the date format and how many header lines there
@@ -4477,8 +4514,8 @@ more CSV rules examples below, and a larger collection at
 https://github.com/hledgerorg/hledger/tree/main/examples/csv.
 .SS CSV rules cheatsheet
 The following kinds of rule can appear in the rules file, in any order.
-(Blank lines and lines beginning with \f[CR]#\f[R] or \f[CR];\f[R] or
-\f[CR]*\f[R] are ignored.)
+(Blank lines and lines beginning with \f[CR]#\f[R] or \f[CR];\f[R] are
+ignored.)
 .PP
 .TS
 tab(@);
@@ -4566,6 +4603,12 @@ T{
 \f[B]\f[CB]end\f[B]\f[R]
 T}@T{
 (inside an \f[CR]if\f[R] rule) skip all remaining records
+T}
+T{
+\f[B]\f[CB]merge\f[B]\f[R]
+T}@T{
+combine this record with the next one(s), to be converted to a single
+transaction
 T}
 T{
 \f[B]\f[CB]balance\-type\f[B]\f[R]
@@ -5021,6 +5064,9 @@ were given in the fields list (\f[CR]%CSVFIELD\f[R]), and regular
 expression match groups (\f[CR]\(rsN\f[R]).
 You can also write \f[CR]%(CSVFIELD)\f[R] to delimit the field name from
 adjacent text (eg \f[CR]%(field)suffix\f[R]).
+When CSV records have been combined by a \f[CR]merge\f[R] rule, a
+\f[CR]_ROWNUM\f[R] suffix (eg \f[CR]%amt_2\f[R], \f[CR]%4_2\f[R])
+references the later rows\(aq fields.
 .PP
 Some examples:
 .IP
@@ -5206,6 +5252,15 @@ MATCHER
  RULE
 .EE
 .PP
+Comment lines can appear anywhere within an if block, and blank lines
+can also appear among the indented rules; these do not end the block.
+(One exception: a matcher on the same line as \f[CR]if\f[R] can begin
+with a comment character (eg \f[CR]if #groceries\f[R] matches records
+containing \(dq#groceries\(dq); but on the lines below \f[CR]if\f[R],
+such a line would be read as a comment.
+There, escape the comment character with a backslash, eg
+\f[CR]\(rs#groceries\f[R].)
+.PP
 If any of the matchers succeeds, all of the indented rules will be
 applied.
 The rules are usually field assignments, but the following special rules
@@ -5215,6 +5270,9 @@ may also be used within an if block:
 transaction from it)
 .IP \(bu 2
 \f[CR]end\f[R] \- skips the rest of the current CSV file.
+.IP \(bu 2
+\f[CR]merge\f[R] \- combines the matched CSV record and the next
+record(s) into one record (described below).
 .PP
 Some examples:
 .IP
@@ -5260,6 +5318,8 @@ Eg: \f[CR]%3 whole foods\f[R] or \f[CR]%description whole foods\f[R].
 .P
 .PD
 hledger will try to match the pattern just within the named CSV field.
+(In records combined by a \f[CR]merge\f[R] rule, a \f[CR]_ROWNUM\f[R]
+suffix selects a later row\(aqs field, eg \f[CR]%description_2\f[R].)
 .PP
 When using these, there\(aqs two things to be aware of:
 .IP "1." 3
@@ -5347,10 +5407,10 @@ delimiter character, then one or more hledger field names.
 The following lines begin with a matcher expression, then values to
 assign to each of those hledger fields.
 .IP \(bu 2
-Comment lines, beginning with \f[CR];\f[R] or \f[CR]#\f[R], are also
-allowed.
+Comment lines, beginning with \f[CR];\f[R] or \f[CR]#\f[R] (indented or
+not), are also allowed.
 .IP \(bu 2
-An empty line ends the table.
+A blank line (or the end of the file) ends the table.
 .PP
 Eg:
 .IP
@@ -5411,6 +5471,95 @@ atm withdrawal fee | expenses:banking   |
 cafe               | expenses:dining    |
 Plumbing LLC       | expenses:home      |
 .EE
+.SS \f[CR]merge\f[R]
+.IP
+.EX
+if MATCHER
+ merge N
+.EE
+.PP
+Some banks and brokers export a single transaction as multiple CSV
+records \- eg a currency conversion or stock trade, with each side of
+the trade on its own row.
+The \f[CR]merge\f[R] rule combines such related records, so that they
+can generate a single journal transaction.
+.PP
+When a record matches an \f[CR]if\f[R] block containing
+\f[CR]merge N\f[R] (the word \f[CR]merge\f[R] followed by a number, or
+no number, meaning 1), the next N records are joined onto the matched
+record, forming a group of rows.
+Conversion then proceeds as usual, with the whole group generating one
+transaction.
+.PP
+Fields of the later rows are referenced by adding a \f[CR]_ROWNUM\f[R]
+suffix (row number 2 or greater) to the usual field name or number:
+\f[CR]%amt_2\f[R] or \f[CR]%4_2\f[R] is row 2\(aqs \f[CR]amt\f[R]/fourth
+field.
+Unsuffixed references (\f[CR]%amt\f[R], \f[CR]%4\f[R]) always mean the
+first row, so the same \f[CR]fields\f[R] list describes every row.
+A reference to a row that isn\(aqt there (eg in an unmerged record) just
+has an empty value.
+And if you have declared a field name that looks like
+\f[CR]NAME_ROWNUM\f[R], it keeps its declared meaning; the suffix
+interpretation is only a fallback.
+.PP
+For example, to convert this two\-row currency conversion:
+.IP
+.EX
+2026\-09\-01,PAYMENT,coffee,\-3.50,USD
+2026\-09\-02,CONVERT,converted USD to EUR,\-100.00,USD
+2026\-09\-02,CONVERT,converted USD to EUR,90.00,EUR
+.EE
+.IP
+.EX
+fields date, type, desc, amt, cur
+description %desc
+account1 assets:bank:%cur
+amount1  %amt %cur
+
+# a conversion\(aqs second row holds the amount received; make it posting 2
+if %type CONVERT
+ merge
+ account2 assets:bank:%cur_2
+ amount2  %amt_2 %cur_2
+
+if %type PAYMENT
+ account2 expenses:unknown
+.EE
+.IP
+.EX
+$ hledger print \-f conversion.csv
+2026\-09\-01 coffee
+    assets:bank:USD          \-3.50 USD
+    expenses:unknown
+
+2026\-09\-02 converted USD to EUR
+    assets:bank:USD        \-100.00 USD
+    assets:bank:EUR          90.00 EUR
+.EE
+.PP
+Things to note:
+.IP \(bu 2
+\f[CR]merge\f[R] can also be used as a top\-level rule
+(unconditionally), useful for files where every transaction is exactly
+N+1 rows.
+.IP \(bu 2
+\f[CR]skip\f[R] and \f[CR]end\f[R] rules are applied before row merging
+\- skipped records don\(aqt count toward a merge group.
+.IP \(bu 2
+The rows of a group must be consecutive in the file (ignoring skipped
+records), and the merging record must be the first of them.
+.IP \(bu 2
+Matchers which (if successful) will trigger a \f[CR]merge\f[R] rule, can
+only usefully reference the first row\(aqs fields \- the other row
+fields will be empty at this stage.
+.IP \(bu 2
+But once a \f[CR]merge\f[R] rule has been evaluated, later \f[CR]if\f[R]
+blocks can see the whole group; eg a whole\-record matcher will see all
+of its rows combined as one, and field matchers can use
+\f[CR]%FIELD_ROWNUM\f[R] references.
+.IP \(bu 2
+If fewer than N records remain in the file, just those are merged.
 .SS \f[CR]balance\-type\f[R]
 Balance assertions generated by assigning to balanceN are of the simple
 \f[CR]=\f[R] type by default, which is a single\-commodity,
@@ -5529,12 +5678,17 @@ once, hledger will look for a correspondingly\-named rules file for each
 CSV file.
 But if you specify a rules file with \f[CR]\-\-rules\f[R], that rules
 file will be used for all the CSV files.
+.PP
+Alternatively, a journal file can include CSV files (or rules files).
+In this case each CSV file always uses its correspondingly\-named rules
+file; \f[CR]\-\-rules\f[R] has no effect.
 .SS Reading files specified by rule
 Instead of specifying a CSV file in the command line, you can specify a
 rules file, as in \f[CR]hledger \-f foo.csv.rules CMD\f[R].
 By default this will read data from foo.csv in the same directory, but
 you can add a source rule to specify a different data file, perhaps
 located in your web browser\(aqs download directory.
+(A rules file can also be included by a journal file.)
 .PP
 This feature helps remove some of the busywork of managing CSV
 downloads.
@@ -5952,6 +6106,11 @@ If found, skip the specified number of CSV records, then continue at 5.
 .P
 .PD
 Otherwise...
+.IP \(bu 2
+Is there a \f[CR]merge\f[R] rule that applies for this record (top level
+or conditional) ?
+If so, join the next N CSV records onto this record, making one combined
+record.
 .IP \(bu 2
 Do some basic validation on this CSV record (eg, check that it has at
 least two fields).
@@ -7277,6 +7436,24 @@ usually don\(aqt bother writing it)
 .PD
 .RE
 .IP \(bu 2
+To match in any field, or by date, use the \f[CR]find:\f[R] query type,
+or \f[CR]::\f[R] for short:
+.RS 2
+.PP
+\f[CR]::amazon\f[R]
+.PD 0
+.P
+.PD
+\f[CR]::2024\f[R]
+.PD 0
+.P
+.PD
+\f[CR]::amazon ::2024\f[R] (both must match)
+.PD 0
+.P
+.PD
+.RE
+.IP \(bu 2
 To negate a query, add a \f[CR]not:\f[R] prefix:
 .RS 2
 .PP
@@ -7446,6 +7623,31 @@ Match (or display, depending on command) accounts at or above this
 depth, optionally only for accounts matching a provided regular
 expression.
 See Depth for detailed rules.
+.SS find: query
+\f[B]\f[CB]find:REGEX\f[B]\f[R], or \f[B]\f[CB]::REGEX\f[B]\f[R]
+.PD 0
+.P
+.PD
+Match if any visible text field contains this case insensitive regular
+expression: the account name, the amount (as it would be displayed), the
+comment, and the transaction\(aqs description, code and comment.
+In other words, the text you would see in \f[CR]print\f[R] output.
+Tags are searched as part of the comment text, so hidden tags and tags
+inherited from account declarations are not matched (use \f[CR]tag:\f[R]
+for those).
+Or, if REGEX is also a valid period expression, match if the date is
+within that period.
+So \f[CR]::amazon\f[R] finds \(dqamazon\(dq anywhere, and
+\f[CR]::2024\f[R] finds \(dq2024\(dq in any field or a date in 2024.
+Unlike \f[CR]date:\f[R], this does not set the report period.
+.PP
+Multiple \f[CR]find:\f[R] terms must all match, like the words of a
+search.
+Eg \f[CR]::amazon ::2024\f[R] shows things matching both.
+(In a transaction\-oriented command like \f[CR]print\f[R], the terms may
+be matched by different postings.)
+To match alternatives, use a regular expression:
+\f[CR]::\(aqamazon|amzn\(aq\f[R].
 .SS note: query
 \f[B]\f[CB]note:REGEX\f[B]\f[R]
 .PD 0
@@ -9284,9 +9486,13 @@ See Cost basis methods.
 .PP
 Sometimes you may want to disable lots/gains processing, to silence
 lot\-related errors when you are working with incomplete journals (eg,
-when piping hledger print into another hledger command).
+when piping hledger print into another hledger command, or when fixing a
+complex journal\(aqs problems one at a time).
 For this, use the \f[CR]\-\-ignore\-lots\f[R] flag, or just
 \f[CR]\-I\f[R].
+This skips lot tracking, capital gains calculation, and all lot error
+checking, while still doing enough lot inference that lot entries
+balance as usual.
 .SS First lots example
 hledger\(aqs lot tracking does not require much extra notation.
 Here is a small example, using \(at syntax.
@@ -9506,9 +9712,9 @@ not a valid lot name.
 This is a breaking change from hledger 1.x, which had no special
 handling for such names.
 If you have such an account name and don\(aqt want hledger to reject it,
-you can pass \f[CR]\-\-ignore\-lots\f[R] (or \f[CR]\-I\f[R]) to skip lot
-processing entirely, causing \f[CR]:{...}\f[R] to be treated as ordinary
-subaccounts.
+you can pass \f[CR]\-\-ignore\-lots\f[R] (or \f[CR]\-I\f[R]) to skip
+most lot processing, allowing \f[CR]:{...}\f[R] names to be treated as
+ordinary subaccounts.
 .PP
 When strictly checking account names, lot subaccounts are ignored \- you
 only need to declare the base account (eg \f[CR]assets:stocks\f[R]), not
@@ -9520,11 +9726,13 @@ It is the cost basis date, followed by the label if any, with a space
 between them.
 .PP
 Lot ids also record the order in which lots were acquired.
-So if multiple lots of a commodity are acquired on the same date, they
-must have distinct, sortable labels.
+So if multiple lots of a commodity are acquired on the same date (even
+in different accounts), they must have distinct, sortable labels.
 Eg the time of the event, in \f[CR]HH:MM\f[R] format, could be used.
 Or if no labels are provided, hledger will add sequentially numbered
 labels starting from \f[CR]0001\f[R].
+These numbers are not reused, even after a lot has been fully disposed
+of.
 .PP
 Acquisitions with these cost basis annotations would produce those lot
 ids:
@@ -9533,7 +9741,7 @@ ids:
 {2026\-01\-01, $50}           ; → \(dq2026\-01\-01\(dq
 {2026\-01\-02, \(dq12:30\(dq, $50}  ; → \(dq2026\-01\-02 12:30\(dq
 {2026\-01\-03, $50}           ; → \(dq2026\-01\-03 0001\(dq
-{2026\-01\-03, $50}           ; → \(dq2026\-01\-04 0002\(dq
+{2026\-01\-03, $50}           ; → \(dq2026\-01\-03 0002\(dq
 .EE
 .SS Cost basis vs transacted cost
 In acquisition transactions, hledger allows the cost basis
@@ -9602,9 +9810,10 @@ the new rendering, which is shown in the error message (or by
 Selectors using just the date (and label) don\(aqt embed a cost and are
 unaffected \- one more reason to prefer them.
 .SS Lot movements
-hledger understands three kinds of event involving lots.
+hledger understands three kinds of lot movement: acquire, transfer, and
+dispose.
 Other real\-world lot events can usually be modelled using combinations
-of these.
+of these (see the next section for examples).
 .SS Acquire
 A positive lot posting in an asset account creates a new lot.
 .IP
@@ -9625,24 +9834,6 @@ Acquire postings may carry a per\-unit (\f[CR]{}\f[R]) or total
 (\f[CR]{{}}\f[R]) cost basis annotation, and a per\-unit
 (\f[CR]\(at\f[R]) or total (\f[CR]\(at\(at\f[R]) transacted cost.
 See Cost basis vs transacted cost for the recommended style.
-.PP
-Here is a worked example: an acquisition where the cost basis differs
-from the commodity\(aqs current market price.
-With GOLD currently priced at $5000, you receive a gift carrying its
-original cost basis of $3000/oz:
-.IP
-.EX
-P 2026\-05\-01 GOLD $5000
-
-2026\-05\-01 gift from Aunt, with carryover basis of $3000
-    income:gifts         $\-6000
-    assets:stock              2 GOLD {$3000}
-.EE
-.PP
-The transacted cost is $3000 (same as the basis), not $5000.
-And the recorded gift income is $6000 (the gift\(aqs current market
-value is $10000, but remember when you dispose you\(aqll have to declare
-$2000/oz more capital gain, $4000 more in total).
 .SS Transfer
 A matching pair of negative/positive lotful postings moves one or more
 existing lots between accounts, preserving their cost basis.
@@ -9759,6 +9950,75 @@ sizes them from the disposal side only: the sum of
 Acquire postings in the same entry don\(aqt contribute to the inferred
 gain (any acquire\-side \f[CR]B ≠ T\f[R] would be rejected at load time
 anyway, see Acquire above).
+.SS Other lot events
+Some examples of recording other real\-world events using these
+movements:
+.SS Gift received
+An acquisition\(aqs cost basis can differ from the commodity\(aqs
+current market price.
+Eg with GOLD currently priced at $5000, you receive a gift carrying its
+original (\(dqcarryover\(dq) cost basis of $3000/oz:
+.IP
+.EX
+P 2026\-05\-01 GOLD $5000
+
+2026\-05\-01 gift received, with carryover basis of $3000
+    income:gifts         $\-6000
+    assets:stock              2 GOLD {$3000}
+.EE
+.PP
+The transacted cost is $3000 (same as the basis), not $5000.
+And the recorded gift income is $6000 (the gift\(aqs current market
+value is $10000, but remember when you dispose you\(aqll have to declare
+$2000/oz more capital gain, $4000 more in total).
+.SS Bonus shares
+Extra shares granted for free (a bonus issue or stock dividend) can be
+recorded as a zero\-cost acquisition.
+Such an entry balances by itself:
+.IP
+.EX
+2026\-06\-01 bonus shares
+    assets:stock    5 AAPL \(at\(at $0
+.EE
+.PP
+Or you can add an equity posting for more explicit double entry (note
+that account will then keep an offsetting negative AAPL balance):
+.IP
+.EX
+2026\-06\-01 bonus shares
+    assets:stock          5 AAPL \(at\(at $0
+    equity:bonus\-shares  \-5 AAPL \(at\(at $0
+.EE
+.PP
+A zero cost basis means the full sale proceeds will be counted as
+capital gain at disposal.
+This matches the tax treatment of bonus shares in some jurisdictions \-
+eg India, where their acquisition cost is nil, or the UK, where they
+enter the pool at nil cost, diluting the average cost.
+Other treatments exist, so check your local rules.
+Eg for US nontaxable stock dividends, the original shares\(aq cost basis
+is instead spread proportionally across the old and new shares, which
+can be recorded like a stock split.
+Or, free shares which are taxable income when received (eg a brokerage
+promotion) would typically be acquired at their market value, balanced
+by an income posting.
+.SS Stock splits
+A stock split (eg 2:1, doubling the share count and halving the share
+price) can be recorded as a disposal and re\-acquisition, preserving the
+original acquisition date and total cost basis.
+Eg, for 10 AAPL bought on 2026\-01\-01 with cost basis $100/share:
+.IP
+.EX
+2026\-06\-01 AAPL splits 2:1
+    assets:broker   \-10 AAPL {2026\-01\-01} \(at\(at $1000
+    assets:broker    20 AAPL {2026\-01\-01} \(at\(at $1000
+.EE
+.PP
+The old lot is disposed at its cost basis, so there is no gain; the new
+lot keeps the old acquisition date, with the per\-unit basis inferred
+from the unchanged total ($1000 / 20 = $50).
+(Since two acquisitions now share the same basis date, hledger will add
+sequence\-number labels to keep their lot ids distinct.)
 .SS Cost basis methods
 If a lot transfer or a lot disposal doesn\(aqt specifically identify the
 lot(s) involved, hledger selects from the available lots automatically,
@@ -11261,9 +11521,14 @@ Flags:
      \-\-unused               list commodities declared but not used or priced
      \-\-find                 list the first commodity matched by the first
                             argument (a case\-insensitive infix regexp)
+     \-\-directives           show as commodity directives (with their display
+                            styles), for use in journals
 .EE
 .PP
 Most of these flags can be combined.
+With \f[CR]\-\-directives\f[R], it shows valid commodity directives,
+declaring each commodity\(aqs (declared or inferred) display style,
+which could be pasted into a journal file.
 Some kinds of query argument are supported: \f[CR]cur:\f[R],
 \f[CR]tag:\f[R], and \f[CR]date:\f[R] (also
 \f[CR]\-b\f[R]/\f[CR]\-e\f[R]/\f[CR]\-p\f[R] report period options).
@@ -11395,6 +11660,7 @@ Flags:
      \-\-unused               list payees declared but not used
      \-\-find                 list the first payee matched by the first
                             argument (a case\-insensitive infix regexp)
+     \-\-directives           show as payee directives, for use in journals
 .EE
 .PP
 This command lists unique payee/payer names \- all of them by default,
@@ -11405,6 +11671,9 @@ declared but not used, or just the first one matched by a pattern (with
 .PP
 The payee/payer name is the part of the transaction description before a
 | character (or if there is no |, the whole description).
+.PP
+With \f[CR]\-\-directives\f[R], it shows valid payee directives, which
+could be pasted into a journal file.
 .PP
 You can add query arguments to select a subset of transactions or
 payees.
@@ -11554,6 +11823,8 @@ Flags:
      \-\-values               list tag values instead of tag names
      \-\-parsed               show them in the order they were parsed (mostly),
                             including duplicates
+     \-\-directives           show tag names as tag directives, for use in
+                            journals
 .EE
 .PP
 This command lists tag names \- all of them by default, or just the ones
@@ -11578,9 +11849,41 @@ With \f[CR]\-\-parsed\f[R], tags or values are shown in the order they
 were parsed, with duplicates included.
 (Except, tags from account declarations are always shown first.)
 .PP
+With \f[CR]\-\-directives\f[R], tag names are shown as valid tag
+directives, which could be pasted into a journal file.
+.PP
 Remember that accounts also acquire tags from their parents; postings
 also acquire tags from their account and transaction; and transactions
 also acquire tags from their postings.
+.SS transactions
+(tx)
+.PP
+List transactions, one per line.
+.IP
+.EX
+Flags:
+  \-m \-\-match=DESC           fuzzy search for one recent transaction with
+                            description closest to DESC
+.EE
+.PP
+This command shows each transaction\(aqs first line only (the date,
+status, code, description, and any same\-line comment), giving a compact
+overview of a journal, in the manner of \f[CR]git log \-\-oneline\f[R].
+You can add a query to select a subset of transactions.
+(To see full journal entries, use the \f[CR]print\f[R] command.)
+.PP
+Example:
+.IP
+.EX
+$ hledger transactions \-f examples/sample.journal
+2008\-01\-01 income
+2008\-06\-01 gift
+2008\-06\-02 save
+2008\-06\-03 * eat & shop
+2008\-12\-31 * pay off
+.EE
+.PP
+To see the full entries, use \f[CR]print\f[R].
 .SH Standard report commands
 .SS print
 Show transactions\(aq journal entries, or export journal data to another
@@ -11588,13 +11891,14 @@ format.
 .IP
 .EX
 Flags:
-     \-\-oneline              show transaction dates and descriptions only
   \-a \-\-all                  show all details (\-\-explicit \-\-lots
                             \-\-verbose\-tags)
   \-x \-\-explicit             show all inferred info explicitly
      \-\-verbose\-tags         add tags indicating generated/modified data
      \-\-invert               display all amounts with reversed sign
      \-\-locations            add tags showing file paths and line numbers
+     \-\-export               reproduce the whole journal, with directives and
+                            comments preserved and included files inlined
   \-m \-\-match=DESC           fuzzy search for one recent transaction with
                             description closest to DESC
      \-\-new                  show only newer\-dated transactions added in each
@@ -11626,11 +11930,15 @@ Flags:
 The print command displays full journal entries (transactions) from the
 journal file, sorted by date (or with \f[CR]\-\-date2\f[R], by secondary
 date).
+(For a compact one\-line\-per\-transaction overview, see the
+\f[CR]transactions\f[R] command.)
 .PP
-Directives and inter\-transaction comments are not shown, currently.
-This means the print command is somewhat lossy, and if you are using it
-to reformat/regenerate your journal you should take care to also copy
-over the directives and inter\-transaction comments.
+By default, directives and inter\-transaction comments are not shown
+(except for comment lines immediately preceding a transaction, which are
+shown with it), and entries are sorted by date.
+So the default print output is somewhat lossy.
+To reproduce the whole journal, including directives and comments, use
+\f[CR]\-\-export\f[R] (see below).
 .PP
 Eg:
 .IP
@@ -11768,11 +12076,77 @@ postings) could be disrupted.
 .PP
 Also, printing a subset of journal entries can disrupt validation of
 balance assertions or lot entries.
-And print does not reproduce directives; this too can break lot entries.
+And print does not reproduce directives (unless \f[CR]\-\-export\f[R] is
+used); this too can break lot entries.
 To suppress errors from these, we often use the \f[CR]\-I\f[R] flag
 (short for \f[CR]\-\-ignore\-assertions \-\-ignore\-lots\f[R].
 So any time you are reading from standard input with \f[CR]\-f\-\f[R],
 consider adding \f[CR]\-I\f[R] also.
+.SS print export mode
+With \f[CR]\-\-export\f[R], print reproduces the whole journal in its
+original order, with directives, top\-level comment lines and
+\f[CR]comment\f[R] blocks preserved verbatim, and with each transaction
+shown as print normally shows it (so \f[CR]\-x\f[R],
+\f[CR]\-\-round\f[R], \f[CR]\-\-layout\f[R] etc.
+still apply).
+Blank lines are normalised: there is one blank line between
+transactions, and between groups of directive or comment lines.
+The output can be read by hledger as an equivalent journal, so this is
+the mode to use when reformatting or regenerating a journal file.
+Some details:
+.IP \(bu 2
+Included files are inlined at the position of their \f[CR]include\f[R]
+directive, and the \f[CR]include\f[R] line itself is dropped.
+If you want to preserve a multi\-file structure rather than flattening
+it, currently the best way is: comment out the \f[CR]include\f[R]
+directives (they will be preserved as comments), export each file
+individually, then uncomment the \f[CR]include\f[R] directives in the
+exported main file.
+(A file which depends on directives in its parent file, such as
+\f[CR]Y\f[R] or \f[CR]decimal\-mark\f[R], might need those added
+temporarily while it is exported.)
+.IP \(bu 2
+\f[CR]apply account\f[R], \f[CR]alias\f[R] and their \f[CR]end\f[R]
+directives are dropped, since their effect is already applied to the
+account names shown.
+(An \f[CR]account\f[R] declaration inside an \f[CR]apply account\f[R]
+block is reproduced as written, without the parent account prefix.)
+.IP \(bu 2
+Directives which hledger ignores (for compatibility with Ledger) are not
+exported.
+.IP \(bu 2
+By default, periodic transaction rules (\f[CR]\(ti\f[R]) and auto
+posting rules (\f[CR]=\f[R]) are exported as directives.
+With \f[CR]\-\-forecast\f[R] and/or \f[CR]\-\-auto\f[R], the generated
+transactions (at the end of the output) and postings are exported
+instead, and the rules are not.
+In other words, these flags materialise the rules.
+Postings generated by \f[CR]\-\-infer\-equity\f[R] are exported too.
+(In Beancount output, these rules are never exported, only whatever has
+been generated.)
+.IP \(bu 2
+A query still selects which transactions are shown, but all directives
+and comments are kept.
+.IP \(bu 2
+Transactions from non\-journal files (eg an included CSV file) are added
+at the end.
+.IP \(bu 2
+The \f[CR]txt\f[R] (default), \f[CR]ledger\f[R] and \f[CR]beancount\f[R]
+output formats are supported.
+With \f[CR]\-O ledger\f[R], transactions use Ledger\(aqs lot syntax, and
+directives which hledger accepts but Ledger does not
+(\f[CR]decimal\-mark\f[R], a one\-line \f[CR]commodity\f[R] directive
+with an amount, a periodic transaction rule with a description, an auto
+posting rule with \f[CR]*N\f[R] amount multipliers) are commented out,
+with an explanatory comment.
+Other hledger\-specific syntax may remain; see Ledger output.
+With \f[CR]\-O beancount\f[R], Beancount \f[CR]option\f[R],
+\f[CR]commodity\f[R], \f[CR]open\f[R] and \f[CR]price\f[R] directives
+are generated from the journal\(aqs declarations and data, other
+directives (which have no Beancount equivalent) are dropped, and
+comments are converted to Beancount comments; see Beancount output.
+Note for both Ledger and Beancount, manual fixups may still be required
+in some cases; but the export will be a good start.
 .SS print, other features
 With \f[CR]\-B\f[R]/\f[CR]\-\-cost\f[R], amounts with costs are shown
 converted to cost.
@@ -11796,16 +12170,11 @@ the program exit code will be non\-zero.
 .PP
 With \f[CR]\-\-locations\f[R], print adds the source file and line
 number to every transaction, as a tag.
-.PP
-With \f[CR]\-\-oneline\f[R], print shows only each transaction\(aqs
-first line (the date, status, code, description, and any same\-line
-comment), This gives a compact overview.
-It affects the default \f[CR]txt\f[R] output only.
 .SS print output format
 This command also supports the output destination and output format
 options The output formats supported are \f[CR]txt\f[R],
 \f[CR]ledger\f[R], \f[CR]beancount\f[R], \f[CR]csv\f[R], \f[CR]tsv\f[R],
-\f[CR]json\f[R] and \f[CR]sql\f[R].
+\f[CR]html\f[R], \f[CR]fods\f[R], \f[CR]json\f[R] and \f[CR]sql\f[R].
 .PP
 The \f[CR]ledger\f[R] format is currently the same as \f[CR]txt\f[R]
 except it renders amounts\(aq cost basis using Ledger\(aqs lot syntax
@@ -11821,7 +12190,7 @@ Transaction and postings with unmarked status are converted to cleared
 Transactions\(aq payee and note are backslash\-escaped and
 double\-quote\-escaped and wrapped in double quotes.
 .IP \(bu 2
-Transaction tags are copied to Beancount #tag format.
+Transaction and posting tags are converted to Beancount metadata lines.
 .IP \(bu 2
 Commodity symbols are converted to upper case, and a small number of
 currency symbols like \f[CR]$\f[R] are converted to the corresponding
@@ -11829,24 +12198,29 @@ currency names.
 .IP \(bu 2
 Account name parts are capitalised and unsupported characters are
 replaced with \f[CR]\-\f[R].
-If an account name part does not begin with a letter, or if the first
-part is not Assets, Liabilities, Equity, Income, or Expenses, an error
-is raised.
-(Use \f[CR]\-\-alias\f[R] options to bring your accounts into
+The first part must be one of Assets, Liabilities, Equity, Income or
+Expenses; if it is not, but the account\(aqs type is known (declared or
+inferred), the corresponding one of those is prepended; otherwise an
+error is raised.
+(Or, use \f[CR]\-\-alias\f[R] options to bring your accounts into
 compliance.)
 .IP \(bu 2
-An \f[CR]open\f[R] directive is generated for each account used, on the
-earliest transaction date.
+Balance assignments are converted to explicit amounts.
+.IP \(bu 2
+Virtual and balanced virtual postings are dropped.
 .PP
-Some limitations:
-.IP \(bu 2
-Balance assertions are removed.
-.IP \(bu 2
-Balance assignments become missing amounts.
-.IP \(bu 2
-Virtual and balanced virtual postings become regular postings.
-.IP \(bu 2
-Directives are not converted.
+By default only transactions are shown.
+With \f[CR]\-\-export\f[R], the directives Beancount needs are also
+generated: options (a commented\-out tolerance option, and
+\f[CR]operating_currency\f[R] for the currencies used in costs), a
+\f[CR]commodity\f[R] directive for each declared commodity, an
+\f[CR]open\f[R] directive for each declared or used account (on the
+account\(aqs earliest posting date, or the earliest transaction date),
+and \f[CR]price\f[R] directives.
+Account and commodity tags become metadata on those directives, and an
+account\(aqs \f[CR]lots:\f[R] tag becomes the Beancount booking method.
+Other hledger directives are dropped, and top\-level comments are
+converted to Beancount comments.
 .PP
 Here\(aqs an example of print\(aqs CSV output:
 .IP
@@ -13938,7 +14312,7 @@ Show monthly change in market value of investment assets.
 .PD
 Show top gainers [or losers] last week
 .SS holdings
-Show a report of investment holdings (lot\-tracked assets).
+Show a report of investment holdings.
 .IP
 .EX
 Flags:
@@ -13969,55 +14343,74 @@ Flags:
                             one of the above formats selects that format.
 .EE
 .PP
-This command shows the assets held in lot\-tracked accounts (see Lots)
-as of the report end date: one row per account and held commodity (an
-account holding several commodities gets several rows, repeating its
-name), or per lot and commodity with \f[CR]\-\-lots\f[R].
-Fully disposed commodities and accounts are not shown by default; with
-\f[CR]\-E/\-\-empty\f[R], they are shown as zero\-units rows, keeping
-their realised gains and realised XIRR visible.
-With \f[CR]\-\-tree\f[R], accounts are shown as a tree, with parent rows
-aggregating the lots beneath them; \f[CR]\-\-depth\f[R] limits and
-aggregates the displayed rows as usual.
-With \f[CR]\-S/\-\-sort\-amount\f[R], rows are sorted by market value
-(or by cost, when unpriced), largest first.
-The report title (\(dqHoldings on DATE\(dq) can be customised with
-\f[CR]\-\-title=TEXT\f[R], or suppressed with
-\f[CR]\-\-title=\(dq\(dq\f[R].
-Columns show each holding\(aqs acquisition date and age (when its lots
-share a single date; ages are shown in days, or from one year in years
-with one decimal digit, eg \f[CR]44d\f[R] or \f[CR]1.1y\f[R],
-approximating years as 365 days), the units held, the unit cost (or
-average cost, on rows aggregating multiple lots; for accounts using the
-AVERAGE cost basis method, this is the pool\(aqs running average as of
-the report date), the current market price, the total cost basis, the
-market value, the percentage of the portfolio\(aqs total value (Weight),
-the unrealised gain and gain percent (UGain, UGain%), the realised gain
-from disposals so far (RGain), and the annualised internal rate of
-return (XIRR, calculated from the holding\(aqs dated cashflows and
-current value, like roi\(aqs IRR; it includes realised gains).
-The cost column\(aqs heading reflects the lots shown: \(dqAvg cost\(dq
-on rows aggregating multiple lots, or when the lots shown all use the
-AVERAGE cost basis method (their cost basis is the pool average);
-\(dqUnit cost\(dq when each lot shows its own cost; and \(dqUnit/Avg
-cost\(dq when both kinds of lot are shown.
-In the totals row, RGain and XIRR are account\-level, for the displayed
-accounts: they also include those accounts\(aq fully disposed lots and
-commodities, which may have no row of their own.
-Fully disposed accounts are included only when \f[CR]\-E\f[R] displays
-them.
+This command shows your lot\-tracked assets (see Lot reporting), and
+their performance, as of the report end date.
+An example:
+.IP
+.EX
+$ hledger holdings \-e 2023\-04\-02
+Holdings on 2023\-04\-01
+
+                           ||       Date   Age    Units  Avg cost     Price      Cost        Value  Weight        UGain   UGain%     RGain     XIRR 
+===========================++=======================================================================================================================
+ assets:investments:stocks || 2022\-04\-07  359d  10 INFY    2.00 ₹  100.00 ₹   20.00 ₹   1,000.00 ₹    6.4%     980.00 ₹  4900.0%            5252.4% 
+ assets:investments:stocks ||                   73 LTTS    4.79 ₹  200.00 ₹  350.00 ₹  14,600.00 ₹   93.6%  14,250.00 ₹  4071.4%  140.00 ₹  4290.2% 
+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-++\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
+                           ||                                                370.00 ₹  15,600.00 ₹  100.0%  15,230.00 ₹  4116.2%  140.00 ₹  4342.1% 
+.EE
 .PP
-Market prices at the report date come from P directives, and from
-transaction costs with \f[CR]\-\-infer\-market\-prices\f[R], as usual.
-Each lot is valued in its cost commodity when known; a row\(aqs Price
-and Value aggregate its lots, showing multiple amounts when their value
-commodities differ (like Cost), so values and value totals do not depend
-on how lots are grouped into rows (by \f[CR]\-\-depth\f[R],
-\f[CR]\-\-pivot\f[R], tree mode etc).
-When a lot has no market price, its row\(aqs Price, Value and gain
-columns are left blank.
-So in a multi\-currency portfolio, aggregated rows and the totals row
-can mix currencies; use \f[CR]\-X COMM\f[R] for a single\-currency view.
+With \f[CR]\-\-lots\f[R], the individual lots are shown:
+.IP
+.EX
+$ hledger \-\-lots \-e 2023\-04\-02
+Holdings on 2023\-04\-01
+
+                                                         ||       Date   Age    Units  Unit cost     Price      Cost        Value  Weight        UGain   UGain%     RGain     XIRR 
+=========================================================++========================================================================================================================
+ assets:investments:stocks:{2022\-04\-06, \(dq0002\(dq, 10.00 ₹} || 2022\-04\-06  360d  13 LTTS    10.00 ₹  200.00 ₹  130.00 ₹   2,600.00 ₹   16.7%   2,470.00 ₹  1900.0%  140.00 ₹  3876.1% 
+ assets:investments:stocks:{2022\-04\-07, 2.00 ₹}          || 2022\-04\-07  359d  10 INFY     2.00 ₹  100.00 ₹   20.00 ₹   1,000.00 ₹    6.4%     980.00 ₹  4900.0%            5252.4% 
+ assets:investments:stocks:{2022\-05\-06, \(dq0002\(dq, 11.00 ₹} || 2022\-05\-06  330d  20 LTTS    11.00 ₹  200.00 ₹  220.00 ₹   4,000.00 ₹   25.6%   3,780.00 ₹  1718.2%            5032.7% 
+ assets:investments:stocks:{2022\-06\-06, \(dq0002\(dq, 0.00 ₹}  || 2022\-06\-06  299d  40 LTTS          0  200.00 ₹         0   8,000.00 ₹   51.3%   8,000.00 ₹                             
+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-++\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
+                                                         ||                                                 370.00 ₹  15,600.00 ₹  100.0%  15,230.00 ₹  4116.2%  140.00 ₹  4342.1% 
+.EE
+.PP
+The columns show:
+.IP \(bu 2
+each holding\(aqs acquisition date (or earlier basis date) and age
+.IP \(bu 2
+the number of units held
+.IP \(bu 2
+the unit cost basis (or average cost; for accounts using the AVERAGE
+method, this is the pool\(aqs running average on the report date),
+.IP \(bu 2
+the unit market price on the report date
+.IP \(bu 2
+the total cost
+.IP \(bu 2
+the total market value
+.IP \(bu 2
+the percentage of the portfolio\(aqs total value (Weight)
+.IP \(bu 2
+the unrealised gain and gain percent (UGain, UGain%)
+.IP \(bu 2
+the realised gain from disposals so far (RGain)
+.IP \(bu 2
+and the annualised rate of return, as of the report end date (XIRR,
+calculated from the holding\(aqs dated cashflows and current value, like
+roi\(aqs IRR; it includes realised gains).
+.PP
+Fully disposed commodities and accounts are not shown, unless you add
+\f[CR]\-E/\-\-empty\f[R].
+(But the RGain and XIRR in the totals row always includes them.)
+.PP
+To see a commodity\(aqs performance, a market price should be declared
+for it (as of the report end date).
+Market prices come from P directives or (with
+\f[CR]\-\-infer\-market\-prices\f[R]) from transacted prices, as usual.
+Each lot is valued in its cost commodity.
+In a multi\-currency portfolio, aggregated values may contain multiple
+currencies; use \f[CR]\-X COMM\f[R] for a single\-currency view.
 .PP
 With \f[CR]\-V\f[R], \f[CR]\-X COMM\f[R] or \f[CR]\-\-value\f[R]
 (Valuation), holdings are valued in the default or given valuation
@@ -14025,43 +14418,28 @@ commodity instead, and the cost columns are also converted to it (at the
 valuation date, so percent gain is unaffected).
 Cashflows are not converted, however, so the XIRR column is left blank
 for holdings whose cashflows are in a different commodity.
-\f[CR]\-\-value=then\f[R] is not supported, and \f[CR]\-B/\-\-cost\f[R]
-has no effect.
-Amounts are displayed with their commodity\(aqs display precision
-(unlike lot names, which can show more precision); \f[CR]\-\-round\f[R]
-can select another rounding strategy.
-The percent columns (Weight, UGain%, XIRR) are shown with one decimal
-digit, or with the display style configured for the \f[CR]%\f[R]
-commodity (eg by \f[CR]\-c \(aq0.00 %\(aq\f[R]).
+\f[CR]\-\-value=then\f[R] is not supported, and
+\f[CR]\-B/\-\-cost\f[R]has no effect.
 .PP
-With \f[CR]\-O csv\f[R] or \f[CR]\-O tsv\f[R], machine\-readable output
-is produced instead: one record per displayed row, with full account
-names, age in days, bare units and gain percent numbers, gain and gain
-percent as separate fields, and no totals records.
-Amounts are shown without digit group marks; as in other commands\(aq
-CSV output, the decimal mark follows the commodity\(aqs display style.
-(Note in tree mode, parent account records repeat the data of their
-subaccounts.)
+Amounts are displayed with their commodity\(aqs display precision.
+\f[CR]\-\-round\f[R] can select another rounding strategy.
+The percent columns (Weight, UGain%, XIRR) are shown with with the
+display style configured for the \f[CR]%\f[R] commodity (eg by
+\f[CR]\-c \(aq0.00 %\(aq\f[R]).
 .PP
-With \f[CR]\-O html\f[R], an HTML table is produced: like the text
-table, but with single\-line cells.
-For styling, each cell has a css class naming its column
-(\f[CR]account\f[R], \f[CR]date\f[R], \f[CR]age\f[R], \f[CR]units\f[R],
-\f[CR]unitcost\f[R], \f[CR]price\f[R], \f[CR]cost\f[R],
-\f[CR]value\f[R], \f[CR]weight\f[R], \f[CR]ugain\f[R],
-\f[CR]ugainpct\f[R], \f[CR]rgain\f[R], \f[CR]xirr\f[R]; totals row cells
-also have \f[CR]coltotal\f[R]), and each commodity amount is enclosed in
-a span with class \f[CR]amount\f[R] (eg allowing wrapping within amounts
-to be prevented).
+Query arguments and report flags like \f[CR]\-t/\-\-tree\f[R],
+\f[CR]\-\-depth\f[R], \f[CR]\-S/\-\-sort\-amount\f[R],
+\f[CR]\-\-title\f[R] etc.
+work as usual.
 .PP
+With \f[CR]\-O html\f[R], an HTML table is produced instead.
 With \f[CR]\-O fods\f[R], a spreadsheet document readable by LibreOffice
 etc.
-is produced, with the same single\-line cells as the html output.
-.PP
-With \f[CR]\-O json\f[R], a JSON array of holding objects is produced,
-with the same fields as the CSV output; units and gain percents are JSON
-number objects as in other commands\(aq JSON output, and missing values
-are null.
+is produced.
+With \f[CR]\-O csv\f[R] or \f[CR]\-O tsv\f[R], machine\-readable output
+is produced: one record per displayed row, with full account names, age
+in days, bare units and gain percent numbers, and no totals record.
+With \f[CR]\-O json\f[R], a JSON array of holding objects is produced.
 .SS roi
 Show the money\-weighted (IRR) and time\-weighted (TWR) rate of return
 on your investments.
@@ -14132,7 +14510,7 @@ If any query terms contain spaces themselves, you will need an extra
 level of nested quoting, eg:
 .IP
 .EX
-$ hledger roi \-\-inv=\(dq\(aqAssets:Test 1\(aq\(dq \-\-pnl=\(dq\(aqEquity:Unrealized Profit and Loss\(aq\(dq
+$ hledger roi \-\-inv=\(dq\(aqAssets:Test 1\(aq cur:USD\(dq \-\-pnl=\(dq\(aqEquity:Unrealized Profit and Loss\(aq\(dq
 .EE
 .SS Semantics of \f[CR]\-\-inv\f[R] and \f[CR]\-\-pnl\f[R]
 Query supplied to \f[CR]\-\-inv\f[R] has to match all transactions that
@@ -14924,9 +15302,9 @@ arguments to the \f[CR]check\f[R] command.
 Eg:
 .IP
 .EX
-hledger check                      # run basic checks
-hledger check \-s                   # run basic and strict checks
-hledger check ordereddates payees  # run basic checks and two others
+hledger check                      # run default checks
+hledger check \-s                   # run default and strict checks
+hledger check ordereddates payees  # run default checks and two others
 .EE
 .PP
 If you are an Emacs user, you can also configure flycheck\-hledger to
@@ -14935,7 +15313,7 @@ run these checks, providing instant feedback as you edit the journal.
 Here are the checks currently available.
 They are generally checked in the order they are shown here, and only
 the first failure will be reported.
-.SS Basic checks
+.SS Default checks
 These important checks are performed by default, by almost all hledger
 commands:
 .IP \(bu 2
@@ -14957,6 +15335,8 @@ it temporarily with \f[CR]\-I\f[R] or \f[CR]\-\-ignore\-assertions\f[R],
 or as a default by adding that flag to your config file.
 If you put it in your config file, you can override that with
 \f[CR]\-s\f[R]/\f[CR]\-\-strict\f[R] or \f[CR]hledger check lots\f[R].
+When a journal has both kinds of problem, lot errors are reported before
+assertion failures.
 .IP \(bu 2
 \f[B]lots\f[R] \- all lot entries are valid.
 Checks lot posting classifications, lot movements, and that any
@@ -15121,6 +15501,8 @@ hledger
 * the config file is readable ?            yes  /Users/simon/src/hledger/hledger.conf
 
 terminal
+* the TERM variable is defined ?           yes  xterm\-256color
+* the terminal supports ANSI color ?       yes  256 colors
 * the NO_COLOR variable is defined ?        no  
 * \-\-color is configured by config file ?    no  
 * hledger will use color by default ?      yes  
@@ -15141,7 +15523,7 @@ journal
 * all commodities are declared ?           yes  10
 * all accounts are declared ?              yes  160
 * all accounts have types ?                 no  14 untyped
-* accounts of each type were detected ?    yes  ALERXCV
+* accounts of all basic types exist ?      yes  ALERXC accounts detected
 * commodities/accounts are checked ?        no  use \-s to check commodities/accounts
 * balance assertions are checked ?         yes  use \-I to ignore assertions
 .EE
@@ -15512,7 +15894,7 @@ Repeat for other asset/liability accounts.
 .PP
 Tip: instead of the register command, use hledger\-ui to see a
 live\-updating register while you edit the journal:
-\f[CR]hledger\-ui \-\-watch \-\-register checking \-C\f[R]
+\f[CR]hledger\-ui \-\-register checking \-C\f[R]
 .PP
 After reconciling, it could be a good time to mark the reconciled
 transactions\(aq status as \(dqcleared and confirmed\(dq, if you want to

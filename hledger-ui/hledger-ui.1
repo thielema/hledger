@@ -1,5 +1,5 @@
 
-.TH "HLEDGER\-UI" "1" "August 2026" "hledger-ui-1.99 " "hledger User Manuals"
+.TH "HLEDGER\-UI" "1" "September 2026" "hledger-ui-1.99 " "hledger User Manuals"
 
 
 
@@ -40,6 +40,12 @@ It can also read timeclock files, timedot files, or any CSV/SSV/TSV file
 with a date field.
 (See hledger(1) \-> Input for details.)
 .PP
+On unix\-like systems, it can also read from standard input
+(\f[CR]\-f\-\f[R]).
+In that case the data can\(aqt be re\-read or edited, so the
+\f[CR]g\f[R], \f[CR]a\f[R], \f[CR]A\f[R] and \f[CR]E\f[R] keys and watch
+mode have no effect.
+.PP
 Unlike hledger, hledger\-ui hides all future\-dated transactions by
 default.
 They can be revealed, along with any rule\-generated periodic
@@ -52,7 +58,8 @@ hledger\-ui provides the following options:
 .EX
 Flags:
   \-w \-\-watch                watch for data and date changes and reload
-                            automatically
+                            automatically (default)
+     \-\-no\-watch             don\(aqt watch; reload only with the g key
      \-\-theme=THEME          use this custom display theme (light,
                             dark, terminal, greenterm)
      \-\-cash                 start in the cash accounts screen
@@ -66,7 +73,7 @@ Flags:
   \-t \-\-tree                 show accounts as a tree
 .EE
 .PP
-and also supports many of hledger\(aqs general options:
+hledger\-ui also supports many of hledger\(aqs general options:
 .IP
 .EX
 General input flags:
@@ -93,7 +100,7 @@ General input flags:
                             hledger\-ui, also make future\-dated transactions
                             visible at startup.
      \-\-ignore\-assertions    don\(aqt check balance assertions by default
-     \-\-ignore\-lots          don\(aqt check lot entries by default
+     \-\-ignore\-lots          don\(aqt do lot tracking or checking by default
   \-I                        shortcut for \-\-ignore\-assertions \-\-ignore\-lots
      \-\-txn\-balancing=...    how to check that transactions are balanced:
                             \(aqold\(aq:   \- use global display precision
@@ -228,7 +235,7 @@ When narrowed, the current report period is displayed in the header
 line, pressing \f[CR]SHIFT\-LEFT\f[R] or \f[CR]SHIFT\-RIGHT\f[R] moves
 to the previous or next period, and pressing \f[CR]T\f[R] sets the
 period to \(dqtoday\(dq.
-If you are using \f[CR]\-w/\-\-watch\f[R] and viewing a narrowed period
+If you are in watch mode (the default) and viewing a narrowed period
 containing today, the view will follow any changes in system date
 (moving to the period containing the new date).
 (These keys work only with the standard Julian calendar
@@ -438,18 +445,22 @@ Non\-fatal warnings, eg from reading CSV files, don\(aqt interrupt like
 this; instead they are shown on the bottom line of the screen, at
 startup or after a reload, until the next key press.
 .SH WATCH MODE
-One of hledger\-ui\(aqs best features is the auto\-reloading
-\f[CR]\-w/\-\-watch\f[R] mode.
-With this flag, it will update the display automatically whenever
-changes are saved to the data files.
+hledger\-ui immediately shows the effect of any file changes, reloading
+automatically.
+(This is enabled by default since 1.99.5.)
 .PP
-This is very useful when reconciling.
+If you don\(aqt want this \- eg because your data is very large or
+constantly changing, or because file notifications don\(aqt work well on
+your system \- you can disable it with \f[CR]\-\-no\-watch\f[R], and
+reload manually with the \f[CR]g\f[R] key instead.
+.PP
+Watch mode is very useful when reconciling.
 A good workflow is to have your bank\(aqs online register open in a
 browser window, for reference; the journal file open in an editor
-window; and hledger\-ui in watch mode in a terminal window, eg:
+window; and hledger\-ui in a terminal window, eg:
 .IP
 .EX
-$ hledger\-ui \-\-watch \-\-register checking \-C
+$ hledger\-ui \-\-register checking \-C
 .EE
 .PP
 As you mark things cleared in the editor, you can see the effect
@@ -457,31 +468,6 @@ immediately without having to context switch.
 This leaves more mental bandwidth for your accounting.
 Of course you can still interact with hledger\-ui when needed, eg to
 toggle cleared mode, or to explore the history.
-.SS \-\-watch problems
-\f[I]However.\f[R] There are limitations/unresolved bugs with
-\f[CR]\-\-watch\f[R]:
-.IP \(bu 2
-It may not work at all for you, depending on platform or system
-configuration.
-On some unix systems, increasing fs.inotify.max_user_watches or
-fs.file\-max parameters in /etc/sysctl.conf might help.
-(#836)
-.IP \(bu 2
-It may not detect changes made from outside a virtual machine, ie by an
-editor running on the host system.
-.IP \(bu 2
-It may not detect file changes on certain less common filesystems.
-.PP
-Tips/workarounds:
-.IP \(bu 2
-If \-\-watch won\(aqt work for you, press \f[CR]g\f[R] to reload data
-manually instead.
-.IP \(bu 2
-When running hledger\-ui inside a VM, also make file changes inside the
-VM.
-.IP \(bu 2
-When working with files mounted from another machine, make sure the
-system clocks on both machines are roughly in agreement.
 .SH ENVIRONMENT
 \f[B]LEDGER_FILE\f[R] The main journal file to use when not specified
 with \f[CR]\-f/\-\-file\f[R].
@@ -493,13 +479,8 @@ We welcome bug reports in the hledger issue tracker
 .PP
 Some known issues:
 .PP
-\f[CR]\-f\-\f[R] doesn\(aqt work (hledger\-ui can\(aqt read from stdin).
-.PP
-\f[CR]\-\-watch\f[R] is not robust, especially with large files (see
-WATCH MODE above).
-.PP
-If you press \f[CR]g\f[R] with large files, there could be a noticeable
-pause with the UI unresponsive.
+If reloading large files on a slow computer, there could be a noticeable
+pause, during which the UI is unresponsive.
 
 
 .SH AUTHORS

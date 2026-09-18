@@ -127,7 +127,7 @@ OPTIONS
                                         hledger-ui, also make future-dated transactions
                                         visible at startup.
                  --ignore-assertions    don't check balance assertions by default
-                 --ignore-lots          don't check lot entries by default
+                 --ignore-lots          don't do lot tracking or checking by default
               -I                        shortcut for --ignore-assertions --ignore-lots
                  --txn-balancing=...    how to check that transactions are balanced:
                                         'old':   - use global display precision
@@ -484,4 +484,4 @@ LICENSE
 SEE ALSO
      hledger(1), hledger-ui(1), hledger-web(1), ledger(1)
 
-hledger-web-1.99                   August 2026                    HLEDGER-WEB(1)
+hledger-web-1.99                 September 2026                   HLEDGER-WEB(1)

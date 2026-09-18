@@ -39,6 +39,10 @@ by the 'LEDGER_FILE' environment variable (defaulting to
 It can also read timeclock files, timedot files, or any CSV/SSV/TSV file
 with a date field.  (See hledger(1) -> Input for details.)
 
+   On unix-like systems, it can also read from standard input ('-f-').
+In that case the data can't be re-read or edited, so the 'g', 'a', 'A'
+and 'E' keys and watch mode have no effect.
+
    Unlike hledger, hledger-ui hides all future-dated transactions by
 default.  They can be revealed, along with any rule-generated periodic
 transactions, by pressing the F key (or starting with -forecast) to
@@ -65,7 +69,8 @@ hledger-ui provides the following options:
 
 Flags:
   -w --watch                watch for data and date changes and reload
-                            automatically
+                            automatically (default)
+     --no-watch             don't watch; reload only with the g key
      --theme=THEME          use this custom display theme (light,
                             dark, terminal, greenterm)
      --cash                 start in the cash accounts screen
@@ -78,7 +83,7 @@ Flags:
   -l --flat                 show accounts as a flat list (default)
   -t --tree                 show accounts as a tree
 
-   and also supports many of hledger's general options:
+   hledger-ui also supports many of hledger's general options:
 
 General input flags:
   -f --file=[FMT:]FILE      Use this as the journal file (- means stdin). If
@@ -104,7 +109,7 @@ General input flags:
                             hledger-ui, also make future-dated transactions
                             visible at startup.
      --ignore-assertions    don't check balance assertions by default
-     --ignore-lots          don't check lot entries by default
+     --ignore-lots          don't do lot tracking or checking by default
   -I                        shortcut for --ignore-assertions --ignore-lots
      --txn-balancing=...    how to check that transactions are balanced:
                             'old':   - use global display precision
@@ -238,12 +243,12 @@ future/forecasted transactions are shown.
 'SHIFT-UP' expands it again.  When narrowed, the current report period
 is displayed in the header line, pressing 'SHIFT-LEFT' or 'SHIFT-RIGHT'
 moves to the previous or next period, and pressing 'T' sets the period
-to "today".  If you are using '-w/--watch' and viewing a narrowed period
-containing today, the view will follow any changes in system date
-(moving to the period containing the new date).  (These keys work only
-with the standard Julian calendar year/quarter/month/week/day periods;
-they are not affected by a custom report interval specified at the
-command line.)
+to "today".  If you are in watch mode (the default) and viewing a
+narrowed period containing today, the view will follow any changes in
+system date (moving to the period containing the new date).  (These keys
+work only with the standard Julian calendar year/quarter/month/week/day
+periods; they are not affected by a custom report interval specified at
+the command line.)
 
    You can also specify a non-standard period with '/' and a 'date:'
 query; in this case, the period is not movable with the arrow keys.
@@ -494,51 +499,26 @@ File: hledger-ui.info,  Node: WATCH MODE,  Next: ENVIRONMENT,  Prev: SCREENS,  U
 5 WATCH MODE
 ************
 
-One of hledger-ui's best features is the auto-reloading '-w/--watch'
-mode.  With this flag, it will update the display automatically whenever
-changes are saved to the data files.
+hledger-ui immediately shows the effect of any file changes, reloading
+automatically.  (This is enabled by default since 1.99.5.)
 
-   This is very useful when reconciling.  A good workflow is to have
-your bank's online register open in a browser window, for reference; the
-journal file open in an editor window; and hledger-ui in watch mode in a
-terminal window, eg:
+   If you don't want this - eg because your data is very large or
+constantly changing, or because file notifications don't work well on
+your system - you can disable it with '--no-watch', and reload manually
+with the 'g' key instead.
 
-$ hledger-ui --watch --register checking -C
+   Watch mode is very useful when reconciling.  A good workflow is to
+have your bank's online register open in a browser window, for
+reference; the journal file open in an editor window; and hledger-ui in
+a terminal window, eg:
+
+$ hledger-ui --register checking -C
 
    As you mark things cleared in the editor, you can see the effect
 immediately without having to context switch.  This leaves more mental
 bandwidth for your accounting.  Of course you can still interact with
 hledger-ui when needed, eg to toggle cleared mode, or to explore the
 history.
-
-* Menu:
-
-* --watch problems::
-
-
-File: hledger-ui.info,  Node: --watch problems,  Up: WATCH MODE
-
-5.1 -watch problems
-===================
-
-_However._  There are limitations/unresolved bugs with '--watch':
-
-   * It may not work at all for you, depending on platform or system
-     configuration.  On some unix systems, increasing
-     fs.inotify.max_user_watches or fs.file-max parameters in
-     /etc/sysctl.conf might help.  (#836)
-   * It may not detect changes made from outside a virtual machine, ie
-     by an editor running on the host system.
-   * It may not detect file changes on certain less common filesystems.
-
-   Tips/workarounds:
-
-   * If -watch won't work for you, press 'g' to reload data manually
-     instead.
-   * When running hledger-ui inside a VM, also make file changes inside
-     the VM.
-   * When working with files mounted from another machine, make sure the
-     system clocks on both machines are roughly in agreement.
 
 
 File: hledger-ui.info,  Node: ENVIRONMENT,  Next: BUGS,  Prev: WATCH MODE,  Up: Top
@@ -561,33 +541,27 @@ We welcome bug reports in the hledger issue tracker
 
    Some known issues:
 
-   '-f-' doesn't work (hledger-ui can't read from stdin).
-
-   '--watch' is not robust, especially with large files (see WATCH MODE
-above).
-
-   If you press 'g' with large files, there could be a noticeable pause
-with the UI unresponsive.
+   If reloading large files on a slow computer, there could be a
+noticeable pause, during which the UI is unresponsive.
 
 
 Tag Table:
 Node: Top221
-Node: OPTIONS1867
-Node: MOUSE9664
-Node: KEYS9996
-Node: SCREENS15325
-Node: Menu screen16065
-Node: Cash accounts screen16381
-Node: Balance sheet accounts screen16742
-Node: Income statement accounts screen17078
-Node: All accounts screen17463
-Node: Register screen17826
-Node: Transaction screen20269
-Node: Error screen21449
-Node: WATCH MODE22006
-Node: --watch problems22904
-Node: ENVIRONMENT23822
-Node: BUGS24055
+Node: OPTIONS2054
+Node: MOUSE9946
+Node: KEYS10278
+Node: SCREENS15616
+Node: Menu screen16356
+Node: Cash accounts screen16672
+Node: Balance sheet accounts screen17033
+Node: Income statement accounts screen17369
+Node: All accounts screen17754
+Node: Register screen18117
+Node: Transaction screen20560
+Node: Error screen21740
+Node: WATCH MODE22297
+Node: ENVIRONMENT23334
+Node: BUGS23567
 
 End Tag Table
 
