@@ -131,7 +131,7 @@ if %type withdrawal
 ################################################################################
 # ** basic trade txns (spend/receive)
 # Buy/sell via the simple interface.
-# The spend record comes first; merge the following receive record.
+# The spend record comes first; merge the following receive record (it gets a _2 suffix).
 # We put the receive as the first posting so it gets the automatic cost annotation.
 
 if %type spend
