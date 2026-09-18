@@ -21,7 +21,7 @@ import Hledger.Cli.CompoundBalanceCommand
 
 incomestatementSpec = CompoundBalanceCommandSpec {
   cbcdoc      = $(embedFileRelative "Hledger/Cli/Commands/Incomestatement.txt"),
-  cbctitle    = Msg.IncomeStatement,
+  cbctitle    = Msg.Noun Msg.IncomeStatement,
   cbcqueries  = [
      CBCSubreportSpec{
       cbcsubreporttitle=Msg.Revenues

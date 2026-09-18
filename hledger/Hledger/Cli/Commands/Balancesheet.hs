@@ -21,7 +21,7 @@ import Hledger.Cli.CompoundBalanceCommand
 
 balancesheetSpec = CompoundBalanceCommandSpec {
   cbcdoc      = $(embedFileRelative "Hledger/Cli/Commands/Balancesheet.txt"),
-  cbctitle    = Msg.BalanceSheet,
+  cbctitle    = Msg.Noun Msg.BalanceSheet,
   cbcqueries  = [
      CBCSubreportSpec{
       cbcsubreporttitle=Msg.Assets

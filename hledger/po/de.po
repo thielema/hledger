@@ -57,11 +57,54 @@ msgstr "Budget"
 msgid "IncomeStatement"
 msgstr "Einnahmenüberschussrechnung"
 
+msgid "IncomeStatement_genus"
+msgstr "_f"
+
 msgid "BalanceSheet"
 msgstr "Bilanz"
+
+msgid "BalanceSheet_genus"
+msgstr "_f"
 
 msgid "BalanceSheetWithEquity"
 msgstr "Bilanz mit Eigenkapital"
 
+msgid "BalanceSheetWithEquity_genus"
+msgstr "_f"
+
 msgid "CashflowStatement"
 msgstr "Kapitalflussrechnung"
+
+msgid "CashflowStatement_genus"
+msgstr "_f"
+
+
+msgid "Periodic_f"
+msgstr "Periodische "
+
+msgid "Days1_f"
+msgstr "Tägliche "
+
+msgid "Weeks1_f"
+msgstr "Wöchentliche "
+
+msgid "Weeks2_f"
+msgstr "Zweiwöchentliche "
+
+msgid "Months1_f"
+msgstr "Monatliche "
+
+msgid "Months2_f"
+msgstr "Zweimonatliche "
+
+msgid "Months3_f"
+msgstr "Vierteljährliche "
+
+msgid "Months6_f"
+msgstr "Halbjährliche "
+
+msgid "Years1_f"
+msgstr "Jährliche "
+
+msgid "Years2_f"
+msgstr "Zweijährliche "
