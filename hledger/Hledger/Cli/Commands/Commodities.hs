@@ -12,8 +12,11 @@ module Hledger.Cli.Commands.Commodities (
  ,commodities
 ) where
 
+import Data.Char (isDigit)
 import Data.Map qualified as M
+import Data.Maybe (fromMaybe)
 import Data.Set qualified as S
+import Data.Text qualified as Text
 import Data.Text.IO qualified as T
 import System.Console.CmdArgs.Explicit
 
@@ -33,6 +36,7 @@ commoditiesmode = hledgerCommandMode
   ,flagNone ["undeclared"]   (setboolopt "undeclared") "list commodities used or priced but not declared"
   ,flagNone ["unused"]       (setboolopt "unused")     "list commodities declared but not used or priced"
   ,flagNone ["find"]         (setboolopt "find")       "list the first commodity matched by the first argument (a case-insensitive infix regexp)"
+  ,flagNone ["directives"]   (setboolopt "directives") "show as commodity directives (with their display styles), for use in journals"
   ]
   [generalflagsgroup2]
   confflags
@@ -74,9 +78,27 @@ commodities opts@CliOpts{rawopts_=rawopts, reportspec_=ReportSpec{_rsQuery=query
     found         = dbg5 "found"         $ findMatchedByArgument rawopts "commodity" $
                       nubSort $ declared' <> refdall
 
+    -- With --directives, show each commodity as a commodity directive declaring its
+    -- (declared or inferred) display style, using a sample amount. A decimal mark is
+    -- always included, since the directive requires one (eg: commodity 1000. AAPL).
+    showc c
+      | boolopt "directives" rawopts = "commodity " <> ensureDecimalMark (wbToText $ showAmountB fmt sample)
+      | otherwise = c
+      where
+        style  = M.findWithDefault amountstyle c $ journalCommodityStyles j
+        sample = nullamt{acommodity=c, aquantity=1000, astyle=style}
+        fmt    = defaultFmt{displayForceDecimalMark=True}
+        mark   = fromMaybe '.' $ asdecimalmark style
+        -- add a decimal mark after the last digit, if the number has none
+        ensureDecimalMark t
+          | Text.any (==mark) (if Text.null c then t else Text.replace c "" t) = t
+          | otherwise = case Text.findIndex isDigit (Text.reverse t) of
+              Just i  -> let n = Text.length t - i in Text.take n t <> Text.singleton mark <> Text.drop n t
+              Nothing -> t
+
   -- --priced is specific to commodities, not part of the shared DeclarablesSelector.
   -- Enforce the mutex with the other selectors locally.
-  mapM_ T.putStrLn $
+  mapM_ (T.putStrLn . showc) $
     case (boolopt "priced" rawopts, declarablesSelectorFromOpts opts) of
       (True,  Nothing)         -> filt pricedmatched
       (True,  Just _)          -> error' "please pick at most one of --used, --priced, --declared, --undeclared, --unused, --find"

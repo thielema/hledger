@@ -36,6 +36,8 @@ With `-E`/`--empty`, blank/empty values are also shown.
 With `--parsed`, tags or values are shown in the order they were parsed, with duplicates included.
 (Except, tags from account declarations are always shown first.)
 
+With `--directives`, tag names are shown as valid tag directives, which could be pasted into a journal file.
+
 Remember that accounts also acquire tags from their parents;
 postings also acquire tags from their account and transaction;
 and transactions also acquire tags from their postings.

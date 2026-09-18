@@ -14,6 +14,7 @@ module Hledger.Cli.Commands.Payees (
  ,payees
 ) where
 
+import Data.Text qualified as Text
 import Data.Text.IO qualified as T
 import System.Console.CmdArgs.Explicit
 
@@ -32,6 +33,7 @@ payeesmode = hledgerCommandMode
   ,flagNone ["undeclared"]   (setboolopt "undeclared") "list payees used but not declared"
   ,flagNone ["unused"]       (setboolopt "unused")     "list payees declared but not used"
   ,flagNone ["find"]         (setboolopt "find")       "list the first payee matched by the first argument (a case-insensitive infix regexp)"
+  ,flagNone ["directives"]   (setboolopt "directives") "show as payee directives, for use in journals"
   ]
   cligeneralflagsgroups1
   hiddenflags
@@ -52,7 +54,11 @@ payees opts@CliOpts{rawopts_=rawopts, reportspec_=ReportSpec{_rsQuery=query, _rs
     found             = dbg5 "found"             $ findMatchedByArgument rawopts "payee" $ nubSort $ allused <> alldeclared
     allused           = map transactionPayee $ jtxns j
     alldeclared       = journalPayeesDeclared j
-  mapM_ T.putStrLn $ case declarablesSelectorFromOpts opts of
+    -- With --directives, show as payee directives; a name containing a semicolon is double-quoted.
+    showp p
+      | boolopt "directives" rawopts = "payee " <> if Text.any (==';') p then "\"" <> p <> "\"" else p
+      | otherwise = p
+  mapM_ (T.putStrLn . showp) $ case declarablesSelectorFromOpts opts of
     Nothing         -> matchedall
     Just Used       -> matchedused
     Just Declared   -> matcheddeclared

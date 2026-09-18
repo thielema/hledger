@@ -128,3 +128,18 @@ punctuation_space
 space
 thin_space
 underscore
+
+# ** 10. --directives shows commodity directives declaring each commodity's display style,
+# declared or inferred, using a sample amount. A decimal mark is always included.
+<
+commodity 1.000,00 EUR
+
+2024-01-01
+    (a)   $1,234.50
+    (b)   10 AAPL
+    (c)   1 EUR
+
+$ hledger -f- commodities --directives
+commodity $1,000.00
+commodity 1000. AAPL
+commodity 1.000,00 EUR

@@ -88,3 +88,16 @@ t1
 t3
 t4
 
+
+# ** 11. --directives shows tag names as tag directives.
+<
+tag declared
+
+2024-01-01  ; t1:, t2:v
+    (a)  1  ; t3:
+
+$ hledger -f- tags --directives
+tag declared
+tag t1
+tag t2
+tag t3

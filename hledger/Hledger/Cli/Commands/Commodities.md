@@ -16,6 +16,8 @@ Flags:
 ```
 
 Most of these flags can be combined.
+With `--directives`, it shows valid commodity directives, declaring each commodity's
+(declared or inferred) display style, which could be pasted into a journal file.
 Some kinds of query argument are supported: `cur:`, `tag:`, and `date:`
 (also `-b`/`-e`/`-p` report period options).
 

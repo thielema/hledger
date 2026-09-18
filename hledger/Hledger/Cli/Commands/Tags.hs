@@ -33,6 +33,7 @@ tagsmode = hledgerCommandMode
   ,flagNone ["find"]         (setboolopt "find")       "list the first tag whose name is matched by the first argument (a case-insensitive infix regexp)"
   ,flagNone ["values"]       (setboolopt "values")     "list tag values instead of tag names"
   ,flagNone ["parsed"]       (setboolopt "parsed")     "show them in the order they were parsed (mostly), including duplicates"
+  ,flagNone ["directives"]   (setboolopt "directives") "show tag names as tag directives, for use in journals"
   ]
   cligeneralflagsgroups1
   hiddenflags
@@ -50,6 +51,7 @@ tags opts@CliOpts{rawopts_=rawopts, reportspec_=rspec@ReportSpec{_rsQuery=_q, _r
   let
     values   = boolopt "values" rawopts
     parsed   = boolopt "parsed" rawopts
+    directives = boolopt "directives" rawopts && not values
     empty    = empty_ ropts
     querystr = map T.pack $ drop 1 args
   query <- either usageError (return . fst) $ parseQueryList today querystr
@@ -95,7 +97,7 @@ tags opts@CliOpts{rawopts_=rawopts, reportspec_=rspec@ReportSpec{_rsQuery=_q, _r
       [ r
       | (t,v) <- tags'
       , maybe True (`regexMatchText` t) mtagpat
-      , let r = if values then v else t
+      , let r = if values then v else if directives then "tag " <> t else t
       , not (values && T.null v && not empty)
       ]
 

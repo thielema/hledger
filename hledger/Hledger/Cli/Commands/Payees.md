@@ -23,6 +23,8 @@ or just the first one matched by a pattern (with `--find`, returning a non-zero 
 The payee/payer name is the part of the transaction description before a | character
 (or if there is no |, the whole description).
 
+With `--directives`, it shows valid payee directives, which could be pasted into a journal file.
+
 You can add [query arguments](#queries) to select a subset of transactions or payees.
 Note that transaction-specific query terms like `date:` will exclude
 declared-but-unused payees, which don't have that field.

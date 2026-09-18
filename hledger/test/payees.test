@@ -38,3 +38,14 @@ $ hledger -f - payees desc:qux
 $ hledger -f - payees payee:qux
 qux
 
+
+# ** 7. --directives shows payee directives. A name containing a semicolon is double-quoted.
+<
+payee "Semi; colon"
+
+2024-01-01 Foo | note
+    (a)  1
+
+$ hledger -f - payees --directives
+payee Foo
+payee "Semi; colon"
