@@ -196,6 +196,7 @@ Some details:
   With `-O beancount`, Beancount `option`, `commodity`, `open` and `price` directives are generated
   from the journal's declarations and data, other directives (which have no Beancount equivalent) are dropped,
   and comments are converted to Beancount comments; see [Beancount output](#beancount-output).
+  Note for both Ledger and Beancount, manual fixups may still be required in some cases; but the export will be a good start.
 
 ### print, other features
 
