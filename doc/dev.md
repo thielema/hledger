@@ -7,40 +7,54 @@ workflows of the hledger project - "the machine that makes the machine".
 These mostly are kept in doc/ in the main hledger repo,
 and then symlinked into the hledger_site repo for rendering on hledger.org.
 
-- [Contributor Quick Start](CONTRIBUTING.md)
-- [Developer FAQ](DEVFAQ.md)
-- [Project README](dev-README.md)
-- [ROADMAP](ROADMAP.md)
-- [RULES](RULES.md)
-- [ACHIEVEMENTS](ACHIEVEMENTS.md)
-- [AI](AI.md)
-- [BENCHMARKS](BENCHMARKS.md)
-- [CLIMATE](CLIMATE.md)
-- [CODE](CODE.md)
-- [COMMITS](COMMITS.md)
-- [CREDITS](CREDITS.md)
-- [DECISIONS](DECISIONS.md)
-- [DEVWORKFLOWS](DEVWORKFLOWS.md)
-- [DOCS](DOCS.md)
-- [ERRORS](ERRORS.md)
-- [EXAMPLES](EXAMPLES.md)
-- [FILES](FILES.md)
-- [FINANCE](FINANCE.md)
-- [IMPACT](IMPACT.md)
-- [ISSUES](ISSUES.md)
-- [MOCKUPS](MOCKUPS.md)
-- [PULLREQUESTS](PULLREQUESTS.md)
-- [REGRESSIONS](REGRESSIONS.md)
-- [RELEASING](RELEASING.md)
-- [REPOS](REPOS.md)
-- [SPEC-finalising](SPEC-finalising.md)
-- [SPEC-holdings](SPEC-holdings.md)
-- [SPEC-journal](SPEC-journal.md)
-- [SPEC-lots](SPEC-lots.md)
-- [SPEC-print](SPEC-print.md)
-- [SPEC-special-postings](SPEC-special-postings.md)
-- [TESTS](TESTS.md)
-- [VERSIONNUMBERS](VERSIONNUMBERS.md)
+**Start here**
+
+- [CONTRIBUTING](CONTRIBUTING.md) - ways to help, by role
+- [DEVFAQ](DEVFAQ.md) - developer FAQ
+- [DEVWORKFLOWS](DEVWORKFLOWS.md) - tools, building, testing, GHCI, working on docs
+- [RULES](RULES.md) - the repo's policies, on one page
+- [AI](AI.md) - AI usage policy
+- [README](dev-README.md) - the project README
+
+**Code and tests**
+
+- [CODE](CODE.md) - architecture and package overview
+- [FILES](FILES.md) - repo and working copy layout
+- [TESTS](TESTS.md) - test suites and how to run them
+- [ERRORS](ERRORS.md) - error message standards and examples
+- [BENCHMARKS](BENCHMARKS.md) - performance measurement
+- [EXAMPLES](EXAMPLES.md) - example data and where it lives
+
+**Specs**
+
+- [SPEC-journal](SPEC-journal.md) - journal syntax
+- [SPEC-finalising](SPEC-finalising.md) - the journal finalisation pipeline
+- [SPEC-special-postings](SPEC-special-postings.md) - inferred postings and their rules
+- [SPEC-lots](SPEC-lots.md) - lot tracking
+- [SPEC-holdings](SPEC-holdings.md) - the holdings command
+- [SPEC-print](SPEC-print.md) - print behaviour
+
+**Process**
+
+- [COMMITS](COMMITS.md) - commit message conventions
+- [PULLREQUESTS](PULLREQUESTS.md) - pull request guidelines
+- [ISSUES](ISSUES.md) - issue tracker conventions and views
+- [REGRESSIONS](REGRESSIONS.md) - regression tracking
+- [RELEASING](RELEASING.md) - release process
+- [VERSIONNUMBERS](VERSIONNUMBERS.md) - version numbering policy
+- [DOCS](DOCS.md) - documentation structure and maintenance
+- [REPOS](REPOS.md) - the project's repositories
+- [MOCKUPS](MOCKUPS.md) - old mockups and draft ideas
+
+**Project**
+
+- [ROADMAP](ROADMAP.md) - where the project is going
+- [DECISIONS](DECISIONS.md) - notable design decisions
+- [ACHIEVEMENTS](ACHIEVEMENTS.md) - achievements to unlock
+- [IMPACT](IMPACT.md) - the project's intended impact
+- [CLIMATE](CLIMATE.md) - environmental cost and benefit
+- [FINANCE](FINANCE.md) - project finances
+- [CREDITS](CREDITS.md) - contributors
 
 See also:
 
@@ -57,7 +71,7 @@ Dev notes on joyful.com:
 - <https://joyful.com/hledger+workflow+2025>
 - <https://joyful.com/hledger+project+report+2024>
 
-## Dev links
+## Links
 
 **Discussion:**
 <https://hledger.org/support>\
