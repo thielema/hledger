@@ -80,7 +80,7 @@ to avoid interfering with branch switching; RELEASING.md should be updated from 
 1. **main: finish fixes/features/docs/issues/prs**
 1. **main: begin/fix release builds:** `just ghbin oldest`
 1. **main: update general flags help:** `just generaloptionshelp` (updates doc/common.m4 from the build's --help output; review the diff)
-1. **main: update command docs and manuals ?** `just manuals`
+1. **main: update command docs and manuals ?** `just manuals`; check the manuals' internal links: `just anchortest`
 1. **(major release) main: update website manuals:** `just manuals-site`
 1. **(major release) main: update website scripts/redirects:** update `site/Makefile`, `site/js/site.js`, `site/hledger.org.caddy`
 
@@ -314,6 +314,7 @@ More procedure notes.
 - `just test`
 - `just doctest`
 - `just haddocktest`
+- `just anchortest` (checks the manuals' internal links)
 
 ### Run CI tests
 - push to a PR, wait for green
