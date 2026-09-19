@@ -100,6 +100,7 @@ Keyboard gives more control.
 `?` shows a help dialog listing all keys.
 (Some of these also appear in the quick help at the bottom of each screen.)
 Press `?` again (or `ESCAPE`, or `LEFT`, or `q`) to close it.
+While it is open, `p`, `m` or `i` show this manual in a pager, man or info.
 The following keys work on most screens:
 
 The cursor keys navigate:
@@ -168,7 +169,7 @@ This allows some basic data entry.
 which provides a terminal interface.
 This key will be available if `hledger-iadd` is installed in $path.
 
-`E` runs $HLEDGER_UI_EDITOR, or $EDITOR, or a default (`emacsclient -a "" -nw`) on the journal file.
+`E` runs $HLEDGER_UI_EDITOR, or $EDITOR, or a default (`emacsclient -a "" -nw`, or `notepad.exe` on Windows) on the journal file.
 With some editors, the cursor will be positioned at the current transaction
 when invoked from the register and transaction screens, and at the error location (if possible)
 when invoked from the error screen.
@@ -195,6 +196,8 @@ Cost/value tips:
 (such as `assets:broker:{2026-01-15, $50}`) and other per-lot detail.
 
 `q` quits the application.
+
+`CTRL-z` suspends it, returning to the shell; resume it with `fg` as usual.
 
 Additional screen-specific keys are described below.
 
@@ -233,6 +236,11 @@ It always shows changes (balance changes in the period shown in the title line).
 
 This screen shows all accounts in your journal (unless filtered by a query; like `hledger balance`).
 It shows balances by default; you can toggle showing changes with the `H` key.
+
+You can limit the account depth shown: `1` to `9` set the depth limit,
+`0` sets it to zero (showing just a single total),
+and `-` and `+` (or `_` and `=`) decrease and increase it.
+`DELETE` resets it, along with any other filters.
 
 ## Register screen
 
@@ -342,6 +350,10 @@ eg to toggle cleared mode, or to explore the history.
 **LEDGER_FILE**
 The main journal file to use when not specified with `-f/--file`.
 Default: `$HOME/.hledger.journal`.
+
+**HLEDGER_UI_EDITOR**, **EDITOR**
+The editor command run by the `E` key, in that order of preference.
+Default: `emacsclient -a "" -nw`, or `notepad.exe` on Windows.
 
 # BUGS
 
