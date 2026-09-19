@@ -93,7 +93,7 @@ and for more project scripts run `just` in the main repo.
 ## Technical writer ?
 
 - Get familiar with the documentation, website and online presence; review and test
-- Get familiar with the doc/site source files and generation process (see [Just, Make, Shake](JUST-MAKE-SHAKE.md))
+- Get familiar with the doc/site source files and generation process (see [DOCS](DOCS.md) and [DEVWORKFLOWS](DEVWORKFLOWS.md#work-on-docs))
 - Help improve user, contributor, process docs, translation
 
 ## Web designer / webmaster ?

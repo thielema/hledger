@@ -15,56 +15,40 @@ functions, and require four different approaches to their creation."
 --[Daniele Procida] (https://news.ycombinator.com/item?id=21289832)
 </div>
 
-2019: out of date, needs update.
+hledger's documentation lives in these places:
 
-Project documentation lives in a number of places:
+1. **The hledger.org website**: home page, install guide, docs hub, hledger by example,
+   cookbook pages, developer docs, and current and past versions of the manuals.
+   Its source is the `hledger_site` repo, usually cloned as `site/` in the hledger working copy,
+   and rendered with [mdbook](https://rust-lang.github.io/mdBook/).
+   `site/src/SUMMARY.md` defines the pages and the sidebar.
+2. **The reference manuals** for hledger, hledger-ui and hledger-web.
+   Their source is markdown with m4 macros, in the main repo:
+   `hledger/hledger.m4.md` (which includes the command docs from `hledger/Hledger/Cli/Commands/*.md`),
+   `hledger-ui/hledger-ui.m4.md` and `hledger-web/hledger-web.m4.md`.
+   They are rendered as web pages, man pages, info manuals and plain text,
+   and embedded in the hledger executables (see `hledger help`).
+3. **Developer docs** in `doc/` of the main repo, such as this one.
+   Most are symlinked into `site/src/` and published on the website.
+4. **Per-package files**: `package.yaml` descriptions, `README.md` and `CHANGES.md` in each package directory,
+   shown on Hackage.
+5. **Code docs**: haddock comments and doctests in the Haskell source.
+6. **Examples**: `examples/` (sample journals, the CSV rules library),
+   the built-in command examples (`hledger help examples`, source in `doc/tldr/`),
+   and the built-in demos (`hledger demo`).
+7. **Other**: HCAR entries (`doc/hcar/`), announcements (`doc/ANNOUNCE*`), mockups (`doc/mockups/`),
+   and project notes and specs (`doc/NOTE-*`, `doc/PLAN-*`, `doc/SPEC-*`; some of these are published).
 
-- `site/*.md` is the hledger.org website content, which is generated with hakyll[-std] and pandoc
-- haddock documentation in the code appears on Hackage
-- short blurbs: cabal files, module headers, HCAR, GSOC project, ..
-- `doc/notes.org` has some old developer notes
-- developer reports (profiles, benchmarks, coverage..) in doc/profs, sometimes published at hledger.org/profs
-- https://github.com/hledgerorg/hledger/tree/main/doc
+### Conventions
 
-
-site/ is now a symlink to the separate hledger_site repo.
-
-See also Shake.hs.
-
-hledger doc files can be divided into several groups: 
-
-1. Project admin/dev notes not published on the website.
-   These are kept in this directory (doc/). They include: 
-   ``` 
-   doc/finance/      project finances
-   doc/hcar/         Haskell Community and Activities Report entries
-   doc/lib.m4        common macros used in package manuals
-   doc/manpage.*     misc. templates for rendering package manuals
-   doc/mockups/      exploratory developer mockups   
-   doc/profs/        a place for long-term profiling/performance data
-   ```
-2. Project doc files required to be in the top directory:
-   ```
-   README.md         the main project readme, displayed on github
-   LICENSE           the default project license
-   ```
-3. Code/API docs in haskell source files as haddock comments:
-   ```
-   hledger*/**/*.hs  haddock module and function docs in most source files
-   ```
-4. Per-package descriptions, readmes, changelogs, and reference manuals.
-   These are in the respective package directories:
-   ```
-   hledger*/package.yaml    source for package metadata (description, etc.)
-   hledger*/README          package readme, displayed on hackage
-   hledger*/CHANGES         package changelog, displayed on hackage
-   hledger*/hledger*.m4.md  package manual source file(s)
-   ```
-5. The project website and additional docs - home page, FAQ, tutorials, 
-   how-tos, developer guide, etc. These are in the site directory:
-   ```
-   site/             hledger.org website content, templates, assets
-   ```
+- The manuals' top-level structure is deliberately flat: the PART headings and the sections within
+  each part are all level-1 headings. This limits heading depth (info manuals support four levels,
+  man pages two), and keeps the website sidebar simple. The built-in help command shows parts as
+  containers by treating all-caps headings as one level up.
+- "Since 1.x" notes in the manuals are kept only for the last few releases, then removed.
+- Website pages (including published dev docs) which haven't been substantively updated in over a year
+  carry a `Last updated: YEAR` line under their title. Hub and index pages don't.
+- Internal links in the manuals are checked by `just anchortest`.
 
 ## Workflows
 
@@ -240,56 +224,3 @@ In the release branch, once the corresponding github release is created, after u
 
 (approximate)
 [![doc update diagrams](doc-update.png)](doc-update.png)
-
-
-
-## 201901 docs reorg (#920, WIP)
-
-https://groups.google.com/forum/#!topic/hledger/t2nVr3zER8Q/discussion
-
-> > On Oct 26, 2018, at 1:47 PM, Simon Michael <simon@joyful.com> wrote:
-> >
-> > A quick heads-up: I am feeling like stepping back from github wiki, and reorganising our docs like so:
-> >
-> > Two repos:
-> >
-> > 1. hledger - code and hard docs
-> >
-> >   - code and code docs (haddock docs & doctest examples)
-> >   - developer docs (READMEs in md or org format)
-> >   - product manuals (hledger*/hledger*.m4.md)
-> >   - release notes and announcements
-> >   - HCAR entries
-> >
-> > 2. hledger-site - website and soft docs
-> >
-> >   - hledger.org content, resources, site infrastructure
-> >   - user cookbook, how-tos, articles
-> >   - links to blog posts, discussions etc.
-> >   - other resources relating to our web presence/marketing
-> >
-> > If you disagree, let's discuss. Some quick considerations:
-> >
-> > - moving docs to the wiki hasn't affected the contribution rate
-> > - using the wiki increases our dependence on github and makes our work less self-contained and future-proof
-> > - the wiki docs don't look great, aren't very flexible, & don't integrate well with our site & static docs
-> > - using two docs systems increases complexity
-> > - dev docs in the wiki are too far from the code, and compete with READMEs
-> 
-> PS:
-> 
-> - Why not go back to just one repo for everything ? Or if two repos, why not put all docs in one of them ? 
-> 
-> Dev docs are most discoverable and maintainable right there in the main repo, ie as READMEs. Likewise for API docs (haddocks) and the reference manuals (hledger*/hledger*m4.md). We want all of these updated in lock step with code/tooling changes.
-> 
-> Other ("soft") docs are needed, but these have a more relaxed process, schedule, and scope (eg bookkeeping advice). They occasionally generate a lot of noise in the commit log, and I think it's a good to keep that out of the code history. The website (home and other pages, site design, site infrastructure) generates similar commit storms and is somewhat independent of code, so it goes in the soft docs repo too.
-> 
-> These are my thoughts, but I have an open mind if you see a better way.
-> 
-> 	me (Simon Michael (sm) change) 	
-> 10/27/18
-> Still plenty of time to discuss and reconsider, but see also
-> https://github.com/hledgerorg/hledger/issues/920
-> https://github.com/hledgerorg/hledger/issues/921
-> 
-> I'll probably make a start on the first one (consolidating dev docs in main repo).
