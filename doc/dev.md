@@ -55,6 +55,7 @@ and then symlinked into the hledger_site repo for rendering on hledger.org.
 - [CLIMATE](CLIMATE.md) - environmental cost and benefit
 - [FINANCE](FINANCE.md) - project finances
 - [CREDITS](CREDITS.md) - contributors
+- [This Week In Hledger 2023-2024](news.md) - a weekly project news digest, archived
 
 See also:
 
