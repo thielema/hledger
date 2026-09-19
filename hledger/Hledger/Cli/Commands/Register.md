@@ -102,7 +102,7 @@ transactions ordered from smallest amount to largest amount.
 $ hledger register --related --invert assets:checking
 ```
 
-With a [reporting interval](#reporting-interval), register shows
+With a [reporting interval](#report-intervals), register shows
 summary postings, one per interval, aggregating the postings to each account:
 
 ```cli

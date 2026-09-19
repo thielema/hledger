@@ -10,7 +10,7 @@ Flags:
 ```
 
 The stats command shows summary information for the whole journal, or
-a matched part of it. With a [reporting interval](#reporting-interval),
+a matched part of it. With a [reporting interval](#report-intervals),
 it shows a report for each report period. 
 
 It also shows some performance statistics:

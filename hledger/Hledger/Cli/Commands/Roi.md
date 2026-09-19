@@ -126,7 +126,7 @@ postings in the example below would be classifed as:
 
 ### Using roi with lots
 
-If your journal records [lots](#lots), each disposal transaction has a
+If your journal records [lots](#lot-reporting), each disposal transaction has a
 balanced pair of gain postings, by default to `revenues:gain` (the
 realised gain) and `equity:unrealised-gain` (reclassifying the
 accumulated unrealised gain). Make sure `--pnl` matches both accounts, eg

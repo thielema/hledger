@@ -159,7 +159,7 @@ You can also have multi-period reports, described later.)
 For real-world accounts, these numbers will normally be their end balance 
 at the end of the journal period; more on this below.
 
-Accounts are sorted by [declaration order](#account)
+Accounts are sorted by [declaration order](#account-directive)
 if any, and then alphabetically by account name.
 For instance 
 (using [examples/sample.journal](https://github.com/hledgerorg/hledger/blob/main/examples/sample.journal)):
@@ -405,7 +405,7 @@ $ hledger -f examples/sample.journal bal expenses --drop 1
 ### Showing declared accounts
 
 With `--declared`, 
-accounts which have been declared with an [account directive](#account)
+accounts which have been declared with an [account directive](#account-directive)
 will be included in the balance report, even if they have no transactions.
 (Since they will have a zero balance, you will also need `-E/--empty` to see them.)
 
@@ -542,7 +542,7 @@ To see accurate historical end balances:
    unless the journal covers the account's full lifetime.
 
 2. Include all of of the account's prior postings in the report,
-   by not specifying a [report start date](#report-start-end-date),
+   by not specifying a [report start date](#report-start--end-date),
    or by using the `-H/--historical` flag.
    (`-H` causes report start date to be ignored when summing postings.)
 

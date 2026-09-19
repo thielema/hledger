@@ -375,7 +375,7 @@ Here's a quick reference:
 | In `ghci` (the Haskell REPL)  | Use double quotes, and enclose the whole argument
 
 [argument file]: #argument-files
-[config file]: #config-file
+[config file]: #config-files
 
 ## Unicode characters
 
@@ -495,7 +495,7 @@ If they're not doing what you expect, it's important to know exactly what they s
 3. they are [POSIX ERE] (extended regular expressions)
 4. they also support [GNU word boundaries] (`\b`, `\B`, `\<`, `\>`)
 5. [backreferences] are supported when doing text replacement in [account
-   aliases](#regex-aliases) or [CSV rules](#csv-rules), where [backreferences]
+   aliases](#regex-aliases) or [CSV rules](#csv), where [backreferences]
    can be used in the replacement string to reference [capturing groups] in the
    search regexp. Otherwise, if you write `\1`, it will match the digit `1`.
 6. they do not support [lazy quantifiers] (`*?`), [mode modifiers] (`(?s)`), character classes (`\w`, `\d`), or anything else not mentioned above.
@@ -1360,7 +1360,7 @@ dates](#smart-dates) documented in the hledger manual.)
 ### Posting dates
 
 You can give individual postings a different date from their parent
-transaction, by adding a [posting comment](#posting-comment) containing a
+transaction, by adding a [posting comment](#posting-comments) containing a
 [tag](#tags) (see 
 below) like `; date:DATE`.
 (There's also a [Ledger-compatible syntax](#bracketed-posting-dates), `; [DATE]`, which can be convenient.)
@@ -1803,7 +1803,7 @@ This form is the easiest to make undetected errors with; so it is rejected by `h
 Advantages of cost notation:
 
 1. it's more compact and easier to read and write
-2. hledger reports can show such amounts converted to their cost, when you add the [`-B/--cost`](#reporting-options) flag (see [Cost reporting](#cost-reporting)).
+2. hledger reports can show such amounts converted to their cost, when you add the [`-B/--cost`](#reporting-at-cost) flag (see [Cost reporting](#cost-reporting)).
 
 Advantages of equity postings
 
@@ -2356,7 +2356,7 @@ Usually you'll find that error later, as an extra account in balance reports,
 or an incorrect balance when reconciling.
 
 In [strict mode], enabled with the `-s`/`--strict` flag, or when you run `hledger check accounts`,
-hledger will report an error if any transaction uses an account name that has not been declared by an [account directive](#account). 
+hledger will report an error if any transaction uses an account name that has not been declared by an [account directive](#account-directive). 
 Some notes:
 
 - The declaration is case-sensitive; transactions must use the correct account name capitalisation.
@@ -2503,7 +2503,7 @@ This can be useful for:
 - combining two accounts into one, eg to see their sum or difference on one line
 - customising reports
 
-Account aliases also rewrite account names in [account directives](#account).
+Account aliases also rewrite account names in [account directives](#account-directive).
 They do not affect account names being entered via hledger add or hledger-web.
 
 Account aliases are very powerful.
@@ -3227,7 +3227,7 @@ $ hledger print --explicit
 
 #### Balance assignments and multiple files
 
-Balance assignments handle multiple files [like balance assertions](#assertions-and-multiple--f-files).
+Balance assignments handle multiple files [like balance assertions](#assertions-and-multiple-files).
 They see balance from other files previously included from the current file,
 but not from previous sibling or parent files.
 
@@ -3254,7 +3254,7 @@ parsing the journal. This effect lasts until the next `D` directive,
 or the end of the current file.
 
 For compatibility/historical reasons, `D` also acts like a [`commodity` directive](#commodity-directive)
-(setting the commodity's decimal mark for parsing and [display style](#amount-display-format) for output).
+(setting the commodity's decimal mark for parsing and [display style](#commodity-display-style) for output).
 So its argument is not just a commodity symbol, but a full amount demonstrating the style.
 The amount must include a decimal mark (either period or comma).
 Eg:
@@ -3552,7 +3552,7 @@ The following kinds of rule can appear in the rules file, in any order.
 | [**`archive`**](#archive)                       | optionally enable an archive of imported files                                                 |
 | [**`encoding`**](#encoding)                     | optionally declare which text encoding the data has                                            |
 | [**`separator`**](#separator)                   | declare the field separator, instead of relying on file extension                              |
-| [**`decimal-mark`**](#decimal-mark-1)           | declare the decimal mark used in CSV amounts, when ambiguous                                   |
+| [**`decimal-mark`**](#decimal-mark)           | declare the decimal mark used in CSV amounts, when ambiguous                                   |
 | [**`date-format`**](#date-format)               | declare how to parse CSV dates/date-times                                                      |
 | [**`timezone`**](#timezone)                     | declare the time zone of ambiguous CSV date-times                                              |
 | [**`newest-first`**](#newest-first)             | improve txn order when: there are multiple records, newest first, all with the same date       |
@@ -4172,7 +4172,7 @@ but on the lines below `if`, such a line would be read as a comment.
 There, escape the comment character with a backslash, eg `\#groceries`.)
 
 If any of the matchers succeeds, all of the indented rules will be applied.
-The rules are usually [field assignments](#field-assignments),
+The rules are usually [field assignments](#field-assignment),
 but the following special rules may also be used within an if block:
 
 - `skip`  - skips the matched CSV record (generating no transaction from it)
@@ -4417,7 +4417,7 @@ Things to note:
 
 ## `balance-type`
 
-Balance assertions generated by [assigning to balanceN](#posting-field-names)
+Balance assertions generated by [assigning to balanceN](#hledger-field-names)
 are of the simple `=` type by default,
 which is a [single-commodity](#assertions-and-commodities),
 [subaccount-excluding](#assertions-and-subaccounts) assertion.
@@ -5516,8 +5516,8 @@ and the report end date will be the latest transaction, posting, or market price
 
 Often you will want to see a shorter period, such as the current month.
 You can specify a start and/or end date with the
-[`-b/--begin`](#general-reporting-options),
-[`-e/--end`](#general-reporting-options),
+[`-b/--begin`](#options),
+[`-e/--end`](#options),
 or
 [`-p/--period`](#period-expressions) options,
 or a [`date:`](#queries) query argument, described below.
@@ -6282,7 +6282,7 @@ To also add visible tags, use `--verbose-tags` (useful for troubleshooting).
 | `conversion-posting`  | A pair of adjacent, single-commodity, costless postings to `Conversion`-type accounts, with a nearby corresponding costful or potentially corresponding costless posting | Helps transaction balancer infer costs or avoid redundancy in commodity conversions                   |
 | `cost-posting`        | A costful posting whose amount and transacted cost correspond to a conversion postings pair; or a costless posting matching one of the pair                              | Helps transaction balancer infer costs or avoid redundancy in commodity conversions                   |
 | `generated-posting`   | Postings generated at runtime                                                                                                                                            | Helps users understand or find postings added at runtime by hledger                                   |
-| `ptype:acquire`       | Positive postings with [lot annotations](#lot-syntax), or in a lotful commodity, with no matching counterposting                                                 | Creates a new lot                                                                                     |
+| `ptype:acquire`       | Positive postings with [lot annotations](#cost-basis-annotations), or in a lotful commodity, with no matching counterposting                                                 | Creates a new lot                                                                                     |
 | `ptype:dispose`       | Negative postings with lot annotations, or in a lotful commodity, with no matching counterposting                                                                | Selects and reduces existing lots                                                                     |
 | `ptype:transfer-from` | The negative posting of a pair of counterpostings, at least one with lot annotation or a lotful commodity; or a negative lot posting with an equity counterpart (equity transfer) | Moves lots between accounts, preserving cost basis                                                    |
 | `ptype:transfer-to`   | The positive posting of a transfer pair; or a positive lot posting with an equity counterpart (equity transfer, e.g. opening balances)                                   | As above                                                                                              |
@@ -6619,7 +6619,7 @@ Ie they will be displayed "at cost" or "at sale price".
 Some things to note:
 
 - Costs are attached to specific posting amounts in specific transactions, and once recorded they do not change.
-  This contrasts with [market prices](#market-prices), which are ambient and fluctuating.
+  This contrasts with [market prices](#p-directive), which are ambient and fluctuating.
 
 - Conversion to cost is performed before conversion to market value (described below).
 
@@ -6821,7 +6821,7 @@ hledger will use the prices on a particular valuation date (or on more than one 
 By default hledger uses "end" dates for valuation. More specifically:
 
 - For single period reports (including normal print and register reports):
-  - If an explicit [report end date](#report-start-end-date) is specified, that is used.
+  - If an explicit [report end date](#report-start--end-date) is specified, that is used.
   - Otherwise the latest transaction date or non-future P directive date is used.
 
 - For [multiperiod reports](#report-intervals), each period is valued on its last day.
@@ -6887,8 +6887,8 @@ and try adding `--debug` or `--debug=2` to troubleshoot.
 - multicommodity transactions with implicit prices (no `@`, two commodities, unbalanced).
   (With these, the order of postings matters. `hledger print -x` can be useful for troubleshooting.)
 
-- [multicommodity transactions with equity postings](#conversion-with-equity-postings),
-  if cost is inferred with [`--infer-costs`](#infer-cost-requirements).
+- [multicommodity transactions with equity postings](#equity-conversion-postings),
+  if cost is inferred with [`--infer-costs`](#requirements-for-detecting-equity-conversion-postings).
   
 There is a limitation (bug) currently: when a valuation commodity is not specified, 
 prices inferred with `--infer-market-prices` do not help select a default valuation commodity,

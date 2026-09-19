@@ -79,7 +79,7 @@ Fully disposed commodities and accounts are not shown, unless you add `-E/--empt
 (But the RGain and XIRR in the totals row always includes them.)
 
 To see a commodity's performance, a market price should be declared for it (as of the report end date).
-Market prices come from [P directives](#p-directives) or (with `--infer-market-prices`) from transacted prices, as usual. 
+Market prices come from [P directives](#p-directive) or (with `--infer-market-prices`) from transacted prices, as usual. 
 Each lot is valued in its cost commodity.
 In a multi-currency portfolio, aggregated values may contain multiple currencies; use `-X COMM` for a single-currency view.
 

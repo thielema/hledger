@@ -32,7 +32,7 @@ Features:
 - The tab key will auto-complete whenever possible - accounts,
   payees/descriptions, dates (`yesterday`, `today`, `tomorrow`).
   If the input area is empty, it will insert the default value.
-- A parenthesised transaction [code](#entries) may be entered following a date.
+- A parenthesised transaction [code](#code) may be entered following a date.
 - [Comments](#transaction-comments) and tags may be entered following a description or amount.
 - If you make a mistake, enter `<` at any prompt to go one step backward.
 - Input prompts are displayed in a different colour when the terminal supports it.
