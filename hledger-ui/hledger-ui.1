@@ -198,6 +198,8 @@ Keyboard gives more control.
 screen.)
 Press \f[CR]?\f[R] again (or \f[CR]ESCAPE\f[R], or \f[CR]LEFT\f[R], or
 \f[CR]q\f[R]) to close it.
+While it is open, \f[CR]p\f[R], \f[CR]m\f[R] or \f[CR]i\f[R] show this
+manual in a pager, man or info.
 The following keys work on most screens:
 .PP
 The cursor keys navigate: \f[CR]RIGHT\f[R] or \f[CR]ENTER\f[R] goes
@@ -286,13 +288,14 @@ This key will be available if \f[CR]hledger\-iadd\f[R] is installed in
 $path.
 .PP
 \f[CR]E\f[R] runs $HLEDGER_UI_EDITOR, or $EDITOR, or a default
-(\f[CR]emacsclient \-a \(dq\(dq \-nw\f[R]) on the journal file.
+(\f[CR]emacsclient \-a \(dq\(dq \-nw\f[R], or \f[CR]notepad.exe\f[R] on
+Windows) on the journal file.
 With some editors, the cursor will be positioned at the current
 transaction when invoked from the register and transaction screens, and
 at the error location (if possible) when invoked from the error screen.
 .PP
 \f[CR]B\f[R] toggles cost mode, showing amounts converted to their
-cost\(aqs commodity (see hledger manual > Cost reporting.
+cost\(aqs commodity (see hledger manual > Cost reporting).
 .PP
 \f[CR]V\f[R] toggles value mode, showing amounts converted to their
 market value (see hledger manual > Valuation flag).
@@ -321,6 +324,9 @@ showing or hiding lot subaccounts (such as
 .PP
 \f[CR]q\f[R] quits the application.
 .PP
+\f[CR]CTRL\-z\f[R] suspends it, returning to the shell; resume it with
+\f[CR]fg\f[R] as usual.
+.PP
 Additional screen\-specific keys are described below.
 .SH SCREENS
 At startup, hledger\-ui shows a menu screen by default.
@@ -330,7 +336,7 @@ selected screen, \f[CR]LEFT\f[R] to return to the previous screen.
 Or you can use \f[CR]ESC\f[R] to return directly to the top menu screen.
 .PP
 You can also use a command line flag to specific a different startup
-screen (\f[CR]\-\-cs\f[R], \f[CR]\-\-bs\f[R], \f[CR]\-\-is\f[R],
+screen (\f[CR]\-\-cash\f[R], \f[CR]\-\-bs\f[R], \f[CR]\-\-is\f[R],
 \f[CR]\-\-all\f[R], or \f[CR]\-\-register=ACCT\f[R]).
 .SS Menu screen
 This is the top\-most screen.
@@ -357,6 +363,12 @@ This screen shows all accounts in your journal (unless filtered by a
 query; like \f[CR]hledger balance\f[R]).
 It shows balances by default; you can toggle showing changes with the
 \f[CR]H\f[R] key.
+.PP
+You can limit the account depth shown: \f[CR]1\f[R] to \f[CR]9\f[R] set
+the depth limit, \f[CR]0\f[R] sets it to zero (showing just a single
+total), and \f[CR]\-\f[R] and \f[CR]+\f[R] (or \f[CR]_\f[R] and
+\f[CR]=\f[R]) decrease and increase it.
+\f[CR]DELETE\f[R] resets it, along with any other filters.
 .SS Register screen
 This screen shows the transactions affecting a particular account.
 Each line represents one transaction, and shows:
@@ -413,8 +425,7 @@ unlike command\-line hledger).
 Press \f[CR]RIGHT\f[R] to view the selected transaction in detail.
 .SS Transaction screen
 This screen shows a single transaction, as a general journal entry,
-similar to hledger\(aqs print command and journal format
-(hledger_journal(5)).
+similar to hledger\(aqs print command and journal format.
 .PP
 The transaction\(aqs date(s) and any cleared flag, transaction code,
 description, comments, along with all of its account postings are shown.
@@ -472,6 +483,11 @@ toggle cleared mode, or to explore the history.
 \f[B]LEDGER_FILE\f[R] The main journal file to use when not specified
 with \f[CR]\-f/\-\-file\f[R].
 Default: \f[CR]$HOME/.hledger.journal\f[R].
+.PP
+\f[B]HLEDGER_UI_EDITOR\f[R], \f[B]EDITOR\f[R] The editor command run by
+the \f[CR]E\f[R] key, in that order of preference.
+Default: \f[CR]emacsclient \-a \(dq\(dq \-nw\f[R], or
+\f[CR]notepad.exe\f[R] on Windows.
 .SH BUGS
 We welcome bug reports in the hledger issue tracker
 (https://bugs.hledger.org), or on the hledger chat or mail list

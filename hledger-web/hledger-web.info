@@ -34,10 +34,10 @@ register, balance charts) and allowing history-aware data entry,
 interactive searching, and bookmarking.
 
    hledger-web also lets you share a journal with multiple users, or
-even the public web.  There is no access control, so if you need that
-you should put it behind a suitable web proxy.  As a small protection
-against data loss when running an unprotected instance, it writes a
-numbered backup of the main journal file (only) on every edit.
+even the public web.  There is no user authentication, so if you need
+that you should put it behind a suitable web proxy.  As a small
+protection against data loss when running an unprotected instance, it
+writes a numbered backup of the main journal file (only) on every edit.
 
    Like hledger, it reads from (and appends to) a journal file specified
 by the 'LEDGER_FILE' environment variable (defaulting to
@@ -101,10 +101,10 @@ Flags:
                             --help
 
    By default hledger-web listens only on IP address '127.0.0.1', which
-be accessed only from the local machine.
+can be accessed only from the local machine.
 
    To allow access from elsewhere, use '--host' to specify an externally
-accessible address configured on this machine, The special address
+accessible address configured on this machine.  The special address
 '0.0.0.0' causes it to listen on all of this machine's addresses.
 
    Similarly, you can use '--port' to listen on a TCP port other than
@@ -280,10 +280,9 @@ File: hledger-web.info,  Node: EDITING UPLOADING DOWNLOADING,  Next: RELOADING, 
 3 EDITING, UPLOADING, DOWNLOADING
 *********************************
 
-If you enable the 'manage' capability mentioned above, you'll see a new
-"spanner" button to the right of the search form.  Clicking this will
-let you edit, upload, or download the journal file or any files it
-includes.
+If you start hledger-web with '--allow=edit', you'll see a new "spanner"
+button to the right of the search form.  Clicking this will let you
+edit, upload, or download the journal file or any files it includes.
 
    Note, unlike any other hledger command, in this mode you (or any
 visitor) can alter or wipe the data files.  Normally when hledger-web
@@ -332,6 +331,7 @@ $ hledger-web -f examples/sample.journal --serve-api
 /commodities
 /accounts
 /accounttransactions/ACCOUNTNAME
+/openapi.json
 
    Eg, all account names in the journal (similar to the accounts
 command).  (hledger-web's JSON does not include newlines, here we use
@@ -379,7 +379,7 @@ $ curl -s http://127.0.0.1:5000/transactions | python -m json.tool
 what the fields mean, see the Hledger.Data.Json haddock docs and click
 on the various data types, eg Transaction.  And for a higher level
 understanding, see the journal docs.  There is also a basic OpenAPI
-specification.
+specification, also served at '/openapi.json'.
 
    In some cases there is outer JSON corresponding to a "Report" type.
 To understand that, go to the Hledger.Web.Handler.MiscR haddock and look
@@ -391,103 +391,105 @@ which consists of a report title and a list of
 AccountTransactionsReportItem (etc).
 
    You can add a new transaction to the journal with a PUT request to
-'/add', if hledger-web was started with the 'add' capability (enabled by
-default).  The payload must be the full, exact JSON representation of a
-hledger transaction (partial data won't do).  You can get sample JSON
-from hledger-web's '/transactions' or '/accounttransactions', or you can
-export it with hledger-lib, eg like so:
+'/add', if hledger-web was started with '--allow=add' (the default when
+listening on a local-only address).  The payload must be the full, exact
+JSON representation of a hledger transaction (partial data won't do).
+You can get sample JSON from hledger-web's '/transactions' or
+'/accounttransactions', or from hledger's print command, eg:
 
-.../hledger$ stack ghci hledger-lib
->>> writeJsonFile "txn.json" (head $ jtxns samplejournal)
->>> :q
+$ hledger -f examples/sample.journal print -O json | python -m json.tool > txns.json
 
-   Here's how it looks as of hledger-1.17 (remember, this JSON
-corresponds to hledger's Transaction and related data types):
+   Here's how one transaction looks (remember, this JSON corresponds to
+hledger's Transaction and related data types):
 
 {
-    "tcomment": "",
-    "tpostings": [
-        {
-            "pbalanceassertion": null,
-            "pstatus": "Unmarked",
-            "pamount": [
-                {
-                    "aprice": null,
-                    "acommodity": "$",
-                    "aquantity": {
-                        "floatingPoint": 1,
-                        "decimalPlaces": 10,
-                        "decimalMantissa": 10000000000
-                    },
-                    "aismultiplier": false,
-                    "astyle": {
-                        "ascommodityside": "L",
-                        "asdigitgroups": null,
-                        "ascommodityspaced": false,
-                        "asprecision": 2,
-                        "asdecimalpoint": "."
-                    }
-                }
-            ],
-            "ptransaction_": "1",
-            "paccount": "assets:bank:checking",
-            "pdate": null,
-            "ptype": "RegularPosting",
-            "pcomment": "",
-            "pdate2": null,
-            "ptags": [],
-            "poriginal": null
-        },
-        {
-            "pbalanceassertion": null,
-            "pstatus": "Unmarked",
-            "pamount": [
-                {
-                    "aprice": null,
-                    "acommodity": "$",
-                    "aquantity": {
-                        "floatingPoint": -1,
-                        "decimalPlaces": 10,
-                        "decimalMantissa": -10000000000
-                    },
-                    "aismultiplier": false,
-                    "astyle": {
-                        "ascommodityside": "L",
-                        "asdigitgroups": null,
-                        "ascommodityspaced": false,
-                        "asprecision": 2,
-                        "asdecimalpoint": "."
-                    }
-                }
-            ],
-            "ptransaction_": "1",
-            "paccount": "income:salary",
-            "pdate": null,
-            "ptype": "RegularPosting",
-            "pcomment": "",
-            "pdate2": null,
-            "ptags": [],
-            "poriginal": null
-        }
-    ],
-    "ttags": [],
-    "tsourcepos": {
-        "tag": "JournalSourcePos",
-        "contents": [
-            "",
-            [
-                1,
-                1
-            ]
-        ]
-    },
-    "tdate": "2008-01-01",
     "tcode": "",
-    "tindex": 1,
-    "tprecedingcomment": "",
+    "tcomment": "",
+    "tdate": "2008-01-01",
     "tdate2": null,
     "tdescription": "income",
-    "tstatus": "Unmarked"
+    "tindex": 1,
+    "tpostings": [
+        {
+            "paccount": "assets:bank:checking",
+            "pamount": [
+                {
+                    "acommodity": "$",
+                    "acost": null,
+                    "acostbasis": null,
+                    "aquantity": {
+                        "decimalMantissa": 1,
+                        "decimalPlaces": 0,
+                        "floatingPoint": 1
+                    },
+                    "astyle": {
+                        "ascommodityside": "L",
+                        "ascommodityspaced": false,
+                        "asdecimalmark": ".",
+                        "asdigitgroups": null,
+                        "asprecision": 0,
+                        "asrounding": "NoRounding"
+                    }
+                }
+            ],
+            "pbalanceassertion": null,
+            "pcomment": "",
+            "pdate": null,
+            "pdate2": null,
+            "poriginal": null,
+            "preal": "RealPosting",
+            "pstatus": "Unmarked",
+            "ptags": [],
+            "ptransaction_": "1"
+        },
+        {
+            "paccount": "income:salary",
+            "pamount": [
+                {
+                    "acommodity": "$",
+                    "acost": null,
+                    "acostbasis": null,
+                    "aquantity": {
+                        "decimalMantissa": -1,
+                        "decimalPlaces": 0,
+                        "floatingPoint": -1
+                    },
+                    "astyle": {
+                        "ascommodityside": "L",
+                        "ascommodityspaced": false,
+                        "asdecimalmark": ".",
+                        "asdigitgroups": null,
+                        "asprecision": 0,
+                        "asrounding": "NoRounding"
+                    }
+                }
+            ],
+            "pbalanceassertion": null,
+            "pcomment": "",
+            "pdate": null,
+            "pdate2": null,
+            "poriginal": null,
+            "preal": "RealPosting",
+            "pstatus": "Unmarked",
+            "ptags": [],
+            "ptransaction_": "1"
+        }
+    ],
+    "tprecedingcomment": "",
+    "tsourcepos": [
+        {
+            "sourceColumn": 1,
+            "sourceLine": 31,
+            "sourceName": "/Users/simon/src/hledger/examples/sample.journal"
+        },
+        {
+            "sourceColumn": 1,
+            "sourceLine": 34,
+            "sourceName": "/Users/simon/src/hledger/examples/sample.journal"
+        }
+    ],
+    "tstatus": "Unmarked",
+    "ttags": []
 }
 
    And here's how to test adding it with curl.  This should add a new
@@ -535,14 +537,14 @@ We welcome bug reports in the hledger issue tracker
 
 Tag Table:
 Node: Top223
-Node: OPTIONS2528
-Node: PERMISSIONS12695
-Node: EDITING UPLOADING DOWNLOADING13950
-Node: RELOADING14877
-Node: JSON API15458
-Node: DEBUG OUTPUT21107
-Node: ENVIRONMENT21649
-Node: BUGS21885
+Node: OPTIONS2533
+Node: PERMISSIONS12705
+Node: EDITING UPLOADING DOWNLOADING13960
+Node: RELOADING14878
+Node: JSON API15459
+Node: DEBUG OUTPUT21375
+Node: ENVIRONMENT21917
+Node: BUGS22153
 
 End Tag Table
 

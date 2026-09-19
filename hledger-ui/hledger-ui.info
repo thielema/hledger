@@ -213,8 +213,9 @@ Keyboard gives more control.
 
    '?' shows a help dialog listing all keys.  (Some of these also appear
 in the quick help at the bottom of each screen.)  Press '?' again (or
-'ESCAPE', or 'LEFT', or 'q') to close it.  The following keys work on
-most screens:
+'ESCAPE', or 'LEFT', or 'q') to close it.  While it is open, 'p', 'm' or
+'i' show this manual in a pager, man or info.  The following keys work
+on most screens:
 
    The cursor keys navigate: 'RIGHT' or 'ENTER' goes deeper, 'LEFT'
 returns to the previous screen, 'UP'/'DOWN'/'PGUP'/'PGDN'/'HOME'/'END'
@@ -287,13 +288,13 @@ terminal interface.  This key will be available if 'hledger-iadd' is
 installed in $path.
 
    'E' runs $HLEDGER_UI_EDITOR, or $EDITOR, or a default ('emacsclient
--a "" -nw') on the journal file.  With some editors, the cursor will be
-positioned at the current transaction when invoked from the register and
-transaction screens, and at the error location (if possible) when
-invoked from the error screen.
+-a "" -nw', or 'notepad.exe' on Windows) on the journal file.  With some
+editors, the cursor will be positioned at the current transaction when
+invoked from the register and transaction screens, and at the error
+location (if possible) when invoked from the error screen.
 
    'B' toggles cost mode, showing amounts converted to their cost's
-commodity (see hledger manual > Cost reporting.
+commodity (see hledger manual > Cost reporting).
 
    'V' toggles value mode, showing amounts converted to their market
 value (see hledger manual > Valuation flag).  More specifically,
@@ -318,6 +319,9 @@ per-lot detail.
 
    'q' quits the application.
 
+   'CTRL-z' suspends it, returning to the shell; resume it with 'fg' as
+usual.
+
    Additional screen-specific keys are described below.
 
 
@@ -333,7 +337,7 @@ previous screen.  Or you can use 'ESC' to return directly to the top
 menu screen.
 
    You can also use a command line flag to specific a different startup
-screen ('--cs', '--bs', '--is', '--all', or '--register=ACCT').
+screen ('--cash', '--bs', '--is', '--all', or '--register=ACCT').
 
 * Menu:
 
@@ -394,6 +398,11 @@ File: hledger-ui.info,  Node: All accounts screen,  Next: Register screen,  Prev
 This screen shows all accounts in your journal (unless filtered by a
 query; like 'hledger balance').  It shows balances by default; you can
 toggle showing changes with the 'H' key.
+
+   You can limit the account depth shown: '1' to '9' set the depth
+limit, '0' sets it to zero (showing just a single total), and '-' and
+'+' (or '_' and '=') decrease and increase it.  'DELETE' resets it,
+along with any other filters.
 
 
 File: hledger-ui.info,  Node: Register screen,  Next: Transaction screen,  Prev: All accounts screen,  Up: SCREENS
@@ -457,8 +466,7 @@ File: hledger-ui.info,  Node: Transaction screen,  Next: Error screen,  Prev: Re
 ======================
 
 This screen shows a single transaction, as a general journal entry,
-similar to hledger's print command and journal format
-(hledger_journal(5)).
+similar to hledger's print command and journal format.
 
    The transaction's date(s) and any cleared flag, transaction code,
 description, comments, along with all of its account postings are shown.
@@ -529,6 +537,10 @@ File: hledger-ui.info,  Node: ENVIRONMENT,  Next: BUGS,  Prev: WATCH MODE,  Up: 
 *LEDGER_FILE* The main journal file to use when not specified with
 '-f/--file'.  Default: '$HOME/.hledger.journal'.
 
+   *HLEDGER_UI_EDITOR*, *EDITOR* The editor command run by the 'E' key,
+in that order of preference.  Default: 'emacsclient -a "" -nw', or
+'notepad.exe' on Windows.
+
 
 File: hledger-ui.info,  Node: BUGS,  Prev: ENVIRONMENT,  Up: Top
 
@@ -550,18 +562,18 @@ Node: Top221
 Node: OPTIONS2054
 Node: MOUSE9946
 Node: KEYS10278
-Node: SCREENS15616
-Node: Menu screen16356
-Node: Cash accounts screen16672
-Node: Balance sheet accounts screen17033
-Node: Income statement accounts screen17369
-Node: All accounts screen17754
-Node: Register screen18117
-Node: Transaction screen20560
-Node: Error screen21740
-Node: WATCH MODE22297
-Node: ENVIRONMENT23334
-Node: BUGS23567
+Node: SCREENS15803
+Node: Menu screen16545
+Node: Cash accounts screen16861
+Node: Balance sheet accounts screen17222
+Node: Income statement accounts screen17558
+Node: All accounts screen17943
+Node: Register screen18542
+Node: Transaction screen20985
+Node: Error screen22144
+Node: WATCH MODE22701
+Node: ENVIRONMENT23738
+Node: BUGS24137
 
 End Tag Table
 

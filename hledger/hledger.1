@@ -54,12 +54,23 @@ the \f[CR]LEDGER_FILE\f[R] environment variable (defaulting to
 It can also read timeclock files, timedot files, or any CSV/SSV/TSV file
 with a date field.
 .PP
-Here is a small journal file describing one transaction:
+Here is a small journal file, describing some starting balances and two
+transactions:
 .IP
 .EX
-2015\-10\-16 bought food
-  expenses:food          $10
-  assets:cash
+2025\-01\-01 * opening balances
+  assets:bank:checking             $1000 = $1000
+  assets:cash                       $100 = $100
+  liabilities:creditcard            $\-50 = $\-50
+  equity:opening/closing balances
+
+2025\-01\-10 * gift received
+  income:gifts                      $\-20
+  assets:cash                        $20
+
+2025\-01\-12 farmers market
+  assets:cash                       $\-13
+  expenses:food                      $13
 .EE
 .PP
 Transactions are dated movements of money (etc.)
@@ -72,6 +83,13 @@ Positive amounts are inflow to that account (\f[I]debit\f[R]), negatives
 are outflow from it (\f[I]credit\f[R]).
 (Some reports show revenue, liability and equity account balances as
 negative numbers as a result; this is normal.)
+.PP
+Some details from this example: the first entry records your real\-world
+balances on a starting date, with the equity account absorbing the
+difference (its amount is inferred); the \f[CR]= AMOUNT\f[R] parts are
+optional balance assertions, for extra error checking; the \f[CR]*\f[R]
+after a date is an optional status mark, meaning \(dqcleared\(dq; and
+the currency symbols are optional, but a good habit.
 .PP
 hledger\(cqs add command can help you add transactions, or you can
 install other data entry UIs like hledger\-web or hledger\-iadd.
@@ -92,8 +110,10 @@ $ hledger incomestatement
 .EE
 .PP
 Run \f[CR]hledger\f[R] to list the commands.
-See also the \(dqStarting a journal file\(dq and \(dqSetting opening
-balances\(dq sections in PART 5: COMMON TASKS.
+For a gentle step by step introduction, see hledger by example, or for a
+faster tour, the 5 minute quick start.
+For configuring a default journal file, reconciling with your bank, and
+starting a new year\(aqs file, see PART 5: COMMON TASKS.
 .SH PART 1: USER INTERFACE
 .SH Input
 hledger reads one or more data files, each time you run it.
@@ -836,7 +856,6 @@ $ hledger bal \(atcash.args
 .SS Config files
 You can configure default command line options and arguments
 conveniently in a hledger config file.
-(Since 1.40.)
 Config file options will be inserted near the start of your command
 line, so you can override them with command line options.
 .PP
@@ -1398,7 +1417,7 @@ append \f[CR]C\f[R] if needed.
 One\-letter symbols will be doubled.
 The no\-symbol commodity will become \f[CR]CC\f[R].
 (Note, hledger tries to keep your commodities distinct, but collisions
-are possiblel with short alphanumeric symbols like \f[CR]CC\f[R],
+are possible with short alphanumeric symbols like \f[CR]CC\f[R],
 \f[CR]C\f[R], and no\-symbol, which are distinct in hledger but all
 become \f[CR]CC\f[R] in beancount.)
 .SS Beancount balance assignments
@@ -1495,8 +1514,9 @@ When displaying amounts, hledger infers a standard display style for
 each commodity/currency, as described below in Commodity display style.
 .PP
 If needed, this can be overridden by a
-\f[CR]\-c/\-\-commodity\-style\f[R] option (except for cost amounts and
-amounts displayed by the \f[CR]print\f[R] command, which are always
+\f[CR]\-c/\-\-commodity\-style\f[R] option (though for cost amounts and
+amounts displayed by the \f[CR]print\f[R] command, it affects only the
+symbol placement and digit group/decimal marks; those amounts are always
 displayed with all decimal digits).
 For example, the following will force dollar amounts to be displayed as
 shown:
@@ -1939,8 +1959,8 @@ parenthesis (or it will be truncated).
 Codes tend to disrupt alignment of the register report, making it harder
 to scan visually.
 And you can\(aqt store more than one value there per transaction.
-For these reasons you might want to avoid the code field and use
-tags(#tags] instead.
+For these reasons you might want to avoid the code field and use tags
+instead.
 .SS Description
 After the date, status mark and/or code fields, the rest of the line (or
 until a comment is begun with \f[CR];\f[R]) is the transaction\(aqs
@@ -2323,7 +2343,7 @@ with neither cost notation nor equity postings.
 If one of the postings is recognised as a lot posting, the cost will be
 attached to that one.
 Otherwise the cost will be attached to the first (top) posting \- so it
-can be important to but the right one first.
+can be important to put the right one first.
 Here we had to switch the order of postings, to get the same meaning as
 above.
 .PP
@@ -2727,7 +2747,7 @@ A tag can have multiple values:
 2025\-01\-01 groceries        ; tag1:value 1, tag1:value 2
 .EE
 .PP
-You can write each tag on its own line of you prefer (but they still
+You can write each tag on its own line if you prefer (but they still
 can\(aqt contain commas):
 .IP
 .EX
@@ -3473,7 +3493,7 @@ In other words, for (an account name in) a given journal entry:
 .IP \(bu 2
 the nearest alias declaration before/above the entry is applied first
 .IP \(bu 2
-the next alias before/above that will be be applied next, and so on
+the next alias before/above that will be applied next, and so on
 .IP \(bu 2
 aliases defined after/below the entry do not affect it.
 .PP
@@ -3866,7 +3886,7 @@ The \(dqtags\(dq check will report an error if any undeclared tag name
 is used.
 It is quite easy to accidentally create a tag through normal use of
 colons in comments; if you want to prevent this, you can declare and
-check your tags .
+check your tags.
 .SS Periodic transactions
 The \f[CR]\(ti\f[R] directive declares a \(dqperiodic rule\(dq which
 generates temporary extra transactions, usually recurring at some
@@ -4073,7 +4093,6 @@ but before balance assertions are checked.
 .PP
 Note this means that journal entries must be balanced both before and
 after auto postings are added.
-This changed in hledger 1.12+; see #893 for background.
 .PP
 This also means that you cannot have more than one auto\-posting with a
 missing amount applied to a given transaction, as it will be unable to
@@ -4629,7 +4648,7 @@ If you tell hledger to read a csv file with \f[CR]\-f foo.csv\f[R], it
 will look for rules in \f[CR]foo.csv.rules\f[R].
 Or, you can tell it to read the rules file, with
 \f[CR]\-f foo.csv.rules\f[R], and it will look for data in
-\f[CR]foo.csv\f[R] (since 1.30).
+\f[CR]foo.csv\f[R].
 These are mostly equivalent, but the second method provides some extra
 features.
 For one, the data file can be missing, without causing an error; it is
@@ -6058,7 +6077,7 @@ comment %amount1
 .PP
 When there are multiple field assignments to the same hledger field,
 only the last one takes effect.
-Here, comment\(aqs value will be be B, or C if \(dqsomething\(dq is
+Here, comment\(aqs value will be B, or C if \(dqsomething\(dq is
 matched, but never A:
 .IP
 .EX
@@ -6148,302 +6167,10 @@ each CSV\(aqs rules file.
 Splitting if blocks into smaller if blocks, extracting the frequently
 used parts.
 .SS CSV rules examples
-.SS Bank of Ireland
-Here\(aqs a CSV with two amount fields (Debit and Credit), and a balance
-field, which we can use to add balance assertions, which is not
-necessary but provides extra error checking:
-.IP
-.EX
-Date,Details,Debit,Credit,Balance
-07/12/2012,LODGMENT       529898,,10.0,131.21
-07/12/2012,PAYMENT,5,,126
-.EE
-.IP
-.EX
-# bankofireland\-checking.csv.rules
-
-# skip the header line
-skip
-
-# name the csv fields, and assign some of them as journal entry fields
-fields  date, description, amount\-out, amount\-in, balance
-
-# We generate balance assertions by assigning to \(dqbalance\(dq
-# above, but you may sometimes need to remove these because:
-#
-# \- the CSV balance differs from the true balance,
-#   by up to 0.0000000000005 in my experience
-#
-# \- it is sometimes calculated based on non\-chronological ordering,
-#   eg when multiple transactions clear on the same day
-
-# date is in UK/Ireland format
-date\-format  %d/%m/%Y
-
-# set the currency
-currency  EUR
-
-# set the base account for all txns
-account1  assets:bank:boi:checking
-.EE
-.IP
-.EX
-$ hledger \-f bankofireland\-checking.csv print
-2012\-12\-07 LODGMENT       529898
-    assets:bank:boi:checking         EUR10.0 = EUR131.2
-    income:unknown                  EUR\-10.0
-
-2012\-12\-07 PAYMENT
-    assets:bank:boi:checking         EUR\-5.0 = EUR126.0
-    expenses:unknown                  EUR5.0
-.EE
-.PP
-The balance assertions don\(aqt raise an error above, because we\(aqre
-reading directly from CSV, but they will be checked if these entries are
-imported into a journal file.
-.SS Coinbase
-A simple example with some CSV from Coinbase.
-The spot price is recorded using cost notation.
-The legacy \f[CR]amount\f[R] field name conveniently sets amount 2
-(posting 2\(aqs amount) to the total cost.
-.IP
-.EX
-# Timestamp,Transaction Type,Asset,Quantity Transacted,Spot Price Currency,Spot Price at Transaction,Subtotal,Total (inclusive of fees and/or spread),Fees and/or Spread,Notes
-# 2021\-12\-30T06:57:59Z,Receive,USDC,100,GBP,0.740000,\(dq\(dq,\(dq\(dq,\(dq\(dq,\(dqReceived 100.00 USDC from an external account\(dq
-.EE
-.IP
-.EX
-# coinbase.csv.rules
-skip         1
-fields       Timestamp,Transaction_Type,Asset,Quantity_Transacted,Spot_Price_Currency,Spot_Price_at_Transaction,Subtotal,Total,Fees_Spread,Notes
-date         %Timestamp
-date\-format  %Y\-%m\-%dT%T%Z
-description  %Notes
-account1     assets:coinbase:cc
-amount       %Quantity_Transacted %Asset \(at %Spot_Price_at_Transaction %Spot_Price_Currency
-.EE
-.IP
-.EX
-$ hledger print \-f coinbase.csv
-2021\-12\-30 Received 100.00 USDC from an external account
-    assets:coinbase:cc    100 USDC \(at 0.740000 GBP
-    income:unknown                 \-74.000000 GBP
-.EE
-.SS Amazon
-Here we convert amazon.com order history, and use an if block to
-generate a third posting if there\(aqs a fee.
-(In practice you\(aqd probably get this data from your bank instead, but
-it\(aqs an example.)
-.IP
-.EX
-\(dqDate\(dq,\(dqType\(dq,\(dqTo/From\(dq,\(dqName\(dq,\(dqStatus\(dq,\(dqAmount\(dq,\(dqFees\(dq,\(dqTransaction ID\(dq
-\(dqJul 29, 2012\(dq,\(dqPayment\(dq,\(dqTo\(dq,\(dqFoo.\(dq,\(dqCompleted\(dq,\(dq$20.00\(dq,\(dq$0.00\(dq,\(dq16000000000000DGLNJPI1P9B8DKPVHL\(dq
-\(dqJul 30, 2012\(dq,\(dqPayment\(dq,\(dqTo\(dq,\(dqAdapteva, Inc.\(dq,\(dqCompleted\(dq,\(dq$25.00\(dq,\(dq$1.00\(dq,\(dq17LA58JSKRD4HDGLNJPI1P9B8DKPVHL\(dq
-.EE
-.IP
-.EX
-# amazon\-orders.csv.rules
-
-# skip one header line
-skip 1
-
-# name the csv fields, and assign the transaction\(aqs date, amount and code.
-# Avoided the \(dqstatus\(dq and \(dqamount\(dq hledger field names to prevent confusion.
-fields date, _, toorfrom, name, amzstatus, amzamount, fees, code
-
-# how to parse the date
-date\-format %b %\-d, %Y
-
-# combine two fields to make the description
-description %toorfrom %name
-
-# save the status as a tag
-comment     status:%amzstatus
-
-# set the base account for all transactions
-account1    assets:amazon
-# leave amount1 blank so it can balance the other(s).
-# I\(aqm assuming amzamount excludes the fees, don\(aqt remember
-
-# set a generic account2
-account2    expenses:misc
-amount2     %amzamount
-# and maybe refine it further:
-#include categorisation.rules
-
-# add a third posting for fees, but only if they are non\-zero.
-if %fees [1\-9]
- account3    expenses:fees
- amount3     %fees
-.EE
-.IP
-.EX
-$ hledger \-f amazon\-orders.csv print
-2012\-07\-29 (16000000000000DGLNJPI1P9B8DKPVHL) To Foo.  ; status:Completed
-    assets:amazon
-    expenses:misc          $20.00
-
-2012\-07\-30 (17LA58JSKRD4HDGLNJPI1P9B8DKPVHL) To Adapteva, Inc.  ; status:Completed
-    assets:amazon
-    expenses:misc          $25.00
-    expenses:fees           $1.00
-.EE
-.SS Paypal
-Here\(aqs a real\-world rules file for (customised) Paypal CSV, with
-some Paypal\-specific rules, and a second rules file included:
-.IP
-.EX
-\(dqDate\(dq,\(dqTime\(dq,\(dqTimeZone\(dq,\(dqName\(dq,\(dqType\(dq,\(dqStatus\(dq,\(dqCurrency\(dq,\(dqGross\(dq,\(dqFee\(dq,\(dqNet\(dq,\(dqFrom Email Address\(dq,\(dqTo Email Address\(dq,\(dqTransaction ID\(dq,\(dqItem Title\(dq,\(dqItem ID\(dq,\(dqReference Txn ID\(dq,\(dqReceipt ID\(dq,\(dqBalance\(dq,\(dqNote\(dq
-\(dq10/01/2019\(dq,\(dq03:46:20\(dq,\(dqPDT\(dq,\(dqCalm Radio\(dq,\(dqSubscription Payment\(dq,\(dqCompleted\(dq,\(dqUSD\(dq,\(dq\-6.99\(dq,\(dq0.00\(dq,\(dq\-6.99\(dq,\(dqsimon\(atjoyful.com\(dq,\(dqmemberships\(atcalmradio.com\(dq,\(dq60P57143A8206782E\(dq,\(dqMONTHLY \- $1 for the first 2 Months: Me \- Order 99309. Item total: $1.00 USD first 2 months, then $6.99 / Month\(dq,\(dq\(dq,\(dqI\-R8YLY094FJYR\(dq,\(dq\(dq,\(dq\-6.99\(dq,\(dq\(dq
-\(dq10/01/2019\(dq,\(dq03:46:20\(dq,\(dqPDT\(dq,\(dq\(dq,\(dqBank Deposit to PP Account \(dq,\(dqPending\(dq,\(dqUSD\(dq,\(dq6.99\(dq,\(dq0.00\(dq,\(dq6.99\(dq,\(dq\(dq,\(dqsimon\(atjoyful.com\(dq,\(dq0TU1544T080463733\(dq,\(dq\(dq,\(dq\(dq,\(dq60P57143A8206782E\(dq,\(dq\(dq,\(dq0.00\(dq,\(dq\(dq
-\(dq10/01/2019\(dq,\(dq08:57:01\(dq,\(dqPDT\(dq,\(dqPatreon\(dq,\(dqPreApproved Payment Bill User Payment\(dq,\(dqCompleted\(dq,\(dqUSD\(dq,\(dq\-7.00\(dq,\(dq0.00\(dq,\(dq\-7.00\(dq,\(dqsimon\(atjoyful.com\(dq,\(dqsupport\(atpatreon.com\(dq,\(dq2722394R5F586712G\(dq,\(dqPatreon* Membership\(dq,\(dq\(dq,\(dqB\-0PG93074E7M86381M\(dq,\(dq\(dq,\(dq\-7.00\(dq,\(dq\(dq
-\(dq10/01/2019\(dq,\(dq08:57:01\(dq,\(dqPDT\(dq,\(dq\(dq,\(dqBank Deposit to PP Account \(dq,\(dqPending\(dq,\(dqUSD\(dq,\(dq7.00\(dq,\(dq0.00\(dq,\(dq7.00\(dq,\(dq\(dq,\(dqsimon\(atjoyful.com\(dq,\(dq71854087RG994194F\(dq,\(dqPatreon* Membership\(dq,\(dq\(dq,\(dq2722394R5F586712G\(dq,\(dq\(dq,\(dq0.00\(dq,\(dq\(dq
-\(dq10/19/2019\(dq,\(dq03:02:12\(dq,\(dqPDT\(dq,\(dqWikimedia Foundation, Inc.\(dq,\(dqSubscription Payment\(dq,\(dqCompleted\(dq,\(dqUSD\(dq,\(dq\-2.00\(dq,\(dq0.00\(dq,\(dq\-2.00\(dq,\(dqsimon\(atjoyful.com\(dq,\(dqtle\(atwikimedia.org\(dq,\(dqK9U43044RY432050M\(dq,\(dqMonthly donation to the Wikimedia Foundation\(dq,\(dq\(dq,\(dqI\-R5C3YUS3285L\(dq,\(dq\(dq,\(dq\-2.00\(dq,\(dq\(dq
-\(dq10/19/2019\(dq,\(dq03:02:12\(dq,\(dqPDT\(dq,\(dq\(dq,\(dqBank Deposit to PP Account \(dq,\(dqPending\(dq,\(dqUSD\(dq,\(dq2.00\(dq,\(dq0.00\(dq,\(dq2.00\(dq,\(dq\(dq,\(dqsimon\(atjoyful.com\(dq,\(dq3XJ107139A851061F\(dq,\(dq\(dq,\(dq\(dq,\(dqK9U43044RY432050M\(dq,\(dq\(dq,\(dq0.00\(dq,\(dq\(dq
-\(dq10/22/2019\(dq,\(dq05:07:06\(dq,\(dqPDT\(dq,\(dqNoble Benefactor\(dq,\(dqSubscription Payment\(dq,\(dqCompleted\(dq,\(dqUSD\(dq,\(dq10.00\(dq,\(dq\-0.59\(dq,\(dq9.41\(dq,\(dqnoble\(atbene.fac.tor\(dq,\(dqsimon\(atjoyful.com\(dq,\(dq6L8L1662YP1334033\(dq,\(dqJoyful Systems\(dq,\(dq\(dq,\(dqI\-KC9VBGY2GWDB\(dq,\(dq\(dq,\(dq9.41\(dq,\(dq\(dq
-.EE
-.IP
-.EX
-# paypal\-custom.csv.rules
-
-# Tips:
-# Export from Activity \-> Statements \-> Custom \-> Activity download
-# Suggested transaction type: \(dqBalance affecting\(dq
-# Paypal\(aqs default fields in 2018 were:
-# \(dqDate\(dq,\(dqTime\(dq,\(dqTimeZone\(dq,\(dqName\(dq,\(dqType\(dq,\(dqStatus\(dq,\(dqCurrency\(dq,\(dqGross\(dq,\(dqFee\(dq,\(dqNet\(dq,\(dqFrom Email Address\(dq,\(dqTo Email Address\(dq,\(dqTransaction ID\(dq,\(dqShipping Address\(dq,\(dqAddress Status\(dq,\(dqItem Title\(dq,\(dqItem ID\(dq,\(dqShipping and Handling Amount\(dq,\(dqInsurance Amount\(dq,\(dqSales Tax\(dq,\(dqOption 1 Name\(dq,\(dqOption 1 Value\(dq,\(dqOption 2 Name\(dq,\(dqOption 2 Value\(dq,\(dqReference Txn ID\(dq,\(dqInvoice Number\(dq,\(dqCustom Number\(dq,\(dqQuantity\(dq,\(dqReceipt ID\(dq,\(dqBalance\(dq,\(dqAddress Line 1\(dq,\(dqAddress Line 2/District/Neighborhood\(dq,\(dqTown/City\(dq,\(dqState/Province/Region/County/Territory/Prefecture/Republic\(dq,\(dqZip/Postal Code\(dq,\(dqCountry\(dq,\(dqContact Phone Number\(dq,\(dqSubject\(dq,\(dqNote\(dq,\(dqCountry Code\(dq,\(dqBalance Impact\(dq
-# This rules file assumes the following more detailed fields, configured in \(dqCustomize report fields\(dq:
-# \(dqDate\(dq,\(dqTime\(dq,\(dqTimeZone\(dq,\(dqName\(dq,\(dqType\(dq,\(dqStatus\(dq,\(dqCurrency\(dq,\(dqGross\(dq,\(dqFee\(dq,\(dqNet\(dq,\(dqFrom Email Address\(dq,\(dqTo Email Address\(dq,\(dqTransaction ID\(dq,\(dqItem Title\(dq,\(dqItem ID\(dq,\(dqReference Txn ID\(dq,\(dqReceipt ID\(dq,\(dqBalance\(dq,\(dqNote\(dq
-
-fields date, time, timezone, description_, type, status_, currency, grossamount, feeamount, netamount, fromemail, toemail, code, itemtitle, itemid, referencetxnid, receiptid, balance, note
-
-skip  1
-
-date\-format  %\-m/%\-d/%Y
-
-# ignore some paypal events
-if
-In Progress
-Temporary Hold
-Update to
- skip
-
-# add more fields to the description
-description %description_ %itemtitle
-
-# save some other fields as tags
-comment  itemid:%itemid, fromemail:%fromemail, toemail:%toemail, time:%time, type:%type, status:%status_
-
-# convert to short currency symbols
-if %currency USD
- currency $
-if %currency EUR
- currency E
-if %currency GBP
- currency P
-
-# generate postings
-
-# the first posting will be the money leaving/entering my paypal account
-# (negative means leaving my account, in all amount fields)
-account1 assets:online:paypal
-amount1  %netamount
-
-# the second posting will be money sent to/received from other party
-# (account2 is set below)
-amount2  \-%grossamount
-
-# if there\(aqs a fee, add a third posting for the money taken by paypal.
-if %feeamount [1\-9]
- account3 expenses:banking:paypal
- amount3  \-%feeamount
- comment3 business:
-
-# choose an account for the second posting
-
-# override the default account names:
-# if the amount is positive, it\(aqs income (a debit)
-if %grossamount \(ha[\(ha\-]
- account2 income:unknown
-# if negative, it\(aqs an expense (a credit)
-if %grossamount \(ha\-
- account2 expenses:unknown
-
-# apply common rules for setting account2 & other tweaks
-include common.rules
-
-# apply some overrides specific to this csv
-
-# Transfers from/to bank. These are usually marked Pending,
-# which can be disregarded in this case.
-if
-Bank Account
-Bank Deposit to PP Account
- description %type for %referencetxnid %itemtitle
- account2 assets:bank:wf:pchecking
- account1 assets:online:paypal
-
-# Currency conversions
-if Currency Conversion
- account2 equity:currency conversion
-.EE
-.IP
-.EX
-# common.rules
-
-if
-darcs
-noble benefactor
- account2 revenues:foss donations:darcshub
- comment2 business:
-
-if
-Calm Radio
- account2 expenses:online:apps
-
-if
-electronic frontier foundation
-Patreon
-wikimedia
-Advent of Code
- account2 expenses:dues
-
-if Google
- account2 expenses:online:apps
- description google | music
-.EE
-.IP
-.EX
-$ hledger \-f paypal\-custom.csv  print
-2019\-10\-01 (60P57143A8206782E) Calm Radio MONTHLY \- $1 for the first 2 Months: Me \- Order 99309. Item total: $1.00 USD first 2 months, then $6.99 / Month  ; itemid:, fromemail:simon\(atjoyful.com, toemail:memberships\(atcalmradio.com, time:03:46:20, type:Subscription Payment, status:Completed
-    assets:online:paypal          $\-6.99 = $\-6.99
-    expenses:online:apps           $6.99
-
-2019\-10\-01 (0TU1544T080463733) Bank Deposit to PP Account for 60P57143A8206782E  ; itemid:, fromemail:, toemail:simon\(atjoyful.com, time:03:46:20, type:Bank Deposit to PP Account, status:Pending
-    assets:online:paypal               $6.99 = $0.00
-    assets:bank:wf:pchecking          $\-6.99
-
-2019\-10\-01 (2722394R5F586712G) Patreon Patreon* Membership  ; itemid:, fromemail:simon\(atjoyful.com, toemail:support\(atpatreon.com, time:08:57:01, type:PreApproved Payment Bill User Payment, status:Completed
-    assets:online:paypal          $\-7.00 = $\-7.00
-    expenses:dues                  $7.00
-
-2019\-10\-01 (71854087RG994194F) Bank Deposit to PP Account for 2722394R5F586712G Patreon* Membership  ; itemid:, fromemail:, toemail:simon\(atjoyful.com, time:08:57:01, type:Bank Deposit to PP Account, status:Pending
-    assets:online:paypal               $7.00 = $0.00
-    assets:bank:wf:pchecking          $\-7.00
-
-2019\-10\-19 (K9U43044RY432050M) Wikimedia Foundation, Inc. Monthly donation to the Wikimedia Foundation  ; itemid:, fromemail:simon\(atjoyful.com, toemail:tle\(atwikimedia.org, time:03:02:12, type:Subscription Payment, status:Completed
-    assets:online:paypal             $\-2.00 = $\-2.00
-    expenses:dues                     $2.00
-    expenses:banking:paypal      ; business:
-
-2019\-10\-19 (3XJ107139A851061F) Bank Deposit to PP Account for K9U43044RY432050M  ; itemid:, fromemail:, toemail:simon\(atjoyful.com, time:03:02:12, type:Bank Deposit to PP Account, status:Pending
-    assets:online:paypal               $2.00 = $0.00
-    assets:bank:wf:pchecking          $\-2.00
-
-2019\-10\-22 (6L8L1662YP1334033) Noble Benefactor Joyful Systems  ; itemid:, fromemail:noble\(atbene.fac.tor, toemail:simon\(atjoyful.com, time:05:07:06, type:Subscription Payment, status:Completed
-    assets:online:paypal                       $9.41 = $9.41
-    revenues:foss donations:darcshub         $\-10.00  ; business:
-    expenses:banking:paypal                    $0.59  ; business:
-.EE
+For real\-world rules files for many banks, brokers, exchanges and apps,
+see the hledger CSV rules library in the hledger repo.
+These aren\(aqt necessarily maintained, and may need adapting, but they
+are a good source of ideas and examples.
 .PP
 .SH Timeclock
 hledger can read time logs in the timeclock time logging format of
@@ -6456,7 +6183,7 @@ If your old time logs are rejected, you should adapt them to modern
 hledger; for now, you can restore the pre\-1.43 behaviour with the
 \f[CR]\-\-old\-timeclock\f[R] flag.
 .PP
-Here the timeclock format in hledger 1.50+:
+Here is the timeclock format (in hledger 1.50+):
 .IP
 .EX
 # Comment lines like these, and blank lines, are ignored:
@@ -6487,7 +6214,7 @@ A transaction comment, beginning with \f[CR];\f[R], is also optional.
 (Indented following comment lines are also allowed, as in journal
 format.)
 .PP
-In clock\-out entries (\f[CR]o\f[R]) have no description, but can have a
+Clock\-out entries (\f[CR]o\f[R]) have no description, but can have a
 comment if you wish.
 A clock\-in and clock\-out pair form a \(dqtransaction\(dq posting some
 number of hours to an account \- also known as a session.
@@ -6646,7 +6373,7 @@ which will be converted to hours using these ratios: 60s = 1m, 60m = 1h,
 24h = 1d, 7d = 1w, 30d = 1mo, 365d = 1y.
 This allows use of more convenient time units.
 .IP \(bu 2
-One or more \f[B]timedot letters\f[R] \f[I](since 1.32)\f[R]
+One or more \f[B]timedot letters\f[R]
 .PD 0
 .P
 .PD
@@ -6989,9 +6716,7 @@ of february.
 report at the end of february (overriding the requested end date).
 .IP \(bu 2
 \f[CR]hledger register \-\-monthly \-\-begin 1/5 \-\-end 2/14\f[R] will
-end the report on march 4th [1].
-.PP
-[1] Since 1.29.
+end the report on march 4th.
 .SS Period expressions
 The \f[CR]\-p/\-\-period\f[R] option specifies a period expression,
 which is a compact way of expressing a start date, end date, and/or
@@ -7313,8 +7038,7 @@ So all of these are equivalent: \f[CR]depth:2\f[R],
 \f[CR]\-\-depth=2\f[R], \f[CR]\-2\f[R].
 .PP
 You can also provide custom depths for specific accounts, by providing a
-\f[CR]REGEX=NUM\f[R] argument instead of just \f[CR]NUM\f[R] \f[I](since
-1.41)\f[R].
+\f[CR]REGEX=NUM\f[R] argument instead of just \f[CR]NUM\f[R].
 For example, \f[CR]\-\-depth assets=2\f[R] (or
 \f[CR]depth:assets=2\f[R]) will collapse accounts matching the regular
 expression \(dqassets\(dq to depth 2.
@@ -7843,7 +7567,6 @@ account name.
 When amounts are converted to other commodities in cost or value
 reports, \f[CR]cur:\f[R] and \f[CR]amt:\f[R] match the old commodity
 symbol and the old amount quantity, not the new ones.
-(Except in hledger 1.22, #1625.)
 .SH Pivoting
 Normally, hledger groups amounts and displays their totals by account
 (name).
@@ -8816,7 +8539,7 @@ To be safe, specify the valuation commmodity, eg:
 \f[CR]\-\-value=then \-\-infer\-market\-prices\f[R]
 .PP
 Signed costs and market prices can be confusing.
-For reference, here is the current behaviour (since 1.25).
+For reference, here is the current behaviour.
 (If you think it should work differently, see #1870.)
 .IP
 .EX
@@ -10573,6 +10296,8 @@ prices \- show market prices
 stats \- show journal statistics
 .IP \(bu 2
 tags \- show tag names
+.IP \(bu 2
+transactions (tx) \- show transactions, one per line
 .PP
 \f[B]Standard report commands\f[R]
 .IP \(bu 2
@@ -10624,7 +10349,21 @@ Next, these commands are described in detail.
 .SH Help commands
 .SS help
 .PP
-Show some part of hledger\(aqs documentation, selected by arguments:
+Show some part of hledger\(aqs documentation.
+.IP
+.EX
+Flags:
+  \-i                       use info when showing the manual
+  \-m                       use man when showing the manual
+  \-p                       use less (or $PAGER) when showing the manual
+  \-w                       use a web browser when showing the manual
+  \-l                       just list the manual topics matching TOPIC
+     \-\-builtins            with commands: show only builtin commands
+     \-\-addons              with commands: show only addon commands
+     \-\-aliases             with commands: show only command aliases
+.EE
+.PP
+The part shown is selected by arguments:
 .IP \(bu 2
 \f[CR]quickref\f[R] (or no args): a quick reference / overview
 .IP \(bu 2
@@ -10650,18 +10389,6 @@ listed, indented to show (most of) their hierarchy.
 .PP
 The manual will be shown in a default viewer (info, man, pager, web
 browser), or you can choose with \-i/\-m/\-p/\-w.
-.IP
-.EX
-Flags:
-  \-i                       use info when showing the manual
-  \-m                       use man when showing the manual
-  \-p                       use less (or $PAGER) when showing the manual
-  \-w                       use a web browser when showing the manual
-  \-l                       just list the manual topics matching TOPIC
-     \-\-builtins            with commands: show only builtin commands
-     \-\-addons              with commands: show only addon commands
-     \-\-aliases             with commands: show only command aliases
-.EE
 .PP
 The manual is built in to your hledger executable, so it can be useful
 when offline, or when you prefer the terminal to a web browser, or when
@@ -10678,7 +10405,7 @@ You can force the use of info, man, or a pager with the \f[CR]\-i\f[R],
 If no viewer can be found, or if running non\-interactively, it just
 prints the manual to stdout.
 .PP
-Examples
+Examples:
 .IP
 .EX
 $ hledger help                    # show the quick reference
@@ -11597,6 +11324,15 @@ T}@T{
 same
 T}
 .TE
+.PP
+Example:
+.IP
+.EX
+$ hledger commodities
+$
+AAPL
+EUR
+.EE
 .SS descriptions
 (desc)
 .PP
@@ -11627,6 +11363,19 @@ With a REGEX argument, only file names matching the regular expression
 .EX
 Flags:
 no command\-specific flags
+.EE
+.PP
+Examples:
+.IP
+.EX
+$ hledger \-f main.journal files
+/home/user/finance/main.journal
+/home/user/finance/2024.journal
+.EE
+.IP
+.EX
+$ hledger \-f main.journal files 2024
+/home/user/finance/2024.journal
 .EE
 .SS notes
 List the unique notes that appear in transactions.
@@ -11721,6 +11470,23 @@ Generally if you run this command with \-\-infer\-market\-prices
 calculate value reports.
 But if in doubt, you can inspect those directly by running the value
 report with \-\-debug=2.
+.PP
+Examples:
+.IP
+.EX
+$ hledger prices
+P 2024\-01\-01 AAPL $150
+P 2024\-02\-01 AAPL $160
+P 2024\-02\-01 EUR $1.08
+.EE
+.IP
+.EX
+$ hledger prices \-\-infer\-market\-prices
+P 2024\-01\-01 AAPL $150
+P 2024\-01\-05 AAPL $150
+P 2024\-02\-01 AAPL $160
+P 2024\-02\-01 EUR $1.08
+.EE
 .SS prices summary
 With \f[CR]\-\-summary\f[R], instead of listing individual prices,
 \f[CR]prices\f[R] prints one row per commodity used in the journal
@@ -11855,6 +11621,21 @@ directives, which could be pasted into a journal file.
 Remember that accounts also acquire tags from their parents; postings
 also acquire tags from their account and transaction; and transactions
 also acquire tags from their postings.
+.PP
+Examples:
+.IP
+.EX
+$ hledger tags
+broker
+receipt
+trip
+.EE
+.IP
+.EX
+$ hledger tags \-\-values
+acme
+paris
+.EE
 .SS transactions
 (tx)
 .PP
@@ -11882,8 +11663,6 @@ $ hledger transactions \-f examples/sample.journal
 2008\-06\-03 * eat & shop
 2008\-12\-31 * pay off
 .EE
-.PP
-To see the full entries, use \f[CR]print\f[R].
 .SH Standard report commands
 .SS print
 Show transactions\(aq journal entries, or export journal data to another
@@ -14362,7 +14141,7 @@ Holdings on 2023\-04\-01
 With \f[CR]\-\-lots\f[R], the individual lots are shown:
 .IP
 .EX
-$ hledger \-\-lots \-e 2023\-04\-02
+$ hledger holdings \-\-lots \-e 2023\-04\-02
 Holdings on 2023\-04\-01
 
                                                          ||       Date   Age    Units  Unit cost     Price      Cost        Value  Weight        UGain   UGain%     RGain     XIRR 
@@ -14418,13 +14197,13 @@ commodity instead, and the cost columns are also converted to it (at the
 valuation date, so percent gain is unaffected).
 Cashflows are not converted, however, so the XIRR column is left blank
 for holdings whose cashflows are in a different commodity.
-\f[CR]\-\-value=then\f[R] is not supported, and
-\f[CR]\-B/\-\-cost\f[R]has no effect.
+\f[CR]\-\-value=then\f[R] is not supported, and \f[CR]\-B/\-\-cost\f[R]
+has no effect.
 .PP
 Amounts are displayed with their commodity\(aqs display precision.
 \f[CR]\-\-round\f[R] can select another rounding strategy.
-The percent columns (Weight, UGain%, XIRR) are shown with with the
-display style configured for the \f[CR]%\f[R] commodity (eg by
+The percent columns (Weight, UGain%, XIRR) are shown with the display
+style configured for the \f[CR]%\f[R] commodity (eg by
 \f[CR]\-c \(aq0.00 %\(aq\f[R]).
 .PP
 Query arguments and report flags like \f[CR]\-t/\-\-tree\f[R],
@@ -15487,45 +15266,26 @@ Example:
 .IP
 .EX
 $ hledger setup
-Checking your hledger setup..
-Legend: good, neutral, unknown, warning
-
+Checking your setup (and contacting hledger.org to find out the current release):
 hledger
-* is a released version ?                   no  hledger 1.42.99\-gbca4b39c5\-20250425, mac\-aarch64
-* is up to date ?                          yes  1.42.99 installed, latest is 1.42.1
-* is a native binary for this machine ?    yes  aarch64
-* is installed in PATH ?                   yes  /Users/simon/.local/bin/hledger
-* has a system text encoding configured ?  yes  UTF\-8, data files should use this encoding
-* has a user config file ? (optional)       no  
-* current directory has a local config ?   yes  /Users/simon/src/hledger/hledger.conf
-* the config file is readable ?            yes  /Users/simon/src/hledger/hledger.conf
-
+  is running on                                 macos 27.0 on aarch64
+  is built with a supported compiler/RTS   yes  ghc 9.14.1, using threaded RTS
+  is a native binary for this machine ?    yes  aarch64
+  is a released version ?                  yes  hledger 1.52.4, mac\-aarch64
+  is up to date ? checking latest...       yes  latest is 1.52.4, 1.52.4 is installed
+  is installed in PATH (this version) ?    yes  /Users/user/.local/bin/hledger
+  has a system text encoding configured ?  yes  UTF\-8, data files must use this encoding
+  has a user config file ?                 yes  /Users/user/.hledger.conf
+  has a local config file ?                 no  
+  the config file is readable ?            yes  
 terminal
-* the TERM variable is defined ?           yes  xterm\-256color
-* the terminal supports ANSI color ?       yes  256 colors
-* the NO_COLOR variable is defined ?        no  
-* \-\-color is configured by config file ?    no  
-* hledger will use color by default ?      yes  
-* the PAGER variable is defined ?          yes  less
-* \-\-pager is configured by config file ?    no  
-* hledger will use a pager when needed ?   yes  /opt/homebrew/bin/less
-* the LESS variable is defined ?           yes  
-* the HLEDGER_LESS variable is defined ?    no  
-* adjusting LESS variable for color etc. ? yes  
-* \-\-pretty is enabled by config file ?      no  tables will use ASCII characters
-* bash shell completions are installed ?     ?  
-* zsh shell completions are installed ?      ?  
-
+  the TERM variable is defined ?           yes  xterm\-256color
+  the terminal supports ANSI color ?       yes  
+  ...
 journal
-* the LEDGER_FILE variable is defined ?    yes  /Users/simon/finance/2025/2025.journal
-* a default journal file is readable ?     yes  /Users/simon/finance/2025/2025.journal
-* it includes additional files ?           yes  15
-* all commodities are declared ?           yes  10
-* all accounts are declared ?              yes  160
-* all accounts have types ?                 no  14 untyped
-* accounts of all basic types exist ?      yes  ALERXC accounts detected
-* commodities/accounts are checked ?        no  use \-s to check commodities/accounts
-* balance assertions are checked ?         yes  use \-I to ignore assertions
+  the LEDGER_FILE variable is defined ?    yes  /Users/user/finance/main.journal
+  a default journal file is readable ?     yes  /Users/user/finance/main.journal
+  ...
 .EE
 .SS test
 Run built\-in unit tests.
@@ -15557,92 +15317,17 @@ $ hledger test \-\- \-h         # show tasty\(aqs options
 .EE
 .PP
 .SH PART 5: COMMON TASKS
-Here are some quick examples of how to do some basic tasks with hledger.
-.SH Getting help
-Here\(aqs how to get a quick overview, list commands, and view options
-and command docs:
-.IP
-.EX
-$ hledger                # show a quick reference card (also: hledger \-?)
-$ hledger help commands  # show available commands
-$ hledger \-\-help         # show common options
-$ hledger CMD \-\-help     # show CMD\(aqs options, common options and CMD\(aqs documentation
-.EE
-.PP
-The help command is a documentation hub; its first argument selects what
-to show.
-Eg:
-.IP
-.EX
-$ hledger help           # show the quick reference card
-$ hledger help manual    # show the hledger manual with info, man or $PAGER (best available)
-$ hledger help journal   # show the journal topic in the hledger manual
-$ hledger help examples print   # show brief examples for the print command
-$ hledger help \-\-help    # find out more about the help command
-.EE
-.PP
-To view manuals and introductory docs on the web, visit
-https://hledger.org.
-Chat and mail list support and discussion archives can be found at
-https://hledger.org/support.
-.SH Constructing command lines
-hledger has a flexible command line interface.
-We strive to keep it simple and ergonomic, but if you run into one of
-the sharp edges described in OPTIONS, here are some tips that might
-help:
-.IP \(bu 2
-command\-specific options must go after the command (it\(aqs fine to put
-common options there too: \f[CR]hledger CMD OPTS ARGS\f[R])
-.IP \(bu 2
-you can run addon commands via hledger (\f[CR]hledger ui [ARGS]\f[R]) or
-directly (\f[CR]hledger\-ui [ARGS]\f[R])
-.IP \(bu 2
-enclose \(dqproblematic\(dq arguments in single quotes
-.IP \(bu 2
-if needed, also add a backslash to hide regular expression
-metacharacters from the shell
-.IP \(bu 2
-to see how a misbehaving command line is being parsed, add
-\f[CR]\-\-debug=2\f[R].
-.SH Starting a journal file
-hledger looks for your accounting data in a journal file,
-\f[CR]$HOME/.hledger.journal\f[R] by default:
-.IP
-.EX
-$ hledger stats
-The hledger journal file \(dq/Users/simon/.hledger.journal\(dq was not found.
-Please create it first, eg with \(dqhledger add\(dq or a text editor.
-Or, specify an existing journal file with \-f or LEDGER_FILE.
-.EE
-.PP
-You can override this by setting the \f[CR]LEDGER_FILE\f[R] environment
-variable (see below).
-It\(aqs a good practice to keep this important file under version
-control, and to start a new file each year.
-So you could do something like this:
-.IP
-.EX
-$ mkdir \(ti/finance
-$ cd \(ti/finance
-$ git init
-Initialized empty Git repository in /Users/simon/finance/.git/
-$ touch 2023.journal
-$ echo \(dqexport LEDGER_FILE=$HOME/finance/2023.journal\(dq >> \(ti/.profile
-$ source \(ti/.profile
-$ hledger stats
-Main file                : /Users/simon/finance/2023.journal
-Included files           : 
-Transactions span        :  to  (0 days)
-Last transaction         : none
-Transactions             : 0 (0.0 per day)
-Transactions last 30 days: 0 (0.0 per day)
-Transactions last 7 days : 0 (0.0 per day)
-Payees/descriptions      : 0
-Accounts                 : 0 (depth 0)
-Commodities              : 0 ()
-Market prices            : 0 ()
-.EE
+For a gentle, step by step introduction to hledger \- installing,
+starting a journal, recording transactions, and running the main reports
+\- see hledger by example on the website.
+For a faster tour, see the 5 minute quick start.
+Here are a few more tasks which aren\(aqt covered there.
 .SH Setting LEDGER_FILE
+hledger looks for your accounting data in a journal file,
+\f[CR]$HOME/.hledger.journal\f[R] by default.
+You can override this by setting the \f[CR]LEDGER_FILE\f[R] environment
+variable (see Environment), eg to \f[CR]\(ti/finance/main.journal\f[R].
+Here\(aqs how to do that on different systems:
 .SS Set LEDGER_FILE on unix
 It depends on your shell, but running these commands in the terminal
 will work for many people; adapt if needed:
@@ -15660,25 +15345,11 @@ and so should \f[CR]hledger setup\f[R] and \f[CR]hledger files\f[R].
 .SS Set LEDGER_FILE on mac
 In a terminal window, follow the unix procedure above.
 .PP
-Also, this optional step may be helpful for GUI applications:
-.IP "1." 3
-Add an entry to \f[CR]\(ti/.MacOSX/environment.plist\f[R] like
-.RS 4
-.IP
-.EX
-{
-  \(dqLEDGER_FILE\(dq : \(dq\(ti/finance/main.journal\(dq
-}
-.EE
-.RE
-.IP "2." 3
-Run \f[CR]killall Dock\f[R] in a terminal window (or restart the
-machine), to complete the change.
-.PP
-When correctly configured for GUI applications:
-.IP \(bu 2
-apps started from the dock or a spotlight search, such as a GUI Emacs,
-will be aware of the new LEDGER_FILE setting.
+Note GUI applications started from the Dock or Spotlight, such as a GUI
+Emacs, don\(aqt see variables set in your shell profile.
+If needed, you can set the variable for them too, until the next reboot,
+with \f[CR]launchctl setenv LEDGER_FILE \(ti/finance/main.journal\f[R]
+(then restart the application).
 .SS Set LEDGER_FILE on Windows
 It can be easier to create a default file at
 \f[CR]C:\(rsUsers\(rsUSER\(rs.hledger.journal\f[R], and have it include
@@ -15736,117 +15407,6 @@ new setting
 .IP \(bu 2
 and so should \f[CR]hledger setup\f[R] and (once the file exists)
 \f[CR]hledger files\f[R].
-.SH Setting opening balances
-Pick a starting date for which you can look up the balances of some
-real\-world assets (bank accounts, wallet..)
-and liabilities (credit cards..).
-.PP
-To avoid a lot of data entry, you may want to start with just one or two
-accounts, like your checking account or cash wallet; and pick a recent
-starting date, like today or the start of the week.
-You can always come back later and add more accounts and older
-transactions, eg going back to january 1st.
-.PP
-Add an opening balances transaction to the journal, declaring the
-balances on this date.
-Here are two ways to do it:
-.IP \(bu 2
-The first way: open the journal in any text editor and save an entry
-like this:
-.RS 2
-.IP
-.EX
-2023\-01\-01 * opening balances
-    assets:bank:checking                $1000   = $1000
-    assets:bank:savings                 $2000   = $2000
-    assets:cash                          $100   = $100
-    liabilities:creditcard               $\-50   = $\-50
-    equity:opening/closing balances
-.EE
-.PP
-These are start\-of\-day balances, ie whatever was in the account at the
-end of the previous day.
-.PP
-The * after the date is an optional status flag.
-Here it means \(dqcleared & confirmed\(dq.
-.PP
-The currency symbols are optional, but usually a good idea as you\(aqll
-be dealing with multiple currencies sooner or later.
-.PP
-The = amounts are optional balance assertions, providing extra error
-checking.
-.RE
-.IP \(bu 2
-The second way: run \f[CR]hledger add\f[R] and follow the prompts to
-record a similar transaction:
-.RS 2
-.IP
-.EX
-$ hledger add
-Adding transactions to journal file /Users/simon/finance/2023.journal
-Any command line arguments will be used as defaults.
-Use tab key to complete, readline keys to edit, enter to accept defaults.
-An optional (CODE) may follow transaction dates.
-An optional ; COMMENT may follow descriptions or amounts.
-If you make a mistake, enter < at any prompt to go one step backward.
-To end a transaction, enter . when prompted.
-To quit, enter . at a date prompt or press control\-d or control\-c.
-Date [2023\-02\-07]: 2023\-01\-01
-Description: * opening balances
-Account 1: assets:bank:checking
-Amount  1: $1000
-Account 2: assets:bank:savings
-Amount  2 [$\-1000]: $2000
-Account 3: assets:cash
-Amount  3 [$\-3000]: $100
-Account 4: liabilities:creditcard
-Amount  4 [$\-3100]: $\-50
-Account 5: equity:opening/closing balances
-Amount  5 [$\-3050]: 
-Account 6 (or . or enter to finish this transaction): .
-2023\-01\-01 * opening balances
-    assets:bank:checking                      $1000
-    assets:bank:savings                       $2000
-    assets:cash                                $100
-    liabilities:creditcard                     $\-50
-    equity:opening/closing balances          $\-3050
-
-Save this transaction to the journal ? [y]: 
-Saved.
-Starting the next transaction (. or ctrl\-D/ctrl\-C to quit)
-Date [2023\-01\-01]: .
-.EE
-.RE
-.PP
-If you\(aqre using version control, this could be a good time to commit
-the journal.
-Eg:
-.IP
-.EX
-$ git commit \-m \(aqinitial balances\(aq 2023.journal
-.EE
-.SH Recording transactions
-As you spend or receive money, you can record these transactions using
-one of the methods above (text editor, hledger add) or by using the
-hledger\-iadd or hledger\-web add\-ons, or by using the import command
-to convert CSV data downloaded from your bank.
-.PP
-Here are some simple transactions, see the hledger_journal(5) manual and
-hledger.org for more ideas:
-.IP
-.EX
-2023/1/10 * gift received
-  assets:cash   $20
-  income:gifts
-
-2023.1.12 * farmers market
-  expenses:food    $13
-  assets:cash
-
-2023\-01\-15 paycheck
-  income:salary
-  assets:bank:checking    $1000
-.EE
 .SH Reconciling
 Periodically you should reconcile \- compare your hledger\-reported
 balances against external sources of truth, like bank statements or your
@@ -15867,8 +15427,8 @@ If they are different, try to remember the missing transaction, or look
 for the error in the already\-recorded transactions.
 A register report can be helpful (\f[CR]hledger reg cash\f[R]).
 If you can\(aqt find the error, add an adjustment transaction.
-Eg if you have $105 after the above, and can\(aqt explain the missing
-$2, it could be:
+Eg if you have $105 in your wallet but hledger says $107, and can\(aqt
+explain the missing $2, it could be:
 .RS 4
 .IP
 .EX
@@ -15898,173 +15458,12 @@ live\-updating register while you edit the journal:
 .PP
 After reconciling, it could be a good time to mark the reconciled
 transactions\(aq status as \(dqcleared and confirmed\(dq, if you want to
-track that, by adding the \f[CR]*\f[R] marker.
-Eg in the paycheck transaction above, insert \f[CR]*\f[R] between
-\f[CR]2023\-01\-15\f[R] and \f[CR]paycheck\f[R]
+track that, by adding the \f[CR]*\f[R] marker after the date.
 .PP
-If you\(aqre using version control, this can be another good time to
-commit:
+If you\(aqre using version control, this can be a good time to commit:
 .IP
 .EX
 $ git commit \-m \(aqtxns\(aq 2023.journal
-.EE
-.SH Reporting
-Here are some basic reports.
-.PP
-Show all transactions:
-.IP
-.EX
-$ hledger print
-2023\-01\-01 * opening balances
-    assets:bank:checking                      $1000
-    assets:bank:savings                       $2000
-    assets:cash                                $100
-    liabilities:creditcard                     $\-50
-    equity:opening/closing balances          $\-3050
-
-2023\-01\-10 * gift received
-    assets:cash              $20
-    income:gifts
-
-2023\-01\-12 * farmers market
-    expenses:food             $13
-    assets:cash
-
-2023\-01\-15 * paycheck
-    income:salary
-    assets:bank:checking           $1000
-
-2023\-01\-16 * adjust cash
-    assets:cash               $\-2 = $105
-    expenses:misc
-.EE
-.PP
-Show account names, and their hierarchy:
-.IP
-.EX
-$ hledger accounts \-\-tree
-assets
-  bank
-    checking
-    savings
-  cash
-equity
-  opening/closing balances
-expenses
-  food
-  misc
-income
-  gifts
-  salary
-liabilities
-  creditcard
-.EE
-.PP
-Show all account totals:
-.IP
-.EX
-$ hledger balance
-               $4105  assets
-               $4000    bank
-               $2000      checking
-               $2000      savings
-                $105    cash
-              $\-3050  equity:opening/closing balances
-                 $15  expenses
-                 $13    food
-                  $2    misc
-              $\-1020  income
-                $\-20    gifts
-              $\-1000    salary
-                $\-50  liabilities:creditcard
-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
-                   0
-.EE
-.PP
-Show only asset and liability balances, as a flat list, limited to depth
-2:
-.IP
-.EX
-$ hledger bal assets liabilities \-2
-               $4000  assets:bank
-                $105  assets:cash
-                $\-50  liabilities:creditcard
-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
-               $4055
-.EE
-.PP
-Show the same thing without negative numbers, formatted as a simple
-balance sheet:
-.IP
-.EX
-$ hledger bs \-2
-Balance Sheet 2023\-01\-16
-
-                        || 2023\-01\-16 
-========================++============
- Assets                 ||            
-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-++\-\-\-\-\-\-\-\-\-\-\-\-
- assets:bank            ||      $4000 
- assets:cash            ||       $105 
-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-++\-\-\-\-\-\-\-\-\-\-\-\-
-                        ||      $4105 
-========================++============
- Liabilities            ||            
-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-++\-\-\-\-\-\-\-\-\-\-\-\-
- liabilities:creditcard ||        $50 
-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-++\-\-\-\-\-\-\-\-\-\-\-\-
-                        ||        $50 
-========================++============
- Net:                   ||      $4055 
-.EE
-.PP
-The final total is your \(dqnet worth\(dq on the end date.
-(Or use \f[CR]bse\f[R] for a full balance sheet with equity.)
-.PP
-Show income and expense totals, formatted as an income statement:
-.IP
-.EX
-hledger is 
-Income Statement 2023\-01\-01\-2023\-01\-16
-
-               || 2023\-01\-01\-2023\-01\-16 
-===============++=======================
- Revenues      ||                       
-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-++\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
- income:gifts  ||                   $20 
- income:salary ||                 $1000 
-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-++\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
-               ||                 $1020 
-===============++=======================
- Expenses      ||                       
-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-++\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
- expenses:food ||                   $13 
- expenses:misc ||                    $2 
-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-++\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
-               ||                   $15 
-===============++=======================
- Net:          ||                 $1005 
-.EE
-.PP
-The final total is your net income during this period.
-.PP
-Show transactions affecting your wallet, with running total:
-.IP
-.EX
-$ hledger register cash
-2023\-01\-01 opening balances     assets:cash                   $100          $100
-2023\-01\-10 gift received        assets:cash                    $20          $120
-2023\-01\-12 farmers market       assets:cash                   $\-13          $107
-2023\-01\-16 adjust cash          assets:cash                    $\-2          $105
-.EE
-.PP
-Show weekly posting counts as a bar chart:
-.IP
-.EX
-$ hledger activity \-W
-2019\-12\-30 *****
-2023\-01\-06 ****
-2023\-01\-13 ****
 .EE
 .SH Migrating to a new file
 At the end of the year, you may want to continue your journal in a new

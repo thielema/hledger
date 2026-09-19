@@ -35,8 +35,8 @@ searching, and bookmarking.
 .PP
 hledger\-web also lets you share a journal with multiple users, or even
 the public web.
-There is no access control, so if you need that you should put it behind
-a suitable web proxy.
+There is no user authentication, so if you need that you should put it
+behind a suitable web proxy.
 As a small protection against data loss when running an unprotected
 instance, it writes a numbered backup of the main journal file (only) on
 every edit.
@@ -90,12 +90,12 @@ Flags:
 .EE
 .PP
 By default hledger\-web listens only on IP address \f[CR]127.0.0.1\f[R],
-which be accessed only from the local machine.
+which can be accessed only from the local machine.
 .PP
 To allow access from elsewhere, use \f[CR]\-\-host\f[R] to specify an
-externally accessible address configured on this machine, The special
-address \f[CR]0.0.0.0\f[R] causes it to listen on all of this
-machine\(aqs addresses.
+externally accessible address configured on this machine.
+The special address \f[CR]0.0.0.0\f[R] causes it to listen on all of
+this machine\(aqs addresses.
 .PP
 Similarly, you can use \f[CR]\-\-port\f[R] to listen on a TCP port other
 than 5000.
@@ -272,9 +272,8 @@ local\-only address (\f[CR]127.0.0.1\f[R], \f[CR]::1\f[R],
 To allow more than the default access, start it with an explicit
 \f[CR]\-\-allow=add\f[R] or \f[CR]\-\-allow=edit\f[R] option.
 .SH EDITING, UPLOADING, DOWNLOADING
-If you enable the \f[CR]manage\f[R] capability mentioned above,
-you\(aqll see a new \(dqspanner\(dq button to the right of the search
-form.
+If you start hledger\-web with \f[CR]\-\-allow=edit\f[R], you\(aqll see
+a new \(dqspanner\(dq button to the right of the search form.
 Clicking this will let you edit, upload, or download the journal file or
 any files it includes.
 .PP
@@ -319,6 +318,7 @@ You can get JSON data from these routes:
 /commodities
 /accounts
 /accounttransactions/ACCOUNTNAME
+/openapi.json
 .EE
 .PP
 Eg, all account names in the journal (similar to the accounts command).
@@ -371,7 +371,8 @@ Most of the JSON corresponds to hledger\(aqs data types; for details of
 what the fields mean, see the Hledger.Data.Json haddock docs and click
 on the various data types, eg Transaction.
 And for a higher level understanding, see the journal docs.
-There is also a basic OpenAPI specification.
+There is also a basic OpenAPI specification, also served at
+\f[CR]/openapi.json\f[R].
 .PP
 In some cases there is outer JSON corresponding to a \(dqReport\(dq
 type.
@@ -384,108 +385,111 @@ returns an AccountTransactionsReport, which consists of a report title
 and a list of AccountTransactionsReportItem (etc).
 .PP
 You can add a new transaction to the journal with a PUT request to
-\f[CR]/add\f[R], if hledger\-web was started with the \f[CR]add\f[R]
-capability (enabled by default).
+\f[CR]/add\f[R], if hledger\-web was started with
+\f[CR]\-\-allow=add\f[R] (the default when listening on a local\-only
+address).
 The payload must be the full, exact JSON representation of a hledger
 transaction (partial data won\(aqt do).
 You can get sample JSON from hledger\-web\(aqs \f[CR]/transactions\f[R]
-or \f[CR]/accounttransactions\f[R], or you can export it with
-hledger\-lib, eg like so:
+or \f[CR]/accounttransactions\f[R], or from hledger\(aqs print command,
+eg:
 .IP
 .EX
-\&.../hledger$ stack ghci hledger\-lib
->>> writeJsonFile \(dqtxn.json\(dq (head $ jtxns samplejournal)
->>> :q
+$ hledger \-f examples/sample.journal print \-O json | python \-m json.tool > txns.json
 .EE
 .PP
-Here\(aqs how it looks as of hledger\-1.17 (remember, this JSON
-corresponds to hledger\(aqs Transaction and related data types):
+Here\(aqs how one transaction looks (remember, this JSON corresponds to
+hledger\(aqs Transaction and related data types):
 .IP
 .EX
 {
-    \(dqtcomment\(dq: \(dq\(dq,
-    \(dqtpostings\(dq: [
-        {
-            \(dqpbalanceassertion\(dq: \f[B]null\f[R],
-            \(dqpstatus\(dq: \(dqUnmarked\(dq,
-            \(dqpamount\(dq: [
-                {
-                    \(dqaprice\(dq: \f[B]null\f[R],
-                    \(dqacommodity\(dq: \(dq$\(dq,
-                    \(dqaquantity\(dq: {
-                        \(dqfloatingPoint\(dq: 1,
-                        \(dqdecimalPlaces\(dq: 10,
-                        \(dqdecimalMantissa\(dq: 10000000000
-                    },
-                    \(dqaismultiplier\(dq: \f[B]false\f[R],
-                    \(dqastyle\(dq: {
-                        \(dqascommodityside\(dq: \(dqL\(dq,
-                        \(dqasdigitgroups\(dq: \f[B]null\f[R],
-                        \(dqascommodityspaced\(dq: \f[B]false\f[R],
-                        \(dqasprecision\(dq: 2,
-                        \(dqasdecimalpoint\(dq: \(dq.\(dq
-                    }
-                }
-            ],
-            \(dqptransaction_\(dq: \(dq1\(dq,
-            \(dqpaccount\(dq: \(dqassets:bank:checking\(dq,
-            \(dqpdate\(dq: \f[B]null\f[R],
-            \(dqptype\(dq: \(dqRegularPosting\(dq,
-            \(dqpcomment\(dq: \(dq\(dq,
-            \(dqpdate2\(dq: \f[B]null\f[R],
-            \(dqptags\(dq: [],
-            \(dqporiginal\(dq: \f[B]null\f[R]
-        },
-        {
-            \(dqpbalanceassertion\(dq: \f[B]null\f[R],
-            \(dqpstatus\(dq: \(dqUnmarked\(dq,
-            \(dqpamount\(dq: [
-                {
-                    \(dqaprice\(dq: \f[B]null\f[R],
-                    \(dqacommodity\(dq: \(dq$\(dq,
-                    \(dqaquantity\(dq: {
-                        \(dqfloatingPoint\(dq: \-1,
-                        \(dqdecimalPlaces\(dq: 10,
-                        \(dqdecimalMantissa\(dq: \-10000000000
-                    },
-                    \(dqaismultiplier\(dq: \f[B]false\f[R],
-                    \(dqastyle\(dq: {
-                        \(dqascommodityside\(dq: \(dqL\(dq,
-                        \(dqasdigitgroups\(dq: \f[B]null\f[R],
-                        \(dqascommodityspaced\(dq: \f[B]false\f[R],
-                        \(dqasprecision\(dq: 2,
-                        \(dqasdecimalpoint\(dq: \(dq.\(dq
-                    }
-                }
-            ],
-            \(dqptransaction_\(dq: \(dq1\(dq,
-            \(dqpaccount\(dq: \(dqincome:salary\(dq,
-            \(dqpdate\(dq: \f[B]null\f[R],
-            \(dqptype\(dq: \(dqRegularPosting\(dq,
-            \(dqpcomment\(dq: \(dq\(dq,
-            \(dqpdate2\(dq: \f[B]null\f[R],
-            \(dqptags\(dq: [],
-            \(dqporiginal\(dq: \f[B]null\f[R]
-        }
-    ],
-    \(dqttags\(dq: [],
-    \(dqtsourcepos\(dq: {
-        \(dqtag\(dq: \(dqJournalSourcePos\(dq,
-        \(dqcontents\(dq: [
-            \(dq\(dq,
-            [
-                1,
-                1
-            ]
-        ]
-    },
-    \(dqtdate\(dq: \(dq2008\-01\-01\(dq,
     \(dqtcode\(dq: \(dq\(dq,
-    \(dqtindex\(dq: 1,
-    \(dqtprecedingcomment\(dq: \(dq\(dq,
+    \(dqtcomment\(dq: \(dq\(dq,
+    \(dqtdate\(dq: \(dq2008\-01\-01\(dq,
     \(dqtdate2\(dq: \f[B]null\f[R],
     \(dqtdescription\(dq: \(dqincome\(dq,
-    \(dqtstatus\(dq: \(dqUnmarked\(dq
+    \(dqtindex\(dq: 1,
+    \(dqtpostings\(dq: [
+        {
+            \(dqpaccount\(dq: \(dqassets:bank:checking\(dq,
+            \(dqpamount\(dq: [
+                {
+                    \(dqacommodity\(dq: \(dq$\(dq,
+                    \(dqacost\(dq: \f[B]null\f[R],
+                    \(dqacostbasis\(dq: \f[B]null\f[R],
+                    \(dqaquantity\(dq: {
+                        \(dqdecimalMantissa\(dq: 1,
+                        \(dqdecimalPlaces\(dq: 0,
+                        \(dqfloatingPoint\(dq: 1
+                    },
+                    \(dqastyle\(dq: {
+                        \(dqascommodityside\(dq: \(dqL\(dq,
+                        \(dqascommodityspaced\(dq: \f[B]false\f[R],
+                        \(dqasdecimalmark\(dq: \(dq.\(dq,
+                        \(dqasdigitgroups\(dq: \f[B]null\f[R],
+                        \(dqasprecision\(dq: 0,
+                        \(dqasrounding\(dq: \(dqNoRounding\(dq
+                    }
+                }
+            ],
+            \(dqpbalanceassertion\(dq: \f[B]null\f[R],
+            \(dqpcomment\(dq: \(dq\(dq,
+            \(dqpdate\(dq: \f[B]null\f[R],
+            \(dqpdate2\(dq: \f[B]null\f[R],
+            \(dqporiginal\(dq: \f[B]null\f[R],
+            \(dqpreal\(dq: \(dqRealPosting\(dq,
+            \(dqpstatus\(dq: \(dqUnmarked\(dq,
+            \(dqptags\(dq: [],
+            \(dqptransaction_\(dq: \(dq1\(dq
+        },
+        {
+            \(dqpaccount\(dq: \(dqincome:salary\(dq,
+            \(dqpamount\(dq: [
+                {
+                    \(dqacommodity\(dq: \(dq$\(dq,
+                    \(dqacost\(dq: \f[B]null\f[R],
+                    \(dqacostbasis\(dq: \f[B]null\f[R],
+                    \(dqaquantity\(dq: {
+                        \(dqdecimalMantissa\(dq: \-1,
+                        \(dqdecimalPlaces\(dq: 0,
+                        \(dqfloatingPoint\(dq: \-1
+                    },
+                    \(dqastyle\(dq: {
+                        \(dqascommodityside\(dq: \(dqL\(dq,
+                        \(dqascommodityspaced\(dq: \f[B]false\f[R],
+                        \(dqasdecimalmark\(dq: \(dq.\(dq,
+                        \(dqasdigitgroups\(dq: \f[B]null\f[R],
+                        \(dqasprecision\(dq: 0,
+                        \(dqasrounding\(dq: \(dqNoRounding\(dq
+                    }
+                }
+            ],
+            \(dqpbalanceassertion\(dq: \f[B]null\f[R],
+            \(dqpcomment\(dq: \(dq\(dq,
+            \(dqpdate\(dq: \f[B]null\f[R],
+            \(dqpdate2\(dq: \f[B]null\f[R],
+            \(dqporiginal\(dq: \f[B]null\f[R],
+            \(dqpreal\(dq: \(dqRealPosting\(dq,
+            \(dqpstatus\(dq: \(dqUnmarked\(dq,
+            \(dqptags\(dq: [],
+            \(dqptransaction_\(dq: \(dq1\(dq
+        }
+    ],
+    \(dqtprecedingcomment\(dq: \(dq\(dq,
+    \(dqtsourcepos\(dq: [
+        {
+            \(dqsourceColumn\(dq: 1,
+            \(dqsourceLine\(dq: 31,
+            \(dqsourceName\(dq: \(dq/Users/simon/src/hledger/examples/sample.journal\(dq
+        },
+        {
+            \(dqsourceColumn\(dq: 1,
+            \(dqsourceLine\(dq: 34,
+            \(dqsourceName\(dq: \(dq/Users/simon/src/hledger/examples/sample.journal\(dq
+        }
+    ],
+    \(dqtstatus\(dq: \(dqUnmarked\(dq,
+    \(dqttags\(dq: []
 }
 .EE
 .PP

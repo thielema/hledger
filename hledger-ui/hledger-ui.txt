@@ -180,7 +180,8 @@ KEYS
 
      ? shows a help dialog listing all keys.  (Some of these also appear in  the
      quick  help  at  the  bottom of each screen.)  Press ? again (or ESCAPE, or
-     LEFT, or q) to close it.  The following keys work on most screens:
+     LEFT, or q) to close it.  While it is open, p, m or i show this manual in a
+     pager, man or info.  The following keys work on most screens:
 
      The cursor keys navigate: RIGHT or ENTER goes deeper, LEFT returns  to  the
      previous screen, UP/DOWN/PGUP/PGDN/HOME/END move up and down through lists.
@@ -247,14 +248,14 @@ KEYS
      A is like a, but runs the hledger-iadd tool, which provides a terminal  in-
      terface.  This key will be available if hledger-iadd is installed in $path.
 
-     E runs $HLEDGER_UI_EDITOR, or $EDITOR, or a default (emacsclient -a "" -nw)
-     on  the  journal file.  With some editors, the cursor will be positioned at
-     the current transaction when invoked  from  the  register  and  transaction
-     screens,  and at the error location (if possible) when invoked from the er-
-     ror screen.
+     E runs $HLEDGER_UI_EDITOR, or $EDITOR, or a default (emacsclient -a "" -nw,
+     or  notepad.exe  on  Windows)  on the journal file.  With some editors, the
+     cursor will be positioned at the current transaction when invoked from  the
+     register  and  transaction screens, and at the error location (if possible)
+     when invoked from the error screen.
 
      B toggles cost mode, showing amounts converted to  their  cost's  commodity
-     (see hledger manual > Cost reporting.
+     (see hledger manual > Cost reporting).
 
      V  toggles value mode, showing amounts converted to their market value (see
      hledger manual > Valuation flag).  More specifically,
@@ -278,6 +279,8 @@ KEYS
 
      q quits the application.
 
+     CTRL-z suspends it, returning to the shell; resume it with fg as usual.
+
      Additional screen-specific keys are described below.
 
 SCREENS
@@ -287,7 +290,7 @@ SCREENS
      you can use ESC to return directly to the top menu screen.
 
      You can also use a command line flag to specific a different startup screen
-     (--cs, --bs, --is, --all, or --register=ACCT).
+     (--cash, --bs, --is, --all, or --register=ACCT).
 
    Menu screen
      This is the top-most screen.  From here you can navigate to several screens
@@ -313,102 +316,106 @@ SCREENS
      like  hledger balance).  It shows balances by default; you can toggle show-
      ing changes with the H key.
 
+     You can limit the account depth shown: 1 to 9 set the depth limit,  0  sets
+     it to zero (showing just a single total), and - and + (or _ and =) decrease
+     and increase it.  DELETE resets it, along with any other filters.
+
    Register screen
-     This screen shows the transactions affecting a  particular  account.   Each
+     This  screen  shows  the transactions affecting a particular account.  Each
      line represents one transaction, and shows:
 
-     * the  other  account(s) involved, in abbreviated form.  (If there are both
-       real and virtual postings, it shows only the accounts  affected  by  real
+     * the other account(s) involved, in abbreviated form.  (If there  are  both
+       real  and  virtual  postings, it shows only the accounts affected by real
        postings.)
 
-     * the  overall change to the current account's balance; positive for an in-
+     * the overall change to the current account's balance; positive for an  in-
        flow to this account, negative for an outflow.
 
-     * the running total after the transaction.  With the H key you  can  toggle
+     * the  running  total after the transaction.  With the H key you can toggle
        between
 
        * the period total, which is from just the transactions displayed
 
-       * or  the  historical  total, which includes any undisplayed transactions
+       * or the historical total, which includes  any  undisplayed  transactions
          before the start of the report period (and matching the filter query if
-         any).  This will be the running historical balance (what you would  see
+         any).   This will be the running historical balance (what you would see
          on a bank's website, eg) if not disturbed by a query.
 
-     Note,  this screen combines each transaction's in-period postings to a sin-
-     gle line item, dated with the earliest  in-period  transaction  or  posting
-     date  (like  hledger's  aregister).   So custom posting dates can cause the
-     running balance to be temporarily inaccurate.  (See hledger manual >  areg-
+     Note, this screen combines each transaction's in-period postings to a  sin-
+     gle  line  item,  dated  with the earliest in-period transaction or posting
+     date (like hledger's aregister).  So custom posting  dates  can  cause  the
+     running  balance to be temporarily inaccurate.  (See hledger manual > areg-
      ister and posting dates.)
 
-     Transactions  affecting  this account's subaccounts will be included in the
-     register if the accounts screen is in tree mode, or if it's  in  list  mode
-     but  this account has subaccounts which are not shown due to a depth limit.
-     In other words, the register always shows the transactions contributing  to
-     the  balance shown on the accounts screen.  Tree mode/list mode can be tog-
+     Transactions affecting this account's subaccounts will be included  in  the
+     register  if  the  accounts screen is in tree mode, or if it's in list mode
+     but this account has subaccounts which are not shown due to a depth  limit.
+     In  other words, the register always shows the transactions contributing to
+     the balance shown on the accounts screen.  Tree mode/list mode can be  tog-
      gled with t here also.
 
      U toggles filtering by unmarked status, showing or hiding unmarked transac-
-     tions.  Similarly, P toggles pending transactions, and  C  toggles  cleared
-     transactions.   (By  default,  transactions with all statuses are shown; if
-     you activate one or two status filters, only those transactions are  shown;
+     tions.   Similarly,  P  toggles pending transactions, and C toggles cleared
+     transactions.  (By default, transactions with all statuses  are  shown;  if
+     you  activate one or two status filters, only those transactions are shown;
      and if you activate all three, the filter is removed.)
 
      R toggles real mode, in which virtual postings are ignored.
 
      z toggles nonzero mode, in which only transactions posting a nonzero change
-     are  shown  (hledger-ui  shows  zero  items by default, unlike command-line
+     are shown (hledger-ui shows zero  items  by  default,  unlike  command-line
      hledger).
 
      Press RIGHT to view the selected transaction in detail.
 
    Transaction screen
      This screen shows a single transaction, as a general journal entry, similar
-     to hledger's print command and journal format (hledger_journal(5)).
+     to hledger's print command and journal format.
 
-     The transaction's date(s) and any cleared flag, transaction code,  descrip-
-     tion,  comments,  along with all of its account postings are shown.  Simple
+     The  transaction's date(s) and any cleared flag, transaction code, descrip-
+     tion, comments, along with all of its account postings are  shown.   Simple
      transactions have two postings, but there can be more (or in certain cases,
      fewer).
 
-     UP and DOWN will step through all transactions listed in the  previous  ac-
-     count  register  screen.  In the title bar, the numbers in parentheses show
-     your position within that account register.  They will  vary  depending  on
-     which  account register you came from (remember most transactions appear in
-     multiple account registers).  The #N number preceding them is the  transac-
-     tion's  position  within  the  complete unfiltered journal, which is a more
+     UP  and  DOWN will step through all transactions listed in the previous ac-
+     count register screen.  In the title bar, the numbers in  parentheses  show
+     your  position  within  that account register.  They will vary depending on
+     which account register you came from (remember most transactions appear  in
+     multiple  account registers).  The #N number preceding them is the transac-
+     tion's position within the complete unfiltered journal,  which  is  a  more
      stable id (at least until the next reload).
 
      On this screen (and the register screen), the E key will open your text ed-
      itor with the cursor positioned at the current transaction if possible.
 
    Error screen
-     This screen will appear if there is a problem, such as a parse error,  when
-     you  press  g to reload.  Once you have fixed the problem, press g again to
-     reload and resume normal operation.  (Or, you can press  escape  to  cancel
+     This  screen will appear if there is a problem, such as a parse error, when
+     you press g to reload.  Once you have fixed the problem, press g  again  to
+     reload  and  resume  normal operation.  (Or, you can press escape to cancel
      the reload attempt.)
 
-     Non-fatal  warnings,  eg from reading CSV files, don't interrupt like this;
-     instead they are shown on the bottom line of the screen, at startup or  af-
+     Non-fatal warnings, eg from reading CSV files, don't interrupt  like  this;
+     instead  they are shown on the bottom line of the screen, at startup or af-
      ter a reload, until the next key press.
 
 WATCH MODE
-     hledger-ui  immediately shows the effect of any file changes, reloading au-
+     hledger-ui immediately shows the effect of any file changes, reloading  au-
      tomatically.  (This is enabled by default since 1.99.5.)
 
-     If you don't want this - eg because your data is very large  or  constantly
-     changing,  or  because  file notifications don't work well on your system -
-     you can disable it with --no-watch, and reload manually with the g key  in-
+     If  you  don't want this - eg because your data is very large or constantly
+     changing, or because file notifications don't work well on  your  system  -
+     you  can disable it with --no-watch, and reload manually with the g key in-
      stead.
 
-     Watch  mode  is  very  useful when reconciling.  A good workflow is to have
-     your bank's online register open in a browser window,  for  reference;  the
+     Watch mode is very useful when reconciling.  A good  workflow  is  to  have
+     your  bank's  online  register open in a browser window, for reference; the
      journal file open in an editor window; and hledger-ui in a terminal window,
      eg:
 
             $ hledger-ui --register checking -C
 
-     As  you  mark  things cleared in the editor, you can see the effect immedi-
-     ately without having to context switch.  This leaves more mental  bandwidth
+     As you mark things cleared in the editor, you can see  the  effect  immedi-
+     ately  without having to context switch.  This leaves more mental bandwidth
      for your accounting.  Of course you can still interact with hledger-ui when
      needed, eg to toggle cleared mode, or to explore the history.
 
@@ -416,14 +423,18 @@ ENVIRONMENT
      LEDGER_FILE The main journal file to use when not specified with -f/--file.
      Default: $HOME/.hledger.journal.
 
+     HLEDGER_UI_EDITOR, EDITOR The editor command run by the E key, in that  or-
+     der  of preference.  Default: emacsclient -a "" -nw, or notepad.exe on Win-
+     dows.
+
 BUGS
      We    welcome    bug    reports    in    the    hledger    issue    tracker
-     (https://bugs.hledger.org),  or  on  the  hledger   chat   or   mail   list
+     (https://bugs.hledger.org),   or   on   the   hledger  chat  or  mail  list
      (https://hledger.org/support).
 
      Some known issues:
 
-     If  reloading  large  files on a slow computer, there could be a noticeable
+     If reloading large files on a slow computer, there could  be  a  noticeable
      pause, during which the UI is unresponsive.
 
 

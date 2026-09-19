@@ -26,10 +26,10 @@ DESCRIPTION
      searching, and bookmarking.
 
      hledger-web  also lets you share a journal with multiple users, or even the
-     public web.  There is no access control, so if you need that you should put
-     it behind a suitable web proxy.  As a small protection  against  data  loss
-     when  running  an  unprotected instance, it writes a numbered backup of the
-     main journal file (only) on every edit.
+     public web.  There is no user authentication,  so  if  you  need  that  you
+     should  put  it behind a suitable web proxy.  As a small protection against
+     data loss when running an unprotected instance, it writes a numbered backup
+     of the main journal file (only) on every edit.
 
      Like hledger, it reads from (and appends to) a journal  file  specified  by
      the  LEDGER_FILE  environment  variable (defaulting to $HOME/.hledger.jour-
@@ -75,11 +75,11 @@ OPTIONS
                                         runner args may follow a --, eg: hledger-web --test
                                         --help
 
-     By default hledger-web listens only on IP address 127.0.0.1, which  be  ac-
-     cessed only from the local machine.
+     By default hledger-web listens only on IP address 127.0.0.1, which  can  be
+     accessed only from the local machine.
 
      To  allow access from elsewhere, use --host to specify an externally acces-
-     sible address configured on  this  machine,  The  special  address  0.0.0.0
+     sible address configured on this  machine.   The  special  address  0.0.0.0
      causes it to listen on all of this machine's addresses.
 
      Similarly,  you  can  use  --port  to listen on a TCP port other than 5000.
@@ -243,33 +243,33 @@ PERMISSIONS
      --allow=edit option.
 
 EDITING, UPLOADING, DOWNLOADING
-     If  you  enable  the  manage  capability  mentioned above, you'll see a new
-     "spanner" button to the right of the search form.  Clicking this  will  let
-     you edit, upload, or download the journal file or any files it includes.
+     If you start hledger-web with --allow=edit, you'll see a new "spanner" but-
+     ton  to the right of the search form.  Clicking this will let you edit, up-
+     load, or download the journal file or any files it includes.
 
-     Note,  unlike  any other hledger command, in this mode you (or any visitor)
-     can alter or wipe the data files.  Normally when  hledger-web  changes  any
+     Note, unlike any other hledger command, in this mode you (or  any  visitor)
+     can  alter  or  wipe the data files.  Normally when hledger-web changes any
      data, it will save a numbered backup of the file (assuming file permissions
-     allow  it, the disk is not full, etc.)  hledger-web is not aware of version
-     control systems, currently; if you use one, you'll have to arrange to  com-
+     allow it, the disk is not full, etc.)  hledger-web is not aware of  version
+     control  systems, currently; if you use one, you'll have to arrange to com-
      mit the changes yourself.
 
-     Changes  which  would  leave the journal file(s) unparseable or invalid (eg
+     Changes which would leave the journal file(s) unparseable  or  invalid  (eg
      with failing balance assertions) are prevented.
 
 RELOADING
-     hledger-web detects changes made to the files by other  means  (eg  if  you
-     edit  it  directly,  outside of hledger-web), and it will show the new data
-     when you reload the page or navigate to a new page.  If a  change  makes  a
-     file  unparseable, hledger-web will display an error message until the file
+     hledger-web  detects  changes  made  to the files by other means (eg if you
+     edit it directly, outside of hledger-web), and it will show  the  new  data
+     when  you  reload  the page or navigate to a new page.  If a change makes a
+     file unparseable, hledger-web will display an error message until the  file
      has been fixed.
 
      (If you are viewing files mounted from another machine, make sure that both
      machines have roughly the same idea of what time it is.)
 
 JSON API
-     In addition to the web UI, hledger-web also serves a JSON API that  can  be
-     used  to  get data or add new transactions.  If you want the JSON API only,
+     In  addition  to the web UI, hledger-web also serves a JSON API that can be
+     used to get data or add new transactions.  If you want the JSON  API  only,
      you can use the --serve-api flag.  Eg:
 
             $ hledger-web -f examples/sample.journal --serve-api
@@ -284,9 +284,10 @@ JSON API
             /commodities
             /accounts
             /accounttransactions/ACCOUNTNAME
+            /openapi.json
 
-     Eg, all account names in the journal (similar  to  the  accounts  command).
-     (hledger-web's  JSON does not include newlines, here we use python to pret-
+     Eg,  all  account  names  in the journal (similar to the accounts command).
+     (hledger-web's JSON does not include newlines, here we use python to  pret-
      tify it):
 
             $ curl -s http://127.0.0.1:5000/accountnames | python -m json.tool
@@ -327,10 +328,11 @@ JSON API
                                     "aprice": null,
             ...
 
-     Most of the JSON corresponds to hledger's data types; for details  of  what
-     the  fields  mean,  see the Hledger.Data.Json haddock docs and click on the
-     various data types, eg Transaction.  And for a higher level  understanding,
-     see the journal docs.  There is also a basic OpenAPI specification.
+     Most  of  the JSON corresponds to hledger's data types; for details of what
+     the fields mean, see the Hledger.Data.Json haddock docs and  click  on  the
+     various  data types, eg Transaction.  And for a higher level understanding,
+     see the journal docs.  There is also a basic  OpenAPI  specification,  also
+     served at /openapi.json.
 
      In some cases there is outer JSON corresponding to a "Report" type.  To un-
      derstand  that, go to the Hledger.Web.Handler.MiscR haddock and look at the
@@ -341,103 +343,105 @@ JSON API
      report title and a list of AccountTransactionsReportItem (etc).
 
      You can add a new transaction to the journal with a PUT request to /add, if
-     hledger-web  was started with the add capability (enabled by default).  The
-     payload must be the full, exact JSON representation of a  hledger  transac-
-     tion  (partial  data won't do).  You can get sample JSON from hledger-web's
-     /transactions  or  /accounttransactions,  or  you  can   export   it   with
-     hledger-lib, eg like so:
+     hledger-web  was  started with --allow=add (the default when listening on a
+     local-only address).  The payload must be the full, exact JSON  representa-
+     tion  of a hledger transaction (partial data won't do).  You can get sample
+     JSON from hledger-web's  /transactions  or  /accounttransactions,  or  from
+     hledger's print command, eg:
 
-            .../hledger$ stack ghci hledger-lib
-            >>> writeJsonFile "txn.json" (head $ jtxns samplejournal)
-            >>> :q
+            $ hledger -f examples/sample.journal print -O json | python -m json.tool > txns.json
 
-     Here's  how it looks as of hledger-1.17 (remember, this JSON corresponds to
+     Here's  how  one  transaction  looks  (remember,  this  JSON corresponds to
      hledger's Transaction and related data types):
 
             {
-                "tcomment": "",
-                "tpostings": [
-                    {
-                        "pbalanceassertion": null,
-                        "pstatus": "Unmarked",
-                        "pamount": [
-                            {
-                                "aprice": null,
-                                "acommodity": "$",
-                                "aquantity": {
-                                    "floatingPoint": 1,
-                                    "decimalPlaces": 10,
-                                    "decimalMantissa": 10000000000
-                                },
-                                "aismultiplier": false,
-                                "astyle": {
-                                    "ascommodityside": "L",
-                                    "asdigitgroups": null,
-                                    "ascommodityspaced": false,
-                                    "asprecision": 2,
-                                    "asdecimalpoint": "."
-                                }
-                            }
-                        ],
-                        "ptransaction_": "1",
-                        "paccount": "assets:bank:checking",
-                        "pdate": null,
-                        "ptype": "RegularPosting",
-                        "pcomment": "",
-                        "pdate2": null,
-                        "ptags": [],
-                        "poriginal": null
-                    },
-                    {
-                        "pbalanceassertion": null,
-                        "pstatus": "Unmarked",
-                        "pamount": [
-                            {
-                                "aprice": null,
-                                "acommodity": "$",
-                                "aquantity": {
-                                    "floatingPoint": -1,
-                                    "decimalPlaces": 10,
-                                    "decimalMantissa": -10000000000
-                                },
-                                "aismultiplier": false,
-                                "astyle": {
-                                    "ascommodityside": "L",
-                                    "asdigitgroups": null,
-                                    "ascommodityspaced": false,
-                                    "asprecision": 2,
-                                    "asdecimalpoint": "."
-                                }
-                            }
-                        ],
-                        "ptransaction_": "1",
-                        "paccount": "income:salary",
-                        "pdate": null,
-                        "ptype": "RegularPosting",
-                        "pcomment": "",
-                        "pdate2": null,
-                        "ptags": [],
-                        "poriginal": null
-                    }
-                ],
-                "ttags": [],
-                "tsourcepos": {
-                    "tag": "JournalSourcePos",
-                    "contents": [
-                        "",
-                        [
-                            1,
-                            1
-                        ]
-                    ]
-                },
-                "tdate": "2008-01-01",
                 "tcode": "",
-                "tindex": 1,
-                "tprecedingcomment": "",
+                "tcomment": "",
+                "tdate": "2008-01-01",
                 "tdate2": null,
                 "tdescription": "income",
-                "tstatus": "Unmarked"
+                "tindex": 1,
+                "tpostings": [
+                    {
+                        "paccount": "assets:bank:checking",
+                        "pamount": [
+                            {
+                                "acommodity": "$",
+                                "acost": null,
+                                "acostbasis": null,
+                                "aquantity": {
+                                    "decimalMantissa": 1,
+                                    "decimalPlaces": 0,
+                                    "floatingPoint": 1
+                                },
+                                "astyle": {
+                                    "ascommodityside": "L",
+                                    "ascommodityspaced": false,
+                                    "asdecimalmark": ".",
+                                    "asdigitgroups": null,
+                                    "asprecision": 0,
+                                    "asrounding": "NoRounding"
+                                }
+                            }
+                        ],
+                        "pbalanceassertion": null,
+                        "pcomment": "",
+                        "pdate": null,
+                        "pdate2": null,
+                        "poriginal": null,
+                        "preal": "RealPosting",
+                        "pstatus": "Unmarked",
+                        "ptags": [],
+                        "ptransaction_": "1"
+                    },
+                    {
+                        "paccount": "income:salary",
+                        "pamount": [
+                            {
+                                "acommodity": "$",
+                                "acost": null,
+                                "acostbasis": null,
+                                "aquantity": {
+                                    "decimalMantissa": -1,
+                                    "decimalPlaces": 0,
+                                    "floatingPoint": -1
+                                },
+                                "astyle": {
+                                    "ascommodityside": "L",
+                                    "ascommodityspaced": false,
+                                    "asdecimalmark": ".",
+                                    "asdigitgroups": null,
+                                    "asprecision": 0,
+                                    "asrounding": "NoRounding"
+                                }
+                            }
+                        ],
+                        "pbalanceassertion": null,
+                        "pcomment": "",
+                        "pdate": null,
+                        "pdate2": null,
+                        "poriginal": null,
+                        "preal": "RealPosting",
+                        "pstatus": "Unmarked",
+                        "ptags": [],
+                        "ptransaction_": "1"
+                    }
+                ],
+                "tprecedingcomment": "",
+                "tsourcepos": [
+                    {
+                        "sourceColumn": 1,
+                        "sourceLine": 31,
+                        "sourceName": "/Users/simon/src/hledger/examples/sample.journal"
+                    },
+                    {
+                        "sourceColumn": 1,
+                        "sourceLine": 34,
+                        "sourceName": "/Users/simon/src/hledger/examples/sample.journal"
+                    }
+                ],
+                "tstatus": "Unmarked",
+                "ttags": []
             }
 
      And here's how to test adding it with curl.  This should add a new entry to
