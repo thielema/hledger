@@ -43,12 +43,22 @@ hledger will also detect other `hledger-*` executables as extra subcommands.
 
 hledger usually _inputfiles_
 
-Here is a small journal file describing one transaction:
+Here is a small journal file, describing some starting balances and two transactions:
 
 ```journal
-2015-10-16 bought food
-  expenses:food          $10
-  assets:cash
+2025-01-01 * opening balances
+  assets:bank:checking             $1000 = $1000
+  assets:cash                       $100 = $100
+  liabilities:creditcard            $-50 = $-50
+  equity:opening/closing balances
+
+2025-01-10 * gift received
+  income:gifts                      $-20
+  assets:cash                        $20
+
+2025-01-12 farmers market
+  assets:cash                       $-13
+  expenses:food                      $13
 ```
 
 Transactions are dated movements of money (etc.) between two or more *accounts*:
@@ -58,6 +68,13 @@ There must be at least two spaces between account name and amount.
 Positive amounts are inflow to that account (*debit*), negatives are outflow from it (*credit*).
 (Some reports show revenue, liability and equity account balances as negative numbers
 as a result; this is normal.)
+
+Some details from this example:
+the first entry records your real-world balances on a starting date,
+with the equity account absorbing the difference (its amount is inferred);
+the `= AMOUNT` parts are optional [balance assertions](#balance-assertions), for extra error checking;
+the `*` after a date is an optional [status](#status) mark, meaning "cleared";
+and the currency symbols are optional, but a good habit.
 
 hledger’s add command can help you add transactions,
 or you can install other data entry UIs like hledger-web or hledger-iadd.
@@ -76,8 +93,10 @@ $ hledger balancesheet
 $ hledger incomestatement
 ```
 Run `hledger` to list the commands.
-See also the "Starting a journal file" and "Setting opening balances" sections
-in [PART 5: COMMON TASKS](#part-5-common-tasks).
+For a gentle step by step introduction, see [hledger by example](https://hledger.org/hbe.html),
+or for a faster tour, the [5 minute quick start](https://hledger.org/5-minute-quick-start.html).
+For configuring a default journal file, reconciling with your bank, and starting a new year's file,
+see [PART 5: COMMON TASKS](#part-5-common-tasks).
 
 # PART 1: USER INTERFACE
 
@@ -553,7 +572,6 @@ $ hledger bal @cash.args
 ## Config files
 
 You can configure default command line options and arguments conveniently in a hledger config file.
-(Since 1.40.)
 Config file options will be inserted near the start of your command line,
 so you can override them with command line options.
 
@@ -3142,9 +3160,7 @@ Currently, auto postings are added:
 - but before [balance assertions](#balance-assertions) are checked.
 
 Note this means that journal entries must be balanced both before and
-after auto postings are added. This changed in hledger 1.12+; see
-[#893](https://github.com/hledgerorg/hledger/issues/893) for
-background.
+after auto postings are added.
 
 This also means that you cannot have more than one auto-posting with a missing
 amount applied to a given transaction, as it will be unable to infer amounts.
@@ -3575,7 +3591,7 @@ including [How CSV rules are evaluated](#how-csv-rules-are-evaluated).
 ## `source`
 
 If you tell hledger to read a csv file with `-f foo.csv`, it will look for rules in `foo.csv.rules`.
-Or, you can tell it to read the rules file, with `-f foo.csv.rules`, and it will look for data in `foo.csv` (since 1.30).
+Or, you can tell it to read the rules file, with `-f foo.csv.rules`, and it will look for data in `foo.csv`.
 These are mostly equivalent, but the second method provides some extra features.
 For one, the data file can be missing, without causing an error; it is just considered empty.
 
@@ -4881,303 +4897,10 @@ Some things than can help reduce duplication and complexity in rules files:
 
 ## CSV rules examples
 
-### Bank of Ireland
-
-Here's a CSV with two amount fields (Debit and Credit), and a balance field,
-which we can use to add balance assertions, which is not necessary but
-provides extra error checking:
-
-```csv
-Date,Details,Debit,Credit,Balance
-07/12/2012,LODGMENT       529898,,10.0,131.21
-07/12/2012,PAYMENT,5,,126
-```
-```rules
-# bankofireland-checking.csv.rules
-
-# skip the header line
-skip
-
-# name the csv fields, and assign some of them as journal entry fields
-fields  date, description, amount-out, amount-in, balance
-
-# We generate balance assertions by assigning to "balance"
-# above, but you may sometimes need to remove these because:
-#
-# - the CSV balance differs from the true balance,
-#   by up to 0.0000000000005 in my experience
-#
-# - it is sometimes calculated based on non-chronological ordering,
-#   eg when multiple transactions clear on the same day
-
-# date is in UK/Ireland format
-date-format  %d/%m/%Y
-
-# set the currency
-currency  EUR
-
-# set the base account for all txns
-account1  assets:bank:boi:checking
-```
-```cli
-$ hledger -f bankofireland-checking.csv print
-2012-12-07 LODGMENT       529898
-    assets:bank:boi:checking         EUR10.0 = EUR131.2
-    income:unknown                  EUR-10.0
-
-2012-12-07 PAYMENT
-    assets:bank:boi:checking         EUR-5.0 = EUR126.0
-    expenses:unknown                  EUR5.0
-
-```
-The balance assertions don't raise an error above, because we're
-reading directly from CSV, but they will be checked if these entries
-are imported into a journal file.
-
-### Coinbase
-
-A simple example with some CSV from Coinbase. The spot price is recorded using cost notation. 
-The legacy `amount` field name conveniently sets amount 2 (posting 2's amount) to the total cost.
-```csv
-# Timestamp,Transaction Type,Asset,Quantity Transacted,Spot Price Currency,Spot Price at Transaction,Subtotal,Total (inclusive of fees and/or spread),Fees and/or Spread,Notes
-# 2021-12-30T06:57:59Z,Receive,USDC,100,GBP,0.740000,"","","","Received 100.00 USDC from an external account"
-```
-```rules
-# coinbase.csv.rules
-skip         1
-fields       Timestamp,Transaction_Type,Asset,Quantity_Transacted,Spot_Price_Currency,Spot_Price_at_Transaction,Subtotal,Total,Fees_Spread,Notes
-date         %Timestamp
-date-format  %Y-%m-%dT%T%Z
-description  %Notes
-account1     assets:coinbase:cc
-amount       %Quantity_Transacted %Asset @ %Spot_Price_at_Transaction %Spot_Price_Currency
-```
-```cli
-$ hledger print -f coinbase.csv
-2021-12-30 Received 100.00 USDC from an external account
-    assets:coinbase:cc    100 USDC @ 0.740000 GBP
-    income:unknown                 -74.000000 GBP
-```
-
-### Amazon
-
-Here we convert amazon.com order history, and use an if block to
-generate a third posting if there's a fee.
-(In practice you'd probably get this data from your bank instead,
-but it's an example.)
-
-```csv
-"Date","Type","To/From","Name","Status","Amount","Fees","Transaction ID"
-"Jul 29, 2012","Payment","To","Foo.","Completed","$20.00","$0.00","16000000000000DGLNJPI1P9B8DKPVHL"
-"Jul 30, 2012","Payment","To","Adapteva, Inc.","Completed","$25.00","$1.00","17LA58JSKRD4HDGLNJPI1P9B8DKPVHL"
-```
-```rules
-# amazon-orders.csv.rules
-
-# skip one header line
-skip 1
-
-# name the csv fields, and assign the transaction's date, amount and code.
-# Avoided the "status" and "amount" hledger field names to prevent confusion.
-fields date, _, toorfrom, name, amzstatus, amzamount, fees, code
-
-# how to parse the date
-date-format %b %-d, %Y
-
-# combine two fields to make the description
-description %toorfrom %name
-
-# save the status as a tag
-comment     status:%amzstatus
-
-# set the base account for all transactions
-account1    assets:amazon
-# leave amount1 blank so it can balance the other(s).
-# I'm assuming amzamount excludes the fees, don't remember
-
-# set a generic account2
-account2    expenses:misc
-amount2     %amzamount
-# and maybe refine it further:
-#include categorisation.rules
-
-# add a third posting for fees, but only if they are non-zero.
-if %fees [1-9]
- account3    expenses:fees
- amount3     %fees
-```
-```cli
-$ hledger -f amazon-orders.csv print
-2012-07-29 (16000000000000DGLNJPI1P9B8DKPVHL) To Foo.  ; status:Completed
-    assets:amazon
-    expenses:misc          $20.00
-
-2012-07-30 (17LA58JSKRD4HDGLNJPI1P9B8DKPVHL) To Adapteva, Inc.  ; status:Completed
-    assets:amazon
-    expenses:misc          $25.00
-    expenses:fees           $1.00
-
-```
-
-### Paypal
-
-Here's a real-world rules file for (customised) Paypal CSV,
-with some Paypal-specific rules, and a second rules file included:
-
-```csv
-"Date","Time","TimeZone","Name","Type","Status","Currency","Gross","Fee","Net","From Email Address","To Email Address","Transaction ID","Item Title","Item ID","Reference Txn ID","Receipt ID","Balance","Note"
-"10/01/2019","03:46:20","PDT","Calm Radio","Subscription Payment","Completed","USD","-6.99","0.00","-6.99","simon@joyful.com","memberships@calmradio.com","60P57143A8206782E","MONTHLY - $1 for the first 2 Months: Me - Order 99309. Item total: $1.00 USD first 2 months, then $6.99 / Month","","I-R8YLY094FJYR","","-6.99",""
-"10/01/2019","03:46:20","PDT","","Bank Deposit to PP Account ","Pending","USD","6.99","0.00","6.99","","simon@joyful.com","0TU1544T080463733","","","60P57143A8206782E","","0.00",""
-"10/01/2019","08:57:01","PDT","Patreon","PreApproved Payment Bill User Payment","Completed","USD","-7.00","0.00","-7.00","simon@joyful.com","support@patreon.com","2722394R5F586712G","Patreon* Membership","","B-0PG93074E7M86381M","","-7.00",""
-"10/01/2019","08:57:01","PDT","","Bank Deposit to PP Account ","Pending","USD","7.00","0.00","7.00","","simon@joyful.com","71854087RG994194F","Patreon* Membership","","2722394R5F586712G","","0.00",""
-"10/19/2019","03:02:12","PDT","Wikimedia Foundation, Inc.","Subscription Payment","Completed","USD","-2.00","0.00","-2.00","simon@joyful.com","tle@wikimedia.org","K9U43044RY432050M","Monthly donation to the Wikimedia Foundation","","I-R5C3YUS3285L","","-2.00",""
-"10/19/2019","03:02:12","PDT","","Bank Deposit to PP Account ","Pending","USD","2.00","0.00","2.00","","simon@joyful.com","3XJ107139A851061F","","","K9U43044RY432050M","","0.00",""
-"10/22/2019","05:07:06","PDT","Noble Benefactor","Subscription Payment","Completed","USD","10.00","-0.59","9.41","noble@bene.fac.tor","simon@joyful.com","6L8L1662YP1334033","Joyful Systems","","I-KC9VBGY2GWDB","","9.41",""
-```
-
-```rules
-# paypal-custom.csv.rules
-
-# Tips:
-# Export from Activity -> Statements -> Custom -> Activity download
-# Suggested transaction type: "Balance affecting"
-# Paypal's default fields in 2018 were:
-# "Date","Time","TimeZone","Name","Type","Status","Currency","Gross","Fee","Net","From Email Address","To Email Address","Transaction ID","Shipping Address","Address Status","Item Title","Item ID","Shipping and Handling Amount","Insurance Amount","Sales Tax","Option 1 Name","Option 1 Value","Option 2 Name","Option 2 Value","Reference Txn ID","Invoice Number","Custom Number","Quantity","Receipt ID","Balance","Address Line 1","Address Line 2/District/Neighborhood","Town/City","State/Province/Region/County/Territory/Prefecture/Republic","Zip/Postal Code","Country","Contact Phone Number","Subject","Note","Country Code","Balance Impact"
-# This rules file assumes the following more detailed fields, configured in "Customize report fields":
-# "Date","Time","TimeZone","Name","Type","Status","Currency","Gross","Fee","Net","From Email Address","To Email Address","Transaction ID","Item Title","Item ID","Reference Txn ID","Receipt ID","Balance","Note"
-
-fields date, time, timezone, description_, type, status_, currency, grossamount, feeamount, netamount, fromemail, toemail, code, itemtitle, itemid, referencetxnid, receiptid, balance, note
-
-skip  1
-
-date-format  %-m/%-d/%Y
-
-# ignore some paypal events
-if
-In Progress
-Temporary Hold
-Update to
- skip
-
-# add more fields to the description
-description %description_ %itemtitle
-
-# save some other fields as tags
-comment  itemid:%itemid, fromemail:%fromemail, toemail:%toemail, time:%time, type:%type, status:%status_
-
-# convert to short currency symbols
-if %currency USD
- currency $
-if %currency EUR
- currency E
-if %currency GBP
- currency P
-
-# generate postings
-
-# the first posting will be the money leaving/entering my paypal account
-# (negative means leaving my account, in all amount fields)
-account1 assets:online:paypal
-amount1  %netamount
-
-# the second posting will be money sent to/received from other party
-# (account2 is set below)
-amount2  -%grossamount
-
-# if there's a fee, add a third posting for the money taken by paypal.
-if %feeamount [1-9]
- account3 expenses:banking:paypal
- amount3  -%feeamount
- comment3 business:
-
-# choose an account for the second posting
-
-# override the default account names:
-# if the amount is positive, it's income (a debit)
-if %grossamount ^[^-]
- account2 income:unknown
-# if negative, it's an expense (a credit)
-if %grossamount ^-
- account2 expenses:unknown
-
-# apply common rules for setting account2 & other tweaks
-include common.rules
-
-# apply some overrides specific to this csv
-
-# Transfers from/to bank. These are usually marked Pending,
-# which can be disregarded in this case.
-if
-Bank Account
-Bank Deposit to PP Account
- description %type for %referencetxnid %itemtitle
- account2 assets:bank:wf:pchecking
- account1 assets:online:paypal
-
-# Currency conversions
-if Currency Conversion
- account2 equity:currency conversion
-```
-
-```rules
-# common.rules
-
-if
-darcs
-noble benefactor
- account2 revenues:foss donations:darcshub
- comment2 business:
-
-if
-Calm Radio
- account2 expenses:online:apps
-
-if
-electronic frontier foundation
-Patreon
-wikimedia
-Advent of Code
- account2 expenses:dues
-
-if Google
- account2 expenses:online:apps
- description google | music
-
-```
-
-```cli
-$ hledger -f paypal-custom.csv  print
-2019-10-01 (60P57143A8206782E) Calm Radio MONTHLY - $1 for the first 2 Months: Me - Order 99309. Item total: $1.00 USD first 2 months, then $6.99 / Month  ; itemid:, fromemail:simon@joyful.com, toemail:memberships@calmradio.com, time:03:46:20, type:Subscription Payment, status:Completed
-    assets:online:paypal          $-6.99 = $-6.99
-    expenses:online:apps           $6.99
-
-2019-10-01 (0TU1544T080463733) Bank Deposit to PP Account for 60P57143A8206782E  ; itemid:, fromemail:, toemail:simon@joyful.com, time:03:46:20, type:Bank Deposit to PP Account, status:Pending
-    assets:online:paypal               $6.99 = $0.00
-    assets:bank:wf:pchecking          $-6.99
-
-2019-10-01 (2722394R5F586712G) Patreon Patreon* Membership  ; itemid:, fromemail:simon@joyful.com, toemail:support@patreon.com, time:08:57:01, type:PreApproved Payment Bill User Payment, status:Completed
-    assets:online:paypal          $-7.00 = $-7.00
-    expenses:dues                  $7.00
-
-2019-10-01 (71854087RG994194F) Bank Deposit to PP Account for 2722394R5F586712G Patreon* Membership  ; itemid:, fromemail:, toemail:simon@joyful.com, time:08:57:01, type:Bank Deposit to PP Account, status:Pending
-    assets:online:paypal               $7.00 = $0.00
-    assets:bank:wf:pchecking          $-7.00
-
-2019-10-19 (K9U43044RY432050M) Wikimedia Foundation, Inc. Monthly donation to the Wikimedia Foundation  ; itemid:, fromemail:simon@joyful.com, toemail:tle@wikimedia.org, time:03:02:12, type:Subscription Payment, status:Completed
-    assets:online:paypal             $-2.00 = $-2.00
-    expenses:dues                     $2.00
-    expenses:banking:paypal      ; business:
-
-2019-10-19 (3XJ107139A851061F) Bank Deposit to PP Account for K9U43044RY432050M  ; itemid:, fromemail:, toemail:simon@joyful.com, time:03:02:12, type:Bank Deposit to PP Account, status:Pending
-    assets:online:paypal               $2.00 = $0.00
-    assets:bank:wf:pchecking          $-2.00
-
-2019-10-22 (6L8L1662YP1334033) Noble Benefactor Joyful Systems  ; itemid:, fromemail:noble@bene.fac.tor, toemail:simon@joyful.com, time:05:07:06, type:Subscription Payment, status:Completed
-    assets:online:paypal                       $9.41 = $9.41
-    revenues:foss donations:darcshub         $-10.00  ; business:
-    expenses:banking:paypal                    $0.59  ; business:
-
-```
+For real-world rules files for many banks, brokers, exchanges and apps,
+see the [hledger CSV rules library](https://github.com/hledgerorg/hledger/tree/main/examples/csv)
+in the hledger repo. These aren't necessarily maintained, and may need adapting,
+but they are a good source of ideas and examples.
 
 <a name="timeclock-format"></a>
 
@@ -5192,7 +4915,7 @@ hledger's timeclock format was updated in hledger 1.43 and 1.50.
 If your old time logs are rejected, you should adapt them to modern hledger;
 for now, you can restore the pre-1.43 behaviour with the `--old-timeclock` flag.
 
-Here the timeclock format in hledger 1.50+:
+Here is the timeclock format (in hledger 1.50+):
 
 ```timeclock
 # Comment lines like these, and blank lines, are ignored:
@@ -5367,7 +5090,7 @@ Timedot amounts can be written in several ways:
     365d = 1y.
     This allows use of more convenient time units.
   
-  - One or more **timedot letters** *(since 1.32)* \
+  - One or more **timedot letters** \
     These work like dots,
     except they also generate a posting tag `t:` (short for "type") with the letter as its value,
     and a separate posting for each of the letter values.
@@ -5665,9 +5388,7 @@ For example, if the journal's last transaction is on february 20th,
 - `hledger register` will end the report on february 20th.
 - `hledger register --monthly` will end the report at the end of february.
 - `hledger register --monthly --end 2/14` also will end the report at the end of february (overriding the requested end date).
-- `hledger register --monthly --begin 1/5 --end 2/14` will end the report on march 4th [1].
-
-[1] Since 1.29.
+- `hledger register --monthly --begin 1/5 --end 2/14` will end the report on march 4th.
 
 ## Period expressions
 
@@ -5841,7 +5562,7 @@ This flag has the same effect as a `depth:` query argument.
 So all of these are equivalent: `depth:2`, `--depth=2`, `-2`.
 
 You can also provide custom depths for specific accounts,
-by providing a `REGEX=NUM` argument instead of just `NUM` *(since 1.41)*.
+by providing a `REGEX=NUM` argument instead of just `NUM`.
 For example, `--depth assets=2` (or `depth:assets=2`) will collapse accounts matching the regular expression "assets" to depth 2.
 So `assets:bank:savings` would be collapsed to `assets:bank`, but `liabilities:bank:credit card` would not be affected.
 
@@ -6180,7 +5901,6 @@ When account names are [rewritten](#alias-directive) with `--alias` or `alias`,
 
 When amounts are converted to other commodities in [cost](#cost-reporting) or [value](#value-reporting) reports,
 `cur:` and `amt:` match the old commodity symbol and the old amount quantity, not the new ones.
-(Except in hledger 1.22, [#1625](https://github.com/hledgerorg/hledger/issues/1625).)
 
 # Pivoting
 
@@ -6901,7 +6621,7 @@ To be safe, specify the valuation commmodity, eg:
 - `--value=then,EUR --infer-market-prices`, not `--value=then --infer-market-prices`
 
 Signed costs and market prices can be confusing.
-For reference, here is the current behaviour (since 1.25).
+For reference, here is the current behaviour.
 (If you think it should work differently, see [#1870](https://github.com/hledgerorg/hledger/issues/1870).)
 
 ```journal
@@ -8207,81 +7927,18 @@ _commands_
 
 # PART 5: COMMON TASKS
 
-Here are some quick examples of how to do some basic tasks with hledger.
-
-# Getting help
-
-Here's how to get a quick overview, list commands, and view options and command docs:
-
-```cli
-$ hledger                # show a quick reference card (also: hledger -?)
-$ hledger help commands  # show available commands
-$ hledger --help         # show common options
-$ hledger CMD --help     # show CMD's options, common options and CMD's documentation
-```
-
-The [help command](#help) is a documentation hub; its first argument
-selects what to show. Eg:
-```cli
-$ hledger help           # show the quick reference card
-$ hledger help manual    # show the hledger manual with info, man or $PAGER (best available)
-$ hledger help journal   # show the journal topic in the hledger manual
-$ hledger help examples print   # show brief examples for the print command
-$ hledger help --help    # find out more about the help command
-```
-
-To view manuals and introductory docs on the web, visit <https://hledger.org>.
-Chat and mail list support and discussion archives can be found at <https://hledger.org/support>.
-
-# Constructing command lines
-
-hledger has a flexible command line interface.
-We strive to keep it simple and ergonomic, but if you run into one of
-the sharp edges described in [OPTIONS](#options),
-here are some tips that might help:
-
-- command-specific options must go after the command (it's fine to put common options there too: `hledger CMD OPTS ARGS`)
-- you can run addon commands via hledger (`hledger ui [ARGS]`) or directly (`hledger-ui [ARGS]`)
-- enclose "problematic" arguments in single quotes
-- if needed, also add a backslash to hide regular expression metacharacters from the shell
-- to see how a misbehaving command line is being parsed, add `--debug=2`.
-
-# Starting a journal file
-
-hledger looks for your accounting data in a journal file, `$HOME/.hledger.journal` by default:
-```cli
-$ hledger stats
-The hledger journal file "/Users/simon/.hledger.journal" was not found.
-Please create it first, eg with "hledger add" or a text editor.
-Or, specify an existing journal file with -f or LEDGER_FILE.
-```
-
-You can override this by setting the `LEDGER_FILE` environment variable (see below).
-It's a good practice to keep this important file under version control,
-and to start a new file each year. So you could do something like this:
-```cli
-$ mkdir ~/finance
-$ cd ~/finance
-$ git init
-Initialized empty Git repository in /Users/simon/finance/.git/
-$ touch 2023.journal
-$ echo "export LEDGER_FILE=$HOME/finance/2023.journal" >> ~/.profile
-$ source ~/.profile
-$ hledger stats
-Main file                : /Users/simon/finance/2023.journal
-Included files           : 
-Transactions span        :  to  (0 days)
-Last transaction         : none
-Transactions             : 0 (0.0 per day)
-Transactions last 30 days: 0 (0.0 per day)
-Transactions last 7 days : 0 (0.0 per day)
-Payees/descriptions      : 0
-Accounts                 : 0 (depth 0)
-Commodities              : 0 ()
-Market prices            : 0 ()
-```
+For a gentle, step by step introduction to hledger - installing, starting a journal,
+recording transactions, and running the main reports - see
+[hledger by example](https://hledger.org/hbe.html) on the website.
+For a faster tour, see the [5 minute quick start](https://hledger.org/5-minute-quick-start.html).
+Here are a few more tasks which aren't covered there.
 
 # Setting LEDGER_FILE
+
+hledger looks for your accounting data in a journal file, `$HOME/.hledger.journal` by default.
+You can override this by setting the `LEDGER_FILE` environment variable
+(see [Environment](#environment)), eg to `~/finance/main.journal`.
+Here's how to do that on different systems:
 
 ## Set LEDGER_FILE on unix
 
@@ -8306,21 +7963,11 @@ When correctly configured:
 
 In a terminal window, follow the unix procedure above.
 
-Also, this optional step may be helpful for GUI applications:
-
-1. Add an entry to `~/.MacOSX/environment.plist` like
-
-    ```json
-    {
-      "LEDGER_FILE" : "~/finance/main.journal"
-    }
-    ```
-2. Run `killall Dock` in a terminal window (or restart the machine), to complete the change.
-
-When correctly configured for GUI applications:
-
-- apps started from the dock or a spotlight search, such as a GUI Emacs,
-  will be aware of the new LEDGER_FILE setting.
+Note GUI applications started from the Dock or Spotlight, such as a GUI Emacs,
+don't see variables set in your shell profile.
+If needed, you can set the variable for them too, until the next reboot, with
+`launchctl setenv LEDGER_FILE ~/finance/main.journal`
+(then restart the application).
 
 ## Set LEDGER_FILE on Windows
 
@@ -8359,106 +8006,6 @@ When correctly configured:
 - in a new powershell window, `$env:LEDGER_FILE` will show your new setting
 - and so should `hledger setup` and (once the file exists) `hledger files`.
 
-# Setting opening balances
-
-Pick a starting date for which you can look up the balances of some
-real-world assets (bank accounts, wallet..) and liabilities (credit cards..).
-
-To avoid a lot of data entry, you may want to start with just one or
-two accounts, like your checking account or cash wallet; and pick a
-recent starting date, like today or the start of the week. You can
-always come back later and add more accounts and older transactions,
-eg going back to january 1st.
-
-Add an opening balances transaction to the journal, declaring the
-balances on this date. Here are two ways to do it:
-
-- The first way: open the journal in any text editor and save an entry like this:
-  ```journal
-  2023-01-01 * opening balances
-      assets:bank:checking                $1000   = $1000
-      assets:bank:savings                 $2000   = $2000
-      assets:cash                          $100   = $100
-      liabilities:creditcard               $-50   = $-50
-      equity:opening/closing balances
-  ```
-  These are start-of-day balances, ie whatever was in the account at the
-  end of the previous day.
-
-  The * after the date is an optional status flag.
-  Here it means "cleared & confirmed".
-
-  The currency symbols are optional, but usually a good idea as you'll
-  be dealing with multiple currencies sooner or later.
-
-  The = amounts are optional balance assertions, providing extra error checking.
-
-- The second way: run `hledger add` and follow the prompts to record a similar transaction:
-  ```cli
-  $ hledger add
-  Adding transactions to journal file /Users/simon/finance/2023.journal
-  Any command line arguments will be used as defaults.
-  Use tab key to complete, readline keys to edit, enter to accept defaults.
-  An optional (CODE) may follow transaction dates.
-  An optional ; COMMENT may follow descriptions or amounts.
-  If you make a mistake, enter < at any prompt to go one step backward.
-  To end a transaction, enter . when prompted.
-  To quit, enter . at a date prompt or press control-d or control-c.
-  Date [2023-02-07]: 2023-01-01
-  Description: * opening balances
-  Account 1: assets:bank:checking
-  Amount  1: $1000
-  Account 2: assets:bank:savings
-  Amount  2 [$-1000]: $2000
-  Account 3: assets:cash
-  Amount  3 [$-3000]: $100
-  Account 4: liabilities:creditcard
-  Amount  4 [$-3100]: $-50
-  Account 5: equity:opening/closing balances
-  Amount  5 [$-3050]: 
-  Account 6 (or . or enter to finish this transaction): .
-  2023-01-01 * opening balances
-      assets:bank:checking                      $1000
-      assets:bank:savings                       $2000
-      assets:cash                                $100
-      liabilities:creditcard                     $-50
-      equity:opening/closing balances          $-3050
-  
-  Save this transaction to the journal ? [y]: 
-  Saved.
-  Starting the next transaction (. or ctrl-D/ctrl-C to quit)
-  Date [2023-01-01]: .
-  ```
-
-If you're using version control, this could be a good time to commit the journal. Eg:
-```cli
-$ git commit -m 'initial balances' 2023.journal
-```
-
-# Recording transactions
-
-As you spend or receive money, you can record these transactions
-using one of the methods above (text editor, hledger add)
-or by using the [hledger-iadd](scripts.md#iadd) or [hledger-web](#web) add-ons,
-or by using the [import command](#import) to convert CSV data downloaded from your bank.
-
-Here are some simple transactions, see the [Journal](#journal) section
-and hledger.org for more ideas:
-
-```journal
-2023/1/10 * gift received
-  assets:cash   $20
-  income:gifts
-
-2023.1.12 * farmers market
-  expenses:food    $13
-  assets:cash
-
-2023-01-15 paycheck
-  income:salary
-  assets:bank:checking    $1000
-```
-
 # Reconciling
 
 Periodically you should reconcile - compare your hledger-reported balances
@@ -8478,7 +8025,7 @@ A typical workflow:
    or look for the error in the already-recorded transactions.
    A register report can be helpful (`hledger reg cash`).
    If you can't find the error, add an adjustment transaction.
-   Eg if you have $105 after the above, and can't explain the missing $2, it could be:
+   Eg if you have $105 in your wallet but hledger says $107, and can't explain the missing $2, it could be:
    ```journal
    2023-01-16 * adjust cash
        assets:cash    $-2 = $105
@@ -8502,163 +8049,14 @@ live-updating register while you edit the journal:
 `hledger-ui --register checking -C`
 
 After reconciling, it could be a good time to mark the reconciled
-transactions' status as "cleared and confirmed", if you want to track
-that, by adding the `*` marker.
-Eg in the paycheck transaction above, insert `*` between `2023-01-15` and `paycheck`
+transactions' [status](#status) as "cleared and confirmed", if you want to track
+that, by adding the `*` marker after the date.
 
-If you're using version control, this can be another good time to commit:
+If you're using version control, this can be a good time to commit:
 ```cli
 $ git commit -m 'txns' 2023.journal
 ```
 
-# Reporting
-
-Here are some basic reports.
-
-Show all transactions:
-```cli
-$ hledger print
-2023-01-01 * opening balances
-    assets:bank:checking                      $1000
-    assets:bank:savings                       $2000
-    assets:cash                                $100
-    liabilities:creditcard                     $-50
-    equity:opening/closing balances          $-3050
-
-2023-01-10 * gift received
-    assets:cash              $20
-    income:gifts
-
-2023-01-12 * farmers market
-    expenses:food             $13
-    assets:cash
-
-2023-01-15 * paycheck
-    income:salary
-    assets:bank:checking           $1000
-
-2023-01-16 * adjust cash
-    assets:cash               $-2 = $105
-    expenses:misc
-
-```
-
-Show account names, and their hierarchy:
-```cli
-$ hledger accounts --tree
-assets
-  bank
-    checking
-    savings
-  cash
-equity
-  opening/closing balances
-expenses
-  food
-  misc
-income
-  gifts
-  salary
-liabilities
-  creditcard
-```
-
-Show all account totals:
-```cli
-$ hledger balance
-               $4105  assets
-               $4000    bank
-               $2000      checking
-               $2000      savings
-                $105    cash
-              $-3050  equity:opening/closing balances
-                 $15  expenses
-                 $13    food
-                  $2    misc
-              $-1020  income
-                $-20    gifts
-              $-1000    salary
-                $-50  liabilities:creditcard
---------------------
-                   0
-```
-
-Show only asset and liability balances, as a flat list, limited to depth 2:
-```cli
-$ hledger bal assets liabilities -2
-               $4000  assets:bank
-                $105  assets:cash
-                $-50  liabilities:creditcard
---------------------
-               $4055
-```
-
-Show the same thing without negative numbers, formatted as a simple balance sheet:
-```cli
-$ hledger bs -2
-Balance Sheet 2023-01-16
-
-                        || 2023-01-16 
-========================++============
- Assets                 ||            
-------------------------++------------
- assets:bank            ||      $4000 
- assets:cash            ||       $105 
-------------------------++------------
-                        ||      $4105 
-========================++============
- Liabilities            ||            
-------------------------++------------
- liabilities:creditcard ||        $50 
-------------------------++------------
-                        ||        $50 
-========================++============
- Net:                   ||      $4055 
-```
-The final total is your "net worth" on the end date.
-(Or use `bse` for a full balance sheet with equity.)
-
-Show income and expense totals, formatted as an income statement:
-```cli
-hledger is 
-Income Statement 2023-01-01-2023-01-16
-
-               || 2023-01-01-2023-01-16 
-===============++=======================
- Revenues      ||                       
----------------++-----------------------
- income:gifts  ||                   $20 
- income:salary ||                 $1000 
----------------++-----------------------
-               ||                 $1020 
-===============++=======================
- Expenses      ||                       
----------------++-----------------------
- expenses:food ||                   $13 
- expenses:misc ||                    $2 
----------------++-----------------------
-               ||                   $15 
-===============++=======================
- Net:          ||                 $1005 
-```
-The final total is your net income during this period.
-
-Show transactions affecting your wallet, with running total:
-```cli
-$ hledger register cash
-2023-01-01 opening balances     assets:cash                   $100          $100
-2023-01-10 gift received        assets:cash                    $20          $120
-2023-01-12 farmers market       assets:cash                   $-13          $107
-2023-01-16 adjust cash          assets:cash                    $-2          $105
-```
-
-Show weekly posting counts as a bar chart:
-```cli
-$ hledger activity -W
-2019-12-30 *****
-2023-01-06 ****
-2023-01-13 ****
-```
 # Migrating to a new file
 
 At the end of the year, you may want to continue your journal in a new file,
