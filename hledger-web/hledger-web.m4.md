@@ -41,7 +41,7 @@ balance charts) and allowing history-aware data entry, interactive searching,
 and bookmarking.
 
 hledger-web also lets you share a journal with multiple users, or even the public web.
-There is no access control, so if you need that you should put it
+There is no user authentication, so if you need that you should put it
 behind a suitable web proxy.  As a small protection against data loss
 when running an unprotected instance, it writes a numbered backup of
 the main journal file (only) on every edit.
@@ -90,9 +90,9 @@ Flags:
 ```
 
 By default hledger-web listens only on IP address `127.0.0.1`,
-which be accessed only from the local machine.
+which can be accessed only from the local machine.
 
-To allow access from elsewhere, use `--host` to specify an externally accessible address configured on this machine,
+To allow access from elsewhere, use `--host` to specify an externally accessible address configured on this machine.
 The special address `0.0.0.0` causes it to listen on all of this machine's addresses.
 
 Similarly, you can use `--port` to listen on a TCP port other than 5000.
@@ -163,7 +163,7 @@ To allow more than the default access, start it with an explicit `--allow=add` o
 
 # EDITING, UPLOADING, DOWNLOADING
 
-If you enable the `manage` capability mentioned above,
+If you start hledger-web with `--allow=edit`,
 you'll see a new "spanner" button to the right of the search form.
 Clicking this will let you edit, upload, or download the journal
 file or any files it includes.
@@ -210,6 +210,7 @@ You can get JSON data from these routes:
 /commodities
 /accounts
 /accounttransactions/ACCOUNTNAME
+/openapi.json
 ```
 
 Eg, all account names in the journal (similar to the [accounts](hledger.html#accounts) command).
@@ -258,129 +259,131 @@ $ curl -s http://127.0.0.1:5000/transactions | python -m json.tool
 ```
 
 Most of the JSON corresponds to hledger's data types; for details of what the fields mean, see the
-[Hledger.Data.Json haddock docs](https://hackage.haskell.org/package/hledger-lib-1.17.1/docs/Hledger-Data-Json.html)
+[Hledger.Data.Json haddock docs](https://hackage.haskell.org/package/hledger-lib/docs/Hledger-Data-Json.html)
 and click on the various data types, eg 
-[Transaction](https://hackage.haskell.org/package/hledger-lib-1.17.1/docs/Hledger-Data-Types.html#t:Transaction).
+[Transaction](https://hackage.haskell.org/package/hledger-lib/docs/Hledger-Data-Types.html#t:Transaction).
 And for a higher level understanding, see the [journal docs](hledger.html#journal).
-There is also a basic [OpenAPI specification][openapi.yaml].
+There is also a basic [OpenAPI specification][openapi.yaml], also served at `/openapi.json`.
 
 [openapi.yaml]: https://github.com/hledgerorg/hledger/blob/main/hledger-web/config/openapi.yaml
 
 In some cases there is outer JSON corresponding to a "Report" type.
 To understand that, go to the
-[Hledger.Web.Handler.MiscR haddock](https://hackage.haskell.org/package/hledger-web-1.17.1/docs/Hledger-Web-Handler-MiscR.html)
+[Hledger.Web.Handler.MiscR haddock](https://hackage.haskell.org/package/hledger-web/docs/Hledger-Web-Handler-MiscR.html)
 and look at the source for the appropriate handler to see what it returns.
 Eg for `/accounttransactions` it's
-[getAccounttransactionsR](https://hackage.haskell.org/package/hledger-web-1.17.1/docs/src/Hledger.Web.Handler.MiscR.html#getAccounttransactionsR),
+[getAccounttransactionsR](https://hackage.haskell.org/package/hledger-web/docs/src/Hledger.Web.Handler.MiscR.html#getAccounttransactionsR),
 returning a "`accountTransactionsReport ...`".
 [Looking up](https://hoogle.haskell.org/?hoogle=accountTransactionsReport) the haddock for that
 we can see that /accounttransactions returns an 
-[AccountTransactionsReport](https://hackage.haskell.org/package/hledger-lib-1.17.1/docs/Hledger-Reports-AccountTransactionsReport.html#t:AccountTransactionsReport),
+[AccountTransactionsReport](https://hackage.haskell.org/package/hledger-lib/docs/Hledger-Reports-AccountTransactionsReport.html#t:AccountTransactionsReport),
 which consists of a report title and a list of AccountTransactionsReportItem (etc).
 
 You can add a new transaction to the journal with a PUT request to `/add`,
-if hledger-web was started with the `add` capability (enabled by default).
+if hledger-web was started with `--allow=add` (the default when listening on a local-only address).
 The payload must be the full, exact JSON representation of a hledger transaction
 (partial data won't do).
 You can get sample JSON from hledger-web's `/transactions` or `/accounttransactions`,
-or you can export it with hledger-lib, eg like so:
+or from hledger's print command, eg:
 
 ```cli
-.../hledger$ stack ghci hledger-lib
->>> writeJsonFile "txn.json" (head $ jtxns samplejournal)
->>> :q
+$ hledger -f examples/sample.journal print -O json | python -m json.tool > txns.json
 ```
 
-Here's how it looks as of hledger-1.17
-(remember, this JSON corresponds to hledger's 
-[Transaction](http://hackage.haskell.org/package/hledger-lib-1.17.1/docs/Hledger-Data-Types.html#t:Transaction)
+Here's how one transaction looks
+(remember, this JSON corresponds to hledger's
+[Transaction](https://hackage.haskell.org/package/hledger-lib/docs/Hledger-Data-Types.html#t:Transaction)
 and related data types):
 
 ```json
 {
-    "tcomment": "",
-    "tpostings": [
-        {
-            "pbalanceassertion": null,
-            "pstatus": "Unmarked",
-            "pamount": [
-                {
-                    "aprice": null,
-                    "acommodity": "$",
-                    "aquantity": {
-                        "floatingPoint": 1,
-                        "decimalPlaces": 10,
-                        "decimalMantissa": 10000000000
-                    },
-                    "aismultiplier": false,
-                    "astyle": {
-                        "ascommodityside": "L",
-                        "asdigitgroups": null,
-                        "ascommodityspaced": false,
-                        "asprecision": 2,
-                        "asdecimalpoint": "."
-                    }
-                }
-            ],
-            "ptransaction_": "1",
-            "paccount": "assets:bank:checking",
-            "pdate": null,
-            "ptype": "RegularPosting",
-            "pcomment": "",
-            "pdate2": null,
-            "ptags": [],
-            "poriginal": null
-        },
-        {
-            "pbalanceassertion": null,
-            "pstatus": "Unmarked",
-            "pamount": [
-                {
-                    "aprice": null,
-                    "acommodity": "$",
-                    "aquantity": {
-                        "floatingPoint": -1,
-                        "decimalPlaces": 10,
-                        "decimalMantissa": -10000000000
-                    },
-                    "aismultiplier": false,
-                    "astyle": {
-                        "ascommodityside": "L",
-                        "asdigitgroups": null,
-                        "ascommodityspaced": false,
-                        "asprecision": 2,
-                        "asdecimalpoint": "."
-                    }
-                }
-            ],
-            "ptransaction_": "1",
-            "paccount": "income:salary",
-            "pdate": null,
-            "ptype": "RegularPosting",
-            "pcomment": "",
-            "pdate2": null,
-            "ptags": [],
-            "poriginal": null
-        }
-    ],
-    "ttags": [],
-    "tsourcepos": {
-        "tag": "JournalSourcePos",
-        "contents": [
-            "",
-            [
-                1,
-                1
-            ]
-        ]
-    },
-    "tdate": "2008-01-01",
     "tcode": "",
-    "tindex": 1,
-    "tprecedingcomment": "",
+    "tcomment": "",
+    "tdate": "2008-01-01",
     "tdate2": null,
     "tdescription": "income",
-    "tstatus": "Unmarked"
+    "tindex": 1,
+    "tpostings": [
+        {
+            "paccount": "assets:bank:checking",
+            "pamount": [
+                {
+                    "acommodity": "$",
+                    "acost": null,
+                    "acostbasis": null,
+                    "aquantity": {
+                        "decimalMantissa": 1,
+                        "decimalPlaces": 0,
+                        "floatingPoint": 1
+                    },
+                    "astyle": {
+                        "ascommodityside": "L",
+                        "ascommodityspaced": false,
+                        "asdecimalmark": ".",
+                        "asdigitgroups": null,
+                        "asprecision": 0,
+                        "asrounding": "NoRounding"
+                    }
+                }
+            ],
+            "pbalanceassertion": null,
+            "pcomment": "",
+            "pdate": null,
+            "pdate2": null,
+            "poriginal": null,
+            "preal": "RealPosting",
+            "pstatus": "Unmarked",
+            "ptags": [],
+            "ptransaction_": "1"
+        },
+        {
+            "paccount": "income:salary",
+            "pamount": [
+                {
+                    "acommodity": "$",
+                    "acost": null,
+                    "acostbasis": null,
+                    "aquantity": {
+                        "decimalMantissa": -1,
+                        "decimalPlaces": 0,
+                        "floatingPoint": -1
+                    },
+                    "astyle": {
+                        "ascommodityside": "L",
+                        "ascommodityspaced": false,
+                        "asdecimalmark": ".",
+                        "asdigitgroups": null,
+                        "asprecision": 0,
+                        "asrounding": "NoRounding"
+                    }
+                }
+            ],
+            "pbalanceassertion": null,
+            "pcomment": "",
+            "pdate": null,
+            "pdate2": null,
+            "poriginal": null,
+            "preal": "RealPosting",
+            "pstatus": "Unmarked",
+            "ptags": [],
+            "ptransaction_": "1"
+        }
+    ],
+    "tprecedingcomment": "",
+    "tsourcepos": [
+        {
+            "sourceColumn": 1,
+            "sourceLine": 31,
+            "sourceName": "/Users/simon/src/hledger/examples/sample.journal"
+        },
+        {
+            "sourceColumn": 1,
+            "sourceLine": 34,
+            "sourceName": "/Users/simon/src/hledger/examples/sample.journal"
+        }
+    ],
+    "tstatus": "Unmarked",
+    "ttags": []
 }
 ```
 
