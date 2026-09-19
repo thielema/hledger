@@ -1,5 +1,7 @@
 # Code
 
+Last updated: 2025
+
 hledger is a suite of applications, tools and libraries.
 The main hledger code repository is [github.com/hledgerorg/hledger](https://github.com/hledgerorg/hledger)
 (shortcut url `code.hledger.org`).

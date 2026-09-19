@@ -1,5 +1,7 @@
 # Version numbers
 
+Last updated: 2024
+
 Some places version numbers appear:
 
 - --version (and sometimes --help) output of all hledger* executables

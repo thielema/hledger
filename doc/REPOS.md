@@ -1,5 +1,7 @@
 # Repositories
 
+Last updated: 2022
+
 Source code and content related to hledger are kept in revision control repositories,
 mostly using [Git](https://en.wikipedia.org/wiki/Git).
 

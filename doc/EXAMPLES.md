@@ -1,5 +1,7 @@
 # EXAMPLES
 
+Last updated: 2024
+
 ## Collected examples
 
 Many example input files in journal and other formats can be found

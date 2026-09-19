@@ -1,5 +1,7 @@
 # MOCKUPS
 
+Last updated: 2025
+
 Old mockups, draft docs and notes exploring possible future features.
 See also <https://github.com/hledgerorg/hledger/tree/main/doc/mockups>
 

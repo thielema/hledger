@@ -1,5 +1,7 @@
 # Benchmarks
 
+Last updated: 2023
+
 Benchmarks are standard performance measurements,
 which we define using `bench` declarations in cabal files.
 There is [one in hledger.cabal](https://github.com/hledgerorg/hledger/blob/main/hledger/hledger.cabal#L228),

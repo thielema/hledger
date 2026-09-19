@@ -1,5 +1,7 @@
 # Just, Make, Shake
 
+Last updated: 2024
+
 After many years of relying on [GNU Make](https://www.gnu.org/software/make) for automating project tasks,
 we now primarily use [just](https://github.com/casey/just) instead.
 `just` is better enough, and clean consolidated efficient project automation is so valuable, that this is worthwhile -
