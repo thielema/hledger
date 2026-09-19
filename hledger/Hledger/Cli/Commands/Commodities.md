@@ -34,3 +34,12 @@ Providing a date query will affect which commodities are reported, as follows:
 | `--undeclared` | (transacted ∪ priced) ∖ declared          | (transacted ∪ priced in the period) ∖ declared |
 | `--unused`     | declared ∖ (transacted ∪ priced)          | same                                           |
 | `--find`       | the first commodity matching the argument | same                                           |
+
+Example:
+
+```cli
+$ hledger commodities
+$
+AAPL
+EUR
+```

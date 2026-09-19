@@ -25,5 +25,3 @@ $ hledger transactions -f examples/sample.journal
 2008-06-03 * eat & shop
 2008-12-31 * pay off
 ```
-
-To see the full entries, use [`print`](#print).

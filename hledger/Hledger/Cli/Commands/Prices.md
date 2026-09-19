@@ -30,6 +30,23 @@ it will show the same prices used internally to calculate value reports.
 But if in doubt, you can inspect those directly by running the value report
 with --debug=2.
 
+Examples:
+
+```cli
+$ hledger prices
+P 2024-01-01 AAPL $150
+P 2024-02-01 AAPL $160
+P 2024-02-01 EUR $1.08
+```
+
+```cli
+$ hledger prices --infer-market-prices
+P 2024-01-01 AAPL $150
+P 2024-01-05 AAPL $150
+P 2024-02-01 AAPL $160
+P 2024-02-01 EUR $1.08
+```
+
 ### prices summary
 
 With `--summary`, instead of listing individual prices, `prices` prints

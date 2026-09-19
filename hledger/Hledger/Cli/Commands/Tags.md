@@ -43,3 +43,18 @@ With `--directives`, tag names are shown as valid tag directives, which could be
 Remember that accounts also acquire tags from their parents;
 postings also acquire tags from their account and transaction;
 and transactions also acquire tags from their postings.
+
+Examples:
+
+```cli
+$ hledger tags
+broker
+receipt
+trip
+```
+
+```cli
+$ hledger tags --values
+acme
+paris
+```

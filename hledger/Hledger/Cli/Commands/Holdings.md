@@ -35,7 +35,7 @@ Flags:
 This command shows your lot-tracked assets (see [Lot reporting](#lot-reporting)), and their performance, as of the report end date.
 An example:
 
-```
+```cli
 $ hledger holdings -e 2023-04-02
 Holdings on 2023-04-01
 
@@ -48,7 +48,7 @@ Holdings on 2023-04-01
 ```
 
 With `--lots`, the individual lots are shown:
-```
+```cli
 $ hledger holdings --lots -e 2023-04-02
 Holdings on 2023-04-01
 

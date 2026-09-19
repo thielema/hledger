@@ -20,7 +20,7 @@ Any arguments before a `--` argument will be passed to the `tasty` test runner a
 and any arguments after `--` will be passed to tasty unchanged.
 
 Examples:
-```
+```cli
 $ hledger test               # run all unit tests
 $ hledger test balance       # run tests with "balance" in their name
 $ hledger test -- -h         # show tasty's options

@@ -2,7 +2,21 @@
 
 (h)
 
-Show some part of hledger's documentation, selected by arguments:
+Show some part of hledger's documentation.
+
+```flags
+Flags:
+  -i                       use info when showing the manual
+  -m                       use man when showing the manual
+  -p                       use less (or $PAGER) when showing the manual
+  -w                       use a web browser when showing the manual
+  -l                       just list the manual topics matching TOPIC
+     --builtins            with commands: show only builtin commands
+     --addons              with commands: show only addon commands
+     --aliases             with commands: show only command aliases
+```
+
+The part shown is selected by arguments:
 
 - `quickref` (or no args): a quick reference / overview
 - `commands`:              all commands, including addons and aliases
@@ -22,17 +36,6 @@ indented to show (most of) their hierarchy.
 The manual will be shown in a default viewer (info, man, pager, web browser),
 or you can choose with -i/-m/-p/-w.
 
-```flags
-Flags:
-  -i                       use info when showing the manual
-  -m                       use man when showing the manual
-  -p                       use less (or $PAGER) when showing the manual
-  -w                       use a web browser when showing the manual
-  -l                       just list the manual topics matching TOPIC
-     --builtins            with commands: show only builtin commands
-     --addons              with commands: show only addon commands
-     --aliases             with commands: show only command aliases
-```
 
 The manual is built in to your hledger executable, so it can be useful when offline,
 or when you prefer the terminal to a web browser,
@@ -44,7 +47,7 @@ By default it chooses the best viewer found in $PATH, trying in this order:
 You can force the use of info, man, or a pager with the `-i`, `-m`, or `-p` flags.
 If no viewer can be found, or if running non-interactively, it just prints the manual to stdout.
 
-Examples
+Examples:
 ```cli
 $ hledger help                    # show the quick reference
 $ hledger help -h                 # show the help command's options
