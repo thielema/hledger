@@ -412,6 +412,10 @@ STACKTEST := STACK + ' test --fast'
 @embedtest:
     tools/checkembeddedfiles
 
+# check that internal links in the manuals' source files point to existing headings
+@anchortest:
+    tools/checkanchors
+
 # # stack build --dry-run all hledger packages ensuring an install plan with default snapshot)
 # buildplantest:
 #     buildplantest-stack.yaml
