@@ -922,7 +922,7 @@ which must be 2-24 uppercase letters, digits, or `'`, `.`, `_`, `-`, beginning w
 hledger will convert known currency symbols to [ISO 4217 currency codes](https://en.wikipedia.org/wiki/ISO_4217#Active_codes),
 capitalise letters, replace spaces with `-`, replace other unsupported characters with `C<HEXBYTES>`,
 and prepend or append `C` if needed. One-letter symbols will be doubled. The no-symbol commodity will become `CC`.
-(Note, hledger tries to keep your commodities distinct, but collisions are possiblel with short alphanumeric symbols like
+(Note, hledger tries to keep your commodities distinct, but collisions are possible with short alphanumeric symbols like
 `CC`, `C`, and no-symbol, which are distinct in hledger but all become `CC` in beancount.)
 
 #### Beancount balance assignments
@@ -1027,8 +1027,9 @@ each commodity/currency, as described below in
 [Commodity display style](#commodity-display-style).
 
 If needed, this can be overridden by a `-c/--commodity-style` option
-(except for [cost amounts](#costs) and amounts displayed
-by the [`print`](#print) command, which are always displayed with all
+(though for [cost amounts](#costs) and amounts displayed
+by the [`print`](#print) command, it affects only the symbol placement and
+digit group/decimal marks; those amounts are always displayed with all
 decimal digits).
 For example, the following will force dollar amounts to be displayed as shown:
 
@@ -1440,7 +1441,7 @@ This has a few limitations:
 The code must not contain a closing parenthesis (or it will be truncated).
 Codes tend to disrupt alignment of the register report, making it harder to scan visually.
 And you can't store more than one value there per transaction.
-For these reasons you might want to avoid the code field and use [tags](#tags] instead.
+For these reasons you might want to avoid the code field and use [tags](#tags) instead.
 
 ## Description
 
@@ -1795,7 +1796,7 @@ or even:
 
 This last form works for transactions involving exactly two commodities, with neither cost notation nor equity postings.
 If one of the postings is recognised as a [lot posting](#lot-reporting), the cost will be attached to that one.
-Otherwise the cost will be attached to the first (top) posting - so it can be important to but the right one first.
+Otherwise the cost will be attached to the first (top) posting - so it can be important to put the right one first.
 Here we had to switch the order of postings, to get the same meaning as above.
 
 This form is the easiest to make undetected errors with; so it is rejected by `hledger check balanced`, and by strict mode.
@@ -2139,7 +2140,7 @@ A tag can have multiple values:
 2025-01-01 groceries        ; tag1:value 1, tag1:value 2
 ```
 
-You can write each tag on its own line of you prefer (but they still can't contain commas):
+You can write each tag on its own line if you prefer (but they still can't contain commas):
 ```journal
 2025-01-01 groceries
     ; tag1: value 1
@@ -2583,7 +2584,7 @@ For (each account name in) each journal entry, we apply:
 In other words, for (an account name in) a given journal entry:
 
 - the nearest alias declaration before/above the entry is applied first
-- the next alias before/above that will be be applied next, and so on
+- the next alias before/above that will be applied next, and so on
 - aliases defined after/below the entry do not affect it.
 
 This gives nearby aliases precedence over distant ones, and helps
@@ -2961,7 +2962,7 @@ Any indented subdirectives are ignored.
 
 The ["tags" check](#check) will report an error if any undeclared tag name is used.
 It is quite easy to accidentally create a tag through normal use of colons in [comments](#comments);
-if you want to prevent this, you can declare and check your tags .
+if you want to prevent this, you can declare and check your tags.
 
 ## Periodic transactions
 
@@ -4807,7 +4808,7 @@ comment %amount1
 ```
 
 When there are multiple field assignments to the same hledger field,
-only the last one takes effect. Here, comment's value will be be B,
+only the last one takes effect. Here, comment's value will be B,
 or C if "something" is matched, but never A:
 
 ```rules
@@ -5219,7 +5220,7 @@ A transaction description, separated from the account name by 2+ spaces, is opti
 A transaction comment, beginning with `;`, is also optional.
 (Indented following comment lines are also allowed, as in journal format.)
 
-In clock-out entries (`o`) have no description, but can have a comment if you wish.
+Clock-out entries (`o`) have no description, but can have a comment if you wish.
 A clock-in and clock-out pair form a "transaction" posting some number of hours to an account - also known as a session.
 Eg:
 
@@ -8153,6 +8154,7 @@ You can list all of a command's options by running `hledger CMD -h`.
 - [prices](#prices)                                - show market prices
 - [stats](#stats)                                  - show journal statistics
 - [tags](#tags-1)                                  - show tag names
+- [transactions](#transactions) (tx)               - show transactions, one per line
 
 **[Standard report commands](#standard-report-commands)**
 
@@ -8440,7 +8442,7 @@ using one of the methods above (text editor, hledger add)
 or by using the [hledger-iadd](scripts.md#iadd) or [hledger-web](#web) add-ons,
 or by using the [import command](#import) to convert CSV data downloaded from your bank.
 
-Here are some simple transactions, see the hledger_journal(5) manual
+Here are some simple transactions, see the [Journal](#journal) section
 and hledger.org for more ideas:
 
 ```journal

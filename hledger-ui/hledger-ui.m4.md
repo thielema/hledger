@@ -174,7 +174,7 @@ when invoked from the register and transaction screens, and at the error locatio
 when invoked from the error screen.
 
 `B` toggles cost mode, showing amounts converted to their cost's commodity
-(see [hledger manual > Cost reporting](hledger.md#cost-reporting).
+(see [hledger manual > Cost reporting](hledger.md#cost-reporting)).
 
 `V` toggles value mode, showing amounts converted to their market value
 (see [hledger manual > Valuation](hledger.md#valuation) flag).
@@ -206,7 +206,7 @@ From here you can navigate to other screens using the cursor keys:
 Or you can use `ESC` to return directly to the top menu screen.
 
 You can also use a command line flag to specific a different startup screen
-(`--cs`, `--bs`, `--is`, `--all`, or `--register=ACCT`).
+(`--cash`, `--bs`, `--is`, `--all`, or `--register=ACCT`).
 
 ## Menu screen
 
@@ -281,7 +281,7 @@ Press `RIGHT` to view the selected transaction in detail.
 ## Transaction screen
 
 This screen shows a single transaction, as a general journal entry,
-similar to hledger's print command and journal format (hledger_journal(5)).
+similar to hledger's print command and [journal format](hledger.md#journal).
 
 The transaction's date(s) and any cleared flag, transaction code,
 description, comments, along with all of its account postings are

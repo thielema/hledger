@@ -49,7 +49,7 @@ Holdings on 2023-04-01
 
 With `--lots`, the individual lots are shown:
 ```
-$ hledger --lots -e 2023-04-02
+$ hledger holdings --lots -e 2023-04-02
 Holdings on 2023-04-01
 
                                                          ||       Date   Age    Units  Unit cost     Price      Cost        Value  Weight        UGain   UGain%     RGain     XIRR 
@@ -88,11 +88,11 @@ are valued in the default or given valuation commodity instead, and the
 cost columns are also converted to it (at the valuation date, so percent
 gain is unaffected). Cashflows are not converted, however, so the XIRR
 column is left blank for holdings whose cashflows are in a different commodity.
-`--value=then` is not supported, and `-B/--cost`has no effect.
+`--value=then` is not supported, and `-B/--cost` has no effect.
 
 Amounts are displayed with their commodity's display precision.
 `--round` can select another rounding strategy.
-The percent columns (Weight, UGain%, XIRR) are shown with with the display style configured for the `%` commodity (eg by `-c '0.00 %'`).
+The percent columns (Weight, UGain%, XIRR) are shown with the display style configured for the `%` commodity (eg by `-c '0.00 %'`).
 
 Query arguments and report flags like `-t/--tree`, `--depth`, `-S/--sort-amount`, `--title` etc. work as usual.
 

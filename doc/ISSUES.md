@@ -8,7 +8,7 @@ Shortcut urls:
 - <https://wishes.hledger.org>       - open WISHes in the github issue tracker
 - <https://bugs.hledger.org>         - open BUGs in the github issue tracker
 - <https://bugs.hledger.org/new>     - report a new issue
-- <https://hledger.org/regressions>  - how to claim regression bounties
+- <https://hledger.org/regressions>  - regression tracking
 
 Misc. issue queries:
 

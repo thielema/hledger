@@ -34,7 +34,7 @@ More features:
 - Supports your preferred account names, currencies, number formats
 - Inspired by and partly compatible with Ledger CLI; interconvertible with Beancount
 - Scriptable by CLI, HTTP or API, with plenty of examples
-- Clean Haskell codebase, continually improved since 2007, with $100 regression bounties
+- Clean Haskell codebase, continually improved since 2007
 - Free software licensed under GNU General Public License v3.0 or later.
 
 ## Examples
