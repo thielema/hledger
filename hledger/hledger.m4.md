@@ -668,30 +668,16 @@ from an untrusted downloaded or shared directory from running arbitrary shell co
 
 ## Config file troubleshooting
 
-There aren't many hledger features that need a warning, but this is one !\
-A default config file (the kind that hledger runs automatically, without needing a --conf option)
-is very convenient. But, it complicates command line processing and can surprise you -
-eg quietly changing report output, or breaking your hledger-using scripts/applications,
-which you might not notice until much later.
-
-This mainly arises when you are first using config files.
-And once you discover this kind of problem, it will be easy to fix.
-Here are some tips:
+A default config file (one which hledger finds and uses automatically, without a `--conf` option) is convenient,
+but it can surprise you, eg by quietly changing report output, or breaking scripts which use hledger.
+Some tips:
 
 1. Be mindful about what you put in your config file; consider the effect on all your reports.
 2. If a hledger command isn't doing what you expect, try it again with `-n`, to see if a config file is to blame.
 3. Run `hledger setup` to list the currently active config file. (`setup` is not affected by config files.)
 4. Add `--debug` or `--debug=8` to any command to see config/command line debug output.
-
-When you are writing scripts, or sharing examples with other people,
-keep in mind that there could be a config file changing hledger's behaviour,
-so you might want to add `-n` to make your hledger commands more robust.
-
-If you prefer to just avoid this feature:
-
-- Don't use a default config file.
-- If you download hledger data from elsewhere, watch out for directories containing a hledger.conf file.
-- If you're feeling paranoid, use the `-n/--no-conf` flag always, eg by running hledger via a script or alias.
+5. In scripts, and in examples you share with others, add `-n` so that a config file can't change the result.
+6. When you download hledger data from elsewhere, watch out for directories containing a `hledger.conf` file.
 
 # Output
 
@@ -867,27 +853,16 @@ are disabled automatically.
 
 ### FODS output
 
-[FODS] is the OpenDocument Spreadsheet format as plain XML,
-as accepted by LibreOffice and OpenOffice.
-If you use their spreadsheet applications,
-this is better than CSV because it works across locales
-(decimal point vs. decimal comma,
-character encoding stored in XML header, thus no problems with umlauts),
-it supports fixed header rows and columns,
-cell types (string vs. number vs. date),
-separation of number and currency
-(currency is displayed but the cell type
-is still a number accessible for computation),
-styles (bold), borders.
-Btw. you can still extract CSV from FODS/ODS
-using various utilities like `libreoffice --headless` or
+[FODS] is the OpenDocument Spreadsheet format as plain XML, as read by LibreOffice and OpenOffice.
+For those spreadsheet applications it is better than CSV.
+It works across locales: decimal point or comma, and the character encoding is stored in the XML header, so non-ascii text is safe.
+It supports fixed header rows and columns, cell types (string, number, date), styles (bold) and borders.
+And it keeps number and currency separate, so amounts show their currency but remain numbers usable in formulas.
+You can still extract CSV from FODS/ODS if needed, with utilities like `libreoffice --headless` or
 [ods2csv](https://hackage.haskell.org/package/ods2csv).
 
-For [digit group marks](#digit-group-marks),
-ODS has not as many options as hledger.
-It only supports thousands separators in the respective locale.
-Thus FODS export enables thousands separators
-if your commodity style contains any digit groups.
+ODS supports only the locale's thousands separator as a [digit group mark](#digit-group-marks),
+so FODS output enables thousands separators if your commodity style has any digit groups.
 
 [FODS]: https://en.wikipedia.org/wiki/OpenDocument
 
@@ -929,78 +904,54 @@ Otherwise, you should use `--alias` (see [Account aliases](#alias-directive),
 or this [hledger2beancount.conf](https://github.com/hledgerorg/hledger/blob/main/examples/hledger2beancount.conf) file).
 <!-- (see also "hledger and Beancount" <https://hledger.org/beancount.html>). -->
 
-#### Beancount account names
+Other adjustments hledger makes:
 
-Aside from the top-level names, hledger will adjust your account names to make valid
-[Beancount account names](https://beancount.github.io/docs/beancount_language_syntax.html#accounts),
-by capitalising each part, replacing spaces and underscores with `-`, replacing other unsupported characters with `C<HEXBYTES>`,
-prepending `A` to account name parts which don't begin with a letter or digit,
-and appending `:A` to account names which have only one part.
+- **Account names:** aside from the top-level names, hledger makes valid
+  [Beancount account names](https://beancount.github.io/docs/beancount_language_syntax.html#accounts)
+  by capitalising each part, replacing spaces and underscores with `-`,
+  replacing other unsupported characters with `C<HEXBYTES>`,
+  prepending `A` to parts which don't begin with a letter or digit,
+  and appending `:A` to account names which have only one part.
 
-#### Beancount commodity names
+- **Commodity names:** hledger makes valid
+  [Beancount commodity/currency names](https://beancount.github.io/docs/beancount_language_syntax.html#commodities-currencies),
+  which must be 2-24 uppercase letters, digits, or `'`, `.`, `_`, `-`, beginning with a letter and ending with a letter or digit.
+  Known currency symbols become [ISO 4217 currency codes](https://en.wikipedia.org/wiki/ISO_4217#Active_codes);
+  otherwise letters are capitalised, spaces become `-`, other unsupported characters become `C<HEXBYTES>`,
+  and `C` is prepended or appended if needed. One-letter symbols are doubled, and the no-symbol commodity becomes `CC`.
+  (hledger tries to keep your commodities distinct, but collisions are possible with short symbols like
+  `CC`, `C` and no-symbol, which are distinct in hledger but all become `CC` in Beancount.)
 
-hledger will adjust your commodity names to make valid
-[Beancount commodity/currency names](https://beancount.github.io/docs/beancount_language_syntax.html#commodities-currencies),
-which must be 2-24 uppercase letters, digits, or `'`, `.`, `_`, `-`, beginning with a letter and ending with a letter or digit.
-hledger will convert known currency symbols to [ISO 4217 currency codes](https://en.wikipedia.org/wiki/ISO_4217#Active_codes),
-capitalise letters, replace spaces with `-`, replace other unsupported characters with `C<HEXBYTES>`,
-and prepend or append `C` if needed. One-letter symbols will be doubled. The no-symbol commodity will become `CC`.
-(Note, hledger tries to keep your commodities distinct, but collisions are possible with short alphanumeric symbols like
-`CC`, `C`, and no-symbol, which are distinct in hledger but all become `CC` in beancount.)
+- **Balance assignments** are not supported by Beancount, so they are converted to explicit amounts.
 
-#### Beancount balance assignments
+- **Virtual postings** are not allowed by Beancount, so any [virtual postings](#virtual-postings) are omitted.
 
-Beancount doesn't support those; any balance assignments will be converted to explicit amounts.
+- **Tags** become [Beancount metadata](https://beancount.github.io/docs/beancount_language_syntax.html#metadata-1)
+  (except tags whose name begins with `_`).
+  Metadata names are adjusted to be Beancount-compatible: beginning with a lowercase letter,
+  at least two characters long, with unsupported characters encoded; values use Beancount's string type.
+  A tag repeated with multiple values (eg an account with both `type:Asset` and `type:Cash`)
+  becomes one metadata entry with the values comma separated: `type: "Asset, Cash"`.
 
-#### Beancount virtual postings
+- **Costs:** Beancount doesn't allow [redundant costs and conversion postings](#combining-costs-and-equity-conversion-postings) as hledger does;
+  if you have any, the conversion postings are omitted.
+  Currently at most one cost + conversion postings group per transaction is supported.
 
-Beancount doesn't allow [virtual postings](#virtual-postings); if you have any, they will be omitted from beancount output.
+- **Price directives:** the 1:1 prices which hledger infers from [commodity aliases](#commodity-aliases)
+  are normally dated `0000-01-01`; in Beancount output they are dated `0001-01-01`.
 
-#### Beancount metadata
+- **Directives:** with `print --export`, hledger generates a `commodity` directive for each declared commodity,
+  and an `open` directive for each declared or used account, dated on the account's earliest posting
+  (or the earliest transaction date). Account and commodity tags become metadata on these directives,
+  and an account's `lots:` tag becomes its Beancount booking method.
+  Other hledger directives have no Beancount equivalent and are dropped.
 
-hledger tags will be converted to [Beancount metadata](https://beancount.github.io/docs/beancount_language_syntax.html#metadata-1)
-(except for tags whose name begins with `_`).
-Metadata names will be adjusted to be Beancount-compatible: beginning with a lowercase letter,
-at least two characters long, and with unsupported characters encoded.
-Metadata values will use Beancount's string type.
+- **Tolerance:** with `print --export`, a sample `inferred_tolerance_default` option is provided, commented out.
+  If Beancount complains that transactions aren't balanced, this is an easy workaround.
 
-In hledger, objects can have the same tag repeated with multiple values.
-Eg an `assets:cash` account might have both `type:Asset` and `type:Cash` tags.
-For Beancount these will be combined into one, with the values combined, comma separated. Eg: `type: "Asset, Cash"`.
-
-#### Beancount costs
-
-Beancount doesn't allow [redundant costs and conversion postings](https://hledger.org/hledger.html#combining-costs-and-equity-conversion-postings) as hledger does.
-If you have any of these, the conversion postings will be omitted.
-Currently we support at most one cost + conversion postings group per transaction.
-
-#### Beancount price directives
-
-The 1:1 price directives which hledger infers from [commodity aliases](#commodity-aliases)
-are normally dated `0000-01-01`; in Beancount output they are dated `0001-01-01` instead.
-
-#### Beancount directives
-
-With `print --export`, hledger generates a `commodity` directive for each declared commodity,
-and an `open` directive for each declared or used account, dated on the account's earliest posting
-(or the earliest transaction date). Account and commodity tags are converted to metadata on these directives,
-and an account's `lots:` tag becomes its Beancount booking method.
-Other hledger directives have no Beancount equivalent and are dropped.
-
-#### Beancount tolerance
-
-With `print --export`, a sample `inferred_tolerance_default` option is provided (commented out).
-If Beancount complains that transactions aren't balanced, 
-this is an easy way to work around it.
-
-#### Beancount operating currency
-
-Declaring an operating currency (or several) improves Beancount and Fava reports.
-With `print --export`, hledger will declare each currency used in cost amounts as an operating currency.
-If needed, replace these with your own declaration, like
-```beancount
-option "operating_currency" "USD"
-```
+- **Operating currency:** declaring one or more improves Beancount and Fava reports.
+  With `print --export`, hledger declares each currency used in cost amounts as an operating currency.
+  If needed, replace these with your own declaration, like `option "operating_currency" "USD"`.
 
 [Beancount]: https://beancount.github.io
 [beancount journal]: https://beancount.github.io/docs/beancount_language_syntax.html
@@ -1872,12 +1823,9 @@ the assertions in the second will not see the balances from the first.
 To work around this, arrange your files in a hierarchy with `include`.
 Or, you could concatenate the files temporarily, and process them like one big file.
 
-Why does it work this way ? 
-It might be related to hledger's goal of stable predictable reports.
-File hierarchy is considered "permanent", part of your data, while the order of command line options/arguments is not.
-We don't want transient changes to be able to change the meaning of the data.
-Eg it would be frustrating if tomorrow all your balance assertions broke because you wrote command line arguments in a different order.
-(Discussion welcome.)
+This is for stable, predictable reports:
+the file hierarchy is part of your data, while the order of command line arguments is not,
+and reordering your arguments should not change whether your assertions pass.
 
 ### Assertions and costs
 
@@ -3615,61 +3563,14 @@ If you need to read CSV files which have some other encoding,
 you can do it by adding `encoding ENCODING` to your CSV rules.
 Eg: `encoding iso-8859-1`.
 
-The following encodings are supported:
-
-`ascii`,
-`utf-8`,
-`utf-16`,
-`utf-32`,
-`iso-8859-1`,
-`iso-8859-2`,
-`iso-8859-3`,
-`iso-8859-4`,
-`iso-8859-5`,
-`iso-8859-6`,
-`iso-8859-7`,
-`iso-8859-8`,
-`iso-8859-9`,
-`iso-8859-10`,
-`iso-8859-11`,
-`iso-8859-13`,
-`iso-8859-14`,
-`iso-8859-15`,
-`iso-8859-16`,
-`cp1250`,
-`cp1251`,
-`cp1252`,
-`cp1253`,
-`cp1254`,
-`cp1255`,
-`cp1256`,
-`cp1257`,
-`cp1258`,
-`koi8-r`,
-`koi8-u`,
-`gb18030`,
-`macintosh`,
-`jis-x-0201`,
-`jis-x-0208`,
-`iso-2022-jp`,
-`shift-jis`,
-`cp437`,
-`cp737`,
-`cp775`,
-`cp850`,
-`cp852`,
-`cp855`,
-`cp857`,
-`cp860`,
-`cp861`,
-`cp862`,
-`cp863`,
-`cp864`,
-`cp865`,
-`cp866`,
-`cp869`,
-`cp874`,
-`cp932`.
+The supported encodings are:
+`ascii`, `utf-8`, `utf-16`, `utf-32`,
+`iso-8859-1` to `iso-8859-11` and `iso-8859-13` to `iso-8859-16`,
+`cp1250` to `cp1258`,
+`koi8-r`, `koi8-u`, `gb18030`, `macintosh`,
+`jis-x-0201`, `jis-x-0208`, `iso-2022-jp`, `shift-jis`,
+`cp437`, `cp737`, `cp775`, `cp850`, `cp852`, `cp855`, `cp857`,
+`cp860` to `cp866`, `cp869`, `cp874`, and `cp932`.
 
 ## `separator`
 
@@ -6197,6 +6098,8 @@ All the other variants above can (usually) be rewritten to this final form with:
 ```cli
 $ hledger print -x --infer-costs --infer-equity
 ```
+Or you can enable both flags always, eg in your [config file](#config-files),
+and your reports will have the advantages of both.
 
 Downsides:
 
@@ -6228,15 +6131,6 @@ When `--infer-costs` fails, it does not infer a cost in that transaction, and do
 
 Reading variant 5 journal entries, combining cost notation and equity postings, has all the same requirements.
 When reading such an entry fails, hledger raises an "unbalanced transaction" error.
-
-## Infer cost and equity by default ?
-
-Should `--infer-costs` and `--infer-equity` be enabled by default ?
-Try using them always, eg with a shell alias:
-```
-alias h="hledger --infer-equity --infer-costs"
-```
-and let us know what problems you find.
 
 
 <a name="valuation"></a>
@@ -7912,18 +7806,11 @@ Or at the command line, you can do it this way:
 1. In a powershell window, run `[Environment]::SetEnvironmentVariable("LEDGER_FILE", "C:\User\USER\finance\main.journal", [System.EnvironmentVariableTarget]::User)`
 2. And open a new powershell window. (Existing windows won't see the change.)
 
-Warning, doing this from the Windows command line can be tricky; other methods you may find online:
-
-- may not affect the current window
-- may not be persistent
-- may not work unless you are an administrator
-- may limit values to 1024 characters
-- may break dynamic references to other variables
-- may require a new-enough version of powershell
-- or may be intended for the older command window.
-- If you still have trouble, see eg
-  [Setting Windows PowerShell environment variables](https://stackoverflow.com/questions/714877/setting-windows-powershell-environment-variables)
-  or [Adding path permanently to windows using powershell doesn't appear to work](https://stackoverflow.com/questions/69236623/adding-path-permanently-to-windows-using-powershell-doesnt-appear-to-work).
+Other methods you may find online are often unreliable: they may not persist, may not affect the current window,
+or may need administrator rights or a newer powershell.
+If you still have trouble, see eg
+[Setting Windows PowerShell environment variables](https://stackoverflow.com/questions/714877/setting-windows-powershell-environment-variables)
+or [Adding path permanently to windows using powershell doesn't appear to work](https://stackoverflow.com/questions/69236623/adding-path-permanently-to-windows-using-powershell-doesnt-appear-to-work).
 
 When correctly configured:
 
