@@ -34,7 +34,7 @@ _web_({{
 <a href="/images/hledger-ui/hledger-ui-sample-reg.png" class="highslide" onclick="return hs.expand(this)"><img src="/images/hledger-ui/hledger-ui-sample-reg.png" title="Register screen" height="180"/></a>
 <a href="/images/hledger-ui/hledger-ui-bcexample-acc.png" class="highslide" onclick="return hs.expand(this)"><img src="/images/hledger-ui/hledger-ui-bcexample-acc.png" title="beancount example accounts" height="180"/></a>
 <a href="/images/hledger-ui/hledger-ui-bcexample-acc-etrade-cash.png" class="highslide" onclick="return hs.expand(this)"><img src="/images/hledger-ui/hledger-ui-bcexample-acc-etrade-cash.png" title="beancount example's etrade cash subaccount" height="180"/></a>
-<a href="/images/hledger-ui/hledger-ui-bcexample-acc-etrade.png" class="highslide" onclick="return hs.expand(this)"><img src="/images/hledger-ui/hledger-ui-bcexample-acc-etrade.png" title="beancount example's etrade investments, all commoditiess" height="180"/></a>
+<a href="/images/hledger-ui/hledger-ui-bcexample-acc-etrade.png" class="highslide" onclick="return hs.expand(this)"><img src="/images/hledger-ui/hledger-ui-bcexample-acc-etrade.png" title="beancount example's etrade investments, all commodities" height="180"/></a>
 </div>
 }})
 
@@ -116,9 +116,9 @@ movement keys are also supported.
 On a mac, the Karabiner app is one way to do that.)
 
 `/` lets you set a general filter query limiting the data shown,
-using the same [query terms](hledger.html#queries) as in hledger and hledger-web.
-While editing the query, you can use [CTRL-a/e/d/k, BS, cursor keys](http://hackage.haskell.org/package/brick-0.7/docs/brick-widgets-edit.html#t:editor);
-press `ENTER` to set it, or `ESCAPE`to cancel.
+using the same [query terms](hledger.md#queries) as in hledger and hledger-web.
+While editing the query, you can use [CTRL-a/e/d/k, BS, cursor keys](https://hackage.haskell.org/package/brick/docs/Brick-Widgets-Edit.html);
+press `ENTER` to set it, or `ESCAPE` to cancel.
 There are also keys for quickly adjusting some common filters like account depth and transaction status (see below).
 `BACKSPACE` or `DELETE` removes all filters, showing all transactions.
 
@@ -133,7 +133,7 @@ pressing `SHIFT-LEFT` or `SHIFT-RIGHT` moves to the previous or next period,
 and pressing `T` sets the period to "today".
 If you are in watch mode (the default) and viewing a narrowed period containing today,
 the view will follow any changes in system date (moving to the period containing the new date).
-(These keys work only with the standard Julian calendar year/quarter/month/week/day periods; they are not affected by a custom report interval specified at the command line.)
+(These keys work only with standard calendar year/quarter/month/week/day periods; they are not affected by a custom report interval specified at the command line.)
 
 You can also specify a non-standard period with `/` and a `date:` query;
 in this case, the period is not movable with the arrow keys.
@@ -167,7 +167,7 @@ This allows some basic data entry.
 
 `A` is like `a`, but runs the [hledger-iadd](http://hackage.haskell.org/package/hledger-iadd) tool,
 which provides a terminal interface.
-This key will be available if `hledger-iadd` is installed in $path.
+This key will be available if `hledger-iadd` is installed in `$PATH`.
 
 `E` runs $HLEDGER_UI_EDITOR, or $EDITOR, or a default (`emacsclient -a "" -nw`, or `notepad.exe` on Windows) on the journal file.
 With some editors, the cursor will be positioned at the current transaction
@@ -178,7 +178,7 @@ when invoked from the error screen.
 (see [hledger manual > Cost reporting](hledger.md#cost-reporting)).
 
 `V` toggles value mode, showing amounts converted to their market value
-(see [hledger manual > Valuation](hledger.md#valuation) flag).
+(see [hledger manual > Value reporting](hledger.md#value-reporting)).
 More specifically, 
 
 1. By default, the `V` key toggles showing end value (`--value=end`) on or off.
@@ -208,14 +208,14 @@ From here you can navigate to other screens using the cursor keys:
 `UP`/`DOWN` to select, `RIGHT` to move to the selected screen, `LEFT` to return to the previous screen.
 Or you can use `ESC` to return directly to the top menu screen.
 
-You can also use a command line flag to specific a different startup screen
+You can also use a command line flag to specify a different startup screen
 (`--cash`, `--bs`, `--is`, `--all`, or `--register=ACCT`).
 
 ## Menu screen
 
 This is the top-most screen.
 From here you can navigate to several screens listing accounts of various types.
-Note some of these may not show anything until you have configured [account types](/hledger.html#account-types).
+Note some of these may not show anything until you have configured [account types](hledger.md#account-types).
 
 ## Cash accounts screen
 
@@ -272,13 +272,13 @@ or if it's in list mode but this account has subaccounts which are not shown due
 In other words, the register always shows the transactions contributing to the balance shown on the accounts screen.
 Tree mode/list mode can be toggled with `t` here also.
 
-`U` toggles filtering by [unmarked status](hledger.html#status), showing or hiding unmarked transactions.
+`U` toggles filtering by [unmarked status](hledger.md#status), showing or hiding unmarked transactions.
 Similarly, `P` toggles pending transactions, and `C` toggles cleared transactions.
 (By default, transactions with all statuses are shown;
 if you activate one or two status filters, only those transactions are shown;
 and if you activate all three, the filter is removed.)
 
-`R` toggles real mode, in which [virtual postings](hledger.html#virtual-postings) are ignored.
+`R` toggles real mode, in which [virtual postings](hledger.md#virtual-postings) are ignored.
 
 `z` toggles nonzero mode, in which only transactions posting a nonzero
 change are shown (hledger-ui shows zero items by default,
