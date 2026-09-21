@@ -57,7 +57,6 @@ Emacs markdown-mode can do that, but it's super slow, avoid it otherwise.
 | [cli](https://github.com/hledgerorg/hledger/issues?q=is:open+label:cli)                               | [bugs](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+label:A-BUG+label:cli)                | [wishes](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+label:A-WISH+label:cli)                | [PRs](https://github.com/hledgerorg/hledger/issues?q=is:open+is:pr+label:cli)                | [other](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+-label:A-BUG+-label:A-WISH+label:cli)                |
 | [ui](https://github.com/hledgerorg/hledger/issues?q=is:open+label:ui)                                 | [bugs](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+label:A-BUG+label:ui)                 | [wishes](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+label:A-WISH+label:ui)                 | [PRs](https://github.com/hledgerorg/hledger/issues?q=is:open+is:pr+label:ui)                 | [other](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+-label:A-BUG+-label:A-WISH+label:ui)                 |
 | [web](https://github.com/hledgerorg/hledger/issues?q=is:open+label:web)                               | [bugs](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+label:A-BUG+label:web)                | [wishes](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+label:A-WISH+label:web)                | [PRs](https://github.com/hledgerorg/hledger/issues?q=is:open+is:pr+label:web)                | [other](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+-label:A-BUG+-label:A-WISH+label:web)                |
-| [interest](https://github.com/hledgerorg/hledger/issues?q=is:open+label:interest)                     | [bugs](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+label:A-BUG+label:interest)           | [wishes](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+label:A-WISH+label:interest)           | [PRs](https://github.com/hledgerorg/hledger/issues?q=is:open+is:pr+label:interest)           | [other](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+-label:A-BUG+-label:A-WISH+label:interest)           |
 | **Input/output Formats:**                                                                               |                                                                                                                |                                                                                                                   |                                                                                                |                                                                                                                                |
 | [journal](https://github.com/hledgerorg/hledger/issues?q=is:open+label:journal)                       | [bugs](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+label:A-BUG+label:journal)            | [wishes](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+label:A-WISH+label:journal)            | [PRs](https://github.com/hledgerorg/hledger/issues?q=is:open+is:pr+label:journal)            | [other](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+-label:A-BUG+-label:A-WISH+label:journal)            |
 | [timeclock](https://github.com/hledgerorg/hledger/issues?q=is:open+label:timeclock)                   | [bugs](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+label:A-BUG+label:timeclock)          | [wishes](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+label:A-WISH+label:timeclock)          | [PRs](https://github.com/hledgerorg/hledger/issues?q=is:open+is:pr+label:timeclock)          | [other](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+-label:A-BUG+-label:A-WISH+label:timeclock)          |
@@ -84,7 +83,6 @@ Emacs markdown-mode can do that, but it's super slow, avoid it otherwise.
 | [demo](https://github.com/hledgerorg/hledger/issues?q=is:open+label:demo)                             | [bugs](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+label:A-BUG+label:demo)               | [wishes](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+label:A-WISH+label:demo)               | [PRs](https://github.com/hledgerorg/hledger/issues?q=is:open+is:pr+label:demo)               | [other](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+-label:A-BUG+-label:A-WISH+label:demo)               |
 | [descriptions](https://github.com/hledgerorg/hledger/issues?q=is:open+label:descriptions)             | [bugs](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+label:A-BUG+label:descriptions)       | [wishes](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+label:A-WISH+label:descriptions)       | [PRs](https://github.com/hledgerorg/hledger/issues?q=is:open+is:pr+label:descriptions)       | [other](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+-label:A-BUG+-label:A-WISH+label:descriptions)       |
 | [diff](https://github.com/hledgerorg/hledger/issues?q=is:open+label:diff)                             | [bugs](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+label:A-BUG+label:diff)               | [wishes](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+label:A-WISH+label:diff)               | [PRs](https://github.com/hledgerorg/hledger/issues?q=is:open+is:pr+label:diff)               | [other](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+-label:A-BUG+-label:A-WISH+label:diff)               |
-| [files](https://github.com/hledgerorg/hledger/issues?q=is:open+label:files)                           | [bugs](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+label:A-BUG+label:files)              | [wishes](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+label:A-WISH+label:files)              | [PRs](https://github.com/hledgerorg/hledger/issues?q=is:open+is:pr+label:files)              | [other](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+-label:A-BUG+-label:A-WISH+label:files)              |
 | [import](https://github.com/hledgerorg/hledger/issues?q=is:open+label:import)                         | [bugs](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+label:A-BUG+label:import)             | [wishes](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+label:A-WISH+label:import)             | [PRs](https://github.com/hledgerorg/hledger/issues?q=is:open+is:pr+label:import)             | [other](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+-label:A-BUG+-label:A-WISH+label:import)             |
 | [incomestatement](https://github.com/hledgerorg/hledger/issues?q=is:open+label:incomestatement)       | [bugs](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+label:A-BUG+label:incomestatement)    | [wishes](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+label:A-WISH+label:incomestatement)    | [PRs](https://github.com/hledgerorg/hledger/issues?q=is:open+is:pr+label:incomestatement)    | [other](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+-label:A-BUG+-label:A-WISH+label:incomestatement)    |
 | [notes](https://github.com/hledgerorg/hledger/issues?q=is:open+label:notes)                           | [bugs](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+label:A-BUG+label:notes)              | [wishes](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+label:A-WISH+label:notes)              | [PRs](https://github.com/hledgerorg/hledger/issues?q=is:open+is:pr+label:notes)              | [other](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+-label:A-BUG+-label:A-WISH+label:notes)              |
@@ -100,14 +98,14 @@ Emacs markdown-mode can do that, but it's super slow, avoid it otherwise.
 | [tags](https://github.com/hledgerorg/hledger/issues?q=is:open+label:tags)                             | [bugs](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+label:A-BUG+label:tags)               | [wishes](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+label:A-WISH+label:tags)               | [PRs](https://github.com/hledgerorg/hledger/issues?q=is:open+is:pr+label:tags)               | [other](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+-label:A-BUG+-label:A-WISH+label:tags)               |
 | [test](https://github.com/hledgerorg/hledger/issues?q=is:open+label:test)                             | [bugs](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+label:A-BUG+label:test)               | [wishes](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+label:A-WISH+label:test)               | [PRs](https://github.com/hledgerorg/hledger/issues?q=is:open+is:pr+label:test)               | [other](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+-label:A-BUG+-label:A-WISH+label:test)               |
 | **Miscellaneous:**                                                                                      |                                                                                                                |                                                                                                                   |                                                                                                |                                                                                                                                |
-| [bounty](https://github.com/hledgerorg/hledger/issues?q=is:open+label:bounty)                         | [bugs](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+label:A-BUG+label:bounty)             | [wishes](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+label:A-WISH+label:bounty)             | [PRs](https://github.com/hledgerorg/hledger/issues?q=is:open+is:pr+label:budget)             | [other](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+-label:A-BUG+-label:A-WISH+label:budget)             |
+| [bounty](https://github.com/hledgerorg/hledger/issues?q=is:open+label:bounty)                         | [bugs](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+label:A-BUG+label:bounty)             | [wishes](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+label:A-WISH+label:bounty)             | [PRs](https://github.com/hledgerorg/hledger/issues?q=is:open+is:pr+label:bounty)             | [other](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+-label:A-BUG+-label:A-WISH+label:bounty)             |
 | [budget](https://github.com/hledgerorg/hledger/issues?q=is:open+label:budget)                         | [bugs](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+label:A-BUG+label:budget)             | [wishes](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+label:A-WISH+label:budget)             | [PRs](https://github.com/hledgerorg/hledger/issues?q=is:open+is:pr+label:budget)             | [other](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+-label:A-BUG+-label:A-WISH+label:budget)             |
-| [doc](https://github.com/hledgerorg/hledger/issues?q=is:open+label:doc)                               | [bugs](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+label:A-BUG+label:doc)                | [wishes](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+label:A-WISH+label:doc)                | [PRs](https://github.com/hledgerorg/hledger/issues?q=is:open+is:pr+label:doc)                | [other](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+-label:A-BUG+-label:A-WISH+label:doc)                |
+| [docs](https://github.com/hledgerorg/hledger/issues?q=is:open+label:docs)                               | [bugs](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+label:A-BUG+label:docs)                | [wishes](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+label:A-WISH+label:docs)                | [PRs](https://github.com/hledgerorg/hledger/issues?q=is:open+is:pr+label:docs)                | [other](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+-label:A-BUG+-label:A-WISH+label:docs)                |
 | [i18n](https://github.com/hledgerorg/hledger/issues?q=is:open+label:i18n)                             | [bugs](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+label:A-BUG+label:i18n)               | [wishes](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+label:A-WISH+label:i18n)               | [PRs](https://github.com/hledgerorg/hledger/issues?q=is:open+is:pr+label:i18n)               | [other](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+-label:A-BUG+-label:A-WISH+label:i18n)               |
 | [interest](https://github.com/hledgerorg/hledger/issues?q=is:open+label:interest)                     | [bugs](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+label:A-BUG+label:interest)           | [wishes](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+label:A-WISH+label:interest)           | [PRs](https://github.com/hledgerorg/hledger/issues?q=is:open+is:pr+label:interest)           | [other](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+-label:A-BUG+-label:A-WISH+label:interest)           |
 | [investing](https://github.com/hledgerorg/hledger/issues?q=is:open+label:investing)                   | [bugs](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+label:A-BUG+label:investing)          | [wishes](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+label:A-WISH+label:investing)          | [PRs](https://github.com/hledgerorg/hledger/issues?q=is:open+is:pr+label:investing)          | [other](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+-label:A-BUG+-label:A-WISH+label:investing)          |
 | [ledger-compat](https://github.com/hledgerorg/hledger/issues?q=is:open+label:ledger-compat)           | [bugs](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+label:A-BUG+label:ledger-compat)      | [wishes](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+label:A-WISH+label:ledger-compat)      | [PRs](https://github.com/hledgerorg/hledger/issues?q=is:open+is:pr+label:ledger-compat)      | [other](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+-label:A-BUG+-label:A-WISH+label:ledger-compat)      |
-| [packaging](https://github.com/hledgerorg/hledger/issues?q=is:open+label:deps)                        | [bugs](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+label:A-BUG+label:deps)               | [wishes](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+label:A-WISH+label:deps)               | [PRs](https://github.com/hledgerorg/hledger/issues?q=is:open+is:pr+label:deps)               | [other](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+-label:A-BUG+-label:A-WISH+label:deps)               |
+| [packaging](https://github.com/hledgerorg/hledger/issues?q=is:open+label:packaging)                        | [bugs](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+label:A-BUG+label:packaging)               | [wishes](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+label:A-WISH+label:packaging)               | [PRs](https://github.com/hledgerorg/hledger/issues?q=is:open+is:pr+label:packaging)               | [other](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+-label:A-BUG+-label:A-WISH+label:packaging)               |
 | [performance](https://github.com/hledgerorg/hledger/issues?q=is:open+label:performance)               | [bugs](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+label:A-BUG+label:performance)        | [wishes](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+label:A-WISH+label:performance)        | [PRs](https://github.com/hledgerorg/hledger/issues?q=is:open+is:pr+label:performance)        | [other](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+-label:A-BUG+-label:A-WISH+label:performance)        |
 | [period-expressions](https://github.com/hledgerorg/hledger/issues?q=is:open+label:period-expressions) | [bugs](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+label:A-BUG+label:period-expressions) | [wishes](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+label:A-WISH+label:period-expressions) | [PRs](https://github.com/hledgerorg/hledger/issues?q=is:open+is:pr+label:period-expressions) | [other](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+-label:A-BUG+-label:A-WISH+label:period-expressions) |
 | [queries](https://github.com/hledgerorg/hledger/issues?q=is:open+label:queries)                       | [bugs](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+label:A-BUG+label:queries)            | [wishes](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+label:A-WISH+label:queries)            | [PRs](https://github.com/hledgerorg/hledger/issues?q=is:open+is:pr+label:queries)            | [other](https://github.com/hledgerorg/hledger/issues?q=is:open+is:issue+-label:A-BUG+-label:A-WISH+label:queries)            |
@@ -120,39 +118,24 @@ Emacs markdown-mode can do that, but it's super slow, avoid it otherwise.
 
 ## Labels
 
-In the github issue tracker we use [labels](https://github.com/hledgerorg/hledger/labels) to categorise things like:
+<a name="topics"></a>
+In the github issue tracker we use [labels](https://github.com/hledgerorg/hledger/labels) to categorise issues and PRs:
 
-- whether an issue is a bug (red) or a wish (purple)
-- bug impact - who is affected (light yellow)
-- bug severity - how annoying is it (light pink)
-- which subcomponents (tools, commands, input/output formats) are involved (light blue)
-- which platforms are involved (blue)
-- regressions (black)
-- security issues (bright red)
-- issues with bounties (bright green)
-- PRs needing release (yellow)
-- PR/issue blockers (grey)
-- miscellaneous (white)
+- `A-BUG` or `A-WISH`: the issue's type, a bug or a wish (feature request)
+- `affectsN-*` and `annoyanceN-*`: a bug's impact and severity, used for [prioritising](#prioritising)
+- component/topic labels, like `cli`, `ui`, `web`, `journal`, `csv`, `balance`, `queries`, `packaging`, `docs`:
+  which part of hledger is involved. These names are also used as [commit message prefixes](COMMITS.md)
+  and issue title prefixes.
+- `platform-*`: which platforms are involved
+- `needs-*`: what an issue or PR is waiting for, like `needs-repro`, `needs-review`, `needs-release`
+- `regression`, `security`, `bounty`, `good-first-issue`: special cases worth highlighting
+- `duplicate`, `invalid`, `wont-fix`, `cant-reproduce`: why an issue was closed
 
-The subcomponent names are also used in [commit message prefixes](COMMITS.html), in issue title prefixes, etc.
-
-Some other loose conventions:
-
-- We sometimes prefix bug titles (especially regressions) with the hledger version(s) affected.
-  This allows searches like
-  [new issues in 1.22](https://github.com/hledgerorg/hledger/issues?q=in%3Atitle+1.22)
-  and
-  [regressions in 1.22](https://github.com/hledgerorg/hledger/issues?q=in%3Atitle+1.22+label%3Aregression)
-
-- In the past we tracked some time estimates in brackets after the issue title.
-  The format was something like `[ESTIMATEDTOTALTASKTIME|TIMESPENTSOFAR]`. Eg:
-
-  - `[2]` two hours estimated, no time spent yet
-  - `[..]` half an hour estimated (a dot is ~a quarter hour, as in timedot format)
-  - `[1d]` one day estimated (a day is ~4 hours)
-  - `[1w]` one week estimated (a week is ~5 days or ~20 hours)
-  - `[3|2]` three hours estimated, about two hours spent so far
-  - `[1|1w|2d]` initially estimated as one hour, later estimated as one week, two days spent so far
+We sometimes prefix bug titles (especially regressions) with the hledger version(s) affected.
+This allows searches like
+[new issues in 1.22](https://github.com/hledgerorg/hledger/issues?q=in%3Atitle+1.22)
+and
+[regressions in 1.22](https://github.com/hledgerorg/hledger/issues?q=in%3Atitle+1.22+label%3Aregression).
 
 ## Prioritising
 
@@ -195,146 +178,6 @@ Then, practices like these are possible:
 - If there are no bugs left above the current quality bar, they can work on feature work.
 - If a bug is found that will take more than a week to fix, it can be flagged as a ‘killer’ bug, for special treatment.
 
-<!--
-
-0..25:
-
-for i in `seq 1 5`; do for s in `seq 1 5`; do echo "$i x $s = " `ruby -e "p $i*$s"`; done; done
-1 x 1 =  1
-1 x 2 =  2
-1 x 3 =  3
-1 x 4 =  4
-1 x 5 =  5
-2 x 1 =  2
-2 x 2 =  4
-2 x 3 =  6
-2 x 4 =  8
-2 x 5 =  10
-3 x 1 =  3
-3 x 2 =  6
-3 x 3 =  9
-3 x 4 =  12
-3 x 5 =  15
-4 x 1 =  4
-4 x 2 =  8
-4 x 3 =  12
-4 x 4 =  16
-4 x 5 =  20
-5 x 1 =  5
-5 x 2 =  10
-5 x 3 =  15
-5 x 4 =  20
-5 x 5 =  25
-
-ghc -ignore-dot-ghci -package-env - -e 'import Data.List; import Text.Printf' -e 'let (is,ss) = ([1..5],[1..5]) in mapM_ (printf "%3d\n") $ nub $ sort [i*s | i<-is, s<-ss]'
-  1
-  2
-  3
-  4
-  5
-  6
-  8
-  9
- 10
- 12
- 15
- 16
- 20
- 25
-
-
-0..100:
-
-for i in `seq 1 5`; do for s in `seq 1 5`; do echo "$i x $s x 4 = " `ruby -e "p $i*$s*4"`; done; done
-1 x 1 x 4 =  4
-1 x 2 x 4 =  8
-1 x 3 x 4 =  12
-1 x 4 x 4 =  16
-1 x 5 x 4 =  20
-2 x 1 x 4 =  8
-2 x 2 x 4 =  16
-2 x 3 x 4 =  24
-2 x 4 x 4 =  32
-2 x 5 x 4 =  40
-3 x 1 x 4 =  12
-3 x 2 x 4 =  24
-3 x 3 x 4 =  36
-3 x 4 x 4 =  48
-3 x 5 x 4 =  60
-4 x 1 x 4 =  16
-4 x 2 x 4 =  32
-4 x 3 x 4 =  48
-4 x 4 x 4 =  64
-4 x 5 x 4 =  80
-5 x 1 x 4 =  20
-5 x 2 x 4 =  40
-5 x 3 x 4 =  60
-5 x 4 x 4 =  80
-5 x 5 x 4 =  100
-
-ghc -ignore-dot-ghci -package-env - -e 'import Data.List; import Text.Printf' -e 'let (is,ss) = ([1..5],[1..5]) in mapM_ (printf "%3.f\n") $ nub $ sort [i*s*100/(maximum is * maximum ss) | i<-is, s<-ss]'
-  4
-  8
- 12
- 16
- 20
- 24
- 32
- 36
- 40
- 48
- 60
- 64
- 80
-100
-
-0..1:
-
-for i in `seq 1 5`; do for s in `seq 1 5`; do echo "$i x $s / 25 = " `ruby -e "p $i*$s/25.0"`; done; done
-1 x 1 / 25 =  0.04
-1 x 2 / 25 =  0.08
-1 x 3 / 25 =  0.12
-1 x 4 / 25 =  0.16
-1 x 5 / 25 =  0.2
-2 x 1 / 25 =  0.08
-2 x 2 / 25 =  0.16
-2 x 3 / 25 =  0.24
-2 x 4 / 25 =  0.32
-2 x 5 / 25 =  0.4
-3 x 1 / 25 =  0.12
-3 x 2 / 25 =  0.24
-3 x 3 / 25 =  0.36
-3 x 4 / 25 =  0.48
-3 x 5 / 25 =  0.6
-4 x 1 / 25 =  0.16
-4 x 2 / 25 =  0.32
-4 x 3 / 25 =  0.48
-4 x 4 / 25 =  0.64
-4 x 5 / 25 =  0.8
-5 x 1 / 25 =  0.2
-5 x 2 / 25 =  0.4
-5 x 3 / 25 =  0.6
-5 x 4 / 25 =  0.8
-5 x 5 / 25 =  1.0 
-
-ghc -ignore-dot-ghci -package-env - -e 'import Data.List; import Text.Printf' -e 'let (is,ss) = ([1..5],[1..5]) in mapM_ (printf "%.2f\n") $ nub $ sort [i*s/(maximum is * maximum ss) | i<-is, s<-ss]'
-0.04
-0.08
-0.12
-0.16
-0.20
-0.24
-0.32
-0.36
-0.40
-0.48
-0.60
-0.64
-0.80
-1.00
-
--->
-
 ## Reducing bugs and regressions
 
 Some ideas in 2024-01:
@@ -356,14 +199,7 @@ Some ideas in 2024-01:
 - Public list / QA dashboard
 - Grow a QA team
 
-Older ideas
-
-- Custodians for particular components/topics
-  ("If you are interested in helping with a particular component for a while, please add yourself as a custodian in the Open Issues table. A custodian\'s job is to help manage the issues, rally the troops, and drive the open issue count towards zero. The more custodians, the better! By dividing up the work this way, we can scale and make forward progress.")
-
 ## Other
 
-In 2017 we experimented with Github projects, in 2018 with Github milestones.
-
-Long ago we collected some wishlist items in a [trello board](https://trello.hledger.org) (trello.hledger.org).
-
+Historically we also tried Github projects (2017), Github milestones (2018),
+and a [trello board](https://trello.hledger.org) for wishlist items.
