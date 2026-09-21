@@ -93,10 +93,13 @@ $ hledger balancesheet
 $ hledger incomestatement
 ```
 Run `hledger` to list the commands.
-For a gentle step by step introduction, see [hledger by example](https://hledger.org/hbe.html),
-or for a faster tour, the [5 minute quick start](https://hledger.org/5-minute-quick-start.html).
-For configuring a default journal file, reconciling with your bank, and starting a new year's file,
-see [PART 6: COMMON TASKS](#part-6-common-tasks).
+
+In this manual, we'll cover all of hledger's functionality in detail.
+For a more gentle step by step introduction, see [hledger by example](https://hledger.org/hbe.html),
+or for a faster intro, the [5 minute quick start](https://hledger.org/5-minute-quick-start.html).
+
+For tips on configuring a default journal file, reconciling with your bank, closing a file at end of year,
+or migrating between hledger 1 and 2, see [PART 6: COMMON TASKS](#part-6-common-tasks).
 
 # PART 1: USER INTERFACE
 
