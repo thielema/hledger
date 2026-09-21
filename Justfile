@@ -1169,29 +1169,6 @@ ghrel-upload:
     echo "Setting versions to $DEVVER.."
     ./Shake setversion "$DEVVER" -c
 
-# Between releases: push HEAD to github testbin branch and start building new platform binaries.
-testbin:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    git push -f origin HEAD:testbin  # testbin is the branch
-    git tag -f testlatest            # testlatest is the tag
-    git push -f origin testlatest
-    git push -f origin HEAD:binaries # also push to binaries branch to build binaries
-    printf "When binaries have built successfully, run:\n just testbin-bin\n"
-    just ghworkflows-open
-
-# Browse the github testbin prerelease.
-@testbin-open:
-    gh release view -w testlatest
-
-# Push the testbin prerelease notes to the github testbin prerelease.
-@testbin-notes:
-    gh release edit testbin -F doc/ghtestbinnotes.md
-
-# After building testbin binaries (testbin), copy them to the github testbin prerelease.
-@testbin-bin:
-    gh workflow run testbin
-
 # ** Installing ------------------------------------------------------------
 INSTALLING:
 

@@ -103,9 +103,9 @@ to avoid interfering with branch switching; RELEASING.md should be updated from 
    release builds below, so that it is included in the release tags. (Preview releases are announced too;
    in general they are treated more like major than minor releases.)
    Show the drafted ANNOUNCE to the maintainer for editing/confirmation before committing it.
-1. **rel: update install docs:** `just installpage`; edit `doc/ghrelnotes`, `doc/ghtestbinnotes.md`, and finish
+1. **rel: update install docs:** `just installpage`; edit `doc/ghrelnotes`, and finish
    `site/src/install.md` by hand ("Update the Install page" below) - do this on the release branch, not on main
-   (main's copies of ghrelnotes/ghtestbinnotes.md describe the *next preview* line and are unrelated to the
+   (main's copy of ghrelnotes describes the *next preview* line and is unrelated to the
    release branch's version).
 1. **rel: make release builds:** `just ghbin` - do this last, once the release branch has all its commits, so the
    binaries are built from the commit that will be tagged. Takes 30-40 minutes; watch with `just ghbin-open`.
