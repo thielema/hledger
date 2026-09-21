@@ -572,7 +572,7 @@ $ hledger bal @cash.args
 
 ## Shell completions
 
-If you use the bash or zsh shells, you can optionally set up context-sensitive autocompletion for hledger command lines.
+If you use the bash, zsh or fish shells, you can optionally set up context-sensitive autocompletion for hledger command lines.
 Try pressing `hledger<SPACE><TAB><TAB>` (should list all hledger commands)
 or `hledger reg acct:<TAB><TAB>` (should list your top-level account names).
 If completions aren't working, or for more details, see [Install > Shell completions](install.html#shell-completions).

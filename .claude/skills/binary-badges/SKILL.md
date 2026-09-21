@@ -79,6 +79,7 @@ end-of-life, its package version is permanently frozen — it will never gain a
 newer hledger, so there's no need to re-check it on future runs. Skip these:
 
 - **Fedora 42** — EOL 2026-05-13, frozen at hledger 1.32.3.
+- **Sandstorm** — the app is no longer updated; frozen at hledger 1.31. (Not a distro release, but the same rule applies.)
 
 When you confirm a release has newly reached EOL (e.g. its packages page
 disappears from Fedora's active-releases table, or endoflife.date shows a
