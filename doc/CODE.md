@@ -84,6 +84,23 @@ Amount -- AmountStyle
 </uml>
 -->
 
+The main modules:
+
+- [Hledger.Data](https://github.com/hledgerorg/hledger/tree/main/hledger-lib/Hledger/Data):
+  Types, Amount, Posting, Transaction, Journal, Account, Balancing, Lots, Valuation, Dates, Period, Errors..
+- [Hledger.Read](https://github.com/hledgerorg/hledger/tree/main/hledger-lib/Hledger/Read):
+  JournalReader, CsvReader (with RulesReader), TimeclockReader, TimedotReader
+- [Hledger.Query](https://github.com/hledgerorg/hledger/blob/main/hledger-lib/Hledger/Query.hs):
+  the query language, used for filtering in reports and UIs
+- [Hledger.Reports](https://github.com/hledgerorg/hledger/tree/main/hledger-lib/Hledger/Reports):
+  ReportOptions, BalanceReport, MultiBalanceReport, PostingsReport, BudgetReport, EntriesReport..
+- [Hledger.Write](https://github.com/hledgerorg/hledger/tree/main/hledger-lib/Hledger/Write):
+  output formats: Csv, Html, Ods/Spreadsheet, Beancount, Ledger
+- [Hledger.Utils](https://github.com/hledgerorg/hledger/tree/main/hledger-lib/Hledger/Utils):
+  Debug, Parse, Regex, String, Text, IO, Test helpers
+- [Hledger](https://github.com/hledgerorg/hledger/blob/main/hledger-lib/Hledger.hs)
+  re-exports all of the above, so most modules just `import Hledger`.
+
 ### hledger
 
 [package](https://hackage.haskell.org/package/hledger),
@@ -91,6 +108,25 @@ Amount -- AmountStyle
 [manual](https://hledger.org/hledger.html)
 
 hledger's command line interface, and command line options and utilities for other hledger tools.
+
+The main modules:
+
+- [Hledger.Cli.CliOptions](https://github.com/hledgerorg/hledger/blob/main/hledger/Hledger/Cli/CliOptions.hs):
+  command line options and their parsing (using cmdargs)
+- [Hledger.Cli.Commands](https://github.com/hledgerorg/hledger/tree/main/hledger/Hledger/Cli/Commands):
+  one module per command, listed in [Commands.hs](https://github.com/hledgerorg/hledger/blob/main/hledger/Hledger/Cli/Commands.hs);
+  the balancesheet/incomestatement/cashflow commands share
+  [CompoundBalanceCommand](https://github.com/hledgerorg/hledger/blob/main/hledger/Hledger/Cli/CompoundBalanceCommand.hs)
+- [Hledger.Cli.Utils](https://github.com/hledgerorg/hledger/blob/main/hledger/Hledger/Cli/Utils.hs):
+  reading the journal and other helpers for commands
+- [Hledger.Cli.Conf](https://github.com/hledgerorg/hledger/blob/main/hledger/Hledger/Cli/Conf.hs): config files
+- [Hledger.Cli.Script](https://github.com/hledgerorg/hledger/blob/main/hledger/Hledger/Cli/Script.hs):
+  a convenience module to import in hledger scripts
+
+Each command is a module `Somecommand.hs` and a doc `Somecommand.md` in Commands/.
+The doc is converted to `Somecommand.txt`, which is embedded in the module to provide `hledger somecommand --help`,
+and also included in the hledger manual.
+See [Commands/README.md](https://github.com/hledgerorg/hledger/blob/main/hledger/Hledger/Cli/Commands/README.md).
 
 Try tracing the execution of a hledger command:
 
@@ -110,16 +146,43 @@ and
 [hledger-lib:Hledger.Data](https://github.com/hledgerorg/hledger/tree/main/hledger-lib/Hledger/Data)
 and [hledger-lib:Hledger.Utils](https://github.com/hledgerorg/hledger/blob/main/hledger-lib/Hledger/Utils.hs).
 
+A suggested reading order for newcomers:
+[Hledger.Data.Types](https://github.com/hledgerorg/hledger/blob/main/hledger-lib/Hledger/Data/Types.hs) for the data model,
+[Hledger.Read.JournalReader](https://github.com/hledgerorg/hledger/blob/main/hledger-lib/Hledger/Read/JournalReader.hs) for how journals are parsed,
+a simple command like [Commands/Accounts.hs](https://github.com/hledgerorg/hledger/blob/main/hledger/Hledger/Cli/Commands/Accounts.hs)
+or [Commands/Balance.hs](https://github.com/hledgerorg/hledger/blob/main/hledger/Hledger/Cli/Commands/Balance.hs),
+and then the report it calls in Hledger.Reports.
+
 ### hledger-ui
 
 [package](https://hackage.haskell.org/package/hledger-ui),
 [code](https://github.com/hledgerorg/hledger/tree/main/hledger-ui),
 [manual](https://hledger.org/hledger-ui.html)
 
-A terminal interface, built with [brick](https://hackage.haskell.org/package/brick).
-Each screen is a module under [Hledger/UI](https://github.com/hledgerorg/hledger/tree/main/hledger-ui/Hledger/UI)
-(MenuScreen, AccountsScreen, RegisterScreen, TransactionScreen, ErrorScreen),
-with the app state in UIState and shared drawing/key handling helpers in UIUtils.
+A terminal interface, built with [brick](https://hackage.haskell.org/package/brick) and vty.
+It reads the journal file(s) at startup and, with `--watch`, again whenever they change.
+Screens are kept on a stack, so that going into an account register or a transaction and back out restores the previous view.
+
+The main modules, all under [Hledger/UI](https://github.com/hledgerorg/hledger/tree/main/hledger-ui/Hledger/UI):
+
+- [Main](https://github.com/hledgerorg/hledger/blob/main/hledger-ui/Hledger/UI/Main.hs):
+  startup, the brick app definition, file watching and date change detection
+- [UIOptions](https://github.com/hledgerorg/hledger/blob/main/hledger-ui/Hledger/UI/UIOptions.hs): command line options
+- [UITypes](https://github.com/hledgerorg/hledger/blob/main/hledger-ui/Hledger/UI/UITypes.hs):
+  the app state (`UIState`), the `Screen` type and each screen's state type, widget names
+- [UIState](https://github.com/hledgerorg/hledger/blob/main/hledger-ui/Hledger/UI/UIState.hs):
+  app state updates: toggling filters, depth, tree mode, lot detail, etc.
+- [UIScreens](https://github.com/hledgerorg/hledger/blob/main/hledger-ui/Hledger/UI/UIScreens.hs):
+  constructors and updaters for all screens, gathered here so any screen can (re)generate the others
+- MenuScreen, AccountsScreen, RegisterScreen, TransactionScreen, ErrorScreen:
+  each screen's drawing and event handling.
+  AccountsScreen serves the all accounts, cash, balance sheet and income statement screens.
+- [UIUtils](https://github.com/hledgerorg/hledger/blob/main/hledger-ui/Hledger/UI/UIUtils.hs):
+  shared drawing and key handling helpers, the help dialog, suspend/resume, warning collection
+- [Editor](https://github.com/hledgerorg/hledger/blob/main/hledger-ui/Hledger/UI/Editor.hs): launching an external editor at a file position
+- [Theme](https://github.com/hledgerorg/hledger/blob/main/hledger-ui/Hledger/UI/Theme.hs): the colour themes
+
+Manual test procedures are in [test/uitest.md](https://github.com/hledgerorg/hledger/blob/main/hledger-ui/test/uitest.md).
 
 ### hledger-web
 
@@ -150,34 +213,29 @@ Handler module and function names end with R, like the yesod-generated route typ
 Dynamically generated page content is mostly inline hamlet.
 Lucius/Julius files and widgets generally are not used, except for the default layout.
 
-Here are some ways to run it during development:
+For ways to run it during development, see
+[Run hledger-web in development](DEVWORKFLOWS.md#run-hledger-web-in-development).
 
-- `yesod devel`: runs in developer mode, rebuilds automatically when config, template, static or haskell files change
-(but only files in the hledger-web package):
-```cli
-$ (cd hledger-web; yesod devel)
-```
+## Conventions
 
-- [yesod-fast-devel](https://hackage.haskell.org/package/yesod-fast-devel)
-  may be a good alternative, also reloads the browser page
+- Functions for a type in Hledger.Data.Types live in Hledger.Data.TYPENAME (Amount, Posting, Journal, ..).
+- Module name suffixes: `*Reader` parses an input format, `*Report` computes a report,
+  `*Options` declares command line options; in hledger-web, `*R` is a route handler.
+- Most modules `import Hledger`, which re-exports the hledger-lib API.
+- Tags whose names begin with `_` are hidden tags for internal use; `print` shows them only with `--verbose-tags`.
+- Code style: post-qualified imports (`import Data.Map qualified as M`),
+  and the -Wall variant shown in [DEVWORKFLOWS](DEVWORKFLOWS.md#type-check-quickly).
+- Keep imports compatible with the oldest supported GHC (see `tested-with:` in hledger-lib/package.yaml).
 
-- `stack ghci`: runs the server in developer mode from GHCI.
-Changes to static files like hledger.js will be visible on page reload;
-to see other changes, restart it as shown.
-```cli
-$ (cd hledger-web; stack ghci hledger-web)
-hledger-web> :main --serve   # restart: ctrl-c, :r, enter, ctrl-p, ctrl-p, enter
-```
+## Debug output
 
-- `just ghci-web`: runs the server in developer mode from GHCI, also
-interpreting the hledger-lib and hledger packages so that :reload picks
-up changes in those packages too:
-```cli
-$ just ghci-web
-ghci> :main --serve
-```
-
-See also [Use GHCI](DEVWORKFLOWS.md#use-ghci) in DEVWORKFLOWS.
+The main hledger programs accept `--debug[=N]` (N from 1 to 9), which prints debug output on stderr
+(hledger-ui logs it to `hledger-ui.log` instead, since it is redrawing the screen).
+In code, use the `dbg0`..`dbg9` helpers from
+[Hledger.Utils.Debug](https://github.com/hledgerorg/hledger/blob/main/hledger-lib/Hledger/Utils/Debug.hs),
+eg `dbg4 "report" x` prints a label and the pretty-printed value when the debug level is 4 or more.
+Levels are used roughly as: 0 for unconditional logging during development, 1 warnings and common troubleshooting, 
+3-5 report options and generation, 6-7 input file reading, 8 command line parsing, 9 anything else; see the module's haddock.
 
 ## Tests
 

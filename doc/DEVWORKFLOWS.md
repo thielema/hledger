@@ -170,6 +170,37 @@ Or use stack directly, eg:
 hledger-web also needs to find some things in its current directory (like the static/ directory).
 This normally just works, if not please [send details](https://github.com/hledgerorg/hledger/issues/274).
 
+## Run hledger-web in development
+
+Some ways to run hledger-web while working on it:
+
+- `yesod devel`: runs in developer mode, rebuilds automatically when config, template, static or haskell files change
+(but only files in the hledger-web package):
+```cli
+$ (cd hledger-web; yesod devel)
+```
+
+- [yesod-fast-devel](https://hackage.haskell.org/package/yesod-fast-devel)
+  may be a good alternative, also reloads the browser page
+
+- `stack ghci`: runs the server in developer mode from GHCI.
+Changes to static files like hledger.js will be visible on page reload;
+to see other changes, restart it as shown.
+```cli
+$ (cd hledger-web; stack ghci hledger-web)
+hledger-web> :main --serve   # restart: ctrl-c, :r, enter, ctrl-p, ctrl-p, enter
+```
+
+- `just ghci-web`: runs the server in developer mode from GHCI, also
+interpreting the hledger-lib and hledger packages so that :reload picks
+up changes in those packages too:
+```cli
+$ just ghci-web
+ghci> :main --serve
+```
+
+See also [Use GHCI](#use-ghci) above.
+
 ## Use ghcid for watching GHC/GHCI
 
 [ghcid](https://hackage.haskell.org/package/ghcid) is the most reliable and fastest way to see GHC's feedback,
