@@ -789,6 +789,10 @@ Multi-period multi-currency reports can often be wider than the window. Besides 
 helpful techniques for this situation include
 `--layout=bare`, `-X COMM`, `cur:`, `--transpose`, `--tree`, `--depth`, `--drop`, switching to html output, etc.
 
+The display style of amounts (symbol placement, decimal and digit group marks, number of decimal digits)
+is inferred per commodity, and can be overridden with `-c/--commodity-style`;
+see [Amount formatting](#amount-formatting).
+
 #### Box-drawing characters
 
 hledger draws simple table borders by default, to minimise the risk of display problems
@@ -1037,30 +1041,6 @@ If you find this causing problems, please let us know.
 Related: [#1195](https://github.com/hledgerorg/hledger/issues/1195)
 
 This is not yet much used; feedback is welcome.
-
-## Commodity styles
-
-When displaying amounts, hledger infers a standard display style for
-each commodity/currency, as described below in
-[Commodity display style](#commodity-display-style).
-
-If needed, this can be overridden by a `-c/--commodity-style` option
-(though for [cost amounts](#costs) and amounts displayed
-by the [`print`](#print) command, it affects only the symbol placement and
-digit group/decimal marks; those amounts are always displayed with all
-decimal digits).
-For example, the following will force dollar amounts to be displayed as shown:
-
-```cli
-$ hledger print -c '$1.000,0'
-```
-
-This option can be repeated to set the display style for multiple
-commodities/currencies. Its argument is as described in 
-the [commodity directive](#commodity-directive). Note that omitting the commodity symbol will set the display style for just the no-symbol commodity, not all commodities.
-
-In some cases hledger will adjust number formatting to improve their parseability
-(such as adding [trailing decimal marks](#trailing-decimal-marks) when needed).
 
 ## Debug output
 
@@ -6146,8 +6126,30 @@ And as fallback if no applicable amounts are found, it would use a
 default style, like `$1000.00` (symbol on the left with no space,
 period as decimal mark, and two decimal digits).
 
-Finally, commodity styles can be [overridden](#commodity-styles) by
-the `-c/--commodity-style` command line option.
+Finally, commodity styles can be overridden by
+the `-c/--commodity-style` command line option, described next.
+
+<a name="commodity-styles"></a>
+
+## Commodity style override
+
+The `-c/--commodity-style` option overrides a commodity's declared or inferred display style, for the current command.
+Its argument is a sample amount, as in the [commodity directive](#commodity-directive).
+Eg, to show dollar amounts with period digit group marks, comma decimal mark, and one decimal digit:
+
+```cli
+$ hledger print -c '$1.000,0'
+```
+
+Some things to note:
+
+- The option can be repeated, to set the display style of several commodities.
+- Omitting the commodity symbol sets the style of just the no-symbol commodity, not of all commodities.
+- For [cost amounts](#costs), and amounts displayed by the [`print`](#print) command,
+  it affects only the symbol placement and digit group/decimal marks;
+  those amounts are always displayed with all of their decimal digits.
+- In some cases hledger will adjust number formatting to improve parseability,
+  eg by adding [trailing decimal marks](#trailing-decimal-marks) when needed.
 
 ## Rounding
 
