@@ -213,11 +213,11 @@ You can get JSON data from these routes:
 /openapi.json
 ```
 
-Eg, all account names in the journal (similar to the [accounts](hledger.html#accounts) command).
+Eg, all account names in the journal (similar to the [accounts](hledger.md#accounts) command).
 (hledger-web's JSON does not include newlines, here we use python to prettify it):
 
 ```cli
-$ curl -s http://127.0.0.1:5000/accountnames | python -m json.tool
+$ curl -s http://127.0.0.1:5000/accountnames | python3 -m json.tool
 [
     "assets",
     "assets:bank",
@@ -238,7 +238,7 @@ $ curl -s http://127.0.0.1:5000/accountnames | python -m json.tool
 Or all transactions:
 
 ```cli
-$ curl -s http://127.0.0.1:5000/transactions | python -m json.tool
+$ curl -s http://127.0.0.1:5000/transactions | python3 -m json.tool
 [
     {
         "tcode": "",
@@ -262,7 +262,7 @@ Most of the JSON corresponds to hledger's data types; for details of what the fi
 [Hledger.Data.Json haddock docs](https://hackage.haskell.org/package/hledger-lib/docs/Hledger-Data-Json.html)
 and click on the various data types, eg 
 [Transaction](https://hackage.haskell.org/package/hledger-lib/docs/Hledger-Data-Types.html#t:Transaction).
-And for a higher level understanding, see the [journal docs](hledger.html#journal).
+And for a higher level understanding, see the [journal docs](hledger.md#journal).
 There is also a basic [OpenAPI specification][openapi.yaml], also served at `/openapi.json`.
 
 [openapi.yaml]: https://github.com/hledgerorg/hledger/blob/main/hledger-web/config/openapi.yaml
@@ -284,13 +284,13 @@ if hledger-web was started with `--allow=add` (the default when listening on a l
 The payload must be the full, exact JSON representation of a hledger transaction
 (partial data won't do).
 You can get sample JSON from hledger-web's `/transactions` or `/accounttransactions`,
-or from hledger's print command, eg:
+or from hledger's print command. Eg, this saves the first transaction of the sample journal to `txn.json`:
 
 ```cli
-$ hledger -f examples/sample.journal print -O json | python -m json.tool > txns.json
+$ hledger -f examples/sample.journal print -O json | python3 -c 'import json,sys; json.dump(json.load(sys.stdin)[0], sys.stdout, indent=4)' > txn.json
 ```
 
-Here's how one transaction looks
+Here's how it looks
 (remember, this JSON corresponds to hledger's
 [Transaction](https://hackage.haskell.org/package/hledger-lib/docs/Hledger-Data-Types.html#t:Transaction)
 and related data types):
@@ -374,12 +374,12 @@ and related data types):
         {
             "sourceColumn": 1,
             "sourceLine": 31,
-            "sourceName": "/Users/simon/src/hledger/examples/sample.journal"
+            "sourceName": "/home/user/hledger/examples/sample.journal"
         },
         {
             "sourceColumn": 1,
             "sourceLine": 34,
-            "sourceName": "/Users/simon/src/hledger/examples/sample.journal"
+            "sourceName": "/home/user/hledger/examples/sample.journal"
         }
     ],
     "tstatus": "Unmarked",
@@ -387,7 +387,7 @@ and related data types):
 }
 ```
 
-And here's how to test adding it with curl. This should add a new entry to your journal:
+And here's how to add it with curl. This should append a new entry to your journal file:
 
 ```cli
 $ curl http://127.0.0.1:5000/add -X PUT -H 'Content-Type: application/json' --data-binary @txn.json
