@@ -189,38 +189,15 @@ and [DEVWORKFLOWS](DEVWORKFLOWS.md#run-package-tests) for how to run them.
 
 ## Haddock comments
 
-Haddock comments are the standard way of attaching docs (and sometimes small tests)
-to a haskell definition, and they are used pervasively in the hledger codebase.
-There is no hard requirement for them, and the bar can be lower
-in single-purpose, less-frequently-developed modules like FODS.hs.
-But most definitions should have at least a line of english description,
-and this is something we consider when reviewing code.
-Obviously redundant haddocks that add no value are to be avoided.
+hledger is a documentation-driven project, and this is one reason it has held together and kept improving for so long.
+(More discussion in [#2222](https://github.com/hledgerorg/hledger/pull/2222).)
 
-Why (from [#2222](https://github.com/hledgerorg/hledger/pull/2222)):
+Haddock comments are used pervasively in the hledger codebase, and they are considered when reviewing code.
+There is no hard requirement, but most definitions should have at least a line of english description.
+The bar can be lower in single-purpose, rarely-changed modules like FODS.hs,
+and obviously redundant haddocks that add no value should be avoided.
 
-Haddocks help guide and anchor the developer while writing or changing code.
-They are the cheapest kind of doc, spec and test suite.
-They also create a place to add actual doctests, now or later.
-
-Haddocks can be helpful to contributors who are not expert haskellers, which happens quite often in the hledger project.
-The human language descriptions complement the code, reducing cognitive effort and helping with mental chunking.
-People seem to find hledger's code, with its pervasive haddocks, above average in readability,
-and we have probably had more successful contributions as a result.
-
-Haddocks also help experienced developers move faster.
-Code which seems clear and obvious when you are writing it is often less obvious a few weeks or years later,
-and less obvious to others than we might think.
-When debugging or coding we are often mentally stretched and would prefer to conserve brainpower for the main task.
-
-In SM's experience debugging/writing/changing hledger code:
-
-- Number of times I've regretted seeing a haddock comment attached to some code: almost zero.
-- Effort to remove an excessive haddock: almost zero.
-- Number of times I've been trying to understand some contributed code and haddocks would have saved my time: quite a few.
-- Number of times I've appreciated code haddocks and found them helpful: many.
-- Number of times I've found errors or staleness in haddocks: not often.
-- Effort to fix wrong haddocks, or to write new ones: usually very low. And if it's high, it's usually very worthwhile because it alerts me to a confusion in the code or clarifies my thinking.
-
-hledger is a documentation-driven project, with docs in general being a top priority.
-This is probably one reason it has held together and kept improving over a long period.
+Why: haddocks anchor the developer while writing or changing code;
+they are the cheapest kind of doc, spec and test suite, and a place to add doctests later;
+they help contributors who are not expert haskellers, and experienced developers returning to code months or years later.
+They also help AI tools work effectively on the hledger codebase.
