@@ -56,6 +56,16 @@ Docs recommend users to always keep `B = T`, and to use the `basis` check to che
 with reasons provided (prevent wrong gain caused by basis typos).
 The new check might be moved into strict mode some day, but not yet.
 
+### Amount keys are commodity plus transacted cost only
+
+`MixedAmountKey`, which decides which amounts combine in `MixedAmount` arithmetic and aggregated reports,
+was simplified to commodity plus transacted cost.
+Cost basis was removed from it, since in `--lots` mode lot identity is carried by lot subaccounts,
+and no report aggregates by cost basis.
+Transacted cost stays, because balance assignments and balance inference rely on keeping
+same-commodity, different-cost amounts separate.
+(Background: doc/NOTE-amount-keys.md in git history, removed 2026-09.)
+
 ### hledger-web is read only by default on a public address
 
 When listening on a non-local address, hledger-web now defaults to read-only;

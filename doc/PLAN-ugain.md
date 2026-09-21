@@ -15,9 +15,9 @@ on the spot.
 This was the trade-off discussed in commit
 [80b320acc](https://github.com/hledgerorg/hledger/commit/80b320acc):
 that commit chose not to generate revaluation postings, paying the cost of
-a less inspectable ugain in exchange for less synthetic noise. The
-disposal-only-gain rework documented in `PLAN-gain-checking.md` (the
-parent of this doc) is forward-compatible with continuous ugain tracking
+a less inspectable ugain in exchange for less synthetic noise.
+The disposal-only-gain rework (see that commit, and "Compute realised gain
+from the disposal postings only" in DECISIONS.md) is forward-compatible with continuous ugain tracking
 — the synthetic `rgain`+`ugain` pair shape we kept is exactly what
 disposal-time reclassification would produce.
 
