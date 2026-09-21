@@ -96,12 +96,15 @@ mouse or touchpad:
 # KEYS
 
 Keyboard gives more control.
-
 `?` shows a help dialog listing all keys.
 (Some of these also appear in the quick help at the bottom of each screen.)
 Press `?` again (or `ESCAPE`, or `LEFT`, or `q`) to close it.
 While it is open, `p`, `m` or `i` show this manual in a pager, man or info.
-The following keys work on most screens:
+
+The following keys work on most screens.
+Additional screen-specific keys are described under [SCREENS](#screens) below.
+
+## Navigation keys
 
 The cursor keys navigate:
 `RIGHT` or `ENTER` goes deeper,
@@ -114,6 +117,15 @@ movement keys are also supported.
 
 (Tip: movement speed is limited by your keyboard repeat rate, to move faster you may want to adjust it.
 On a mac, the Karabiner app is one way to do that.)
+
+`ESCAPE` resets the UI state and jumps back to the top screen,
+restoring the app's initial state at startup.
+Or, it cancels minibuffer data entry or the help dialog.
+
+`CTRL-l` redraws the screen and centers the selection if possible
+(selections near the top won't be centered, since we don't scroll above the top).
+
+## Filtering keys
 
 `/` lets you set a general filter query limiting the data shown,
 using the same [query terms](hledger.md#queries) as in hledger and hledger-web.
@@ -138,22 +150,12 @@ the view will follow any changes in system date (moving to the period containing
 You can also specify a non-standard period with `/` and a `date:` query;
 in this case, the period is not movable with the arrow keys.
 
-(Tip: arrow keys with Shift do not work out of the box in all terminal software.
-Eg in Apple's Terminal, the SHIFT-DOWN and SHIFT-UP keys must be configured as follows:
-in Terminal's preferences, click Profiles,
-select your current profile on the left,
-click Keyboard on the right,
-click + and add this for SHIFT-DOWN: `\033[1;2B`,
-click + and add this for SHIFT-UP:   `\033[1;2A`. <!-- Press the Escape key to enter the `\033` part, you can't type it directly.) -->
-In other terminals (Windows Terminal ?) you might need to configure SHIFT-RIGHT and SHIFT-LEFT
-to emit `\033[1;2C` and `\033[1;2D` respectively.)
+(Tip: shifted arrow keys don't work out of the box in all terminals.
+In Apple's Terminal, SHIFT-DOWN and SHIFT-UP must be added in Preferences > Profiles > Keyboard,
+sending `\033[1;2B` and `\033[1;2A` respectively.
+Other terminals may need SHIFT-RIGHT and SHIFT-LEFT configured to send `\033[1;2C` and `\033[1;2D`.)
 
-`ESCAPE` resets the UI state and jumps back to the top screen,
-restoring the app's initial state at startup.
-Or, it cancels minibuffer data entry or the help dialog.
-
-`CTRL-l` redraws the screen and centers the selection if possible
-(selections near the top won't be centered, since we don't scroll above the top).
+## Other keys
 
 `g` reloads from the data file(s) and updates the current screen and any
 previous screens. (With large files, this could cause a noticeable pause.)
@@ -199,8 +201,6 @@ Cost/value tips:
 
 `CTRL-z` suspends it, returning to the shell; resume it with `fg` as usual.
 
-Additional screen-specific keys are described below.
-
 # SCREENS
 
 At startup, hledger-ui shows a menu screen by default.
@@ -210,6 +210,12 @@ Or you can use `ESC` to return directly to the top menu screen.
 
 You can also use a command line flag to specify a different startup screen
 (`--cash`, `--bs`, `--is`, `--all`, or `--register=ACCT`).
+
+On the four accounts screens, `t` toggles between tree mode and list mode,
+and you can limit the account depth shown: `1` to `9` set the depth limit,
+`0` sets it to zero (showing just a single total),
+and `-` and `+` (or `_` and `=`) decrease and increase it.
+`DELETE` resets it, along with any other filters.
 
 ## Menu screen
 
@@ -236,11 +242,6 @@ It always shows changes (balance changes in the period shown in the title line).
 
 This screen shows all accounts in your journal (unless filtered by a query; like `hledger balance`).
 It shows balances by default; you can toggle showing changes with the `H` key.
-
-You can limit the account depth shown: `1` to `9` set the depth limit,
-`0` sets it to zero (showing just a single total),
-and `-` and `+` (or `_` and `=`) decrease and increase it.
-`DELETE` resets it, along with any other filters.
 
 ## Register screen
 
