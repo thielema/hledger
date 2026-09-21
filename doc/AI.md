@@ -1,6 +1,6 @@
 # AI policy
 
-Last updated: 2026-09-11
+Last updated: 2026-09-21
 
 The productivity benefits from AI-assisted software development are becoming obvious.
 And the disruptions, costs and risks of AI will keep becoming clearer.
@@ -9,10 +9,6 @@ From 2026, in the hledger 2.x series, we are exploring ethical and effective use
 
 If you are a hledger user who objects to any use of AI, for one reason or another: I can understand.
 The AI-free hledger 1.x still exists, will continue to receive regression fixes, and can be revived or forked at any time.
-
-Since writing this policy, I applied for and received Anthropic's FOSS 6-month Claude Max credit (currently worth $1200),
-and activated it from 2026-04-01.
-This is helping recover the costs I incurred during initial experimentation.
 
 ## Justification for AI use in this project
 
@@ -57,13 +53,13 @@ Here are our current policies for AI use in hledger.
    At any time we can stop using AI and keep moving forward.
 
 4. We require disclosure of non-trivial AI usage, including
-  the provider, model, and a rough estimate of output tokens used.
-  Eg, in your main commit: "AI usage: Claude Opus 4.8, ~10k output tokens."
-  See also "Measuring usage" below.
-  
+   the provider, model, and a rough estimate of output tokens used.
+   Eg, in your main commit: "AI usage: Claude Opus 4.8, ~10k output tokens."
+   See also "Measuring usage" below.
+
 5. We try to use the more principled/trustworthy tools and providers,
-  such as local LLMs, Ecosia, Anthropic.
-  We don't use OpenAI models (GPT series, o-series, etc).
+   such as local LLMs, Ecosia, Anthropic.
+   We don't use OpenAI models (GPT series, o-series, etc).
 
 6. First-time hledger contributors must not use any AI-generated code, tests or docs in their first merged pull request.
    Human-generated commit messages and discussion are also encouraged.
@@ -84,7 +80,6 @@ Here are our current policies for AI use in hledger.
 
 - Choosing to avoid AI use entirely will become increasingly hard if not impossible.
 But it's one possible stance, requiring Amish- or Stallman-like discipline.
-(FSF is working on an AI policy, which will be interesting to read.)
 My gut feeling is that absolute non-engagement isn't the right course for most of us.
 It's possible that could change.
 
@@ -128,8 +123,8 @@ sm: I feel like the lots branch is essentially human-authored, using powerful to
 Similar in principle to how the compiled machine code was human-authored, using a compiler to generate it. 
 Of course it's a spectrum, and we'll find out what the various courts decide.
 
+### Is AI-generated code a copyright time bomb ?
 
-Re "generated code seems like a potential time bomb": because of copyright/licensing reasons ?
 I think hledger has less to lose there than a large business; we are a GPLv3+ project,
 which means in practice nothing depends on us except similar projects.
 Worst case, we roll back to hledger 1.x and rewrite things by hand.
@@ -177,7 +172,7 @@ Some notes on tracking AI usage:
 
 ### Anthropic API
 
-For the initial lots work in the 2.0pre1 release, 
+For the initial lots work in the first 2.0 preview release (1.99.1),
 here's my (SM's) estimated claude input+output tokens and costs,
 from <https://platform.claude.com/usage>:
 
@@ -190,13 +185,14 @@ Estimated human dev time: ~150h, market value ~$10k-30k
 
 ### Anthropic monthly plan
 
-From 2026-04, I'm using the 6-month FOSS Claude Max plan, donated by Anthropic.
+From 2026-04-01, I'm using Anthropic's 6-month FOSS Claude Max plan (worth about $1200),
+which I applied for and received after writing this policy.
+It is helping recover the costs of the initial experimentation above.
 
-[ccusage](https://ccusage.com) shows data from the claude code chat logs on your machine.
-Probably it stops showing data if old chat logs get cleaned up or lost.
-
-I believe the chat logs have data for both API and monthly plan usage.
-For me ccusage shows numbers much lower than the ones from platform.claude.com above, I'm not sure why.
+[ccusage](https://ccusage.com) shows data from the claude code chat logs on your machine,
+for both API and monthly plan usage.
+It sees only the chat logs still present on the machine, so it can undercount;
+for me it shows numbers much lower than the ones from platform.claude.com above.
 
 `just h ai-` shows some related Justfile scripts.
 Each month I import my estimated claude code usage data, summarised, to the project's ai.journal.
@@ -251,8 +247,7 @@ Other contributors' usage estimates can be added here too.
 - <https://legallayer.substack.com/p/who-owns-the-claude-code-wrote> ([discussion](https://news.ycombinator.com/item?id=47932937))
 
 ### Risks
-- <https://simonwillison.net/2025/Jun/16/the-lethal-trifecta/>
-and so many more.
+- <https://simonwillison.net/2025/Jun/16/the-lethal-trifecta/> (one of many)
 
 ### Tools
 - <https://ccusage.com>
