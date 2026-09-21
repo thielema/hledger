@@ -211,10 +211,17 @@ You can use the [check](#check) command to run individual checks - the ones list
 hledger provides various subcommands for getting things done.
 Most of these commands do not change the journal file; they just read it and output a report.
 A few commands assist with adding data and file management.
-Some often-used commands are `add`, `print`, `register`, `balancesheet` and `incomestatement`.
+Some commands to start with:
+
+- `hledger add` - add transactions, with interactive prompts
+- `hledger print` - show journal entries
+- `hledger balance` (`bal`) - show account balances
+- `hledger aregister assets:checking` (`areg`) - show one account's transactions and running balance
+- `hledger balancesheet` (`bs`) - show assets, liabilities and net worth
+- `hledger incomestatement` (`is`) - show revenues and expenses
 
 To show a summary of commands, run `hledger` with no arguments.
-See also [PART 4: COMMANDS](#part-4-commands) below.
+See also [PART 2: COMMANDS](#part-2-commands) below.
 
 To use a particular command, run `hledger CMD [CMDOPTS] [CMDARGS]`,
 
@@ -1029,7 +1036,102 @@ If this environment variable exists (with any value, including empty),
 hledger will not use ANSI color codes in terminal output,
 unless overridden by an explicit `--color=y` or `--colour=y` option.
 
-# PART 2: DATA FORMATS
+# PART 2: COMMANDS
+
+
+<a name="commands-overview"></a>
+
+Here are hledger's standard [subcommands](#commands).
+You can list these by running `hledger help commands`.
+If you have installed more [add-on commands](../scripts.md), they also will be listed.
+
+In the following command docs, each command's specific options are shown.
+Most commands also support the [general options](#options) described above, though some of them might have no effect.
+(Usually if there's a sensible way for a general option to affect a command, it will.)
+You can list all of a command's options by running `hledger CMD -h`.
+
+<!-- keep commands & descriptions synced with Hledger.Cli.Commands.commandsListSections, commands.m4 -->
+
+**[Help commands](#help-commands)**
+
+- [help](#help) (h)                                - show documentation
+
+**[User interface commands](#user-interface-commands)**
+
+- [repl](#repl)                                    - run multiple commands from an interactive prompt
+- [run](#run)                                      - run multiple commands from a file or command line
+- [ui](hledger-ui.md)                              - (if installed) run hledger's terminal UI
+- [web](hledger-web.md)                            - (if installed) run hledger's web UI
+
+**[Data entry commands](#data-entry-commands)**
+
+- [add](#add)                                      - add transactions using terminal prompts
+- [import](#import)                                - add new transactions from other files, eg CSV files
+
+**[Basic report commands](#basic-report-commands)**
+
+- [accounts](#accounts) (acc)                      - show account names
+- [codes](#codes)                                  - show transaction codes
+- [commodities](#commodities) (comm)               - show commodity/currency symbols
+- [descriptions](#descriptions) (desc)             - show transaction descriptions
+- [files](#files)                                  - show input files in use
+- [notes](#notes)                                  - show note part of transaction descriptions
+- [payees](#payees)                                - show payee part of transaction descriptions
+- [prices](#prices)                                - show market prices
+- [stats](#stats)                                  - show journal statistics
+- [tags](#tags-1)                                  - show tag names
+- [transactions](#transactions) (tx)               - show transactions, one per line
+
+**[Standard report commands](#standard-report-commands)**
+
+- [print](#print)                                  - show journal entries, or export journal data
+- [aregister](#aregister) (areg)                   - show transactions & running balance in one account
+- [register](#register) (reg)                      - show postings & running total across accounts
+- [balancesheet](#balancesheet) (bs)               - show assets, liabilities and net worth
+- [balancesheetequity](#balancesheetequity) (bse)  - show assets, liabilities and equity
+- [cashflow](#cashflow) (cf)                       - show changes in liquid assets
+- [incomestatement](#incomestatement) (is)         - show revenues and expenses
+
+**[Advanced report commands](#advanced-report-commands)**
+
+- [balance](#balance) (bal)                        - show balance changes, end balances, gains, budgets..
+- [holdings](#holdings)                            - show investment holdings
+- [roi](#roi)                                      - show return on investments
+
+**[Chart commands](#chart-commands)**
+
+- [activity](#activity)                            - show posting counts as a bar chart
+
+**[Data generation commands](#data-generation-commands)**
+
+- [close](#close)                                  - generate transactions to zero/restore/assert balances
+- [get](#get)                                      - fetch new transactions and market price data
+- [rewrite](#rewrite)                              - generate auto postings, like print --auto
+
+**[Maintenance commands](#maintenance-commands)**
+
+- [check](#check)                                  - check for various kinds of error in the data
+- [diff](#diff)                                    - compare an account's transactions in two journals
+- [setup](#setup)                                  - check and show the status of the hledger installation
+- [test](#test)                                    - run self tests
+
+
+m4_dnl XXX maybe later
+m4_dnl _man_({{
+m4_dnl For detailed command docs please see the appropriate man page (eg `man hledger-print`), 
+m4_dnl or the info or web format of this manual.
+m4_dnl }})
+m4_dnl _notman_({{
+
+Next, these commands are described in detail.
+
+m4_dnl Include the command docs. Each starts with a level 2 heading.
+m4_dnl (To change that, see Hledger/Cli/Commands/{*.md,commands.m4})
+_commands_
+
+<a name="common-tasks"></a>
+
+# PART 3: DATA FORMATS
 
 <a name="journal-format"></a>
 
@@ -5028,7 +5130,7 @@ $ hledger -f a.timedot --alias '/\./=:' bal -t
                 4.50  
 ```
 
-# PART 3: REPORTING CONCEPTS
+# PART 4: REPORTING CONCEPTS
 
 # Time periods
 
@@ -5389,8 +5491,7 @@ Here's a quick overview of hledger's queries:
   Eg: `hledger print expr:'date:2022 and (desc:amazon or desc:amzn) and not date:202210'`\
 
 All hledger commands use the same query language, but different commands may interpret the query in different ways.
-We haven't described the commands yet (that's coming in [PART 4: COMMANDS](#part-4-commands) below)
-but here's the gist of it:
+Here's the gist of it (see [PART 2: COMMANDS](#part-2-commands) above for the commands):
 
 - Transaction-oriented commands
   (`print`, `aregister`, `close`, `import`, `descriptions`..)
@@ -7647,101 +7748,6 @@ To also add visible tags, use `--verbose-tags` (useful for troubleshooting).
 | `ptype:rgain`         | A generated realised-gain posting on a `Gain`-type account                                                                                                               | Marks hledger-inferred realised capital gain/loss in a disposal                                       |
 | `ptype:ugain`         | A generated unrealised-gain posting on an `UnrealisedGain`-type account                                                                                                  | Marks the balancing posting so the disposal sums to zero at transacted cost                           |
 
-# PART 4: COMMANDS
-
-
-<a name="commands-overview"></a>
-
-Here are hledger's standard [subcommands](#commands).
-You can list these by running `hledger help commands`.
-If you have installed more [add-on commands](../scripts.md), they also will be listed.
-
-In the following command docs, each command's specific options are shown.
-Most commands also support the [general options](#options) described above, though some of them might have no effect.
-(Usually if there's a sensible way for a general option to affect a command, it will.)
-You can list all of a command's options by running `hledger CMD -h`.
-
-<!-- keep commands & descriptions synced with Hledger.Cli.Commands.commandsListSections, commands.m4 -->
-
-**[Help commands](#help-commands)**
-
-- [help](#help) (h)                                - show documentation
-
-**[User interface commands](#user-interface-commands)**
-
-- [repl](#repl)                                    - run multiple commands from an interactive prompt
-- [run](#run)                                      - run multiple commands from a file or command line
-- [ui](hledger-ui.md)                              - (if installed) run hledger's terminal UI
-- [web](hledger-web.md)                            - (if installed) run hledger's web UI
-
-**[Data entry commands](#data-entry-commands)**
-
-- [add](#add)                                      - add transactions using terminal prompts
-- [import](#import)                                - add new transactions from other files, eg CSV files
-
-**[Basic report commands](#basic-report-commands)**
-
-- [accounts](#accounts) (acc)                      - show account names
-- [codes](#codes)                                  - show transaction codes
-- [commodities](#commodities) (comm)               - show commodity/currency symbols
-- [descriptions](#descriptions) (desc)             - show transaction descriptions
-- [files](#files)                                  - show input files in use
-- [notes](#notes)                                  - show note part of transaction descriptions
-- [payees](#payees)                                - show payee part of transaction descriptions
-- [prices](#prices)                                - show market prices
-- [stats](#stats)                                  - show journal statistics
-- [tags](#tags-1)                                  - show tag names
-- [transactions](#transactions) (tx)               - show transactions, one per line
-
-**[Standard report commands](#standard-report-commands)**
-
-- [print](#print)                                  - show journal entries, or export journal data
-- [aregister](#aregister) (areg)                   - show transactions & running balance in one account
-- [register](#register) (reg)                      - show postings & running total across accounts
-- [balancesheet](#balancesheet) (bs)               - show assets, liabilities and net worth
-- [balancesheetequity](#balancesheetequity) (bse)  - show assets, liabilities and equity
-- [cashflow](#cashflow) (cf)                       - show changes in liquid assets
-- [incomestatement](#incomestatement) (is)         - show revenues and expenses
-
-**[Advanced report commands](#advanced-report-commands)**
-
-- [balance](#balance) (bal)                        - show balance changes, end balances, gains, budgets..
-- [holdings](#holdings)                            - show investment holdings
-- [roi](#roi)                                      - show return on investments
-
-**[Chart commands](#chart-commands)**
-
-- [activity](#activity)                            - show posting counts as a bar chart
-
-**[Data generation commands](#data-generation-commands)**
-
-- [close](#close)                                  - generate transactions to zero/restore/assert balances
-- [get](#get)                                      - fetch new transactions and market price data
-- [rewrite](#rewrite)                              - generate auto postings, like print --auto
-
-**[Maintenance commands](#maintenance-commands)**
-
-- [check](#check)                                  - check for various kinds of error in the data
-- [diff](#diff)                                    - compare an account's transactions in two journals
-- [setup](#setup)                                  - check and show the status of the hledger installation
-- [test](#test)                                    - run self tests
-
-
-m4_dnl XXX maybe later
-m4_dnl _man_({{
-m4_dnl For detailed command docs please see the appropriate man page (eg `man hledger-print`), 
-m4_dnl or the info or web format of this manual.
-m4_dnl }})
-m4_dnl _notman_({{
-
-Next, these commands are described in detail.
-
-m4_dnl Include the command docs. Each starts with a level 2 heading.
-m4_dnl (To change that, see Hledger/Cli/Commands/{*.md,commands.m4})
-_commands_
-
-<a name="common-tasks"></a>
-
 # PART 5: COMMON TASKS
 
 For a gentle, step by step introduction to hledger - installing, starting a journal,
@@ -8007,7 +8013,7 @@ m4_dnl Be wary of pandoc/mdbook handling [shortcut] link syntax differently ?
 [balancesheet]:        #balancesheet
 [balancesheetequity]:  #balancesheetequity
 [cashflow]:            #cashflow
-[commands-list]:       #part-4-commands
+[commands-list]:       #part-2-commands
 [common tasks]:        #common-tasks
 [csv]:                 #csv
 [directives]:          #directives
