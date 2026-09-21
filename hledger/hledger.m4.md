@@ -96,7 +96,7 @@ Run `hledger` to list the commands.
 For a gentle step by step introduction, see [hledger by example](https://hledger.org/hbe.html),
 or for a faster tour, the [5 minute quick start](https://hledger.org/5-minute-quick-start.html).
 For configuring a default journal file, reconciling with your bank, and starting a new year's file,
-see [PART 5: COMMON TASKS](#part-5-common-tasks).
+see [PART 6: COMMON TASKS](#part-6-common-tasks).
 
 # PART 1: USER INTERFACE
 
@@ -299,291 +299,6 @@ Similarly, if mutually exclusive flags are used together, the right-most wins.
 With most commands, arguments are interpreted as a hledger [query](#queries) which filters the data.
 Some queries can be expressed either with options or with arguments.
 
-# Command line tips
-
-Here are some tips for using hledger at the command line;
-feel free to skip these until you need them.
-
-## Special characters
-
-In commands you type at the command line,
-certain characters have special meaning and sometimes need to be "escaped" or "quoted",
-by prefixing backslashes or enclosing in quotes.
-
-If you are able to minimise the use of special characters in your data, you won't have to deal with this as much.
-For example, you could use hyphen `-` or underscore `_` instead of spaces in account names, 
-and you could use the `USD` currency code instead of the `$` currency symbol in amounts.
-
-But if you prefer to use spaced account names and `$`, it's fine.
-Just be aware of this topic so you can check this doc when needed.
-(These examples are mostly tested on unix; some details might need to be adapted if you're on Windows.)
-
-### Escaping shell special characters
-
-These are some characters which may have special meaning to your shell (the program which interprets command lines):
-
-- SPACE, `<`, `>`, `(`, `)`, `|`, `\`, `%`
-- `$` if followed by a word character
-
-So for example, to match an account name containing spaces, like "credit card", don't write:
-```cli
-$ hledger register credit card
-```
-
-Instead, enclose the name in single quotes:
-```cli
-$ hledger register 'credit card'
-```
-
-On unix or in Windows powershell, if you use double quotes your shell will silently treat `$` as variable interpolation.
-So you should probably avoid double quotes, unless you want that behaviour, eg in a script:
-```cli
-$ hledger register "assets:$SOMEACCT"
-```
-
-But in an older Windows CMD.EXE window, you must use double quotes:
-```cli
-C:\Users\Me> hledger register "credit card"
-```
-
-On unix or in Windows powershell, as an alternative to quotes you can write a backslash before each special character:
-```cli
-$ hledger register credit\ card
-```
-
-Finally, since hledger's query arguments are [regular expressions] (described below),
-you could also fill that gap with `.` which matches any character:
-```cli
-$ hledger register credit.card
-```
-
-
-### Escaping regular expression special characters
-
-Some characters also have special meaning in [regular expressions], which hledger's arguments often are. Those include:
-
-- `.`, `^`, `$`, `[`, `]`, `(`, `)`, `|`, `\`
-
-To escape one of these, write `\` before it.
-But note this is in addition to the shell escaping above.
-So for characters which are special to both shell and regular expressions, like `\` and `$`, you will sometimes need two levels of escaping.
-
-For example, a balance report that uses a `cur:` query restricting it to just the $ currency, should be written like this:
-```cli
-$ hledger balance cur:\\$
-```
-Explanation:
-
-1. Add a backslash `\` before the dollar sign `$` to protect it from regular expressions (so it will be matched literally with no special meaning).
-2. Add another backslash before that backslash, to protect it from the shell (so the shell won't consume it).
-3. `$` doesn't need to be protected from the shell in this case, because it's not followed by a word character; but it would be harmless to do so.
-
-But here's another way to write that, which tends to be easier:
-add backslashes to escape from regular expressions, then enclose with quotes to escape from the shell:
-```cli
-$ hledger balance cur:'\$'
-```
-
-### Escaping in other situations
-
-hledger options and arguments are sometimes used in places other than the command line, where the escaping/quoting rules are different.
-For example, backslash-quoting may not be available.
-Here's a quick reference:
-
-|                               ||
-|:------------------------------|:--------------------------------------------------------------------------------------------
-| In unix shell                 | Use single quotes and/or backslash (or double quotes for variable interpolation)
-| In Windows `powershell`       | Use single quotes (or double quotes for variable interpolation)
-| In Windows `cmd`              | Use double quotes
-| In hledger-ui's filter prompt | Use single or double quotes
-| In hledger-web's search form  | Use single or double quotes
-| In an [argument file]         | Don't use spaces, don't shell-escape, do regex-escape, write one argument/option per line
-| In a [config file]            | Use single or double quotes, enclosing all or part of an argument <br>(`'desc:a b'` or `desc:'a b'`, as in the unix shell)
-| In `repl` or a `run` script   | Use single or double quotes, enclosing all or part of an argument
-| In `ghci` (the Haskell REPL)  | Use double quotes, and enclose the whole argument
-
-[argument file]: #argument-files
-[config file]: #config-files
-
-## Unicode characters
-
-hledger is expected to handle non-ascii characters correctly:
-
-- they should be parsed correctly in input files and on the command
-line, by all hledger tools (add, iadd, hledger-web's search/add/edit
-forms, etc.)
-
-- they should be displayed correctly by all hledger tools,
-  and on-screen alignment should be preserved.
-
-This requires a well-configured environment. Here are some tips:
-
-- A system locale must be configured, which can decode the characters being used.
-  This is essential - see [Text encoding](#text-encoding)
-  and [Install: Text encoding](install.md#text-encoding).
-
-- Your terminal software (eg Terminal.app, iTerm, CMD.exe, xterm..)  must support unicode.
-  On Windows, you may need to use Windows Terminal.
-
-- The terminal must be using a font which includes the required unicode glyphs.
-
-- The terminal should be configured to display wide characters as double width (for report alignment).
-
-- On Windows, for best results you should run hledger in the same kind of environment in which it was built.
-  Eg hledger built in the standard CMD.EXE environment (like the binaries on our download page)
-  might show display problems when run in a cygwin or msys terminal, and vice versa.
-  (See eg [#961](https://github.com/hledgerorg/hledger/issues/961#issuecomment-471229644)).
-
-## Regular expressions
-
-A [regular expression](https://en.wikipedia.org/wiki/regular_expression) (regexp)
-is a small piece of text where certain characters
-(like `.`, `^`, `$`, `+`, `*`, `()`, `|`, `[]`, `\`) have special meanings,
-forming a tiny language for matching text precisely - very useful in hledger and elsewhere. 
-To learn all about them, visit [regular-expressions.info](https://www.regular-expressions.info).
-
-hledger supports regexps whenever you are entering a pattern to match something, eg in
-[query arguments](#queries), 
-[account aliases](#alias-directive),
-[CSV if rules](#if),
-hledger-web's search form,
-hledger-ui's `/` search,
-etc.
-You may need to wrap them in quotes, especially at the command line (see [Special characters](#special-characters) above).
-Here are some examples:
-
-Account name queries (quoted for command line use):
-```
-Regular expression:  Matches:
--------------------  ------------------------------------------------------------
-bank                 assets:bank, assets:bank:savings, expenses:art:banksy, ...
-:bank                assets:bank:savings, expenses:art:banksy
-:bank:               assets:bank:savings
-'^bank'              none of those ( ^ matches beginning of text )
-'bank$'              assets:bank   ( $ matches end of text )
-'big \$ bank'        big $ bank    ( \ disables following character's special meaning )
-'\bbank\b'           assets:bank, assets:bank:savings  ( \b matches word boundaries )
-'(sav|check)ing'     saving or checking  ( (|) matches either alternative )
-'saving|checking'    saving or checking  ( outer parentheses are not needed )
-'savings?'           saving or savings   ( ? matches 0 or 1 of the preceding thing )
-'my +bank'           my bank, my  bank, ... ( + matches 1 or more of the preceding thing )
-'my *bank'           mybank, my bank, my  bank, ... ( * matches 0 or more of the preceding thing )
-'b.nk'               bank, bonk, b nk, ... ( . matches any character )
-```
-
-Some other queries:
-```
-desc:'amazon|amzn|audible'  Amazon transactions
-cur:EUR              amounts with commodity symbol EUR (or any of its declared aliases)
-cur:\\$              amounts with commodity symbol $ (or any of its aliases)
-cur:....?            amounts with 3- or 4-character symbols (or any of their aliases)
-sym:EUR              amounts whose commodity symbol is exactly EUR (ignoring aliases)
-tag:.=202[1-3]       things with any tag whose value contains 2021, 2022 or 2023
-```
-
-Account name aliases: accept `.` instead of `:` as account separator:
-```
-alias /\./=:         replaces all periods in account names with colons
-```
-
-Show multiple top-level accounts combined as one:
-```
---alias='/^[^:]+/=combined'  ( [^:] matches any character other than : )
-```
-
-Show accounts with the second-level part removed:
-```
---alias '/^([^:]+):[^:]+/ = \1'
-                     match a top-level account and a second-level account
-                     and replace those with just the top-level account
-                     ( \1 in the replacement text means "whatever was matched
-                     by the first parenthesised part of the regexp"
-```
-
-CSV rules: match CSV records containing dining-related MCC codes:
-```
-if \?MCC581[124]
-```
-
-Match CSV records with a specific amount around the end/start of month:
-```
-if %amount \b3\.99
-&  %date   (29|30|31|01|02|03)$
-```
-
-### hledger's regular expressions
-
-hledger's regular expressions come from the
-[regex-tdfa](http://hackage.haskell.org/package/regex-tdfa/docs/Text-Regex-TDFA.html)
-library. 
-If they're not doing what you expect, it's important to know exactly what they support:
-
-1. they are case insensitive
-2. they are infix matching (they do not need to match the entire thing being matched)
-3. they are [POSIX ERE] (extended regular expressions)
-4. they also support [GNU word boundaries] (`\b`, `\B`, `\<`, `\>`)
-5. [backreferences] are supported when doing text replacement in [account
-   aliases](#regex-aliases) or [CSV rules](#csv), where [backreferences]
-   can be used in the replacement string to reference [capturing groups] in the
-   search regexp. Otherwise, if you write `\1`, it will match the digit `1`.
-6. they do not support [lazy quantifiers] (`*?`), [mode modifiers] (`(?s)`), character classes (`\w`, `\d`), or anything else not mentioned above.
-7. they may not (I'm guessing not) properly support right-to-left or bidirectional text.
-
-[POSIX ERE]: http://www.regular-expressions.info/posix.html#ere
-[backreferences]: https://www.regular-expressions.info/backref.html
-[capturing groups]: http://www.regular-expressions.info/refcapture.html
-[lazy quantifiers]: http://www.regular-expressions.info/repeat.html#lazy
-[mode modifiers]: http://www.regular-expressions.info/modifiers.html
-[GNU word boundaries]: http://www.regular-expressions.info/wordboundaries.html
-
-Some things to note:
-
-- In the `alias` directive and `--alias` option, regular expressions
-must be enclosed in forward slashes (`/REGEX/`). Elsewhere in hledger,
-these are not required.
-
-- In queries, to match a regular expression metacharacter like `$`
-as a literal character, prepend a backslash. Eg to search for amounts with the
-dollar sign in hledger-web, write `cur:\$`.
-
-- On the command line, some metacharacters like `$` have a special
-meaning to the shell and so must be escaped at least once more.
-See [Special characters](#special-characters).
-
-## Argument files
-
-You can save a set of command line options and arguments in a file,
-and then use them by writing `@FILE.args` as a hledger command argument.
-The `.args` file extension is conventional, but not required.
-In an argument file,
-
-- Each line can contain one argument, flag, or option.
-- Blank lines or lines beginning with `#` are ignored.
-- An option's flag and value should be joined by `=`.
-- An option value or an argument may contain spaces. Don't use single or double quotes.
-- And generally, use one less level of quoting/escaping than at the command line.
-  Eg `cur:\$`, not `cur:\\$` as on the command line.
-
-For example:
-```text
-# cash.args
-
-assets:cash
-assets:charles schwab:sweep
-cur:\$
--c=$1.
-```
-```cli
-$ hledger bal @cash.args
-```
-
-## Shell completions
-
-If you use the bash, zsh or fish shells, you can optionally set up context-sensitive autocompletion for hledger command lines.
-Try pressing `hledger<SPACE><TAB><TAB>` (should list all hledger commands)
-or `hledger reg acct:<TAB><TAB>` (should list your top-level account names).
-If completions aren't working, or for more details, see [Install > Shell completions](install.html#shell-completions).
-
 # Config files
 
 You can configure default command line options and arguments conveniently in a hledger config file.
@@ -685,330 +400,6 @@ Some tips:
 4. Add `--debug` or `--debug=8` to any command to see config/command line debug output.
 5. In scripts, and in examples you share with others, add `-n` so that a config file can't change the result.
 6. When you download hledger data from elsewhere, watch out for directories containing a `hledger.conf` file.
-
-# Output
-
-## Output destination
-
-hledger commands send their output to the terminal by default.
-You can of course redirect this, eg into a file, using standard shell syntax:
-```cli
-$ hledger print > foo.txt
-```
-
-Some commands (print, register, stats, the balance commands) also
-provide the `-o`/`--output-file` option, which does the same thing
-without needing the shell. Eg:
-```cli
-$ hledger print -o foo.txt
-$ hledger print -o -        # write to stdout (the default)
-```
-
-## Output format
-
-Some commands offer other kinds of output, not just text on the terminal.
-Here are those commands and the formats currently supported:
-
-|  command           | txt | html | csv/tsv | fods | ledger | beancount | sql | json |
-|--------------------|-----|------|---------|------|--------|-----------|-----|------|
-| aregister          | Y   | Y    | Y       | Y    |        |           |     | Y    |
-| balance            | Y   | Y    | Y       | Y    |        |           |     | Y    |
-| balancesheet       | Y   | Y    | Y       | Y    |        |           |     | Y    |
-| balancesheetequity | Y   | Y    | Y       | Y    |        |           |     | Y    |
-| cashflow           | Y   | Y    | Y       | Y    |        |           |     | Y    |
-| holdings           | Y   | Y    | Y       | Y    |        |           |     | Y    |
-| incomestatement    | Y   | Y    | Y       | Y    |        |           |     | Y    |
-| print              | Y   | Y    | Y       | Y    | Y      | Y         | Y   | Y    |
-| register           | Y   | Y    | Y       | Y    |        |           |     | Y    |
-
-<!--
-| accounts              |     |     |      |      |     |
-| activity              |     |     |      |      |     |
-| add                   |     |     |      |      |     |
-| check                 |     |     |      |      |     |
-| check-fancyassertions |     |     |      |      |     |
-| check-tagfiles        |     |     |      |      |     |
-| close                 |     |     |      |      |     |
-| codes                 |     |     |      |      |     |
-| commodities           |     |     |      |      |     |
-| descriptions          |     |     |      |      |     |
-| diff                  |     |     |      |      |     |
-| files                 |     |     |      |      |     |
-| iadd                  |     |     |      |      |     |
-| import                |     |     |      |      |     |
-| interest              |     |     |      |      |     |
-| notes                 |     |     |      |      |     |
-| payees                |     |     |      |      |     |
-| prices                |     |     |      |      |     |
-| rewrite               |     |     |      |      |     |
-| roi                   |     |     |      |      |     |
-| setup                 |     |     |      |      |     |
-| stats                 |     |     |      |      |     |
-| stockquotes           |     |     |      |      |     |
-| tags                  |     |     |      |      |     |
-| test                  |     |     |      |      |     |
--->
-
-You can also see which output formats a command supports by running
-`hledger CMD -h` and looking for the `-O`/`--output-format=FMT` option,
-
-You can select the output format by using that option:
-```cli
-$ hledger print -O csv    # print CSV to standard output
-```
-
-or by choosing a suitable filename extension with the `-o`/`--output-file=FILE.FMT` option:
-```cli
-$ hledger balancesheet -o foo.csv    # write CSV to foo.csv
-```
-
-The `-O` option can be combined with `-o` to override the file extension if needed:
-```cli
-$ hledger balancesheet -o foo.txt -O csv    # write CSV to foo.txt
-```
-
-Here are some notes about the various output formats.
-
-### Text output
-
-This is the default: human readable, plain text report output, suitable for viewing with a monospace font in a terminal.
-If your data contains unicode or wide characters, you'll need a terminal and font that render those correctly.
-(This can be challenging on MS Windows.)
-
-Some reports (`register`, `aregister`) will normally use the full window width.
-If this isn't working or you want to override it, you can use the `-w`/`--width` option.
-
-Balance reports (`balance`, `balancesheet`, `incomestatement`...) use whatever width they need.
-Multi-period multi-currency reports can often be wider than the window. Besides using a pager,
-helpful techniques for this situation include
-`--layout=bare`, `-X COMM`, `cur:`, `--transpose`, `--tree`, `--depth`, `--drop`, switching to html output, etc.
-
-The display style of amounts (symbol placement, decimal and digit group marks, number of decimal digits)
-is inferred per commodity, and can be overridden with `-c/--commodity-style`;
-see [Amount formatting](#amount-formatting).
-
-#### Box-drawing characters
-
-hledger draws simple table borders by default, to minimise the risk of display problems
-caused by a terminal/font not supporting box-drawing characters.
-
-But your terminal and font probably do support them, so we recommend
-using the `--pretty` flag to show prettier tables in the terminal.
-This is a good flag to add to your hledger config file.
-
-#### Colour
-
-hledger tries to automatically detect ANSI colour and text styling support and use it when appropriate.
-(Currently, it is used rather minimally: some reports show negative numbers in red, and help output uses bold text for emphasis.)
-Colour is not used when the `TERM` environment variable is `dumb`, or `NO_COLOR` is set, or output is not going to a colour-capable terminal.
-
-You can override this by setting the `NO_COLOR` environment variable to disable it,
-or by using the `--color/--colour` option, perhaps in your config file,
-with a `y`/`yes` or `n`/`no` value to force it on or off.
-
-#### Paging
-
-In unix-like environments, when displaying large output (in any output format) in the terminal,
-hledger tries to use a pager when appropriate.
-(You can disable this with the `--pager=no` option, perhaps in your config file.)
-
-The pager shows one page of text at a time, and lets you scroll around to see more.
-While it is active, usually `SPACE` shows the next page, `h` shows help, and `q` quits.
-The home/end/page up/page down/cursor keys, and mouse scrolling, may also work.
-
-hledger will use the pager specified by the `PAGER` environment variable, otherwise `less` if available, otherwise `more` if available.
-(With one exception: `hledger help -p TOPIC` will always use `less`, so that it can scroll to the topic.)
-
-The pager is expected to display hledger's ANSI colour and text styling.
-If you see junk characters, you might need to configure your pager to handle ANSI codes.
-Or you could disable colour as described above.
-
-If you are using the [`less` pager](https://www.greenwoodsoftware.com/less/faq.html),
-hledger tries to provide a consistently pleasant experience by running it with some extra options added to your `LESS` environment variable:
-
---chop-long-lines
---hilite-unread
---ignore-case
---no-init
---quit-if-one-screen
---shift=8
---squeeze-blank-lines
---use-backslash
-
-and when colour output is enabled:
-
---RAW-CONTROL-CHARS
-
-You can prevent this by setting your preferred options in the `HLEDGER_LESS` variable, which will be used instead of `LESS`.
-
-### HTML output
-
-HTML output has some default styling built in; eg, it prevents wrapping
-within dates and individual commodity amounts.
-It can be customised (or overridden) by an optional `hledger.css` file in the
-same directory (there is a sample in the hledger repo).
-
-HTML output will be a HTML fragment, not a complete HTML document.
-It has a newline after each table row, for readability.
-Like other hledger output, for non-ascii characters it will use the system locale's text encoding
-(see [Text encoding](#text-encoding)).
-
-### CSV / TSV output
-
-In CSV or TSV output, [digit group marks](#digit-group-marks) (such as thousands separators)
-are disabled automatically.
-
-### FODS output
-
-[FODS] is the OpenDocument Spreadsheet format as plain XML, as read by LibreOffice and OpenOffice.
-For those spreadsheet applications it is better than CSV.
-It works across locales: decimal point or comma, and the character encoding is stored in the XML header, so non-ascii text is safe.
-It supports fixed header rows and columns, cell types (string, number, date), styles (bold) and borders.
-And it keeps number and currency separate, so amounts show their currency but remain numbers usable in formulas.
-You can still extract CSV from FODS/ODS if needed, with utilities like `libreoffice --headless` or
-[ods2csv](https://hackage.haskell.org/package/ods2csv).
-
-ODS supports only the locale's thousands separator as a [digit group mark](#digit-group-marks),
-so FODS output enables thousands separators if your commodity style has any digit groups.
-
-[FODS]: https://en.wikipedia.org/wiki/OpenDocument
-
-### Ledger output
-
-This is a Ledger-specific journal format supported by the `print` command.
-It is currently identical to hledger's default `print` output
-except that cost basis annotations will use [Ledger's syntax](#ledger-cost-basis),
-(`{COST} [DATE] (NOTE)`), not hledger's (`{DATE, "LABEL", COST}`).
-With [`print --export`](#print-export-mode), directives and comments are also reproduced,
-and directives which Ledger does not support are commented out.
-
-### Beancount output
-
-This is [Beancount's journal format][beancount journal], supported by the `print` command.
-You can use this to export your hledger data to [Beancount], eg to use the [Fava] web app.
-
-hledger will try to adjust your data to suit Beancount, automatically.
-By default only transactions are converted; with [`print --export`](#print-export-mode),
-the options and `commodity`, `open` and `price` directives Beancount needs are generated too,
-and top-level comments are converted, so the output can be read by Beancount directly.
-Be cautious and check the conversion until you are confident it is good.
-If you plan to export to Beancount often, you may want to follow its [conventions], for a cleaner conversion:
-
-- use Beancount-friendly account names
-- use currency codes instead of currency symbols
-- use cost notation instead of equity conversion postings
-- avoid virtual postings, balance assignments, and secondary dates.
-
-[conventions]: https://plaintextaccounting.org/#other-features
-
-There is one big adjustment: for Beancount, the top level account names must be
-`Assets`, `Liabilities`, `Equity`, `Income`, and/or `Expenses`.
-A top level hledger account named `revenue` or `revenues` (case insensitive) will be converted to `Income`.
-Any other top level account whose [account type](#account-types) is known (declared or inferred)
-will have the corresponding Beancount top level account prepended; eg with `account bonds  ; type:A`,
-`bonds:treasury` becomes `Assets:Bonds:Treasury`.
-Otherwise, you should use `--alias` (see [Account aliases](#alias-directive),
-or this [hledger2beancount.conf](https://github.com/hledgerorg/hledger/blob/main/examples/hledger2beancount.conf) file).
-<!-- (see also "hledger and Beancount" <https://hledger.org/beancount.html>). -->
-
-Other adjustments hledger makes:
-
-- **Account names:** aside from the top-level names, hledger makes valid
-  [Beancount account names](https://beancount.github.io/docs/beancount_language_syntax.html#accounts)
-  by capitalising each part, replacing spaces and underscores with `-`,
-  replacing other unsupported characters with `C<HEXBYTES>`,
-  prepending `A` to parts which don't begin with a letter or digit,
-  and appending `:A` to account names which have only one part.
-
-- **Commodity names:** hledger makes valid
-  [Beancount commodity/currency names](https://beancount.github.io/docs/beancount_language_syntax.html#commodities-currencies),
-  which must be 2-24 uppercase letters, digits, or `'`, `.`, `_`, `-`, beginning with a letter and ending with a letter or digit.
-  Known currency symbols become [ISO 4217 currency codes](https://en.wikipedia.org/wiki/ISO_4217#Active_codes);
-  otherwise letters are capitalised, spaces become `-`, other unsupported characters become `C<HEXBYTES>`,
-  and `C` is prepended or appended if needed. One-letter symbols are doubled, and the no-symbol commodity becomes `CC`.
-  (hledger tries to keep your commodities distinct, but collisions are possible with short symbols like
-  `CC`, `C` and no-symbol, which are distinct in hledger but all become `CC` in Beancount.)
-
-- **Balance assignments** are not supported by Beancount, so they are converted to explicit amounts.
-
-- **Virtual postings** are not allowed by Beancount, so any [virtual postings](#virtual-postings) are omitted.
-
-- **Tags** become [Beancount metadata](https://beancount.github.io/docs/beancount_language_syntax.html#metadata-1)
-  (except tags whose name begins with `_`).
-  Metadata names are adjusted to be Beancount-compatible: beginning with a lowercase letter,
-  at least two characters long, with unsupported characters encoded; values use Beancount's string type.
-  A tag repeated with multiple values (eg an account with both `type:Asset` and `type:Cash`)
-  becomes one metadata entry with the values comma separated: `type: "Asset, Cash"`.
-
-- **Costs:** Beancount doesn't allow [redundant costs and conversion postings](#combining-costs-and-equity-conversion-postings) as hledger does;
-  if you have any, the conversion postings are omitted.
-  Currently at most one cost + conversion postings group per transaction is supported.
-
-- **Price directives:** the 1:1 prices which hledger infers from [commodity aliases](#commodity-aliases)
-  are normally dated `0000-01-01`; in Beancount output they are dated `0001-01-01`.
-
-- **Directives:** with `print --export`, hledger generates a `commodity` directive for each declared commodity,
-  and an `open` directive for each declared or used account, dated on the account's earliest posting
-  (or the earliest transaction date). Account and commodity tags become metadata on these directives,
-  and an account's `lots:` tag becomes its Beancount booking method.
-  Other hledger directives have no Beancount equivalent and are dropped.
-
-- **Tolerance:** with `print --export`, a sample `inferred_tolerance_default` option is provided, commented out.
-  If Beancount complains that transactions aren't balanced, this is an easy workaround.
-
-- **Operating currency:** declaring one or more improves Beancount and Fava reports.
-  With `print --export`, hledger declares each currency used in cost amounts as an operating currency.
-  If needed, replace these with your own declaration, like `option "operating_currency" "USD"`.
-
-[Beancount]: https://beancount.github.io
-[beancount journal]: https://beancount.github.io/docs/beancount_language_syntax.html
-[Beancount Query Language]: https://beancount.github.io/docs/beancount_query_language.html
-[Fava]: https://beancount.github.io/fava/
-
-### SQL output
-
-SQL output is expected to work at least with SQLite, MySQL and Postgres.
-
-The SQL statements are expected to be executed in the empty database.
-If you already have tables created via SQL output of hledger,
-you would probably want to either clear data from these
-(via `delete` or `truncate` SQL statements) or `drop` the tables completely
-before import; otherwise your postings would be duplicated.
-
-For SQLite, it is more useful if you modify the generated `id` field
-to be a PRIMARY KEY. Eg:
-```
-$ hledger print -O sql | sed 's/id serial/id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL/g' | ...
-```
-
-### JSON output
-
-Our JSON is rather large and verbose, since it is a faithful representation of hledger's internal data types. 
-To understand its structure, read the Haskell type definitions, which are mostly in
-<https://github.com/hledgerorg/hledger/blob/main/hledger-lib/Hledger/Data/Types.hs>.
-[hledger-web's OpenAPI specification][openapi.yaml] may also be relevant.
-
-[openapi.yaml]: https://github.com/hledgerorg/hledger/blob/main/hledger-web/config/openapi.yaml
-
-hledger stores numbers with sometimes up to 255 significant digits.
-This is too many digits for most JSON consumers,
-so in JSON output we round numbers to at most 10 decimal places.
-(We don't limit the number of integer digits.)
-Related: [#1195](https://github.com/hledgerorg/hledger/issues/1195)
-
-## Debug output
-
-We intend hledger to be relatively easy to troubleshoot, introspect and develop.
-You can add `--debug[=N]` to any hledger command line to see additional debug output.
-N ranges from 1 (least output, the default) to 9 (maximum output).
-Typically you would start with 1 and increase until you are seeing enough.
-Debug output goes to stderr, and is not affected by `-o/--output-file` (unless you redirect stderr to stdout, eg: `2>&1`).
-It will be interleaved with normal output, which can help reveal when parts of the code are evaluated.
-To capture debug output in a log file instead, you can usually redirect stderr, eg:
-```cli
-hledger bal --debug=3 2>hledger.log
-```
-(This option doesn't work in a config file yet.)
 
 # Environment
 
@@ -7748,7 +7139,618 @@ To also add visible tags, use `--verbose-tags` (useful for troubleshooting).
 | `ptype:rgain`         | A generated realised-gain posting on a `Gain`-type account                                                                                                               | Marks hledger-inferred realised capital gain/loss in a disposal                                       |
 | `ptype:ugain`         | A generated unrealised-gain posting on an `UnrealisedGain`-type account                                                                                                  | Marks the balancing posting so the disposal sums to zero at transacted cost                           |
 
-# PART 5: COMMON TASKS
+# PART 5: MORE ABOUT THE COMMAND LINE
+
+# Output
+
+## Output destination
+
+hledger commands send their output to the terminal by default.
+You can of course redirect this, eg into a file, using standard shell syntax:
+```cli
+$ hledger print > foo.txt
+```
+
+Some commands (print, register, stats, the balance commands) also
+provide the `-o`/`--output-file` option, which does the same thing
+without needing the shell. Eg:
+```cli
+$ hledger print -o foo.txt
+$ hledger print -o -        # write to stdout (the default)
+```
+
+## Output format
+
+Some commands offer other kinds of output, not just text on the terminal.
+Here are those commands and the formats currently supported:
+
+|  command           | txt | html | csv/tsv | fods | ledger | beancount | sql | json |
+|--------------------|-----|------|---------|------|--------|-----------|-----|------|
+| aregister          | Y   | Y    | Y       | Y    |        |           |     | Y    |
+| balance            | Y   | Y    | Y       | Y    |        |           |     | Y    |
+| balancesheet       | Y   | Y    | Y       | Y    |        |           |     | Y    |
+| balancesheetequity | Y   | Y    | Y       | Y    |        |           |     | Y    |
+| cashflow           | Y   | Y    | Y       | Y    |        |           |     | Y    |
+| holdings           | Y   | Y    | Y       | Y    |        |           |     | Y    |
+| incomestatement    | Y   | Y    | Y       | Y    |        |           |     | Y    |
+| print              | Y   | Y    | Y       | Y    | Y      | Y         | Y   | Y    |
+| register           | Y   | Y    | Y       | Y    |        |           |     | Y    |
+
+<!--
+| accounts              |     |     |      |      |     |
+| activity              |     |     |      |      |     |
+| add                   |     |     |      |      |     |
+| check                 |     |     |      |      |     |
+| check-fancyassertions |     |     |      |      |     |
+| check-tagfiles        |     |     |      |      |     |
+| close                 |     |     |      |      |     |
+| codes                 |     |     |      |      |     |
+| commodities           |     |     |      |      |     |
+| descriptions          |     |     |      |      |     |
+| diff                  |     |     |      |      |     |
+| files                 |     |     |      |      |     |
+| iadd                  |     |     |      |      |     |
+| import                |     |     |      |      |     |
+| interest              |     |     |      |      |     |
+| notes                 |     |     |      |      |     |
+| payees                |     |     |      |      |     |
+| prices                |     |     |      |      |     |
+| rewrite               |     |     |      |      |     |
+| roi                   |     |     |      |      |     |
+| setup                 |     |     |      |      |     |
+| stats                 |     |     |      |      |     |
+| stockquotes           |     |     |      |      |     |
+| tags                  |     |     |      |      |     |
+| test                  |     |     |      |      |     |
+-->
+
+You can also see which output formats a command supports by running
+`hledger CMD -h` and looking for the `-O`/`--output-format=FMT` option,
+
+You can select the output format by using that option:
+```cli
+$ hledger print -O csv    # print CSV to standard output
+```
+
+or by choosing a suitable filename extension with the `-o`/`--output-file=FILE.FMT` option:
+```cli
+$ hledger balancesheet -o foo.csv    # write CSV to foo.csv
+```
+
+The `-O` option can be combined with `-o` to override the file extension if needed:
+```cli
+$ hledger balancesheet -o foo.txt -O csv    # write CSV to foo.txt
+```
+
+Here are some notes about the various output formats.
+
+### Text output
+
+This is the default: human readable, plain text report output, suitable for viewing with a monospace font in a terminal.
+If your data contains unicode or wide characters, you'll need a terminal and font that render those correctly.
+(This can be challenging on MS Windows.)
+
+Some reports (`register`, `aregister`) will normally use the full window width.
+If this isn't working or you want to override it, you can use the `-w`/`--width` option.
+
+Balance reports (`balance`, `balancesheet`, `incomestatement`...) use whatever width they need.
+Multi-period multi-currency reports can often be wider than the window. Besides using a pager,
+helpful techniques for this situation include
+`--layout=bare`, `-X COMM`, `cur:`, `--transpose`, `--tree`, `--depth`, `--drop`, switching to html output, etc.
+
+The display style of amounts (symbol placement, decimal and digit group marks, number of decimal digits)
+is inferred per commodity, and can be overridden with `-c/--commodity-style`;
+see [Amount formatting](#amount-formatting).
+
+#### Box-drawing characters
+
+hledger draws simple table borders by default, to minimise the risk of display problems
+caused by a terminal/font not supporting box-drawing characters.
+
+But your terminal and font probably do support them, so we recommend
+using the `--pretty` flag to show prettier tables in the terminal.
+This is a good flag to add to your hledger config file.
+
+#### Colour
+
+hledger tries to automatically detect ANSI colour and text styling support and use it when appropriate.
+(Currently, it is used rather minimally: some reports show negative numbers in red, and help output uses bold text for emphasis.)
+Colour is not used when the `TERM` environment variable is `dumb`, or `NO_COLOR` is set, or output is not going to a colour-capable terminal.
+
+You can override this by setting the `NO_COLOR` environment variable to disable it,
+or by using the `--color/--colour` option, perhaps in your config file,
+with a `y`/`yes` or `n`/`no` value to force it on or off.
+
+#### Paging
+
+In unix-like environments, when displaying large output (in any output format) in the terminal,
+hledger tries to use a pager when appropriate.
+(You can disable this with the `--pager=no` option, perhaps in your config file.)
+
+The pager shows one page of text at a time, and lets you scroll around to see more.
+While it is active, usually `SPACE` shows the next page, `h` shows help, and `q` quits.
+The home/end/page up/page down/cursor keys, and mouse scrolling, may also work.
+
+hledger will use the pager specified by the `PAGER` environment variable, otherwise `less` if available, otherwise `more` if available.
+(With one exception: `hledger help -p TOPIC` will always use `less`, so that it can scroll to the topic.)
+
+The pager is expected to display hledger's ANSI colour and text styling.
+If you see junk characters, you might need to configure your pager to handle ANSI codes.
+Or you could disable colour as described above.
+
+If you are using the [`less` pager](https://www.greenwoodsoftware.com/less/faq.html),
+hledger tries to provide a consistently pleasant experience by running it with some extra options added to your `LESS` environment variable:
+
+--chop-long-lines
+--hilite-unread
+--ignore-case
+--no-init
+--quit-if-one-screen
+--shift=8
+--squeeze-blank-lines
+--use-backslash
+
+and when colour output is enabled:
+
+--RAW-CONTROL-CHARS
+
+You can prevent this by setting your preferred options in the `HLEDGER_LESS` variable, which will be used instead of `LESS`.
+
+### HTML output
+
+HTML output has some default styling built in; eg, it prevents wrapping
+within dates and individual commodity amounts.
+It can be customised (or overridden) by an optional `hledger.css` file in the
+same directory (there is a sample in the hledger repo).
+
+HTML output will be a HTML fragment, not a complete HTML document.
+It has a newline after each table row, for readability.
+Like other hledger output, for non-ascii characters it will use the system locale's text encoding
+(see [Text encoding](#text-encoding)).
+
+### CSV / TSV output
+
+In CSV or TSV output, [digit group marks](#digit-group-marks) (such as thousands separators)
+are disabled automatically.
+
+### FODS output
+
+[FODS] is the OpenDocument Spreadsheet format as plain XML, as read by LibreOffice and OpenOffice.
+For those spreadsheet applications it is better than CSV.
+It works across locales: decimal point or comma, and the character encoding is stored in the XML header, so non-ascii text is safe.
+It supports fixed header rows and columns, cell types (string, number, date), styles (bold) and borders.
+And it keeps number and currency separate, so amounts show their currency but remain numbers usable in formulas.
+You can still extract CSV from FODS/ODS if needed, with utilities like `libreoffice --headless` or
+[ods2csv](https://hackage.haskell.org/package/ods2csv).
+
+ODS supports only the locale's thousands separator as a [digit group mark](#digit-group-marks),
+so FODS output enables thousands separators if your commodity style has any digit groups.
+
+[FODS]: https://en.wikipedia.org/wiki/OpenDocument
+
+### Ledger output
+
+This is a Ledger-specific journal format supported by the `print` command.
+It is currently identical to hledger's default `print` output
+except that cost basis annotations will use [Ledger's syntax](#ledger-cost-basis),
+(`{COST} [DATE] (NOTE)`), not hledger's (`{DATE, "LABEL", COST}`).
+With [`print --export`](#print-export-mode), directives and comments are also reproduced,
+and directives which Ledger does not support are commented out.
+
+### Beancount output
+
+This is [Beancount's journal format][beancount journal], supported by the `print` command.
+You can use this to export your hledger data to [Beancount], eg to use the [Fava] web app.
+
+hledger will try to adjust your data to suit Beancount, automatically.
+By default only transactions are converted; with [`print --export`](#print-export-mode),
+the options and `commodity`, `open` and `price` directives Beancount needs are generated too,
+and top-level comments are converted, so the output can be read by Beancount directly.
+Be cautious and check the conversion until you are confident it is good.
+If you plan to export to Beancount often, you may want to follow its [conventions], for a cleaner conversion:
+
+- use Beancount-friendly account names
+- use currency codes instead of currency symbols
+- use cost notation instead of equity conversion postings
+- avoid virtual postings, balance assignments, and secondary dates.
+
+[conventions]: https://plaintextaccounting.org/#other-features
+
+There is one big adjustment: for Beancount, the top level account names must be
+`Assets`, `Liabilities`, `Equity`, `Income`, and/or `Expenses`.
+A top level hledger account named `revenue` or `revenues` (case insensitive) will be converted to `Income`.
+Any other top level account whose [account type](#account-types) is known (declared or inferred)
+will have the corresponding Beancount top level account prepended; eg with `account bonds  ; type:A`,
+`bonds:treasury` becomes `Assets:Bonds:Treasury`.
+Otherwise, you should use `--alias` (see [Account aliases](#alias-directive),
+or this [hledger2beancount.conf](https://github.com/hledgerorg/hledger/blob/main/examples/hledger2beancount.conf) file).
+<!-- (see also "hledger and Beancount" <https://hledger.org/beancount.html>). -->
+
+Other adjustments hledger makes:
+
+- **Account names:** aside from the top-level names, hledger makes valid
+  [Beancount account names](https://beancount.github.io/docs/beancount_language_syntax.html#accounts)
+  by capitalising each part, replacing spaces and underscores with `-`,
+  replacing other unsupported characters with `C<HEXBYTES>`,
+  prepending `A` to parts which don't begin with a letter or digit,
+  and appending `:A` to account names which have only one part.
+
+- **Commodity names:** hledger makes valid
+  [Beancount commodity/currency names](https://beancount.github.io/docs/beancount_language_syntax.html#commodities-currencies),
+  which must be 2-24 uppercase letters, digits, or `'`, `.`, `_`, `-`, beginning with a letter and ending with a letter or digit.
+  Known currency symbols become [ISO 4217 currency codes](https://en.wikipedia.org/wiki/ISO_4217#Active_codes);
+  otherwise letters are capitalised, spaces become `-`, other unsupported characters become `C<HEXBYTES>`,
+  and `C` is prepended or appended if needed. One-letter symbols are doubled, and the no-symbol commodity becomes `CC`.
+  (hledger tries to keep your commodities distinct, but collisions are possible with short symbols like
+  `CC`, `C` and no-symbol, which are distinct in hledger but all become `CC` in Beancount.)
+
+- **Balance assignments** are not supported by Beancount, so they are converted to explicit amounts.
+
+- **Virtual postings** are not allowed by Beancount, so any [virtual postings](#virtual-postings) are omitted.
+
+- **Tags** become [Beancount metadata](https://beancount.github.io/docs/beancount_language_syntax.html#metadata-1)
+  (except tags whose name begins with `_`).
+  Metadata names are adjusted to be Beancount-compatible: beginning with a lowercase letter,
+  at least two characters long, with unsupported characters encoded; values use Beancount's string type.
+  A tag repeated with multiple values (eg an account with both `type:Asset` and `type:Cash`)
+  becomes one metadata entry with the values comma separated: `type: "Asset, Cash"`.
+
+- **Costs:** Beancount doesn't allow [redundant costs and conversion postings](#combining-costs-and-equity-conversion-postings) as hledger does;
+  if you have any, the conversion postings are omitted.
+  Currently at most one cost + conversion postings group per transaction is supported.
+
+- **Price directives:** the 1:1 prices which hledger infers from [commodity aliases](#commodity-aliases)
+  are normally dated `0000-01-01`; in Beancount output they are dated `0001-01-01`.
+
+- **Directives:** with `print --export`, hledger generates a `commodity` directive for each declared commodity,
+  and an `open` directive for each declared or used account, dated on the account's earliest posting
+  (or the earliest transaction date). Account and commodity tags become metadata on these directives,
+  and an account's `lots:` tag becomes its Beancount booking method.
+  Other hledger directives have no Beancount equivalent and are dropped.
+
+- **Tolerance:** with `print --export`, a sample `inferred_tolerance_default` option is provided, commented out.
+  If Beancount complains that transactions aren't balanced, this is an easy workaround.
+
+- **Operating currency:** declaring one or more improves Beancount and Fava reports.
+  With `print --export`, hledger declares each currency used in cost amounts as an operating currency.
+  If needed, replace these with your own declaration, like `option "operating_currency" "USD"`.
+
+[Beancount]: https://beancount.github.io
+[beancount journal]: https://beancount.github.io/docs/beancount_language_syntax.html
+[Beancount Query Language]: https://beancount.github.io/docs/beancount_query_language.html
+[Fava]: https://beancount.github.io/fava/
+
+### SQL output
+
+SQL output is expected to work at least with SQLite, MySQL and Postgres.
+
+The SQL statements are expected to be executed in the empty database.
+If you already have tables created via SQL output of hledger,
+you would probably want to either clear data from these
+(via `delete` or `truncate` SQL statements) or `drop` the tables completely
+before import; otherwise your postings would be duplicated.
+
+For SQLite, it is more useful if you modify the generated `id` field
+to be a PRIMARY KEY. Eg:
+```
+$ hledger print -O sql | sed 's/id serial/id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL/g' | ...
+```
+
+### JSON output
+
+Our JSON is rather large and verbose, since it is a faithful representation of hledger's internal data types. 
+To understand its structure, read the Haskell type definitions, which are mostly in
+<https://github.com/hledgerorg/hledger/blob/main/hledger-lib/Hledger/Data/Types.hs>.
+[hledger-web's OpenAPI specification][openapi.yaml] may also be relevant.
+
+[openapi.yaml]: https://github.com/hledgerorg/hledger/blob/main/hledger-web/config/openapi.yaml
+
+hledger stores numbers with sometimes up to 255 significant digits.
+This is too many digits for most JSON consumers,
+so in JSON output we round numbers to at most 10 decimal places.
+(We don't limit the number of integer digits.)
+Related: [#1195](https://github.com/hledgerorg/hledger/issues/1195)
+
+## Debug output
+
+We intend hledger to be relatively easy to troubleshoot, introspect and develop.
+You can add `--debug[=N]` to any hledger command line to see additional debug output.
+N ranges from 1 (least output, the default) to 9 (maximum output).
+Typically you would start with 1 and increase until you are seeing enough.
+Debug output goes to stderr, and is not affected by `-o/--output-file` (unless you redirect stderr to stdout, eg: `2>&1`).
+It will be interleaved with normal output, which can help reveal when parts of the code are evaluated.
+To capture debug output in a log file instead, you can usually redirect stderr, eg:
+```cli
+hledger bal --debug=3 2>hledger.log
+```
+(This option doesn't work in a config file yet.)
+
+# Command line tips
+
+Here are some tips for using hledger at the command line;
+feel free to skip these until you need them.
+
+## Special characters
+
+In commands you type at the command line,
+certain characters have special meaning and sometimes need to be "escaped" or "quoted",
+by prefixing backslashes or enclosing in quotes.
+
+If you are able to minimise the use of special characters in your data, you won't have to deal with this as much.
+For example, you could use hyphen `-` or underscore `_` instead of spaces in account names, 
+and you could use the `USD` currency code instead of the `$` currency symbol in amounts.
+
+But if you prefer to use spaced account names and `$`, it's fine.
+Just be aware of this topic so you can check this doc when needed.
+(These examples are mostly tested on unix; some details might need to be adapted if you're on Windows.)
+
+### Escaping shell special characters
+
+These are some characters which may have special meaning to your shell (the program which interprets command lines):
+
+- SPACE, `<`, `>`, `(`, `)`, `|`, `\`, `%`
+- `$` if followed by a word character
+
+So for example, to match an account name containing spaces, like "credit card", don't write:
+```cli
+$ hledger register credit card
+```
+
+Instead, enclose the name in single quotes:
+```cli
+$ hledger register 'credit card'
+```
+
+On unix or in Windows powershell, if you use double quotes your shell will silently treat `$` as variable interpolation.
+So you should probably avoid double quotes, unless you want that behaviour, eg in a script:
+```cli
+$ hledger register "assets:$SOMEACCT"
+```
+
+But in an older Windows CMD.EXE window, you must use double quotes:
+```cli
+C:\Users\Me> hledger register "credit card"
+```
+
+On unix or in Windows powershell, as an alternative to quotes you can write a backslash before each special character:
+```cli
+$ hledger register credit\ card
+```
+
+Finally, since hledger's query arguments are [regular expressions] (described below),
+you could also fill that gap with `.` which matches any character:
+```cli
+$ hledger register credit.card
+```
+
+
+### Escaping regular expression special characters
+
+Some characters also have special meaning in [regular expressions], which hledger's arguments often are. Those include:
+
+- `.`, `^`, `$`, `[`, `]`, `(`, `)`, `|`, `\`
+
+To escape one of these, write `\` before it.
+But note this is in addition to the shell escaping above.
+So for characters which are special to both shell and regular expressions, like `\` and `$`, you will sometimes need two levels of escaping.
+
+For example, a balance report that uses a `cur:` query restricting it to just the $ currency, should be written like this:
+```cli
+$ hledger balance cur:\\$
+```
+Explanation:
+
+1. Add a backslash `\` before the dollar sign `$` to protect it from regular expressions (so it will be matched literally with no special meaning).
+2. Add another backslash before that backslash, to protect it from the shell (so the shell won't consume it).
+3. `$` doesn't need to be protected from the shell in this case, because it's not followed by a word character; but it would be harmless to do so.
+
+But here's another way to write that, which tends to be easier:
+add backslashes to escape from regular expressions, then enclose with quotes to escape from the shell:
+```cli
+$ hledger balance cur:'\$'
+```
+
+### Escaping in other situations
+
+hledger options and arguments are sometimes used in places other than the command line, where the escaping/quoting rules are different.
+For example, backslash-quoting may not be available.
+Here's a quick reference:
+
+|                               ||
+|:------------------------------|:--------------------------------------------------------------------------------------------
+| In unix shell                 | Use single quotes and/or backslash (or double quotes for variable interpolation)
+| In Windows `powershell`       | Use single quotes (or double quotes for variable interpolation)
+| In Windows `cmd`              | Use double quotes
+| In hledger-ui's filter prompt | Use single or double quotes
+| In hledger-web's search form  | Use single or double quotes
+| In an [argument file]         | Don't use spaces, don't shell-escape, do regex-escape, write one argument/option per line
+| In a [config file]            | Use single or double quotes, enclosing all or part of an argument <br>(`'desc:a b'` or `desc:'a b'`, as in the unix shell)
+| In `repl` or a `run` script   | Use single or double quotes, enclosing all or part of an argument
+| In `ghci` (the Haskell REPL)  | Use double quotes, and enclose the whole argument
+
+[argument file]: #argument-files
+[config file]: #config-files
+
+## Unicode characters
+
+hledger is expected to handle non-ascii characters correctly:
+
+- they should be parsed correctly in input files and on the command
+line, by all hledger tools (add, iadd, hledger-web's search/add/edit
+forms, etc.)
+
+- they should be displayed correctly by all hledger tools,
+  and on-screen alignment should be preserved.
+
+This requires a well-configured environment. Here are some tips:
+
+- A system locale must be configured, which can decode the characters being used.
+  This is essential - see [Text encoding](#text-encoding)
+  and [Install: Text encoding](install.md#text-encoding).
+
+- Your terminal software (eg Terminal.app, iTerm, CMD.exe, xterm..)  must support unicode.
+  On Windows, you may need to use Windows Terminal.
+
+- The terminal must be using a font which includes the required unicode glyphs.
+
+- The terminal should be configured to display wide characters as double width (for report alignment).
+
+- On Windows, for best results you should run hledger in the same kind of environment in which it was built.
+  Eg hledger built in the standard CMD.EXE environment (like the binaries on our download page)
+  might show display problems when run in a cygwin or msys terminal, and vice versa.
+  (See eg [#961](https://github.com/hledgerorg/hledger/issues/961#issuecomment-471229644)).
+
+## Regular expressions
+
+A [regular expression](https://en.wikipedia.org/wiki/regular_expression) (regexp)
+is a small piece of text where certain characters
+(like `.`, `^`, `$`, `+`, `*`, `()`, `|`, `[]`, `\`) have special meanings,
+forming a tiny language for matching text precisely - very useful in hledger and elsewhere. 
+To learn all about them, visit [regular-expressions.info](https://www.regular-expressions.info).
+
+hledger supports regexps whenever you are entering a pattern to match something, eg in
+[query arguments](#queries), 
+[account aliases](#alias-directive),
+[CSV if rules](#if),
+hledger-web's search form,
+hledger-ui's `/` search,
+etc.
+You may need to wrap them in quotes, especially at the command line (see [Special characters](#special-characters) above).
+Here are some examples:
+
+Account name queries (quoted for command line use):
+```
+Regular expression:  Matches:
+-------------------  ------------------------------------------------------------
+bank                 assets:bank, assets:bank:savings, expenses:art:banksy, ...
+:bank                assets:bank:savings, expenses:art:banksy
+:bank:               assets:bank:savings
+'^bank'              none of those ( ^ matches beginning of text )
+'bank$'              assets:bank   ( $ matches end of text )
+'big \$ bank'        big $ bank    ( \ disables following character's special meaning )
+'\bbank\b'           assets:bank, assets:bank:savings  ( \b matches word boundaries )
+'(sav|check)ing'     saving or checking  ( (|) matches either alternative )
+'saving|checking'    saving or checking  ( outer parentheses are not needed )
+'savings?'           saving or savings   ( ? matches 0 or 1 of the preceding thing )
+'my +bank'           my bank, my  bank, ... ( + matches 1 or more of the preceding thing )
+'my *bank'           mybank, my bank, my  bank, ... ( * matches 0 or more of the preceding thing )
+'b.nk'               bank, bonk, b nk, ... ( . matches any character )
+```
+
+Some other queries:
+```
+desc:'amazon|amzn|audible'  Amazon transactions
+cur:EUR              amounts with commodity symbol EUR (or any of its declared aliases)
+cur:\\$              amounts with commodity symbol $ (or any of its aliases)
+cur:....?            amounts with 3- or 4-character symbols (or any of their aliases)
+sym:EUR              amounts whose commodity symbol is exactly EUR (ignoring aliases)
+tag:.=202[1-3]       things with any tag whose value contains 2021, 2022 or 2023
+```
+
+Account name aliases: accept `.` instead of `:` as account separator:
+```
+alias /\./=:         replaces all periods in account names with colons
+```
+
+Show multiple top-level accounts combined as one:
+```
+--alias='/^[^:]+/=combined'  ( [^:] matches any character other than : )
+```
+
+Show accounts with the second-level part removed:
+```
+--alias '/^([^:]+):[^:]+/ = \1'
+                     match a top-level account and a second-level account
+                     and replace those with just the top-level account
+                     ( \1 in the replacement text means "whatever was matched
+                     by the first parenthesised part of the regexp"
+```
+
+CSV rules: match CSV records containing dining-related MCC codes:
+```
+if \?MCC581[124]
+```
+
+Match CSV records with a specific amount around the end/start of month:
+```
+if %amount \b3\.99
+&  %date   (29|30|31|01|02|03)$
+```
+
+### hledger's regular expressions
+
+hledger's regular expressions come from the
+[regex-tdfa](http://hackage.haskell.org/package/regex-tdfa/docs/Text-Regex-TDFA.html)
+library. 
+If they're not doing what you expect, it's important to know exactly what they support:
+
+1. they are case insensitive
+2. they are infix matching (they do not need to match the entire thing being matched)
+3. they are [POSIX ERE] (extended regular expressions)
+4. they also support [GNU word boundaries] (`\b`, `\B`, `\<`, `\>`)
+5. [backreferences] are supported when doing text replacement in [account
+   aliases](#regex-aliases) or [CSV rules](#csv), where [backreferences]
+   can be used in the replacement string to reference [capturing groups] in the
+   search regexp. Otherwise, if you write `\1`, it will match the digit `1`.
+6. they do not support [lazy quantifiers] (`*?`), [mode modifiers] (`(?s)`), character classes (`\w`, `\d`), or anything else not mentioned above.
+7. they may not (I'm guessing not) properly support right-to-left or bidirectional text.
+
+[POSIX ERE]: http://www.regular-expressions.info/posix.html#ere
+[backreferences]: https://www.regular-expressions.info/backref.html
+[capturing groups]: http://www.regular-expressions.info/refcapture.html
+[lazy quantifiers]: http://www.regular-expressions.info/repeat.html#lazy
+[mode modifiers]: http://www.regular-expressions.info/modifiers.html
+[GNU word boundaries]: http://www.regular-expressions.info/wordboundaries.html
+
+Some things to note:
+
+- In the `alias` directive and `--alias` option, regular expressions
+must be enclosed in forward slashes (`/REGEX/`). Elsewhere in hledger,
+these are not required.
+
+- In queries, to match a regular expression metacharacter like `$`
+as a literal character, prepend a backslash. Eg to search for amounts with the
+dollar sign in hledger-web, write `cur:\$`.
+
+- On the command line, some metacharacters like `$` have a special
+meaning to the shell and so must be escaped at least once more.
+See [Special characters](#special-characters).
+
+## Argument files
+
+You can save a set of command line options and arguments in a file,
+and then use them by writing `@FILE.args` as a hledger command argument.
+The `.args` file extension is conventional, but not required.
+In an argument file,
+
+- Each line can contain one argument, flag, or option.
+- Blank lines or lines beginning with `#` are ignored.
+- An option's flag and value should be joined by `=`.
+- An option value or an argument may contain spaces. Don't use single or double quotes.
+- And generally, use one less level of quoting/escaping than at the command line.
+  Eg `cur:\$`, not `cur:\\$` as on the command line.
+
+For example:
+```text
+# cash.args
+
+assets:cash
+assets:charles schwab:sweep
+cur:\$
+-c=$1.
+```
+```cli
+$ hledger bal @cash.args
+```
+
+## Shell completions
+
+If you use the bash, zsh or fish shells, you can optionally set up context-sensitive autocompletion for hledger command lines.
+Try pressing `hledger<SPACE><TAB><TAB>` (should list all hledger commands)
+or `hledger reg acct:<TAB><TAB>` (should list your top-level account names).
+If completions aren't working, or for more details, see [Install > Shell completions](install.html#shell-completions).
+
+# PART 6: COMMON TASKS
 
 For a gentle, step by step introduction to hledger - installing, starting a journal,
 recording transactions, and running the main reports - see
