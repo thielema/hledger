@@ -23,7 +23,6 @@ and then symlinked into the hledger_site repo for rendering on hledger.org.
 - [TESTS](TESTS.md) - test suites and how to run them
 - [ERRORS](ERRORS.md) - error message standards and examples
 - [BENCHMARKS](BENCHMARKS.md) - performance measurement
-- [EXAMPLES](EXAMPLES.md) - example data and where it lives
 
 **Specs**
 
@@ -43,7 +42,6 @@ and then symlinked into the hledger_site repo for rendering on hledger.org.
 - [RELEASING](RELEASING.md) - release process
 - [VERSIONNUMBERS](VERSIONNUMBERS.md) - version numbering policy
 - [DOCS](DOCS.md) - documentation structure and maintenance
-- [REPOS](REPOS.md) - the project's repositories
 - [MOCKUPS](MOCKUPS.md) - old mockups and draft ideas
 
 **Project**
