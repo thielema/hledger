@@ -214,6 +214,46 @@ OPTIONS
      If  you  use the bash shell, you can auto-complete flags by pressing TAB in
      the command line.  If this is not working see Install > Shell completions.
 
+WEB UI
+     hledger-web's main views are:
+
+     * the journal view (the home page), showing journal entries, newest  first,
+       with their postings; and
+
+     * the  register  view,  showing the transactions affecting one account (and
+       its subaccounts), with a running balance and a balance chart.
+
+     The sidebar lists accounts and their balances (parent balances include sub-
+     accounts, and multiple commodities are shown one above the  other).   Click
+     an  account  name  to see its register, or a date to see that day's journal
+     entries.
+
+     The search form filters both views with hledger's query syntax, eg expenses
+     date:thismonth; the help dialog summarises the query  types.   The  current
+     view  and  search  are reflected in the URL, so views can be bookmarked and
+     shared.
+
+     The add form (press a, or click "Add a transaction" in  the  journal  view)
+     adds a transaction to the main journal file, if the access level allows it.
+     It autocompletes account names and descriptions from your existing entries.
+
+     The  help  dialog  (press ?, or click the question mark button) lists these
+     keyboard shortcuts, which work when you are not typing in a field:
+
+     * h or ? - show or hide the help dialog
+
+     * j - go to the journal view
+
+     * a or n - add a transaction (escape to cancel)
+
+     * s - show or hide the sidebar
+
+     * e - show or hide empty accounts in the sidebar
+
+     * f - focus the search form
+
+     Editing, uploading and downloading journal files is described below.
+
 PERMISSIONS
      You can restrict who can access hledger-web by
 
@@ -290,7 +330,7 @@ JSON API
      (hledger-web's JSON does not include newlines, here we use python to  pret-
      tify it):
 
-            $ curl -s http://127.0.0.1:5000/accountnames | python -m json.tool
+            $ curl -s http://127.0.0.1:5000/accountnames | python3 -m json.tool
             [
                 "assets",
                 "assets:bank",
@@ -309,7 +349,7 @@ JSON API
 
      Or all transactions:
 
-            $ curl -s http://127.0.0.1:5000/transactions | python -m json.tool
+            $ curl -s http://127.0.0.1:5000/transactions | python3 -m json.tool
             [
                 {
                     "tcode": "",
@@ -334,25 +374,22 @@ JSON API
      see the journal docs.  There is also a basic  OpenAPI  specification,  also
      served at /openapi.json.
 
-     In some cases there is outer JSON corresponding to a "Report" type.  To un-
-     derstand  that, go to the Hledger.Web.Handler.MiscR haddock and look at the
-     source for the appropriate handler to see what it  returns.   Eg  for  /ac-
-     counttransactions  it's getAccounttransactionsR, returning a "accountTrans-
-     actionsReport ...".  Looking up the haddock for that we can see  that  /ac-
-     counttransactions returns an AccountTransactionsReport, which consists of a
-     report title and a list of AccountTransactionsReportItem (etc).
+     Some routes return a report type wrapping the data; eg /accounttransactions
+     returns  an  AccountTransactionsReport, a report title and a list of items.
+     The handlers in Hledger.Web.Handler.MiscR show what each route returns.
 
      You can add a new transaction to the journal with a PUT request to /add, if
-     hledger-web  was  started with --allow=add (the default when listening on a
-     local-only address).  The payload must be the full, exact JSON  representa-
-     tion  of a hledger transaction (partial data won't do).  You can get sample
-     JSON from hledger-web's  /transactions  or  /accounttransactions,  or  from
-     hledger's print command, eg:
+     hledger-web was started with --allow=add (the default when listening  on  a
+     local-only  address).  The payload must be the full, exact JSON representa-
+     tion of a hledger transaction (partial data won't do).  You can get  sample
+     JSON  from  hledger-web's  /transactions  or  /accounttransactions, or from
+     hledger's print command.  Eg, this saves the first transaction of the  sam-
+     ple journal to txn.json:
 
-            $ hledger -f examples/sample.journal print -O json | python -m json.tool > txns.json
+            $ hledger -f examples/sample.journal print -O json | python3 -c 'import json,sys; json.dump(json.load(sys.stdin)[0], sys.stdout, indent=4)' > txn.json
 
-     Here's  how  one  transaction  looks  (remember,  this  JSON corresponds to
-     hledger's Transaction and related data types):
+     Here's  how it looks (remember, this JSON corresponds to hledger's Transac-
+     tion and related data types):
 
             {
                 "tcode": "",
@@ -432,20 +469,20 @@ JSON API
                     {
                         "sourceColumn": 1,
                         "sourceLine": 31,
-                        "sourceName": "/Users/simon/src/hledger/examples/sample.journal"
+                        "sourceName": "/home/user/hledger/examples/sample.journal"
                     },
                     {
                         "sourceColumn": 1,
                         "sourceLine": 34,
-                        "sourceName": "/Users/simon/src/hledger/examples/sample.journal"
+                        "sourceName": "/home/user/hledger/examples/sample.journal"
                     }
                 ],
                 "tstatus": "Unmarked",
                 "ttags": []
             }
 
-     And here's how to test adding it with curl.  This should add a new entry to
-     your journal:
+     And here's how to add it with curl.  This should append a new entry to your
+     journal file:
 
             $ curl http://127.0.0.1:5000/add -X PUT -H 'Content-Type: application/json' --data-binary @txn.json
 

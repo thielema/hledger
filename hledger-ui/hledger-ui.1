@@ -192,7 +192,6 @@ Click on list items to go deeper
 Click on the left margin (column 0) to go back.
 .SH KEYS
 Keyboard gives more control.
-.PP
 \f[CR]?\f[R] shows a help dialog listing all keys.
 (Some of these also appear in the quick help at the bottom of each
 screen.)
@@ -200,8 +199,10 @@ Press \f[CR]?\f[R] again (or \f[CR]ESCAPE\f[R], or \f[CR]LEFT\f[R], or
 \f[CR]q\f[R]) to close it.
 While it is open, \f[CR]p\f[R], \f[CR]m\f[R] or \f[CR]i\f[R] show this
 manual in a pager, man or info.
-The following keys work on most screens:
 .PP
+The following keys work on most screens.
+Additional screen\-specific keys are described under SCREENS below.
+.SS Navigation keys
 The cursor keys navigate: \f[CR]RIGHT\f[R] or \f[CR]ENTER\f[R] goes
 deeper, \f[CR]LEFT\f[R] returns to the previous screen,
 \f[CR]UP\f[R]/\f[CR]DOWN\f[R]/\f[CR]PGUP\f[R]/\f[CR]PGDN\f[R]/\f[CR]HOME\f[R]/\f[CR]END\f[R]
@@ -216,10 +217,18 @@ movement keys are also supported.
 faster you may want to adjust it.
 On a mac, the Karabiner app is one way to do that.)
 .PP
+\f[CR]ESCAPE\f[R] resets the UI state and jumps back to the top screen,
+restoring the app\(aqs initial state at startup.
+Or, it cancels minibuffer data entry or the help dialog.
+.PP
+\f[CR]CTRL\-l\f[R] redraws the screen and centers the selection if
+possible (selections near the top won\(aqt be centered, since we
+don\(aqt scroll above the top).
+.SS Filtering keys
 \f[CR]/\f[R] lets you set a general filter query limiting the data
 shown, using the same query terms as in hledger and hledger\-web.
 While editing the query, you can use CTRL\-a/e/d/k, BS, cursor keys;
-press \f[CR]ENTER\f[R] to set it, or \f[CR]ESCAPE\f[R]to cancel.
+press \f[CR]ENTER\f[R] to set it, or \f[CR]ESCAPE\f[R] to cancel.
 There are also keys for quickly adjusting some common filters like
 account depth and transaction status (see below).
 \f[CR]BACKSPACE\f[R] or \f[CR]DELETE\f[R] removes all filters, showing
@@ -240,33 +249,21 @@ period to \(dqtoday\(dq.
 If you are in watch mode (the default) and viewing a narrowed period
 containing today, the view will follow any changes in system date
 (moving to the period containing the new date).
-(These keys work only with the standard Julian calendar
-year/quarter/month/week/day periods; they are not affected by a custom
-report interval specified at the command line.)
+(These keys work only with standard calendar year/quarter/month/week/day
+periods; they are not affected by a custom report interval specified at
+the command line.)
 .PP
 You can also specify a non\-standard period with \f[CR]/\f[R] and a
 \f[CR]date:\f[R] query; in this case, the period is not movable with the
 arrow keys.
 .PP
-(Tip: arrow keys with Shift do not work out of the box in all terminal
-software.
-Eg in Apple\(aqs Terminal, the SHIFT\-DOWN and SHIFT\-UP keys must be
-configured as follows: in Terminal\(aqs preferences, click Profiles,
-select your current profile on the left, click Keyboard on the right,
-click + and add this for SHIFT\-DOWN: \f[CR]\(rs033[1;2B\f[R], click +
-and add this for SHIFT\-UP: \f[CR]\(rs033[1;2A\f[R].
-\ In other terminals (Windows Terminal ?)
-you might need to configure SHIFT\-RIGHT and SHIFT\-LEFT to emit
-\f[CR]\(rs033[1;2C\f[R] and \f[CR]\(rs033[1;2D\f[R] respectively.)
-.PP
-\f[CR]ESCAPE\f[R] resets the UI state and jumps back to the top screen,
-restoring the app\(aqs initial state at startup.
-Or, it cancels minibuffer data entry or the help dialog.
-.PP
-\f[CR]CTRL\-l\f[R] redraws the screen and centers the selection if
-possible (selections near the top won\(aqt be centered, since we
-don\(aqt scroll above the top).
-.PP
+(Tip: shifted arrow keys don\(aqt work out of the box in all terminals.
+In Apple\(aqs Terminal, SHIFT\-DOWN and SHIFT\-UP must be added in
+Preferences > Profiles > Keyboard, sending \f[CR]\(rs033[1;2B\f[R] and
+\f[CR]\(rs033[1;2A\f[R] respectively.
+Other terminals may need SHIFT\-RIGHT and SHIFT\-LEFT configured to send
+\f[CR]\(rs033[1;2C\f[R] and \f[CR]\(rs033[1;2D\f[R].)
+.SS Other keys
 \f[CR]g\f[R] reloads from the data file(s) and updates the current
 screen and any previous screens.
 (With large files, this could cause a noticeable pause.)
@@ -285,7 +282,7 @@ This allows some basic data entry.
 \f[CR]A\f[R] is like \f[CR]a\f[R], but runs the hledger\-iadd tool,
 which provides a terminal interface.
 This key will be available if \f[CR]hledger\-iadd\f[R] is installed in
-$path.
+\f[CR]$PATH\f[R].
 .PP
 \f[CR]E\f[R] runs $HLEDGER_UI_EDITOR, or $EDITOR, or a default
 (\f[CR]emacsclient \-a \(dq\(dq \-nw\f[R], or \f[CR]notepad.exe\f[R] on
@@ -298,7 +295,7 @@ at the error location (if possible) when invoked from the error screen.
 cost\(aqs commodity (see hledger manual > Cost reporting).
 .PP
 \f[CR]V\f[R] toggles value mode, showing amounts converted to their
-market value (see hledger manual > Valuation flag).
+market value (see hledger manual > Value reporting).
 More specifically,
 .IP "1." 3
 By default, the \f[CR]V\f[R] key toggles showing end value
@@ -326,8 +323,6 @@ showing or hiding lot subaccounts (such as
 .PP
 \f[CR]CTRL\-z\f[R] suspends it, returning to the shell; resume it with
 \f[CR]fg\f[R] as usual.
-.PP
-Additional screen\-specific keys are described below.
 .SH SCREENS
 At startup, hledger\-ui shows a menu screen by default.
 From here you can navigate to other screens using the cursor keys:
@@ -335,9 +330,16 @@ From here you can navigate to other screens using the cursor keys:
 selected screen, \f[CR]LEFT\f[R] to return to the previous screen.
 Or you can use \f[CR]ESC\f[R] to return directly to the top menu screen.
 .PP
-You can also use a command line flag to specific a different startup
+You can also use a command line flag to specify a different startup
 screen (\f[CR]\-\-cash\f[R], \f[CR]\-\-bs\f[R], \f[CR]\-\-is\f[R],
 \f[CR]\-\-all\f[R], or \f[CR]\-\-register=ACCT\f[R]).
+.PP
+On the four accounts screens, \f[CR]t\f[R] toggles between tree mode and
+list mode, and you can limit the account depth shown: \f[CR]1\f[R] to
+\f[CR]9\f[R] set the depth limit, \f[CR]0\f[R] sets it to zero (showing
+just a single total), and \f[CR]\-\f[R] and \f[CR]+\f[R] (or
+\f[CR]_\f[R] and \f[CR]=\f[R]) decrease and increase it.
+\f[CR]DELETE\f[R] resets it, along with any other filters.
 .SS Menu screen
 This is the top\-most screen.
 From here you can navigate to several screens listing accounts of
@@ -363,12 +365,6 @@ This screen shows all accounts in your journal (unless filtered by a
 query; like \f[CR]hledger balance\f[R]).
 It shows balances by default; you can toggle showing changes with the
 \f[CR]H\f[R] key.
-.PP
-You can limit the account depth shown: \f[CR]1\f[R] to \f[CR]9\f[R] set
-the depth limit, \f[CR]0\f[R] sets it to zero (showing just a single
-total), and \f[CR]\-\f[R] and \f[CR]+\f[R] (or \f[CR]_\f[R] and
-\f[CR]=\f[R]) decrease and increase it.
-\f[CR]DELETE\f[R] resets it, along with any other filters.
 .SS Register screen
 This screen shows the transactions affecting a particular account.
 Each line represents one transaction, and shows:

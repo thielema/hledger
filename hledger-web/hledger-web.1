@@ -239,6 +239,51 @@ query, which although not shown in the UI, will restrict the data shown
 If you use the bash shell, you can auto\-complete flags by pressing TAB
 in the command line.
 If this is not working see Install > Shell completions.
+.SH WEB UI
+hledger\-web\(aqs main views are:
+.IP \(bu 2
+the \f[B]journal view\f[R] (the home page), showing journal entries,
+newest first, with their postings; and
+.IP \(bu 2
+the \f[B]register view\f[R], showing the transactions affecting one
+account (and its subaccounts), with a running balance and a balance
+chart.
+.PP
+The \f[B]sidebar\f[R] lists accounts and their balances (parent balances
+include subaccounts, and multiple commodities are shown one above the
+other).
+Click an account name to see its register, or a date to see that
+day\(aqs journal entries.
+.PP
+The \f[B]search form\f[R] filters both views with hledger\(aqs query
+syntax, eg \f[CR]expenses date:thismonth\f[R]; the help dialog
+summarises the query types.
+The current view and search are reflected in the URL, so views can be
+bookmarked and shared.
+.PP
+The \f[B]add form\f[R] (press \f[CR]a\f[R], or click \(dqAdd a
+transaction\(dq in the journal view) adds a transaction to the main
+journal file, if the access level allows it.
+It autocompletes account names and descriptions from your existing
+entries.
+.PP
+The \f[B]help dialog\f[R] (press \f[CR]?\f[R], or click the question
+mark button) lists these keyboard shortcuts, which work when you are not
+typing in a field:
+.IP \(bu 2
+\f[CR]h\f[R] or \f[CR]?\f[R] \- show or hide the help dialog
+.IP \(bu 2
+\f[CR]j\f[R] \- go to the journal view
+.IP \(bu 2
+\f[CR]a\f[R] or \f[CR]n\f[R] \- add a transaction (escape to cancel)
+.IP \(bu 2
+\f[CR]s\f[R] \- show or hide the sidebar
+.IP \(bu 2
+\f[CR]e\f[R] \- show or hide empty accounts in the sidebar
+.IP \(bu 2
+\f[CR]f\f[R] \- focus the search form
+.PP
+Editing, uploading and downloading journal files is described below.
 .SH PERMISSIONS
 You can restrict who can access hledger\-web by
 .IP \(bu 2
@@ -326,7 +371,7 @@ Eg, all account names in the journal (similar to the accounts command).
 prettify it):
 .IP
 .EX
-$ curl \-s http://127.0.0.1:5000/accountnames | python \-m json.tool
+$ curl \-s http://127.0.0.1:5000/accountnames | python3 \-m json.tool
 [
     \(dqassets\(dq,
     \(dqassets:bank\(dq,
@@ -347,7 +392,7 @@ $ curl \-s http://127.0.0.1:5000/accountnames | python \-m json.tool
 Or all transactions:
 .IP
 .EX
-$ curl \-s http://127.0.0.1:5000/transactions | python \-m json.tool
+$ curl \-s http://127.0.0.1:5000/transactions | python3 \-m json.tool
 [
     {
         \(dqtcode\(dq: \(dq\(dq,
@@ -374,15 +419,10 @@ And for a higher level understanding, see the journal docs.
 There is also a basic OpenAPI specification, also served at
 \f[CR]/openapi.json\f[R].
 .PP
-In some cases there is outer JSON corresponding to a \(dqReport\(dq
-type.
-To understand that, go to the Hledger.Web.Handler.MiscR haddock and look
-at the source for the appropriate handler to see what it returns.
-Eg for \f[CR]/accounttransactions\f[R] it\(aqs getAccounttransactionsR,
-returning a \(dq\f[CR]accountTransactionsReport ...\f[R]\(dq.
-Looking up the haddock for that we can see that /accounttransactions
-returns an AccountTransactionsReport, which consists of a report title
-and a list of AccountTransactionsReportItem (etc).
+Some routes return a report type wrapping the data; eg
+\f[CR]/accounttransactions\f[R] returns an AccountTransactionsReport, a
+report title and a list of items.
+The handlers in Hledger.Web.Handler.MiscR show what each route returns.
 .PP
 You can add a new transaction to the journal with a PUT request to
 \f[CR]/add\f[R], if hledger\-web was started with
@@ -391,15 +431,16 @@ address).
 The payload must be the full, exact JSON representation of a hledger
 transaction (partial data won\(aqt do).
 You can get sample JSON from hledger\-web\(aqs \f[CR]/transactions\f[R]
-or \f[CR]/accounttransactions\f[R], or from hledger\(aqs print command,
-eg:
+or \f[CR]/accounttransactions\f[R], or from hledger\(aqs print command.
+Eg, this saves the first transaction of the sample journal to
+\f[CR]txn.json\f[R]:
 .IP
 .EX
-$ hledger \-f examples/sample.journal print \-O json | python \-m json.tool > txns.json
+$ hledger \-f examples/sample.journal print \-O json | python3 \-c \(aqimport json,sys; json.dump(json.load(sys.stdin)[0], sys.stdout, indent=4)\(aq > txn.json
 .EE
 .PP
-Here\(aqs how one transaction looks (remember, this JSON corresponds to
-hledger\(aqs Transaction and related data types):
+Here\(aqs how it looks (remember, this JSON corresponds to hledger\(aqs
+Transaction and related data types):
 .IP
 .EX
 {
@@ -480,12 +521,12 @@ hledger\(aqs Transaction and related data types):
         {
             \(dqsourceColumn\(dq: 1,
             \(dqsourceLine\(dq: 31,
-            \(dqsourceName\(dq: \(dq/Users/simon/src/hledger/examples/sample.journal\(dq
+            \(dqsourceName\(dq: \(dq/home/user/hledger/examples/sample.journal\(dq
         },
         {
             \(dqsourceColumn\(dq: 1,
             \(dqsourceLine\(dq: 34,
-            \(dqsourceName\(dq: \(dq/Users/simon/src/hledger/examples/sample.journal\(dq
+            \(dqsourceName\(dq: \(dq/home/user/hledger/examples/sample.journal\(dq
         }
     ],
     \(dqtstatus\(dq: \(dqUnmarked\(dq,
@@ -493,8 +534,8 @@ hledger\(aqs Transaction and related data types):
 }
 .EE
 .PP
-And here\(aqs how to test adding it with curl.
-This should add a new entry to your journal:
+And here\(aqs how to add it with curl.
+This should append a new entry to your journal file:
 .IP
 .EX
 $ curl http://127.0.0.1:5000/add \-X PUT \-H \(aqContent\-Type: application/json\(aq \-\-data\-binary \(attxn.json

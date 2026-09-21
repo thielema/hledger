@@ -62,6 +62,7 @@ requests to stdout.
 * Menu:
 
 * OPTIONS::
+* WEB UI::
 * PERMISSIONS::
 * EDITING UPLOADING DOWNLOADING::
 * RELOADING::
@@ -71,7 +72,7 @@ requests to stdout.
 * BUGS::
 
 
-File: hledger-web.info,  Node: OPTIONS,  Next: PERMISSIONS,  Prev: Top,  Up: Top
+File: hledger-web.info,  Node: OPTIONS,  Next: WEB UI,  Prev: Top,  Up: Top
 
 1 OPTIONS
 *********
@@ -243,9 +244,50 @@ TAB in the command line.  If this is not working see Install > Shell
 completions.
 
 
-File: hledger-web.info,  Node: PERMISSIONS,  Next: EDITING UPLOADING DOWNLOADING,  Prev: OPTIONS,  Up: Top
+File: hledger-web.info,  Node: WEB UI,  Next: PERMISSIONS,  Prev: OPTIONS,  Up: Top
 
-2 PERMISSIONS
+2 WEB UI
+********
+
+hledger-web's main views are:
+
+   * the *journal view* (the home page), showing journal entries, newest
+     first, with their postings; and
+   * the *register view*, showing the transactions affecting one account
+     (and its subaccounts), with a running balance and a balance chart.
+
+   The *sidebar* lists accounts and their balances (parent balances
+include subaccounts, and multiple commodities are shown one above the
+other).  Click an account name to see its register, or a date to see
+that day's journal entries.
+
+   The *search form* filters both views with hledger's query syntax, eg
+'expenses date:thismonth'; the help dialog summarises the query types.
+The current view and search are reflected in the URL, so views can be
+bookmarked and shared.
+
+   The *add form* (press 'a', or click "Add a transaction" in the
+journal view) adds a transaction to the main journal file, if the access
+level allows it.  It autocompletes account names and descriptions from
+your existing entries.
+
+   The *help dialog* (press '?', or click the question mark button)
+lists these keyboard shortcuts, which work when you are not typing in a
+field:
+
+   * 'h' or '?' - show or hide the help dialog
+   * 'j' - go to the journal view
+   * 'a' or 'n' - add a transaction (escape to cancel)
+   * 's' - show or hide the sidebar
+   * 'e' - show or hide empty accounts in the sidebar
+   * 'f' - focus the search form
+
+   Editing, uploading and downloading journal files is described below.
+
+
+File: hledger-web.info,  Node: PERMISSIONS,  Next: EDITING UPLOADING DOWNLOADING,  Prev: WEB UI,  Up: Top
+
+3 PERMISSIONS
 *************
 
 You can restrict who can access hledger-web by
@@ -277,7 +319,7 @@ explicit '--allow=add' or '--allow=edit' option.
 
 File: hledger-web.info,  Node: EDITING UPLOADING DOWNLOADING,  Next: RELOADING,  Prev: PERMISSIONS,  Up: Top
 
-3 EDITING, UPLOADING, DOWNLOADING
+4 EDITING, UPLOADING, DOWNLOADING
 *********************************
 
 If you start hledger-web with '--allow=edit', you'll see a new "spanner"
@@ -297,7 +339,7 @@ have to arrange to commit the changes yourself.
 
 File: hledger-web.info,  Node: RELOADING,  Next: JSON API,  Prev: EDITING UPLOADING DOWNLOADING,  Up: Top
 
-4 RELOADING
+5 RELOADING
 ***********
 
 hledger-web detects changes made to the files by other means (eg if you
@@ -312,7 +354,7 @@ that both machines have roughly the same idea of what time it is.)
 
 File: hledger-web.info,  Node: JSON API,  Next: DEBUG OUTPUT,  Prev: RELOADING,  Up: Top
 
-5 JSON API
+6 JSON API
 **********
 
 In addition to the web UI, hledger-web also serves a JSON API that can
@@ -337,7 +379,7 @@ $ hledger-web -f examples/sample.journal --serve-api
 command).  (hledger-web's JSON does not include newlines, here we use
 python to prettify it):
 
-$ curl -s http://127.0.0.1:5000/accountnames | python -m json.tool
+$ curl -s http://127.0.0.1:5000/accountnames | python3 -m json.tool
 [
     "assets",
     "assets:bank",
@@ -356,7 +398,7 @@ $ curl -s http://127.0.0.1:5000/accountnames | python -m json.tool
 
    Or all transactions:
 
-$ curl -s http://127.0.0.1:5000/transactions | python -m json.tool
+$ curl -s http://127.0.0.1:5000/transactions | python3 -m json.tool
 [
     {
         "tcode": "",
@@ -381,26 +423,23 @@ on the various data types, eg Transaction.  And for a higher level
 understanding, see the journal docs.  There is also a basic OpenAPI
 specification, also served at '/openapi.json'.
 
-   In some cases there is outer JSON corresponding to a "Report" type.
-To understand that, go to the Hledger.Web.Handler.MiscR haddock and look
-at the source for the appropriate handler to see what it returns.  Eg
-for '/accounttransactions' it's getAccounttransactionsR, returning a
-"'accountTransactionsReport ...'".  Looking up the haddock for that we
-can see that /accounttransactions returns an AccountTransactionsReport,
-which consists of a report title and a list of
-AccountTransactionsReportItem (etc).
+   Some routes return a report type wrapping the data; eg
+'/accounttransactions' returns an AccountTransactionsReport, a report
+title and a list of items.  The handlers in Hledger.Web.Handler.MiscR
+show what each route returns.
 
    You can add a new transaction to the journal with a PUT request to
 '/add', if hledger-web was started with '--allow=add' (the default when
 listening on a local-only address).  The payload must be the full, exact
 JSON representation of a hledger transaction (partial data won't do).
 You can get sample JSON from hledger-web's '/transactions' or
-'/accounttransactions', or from hledger's print command, eg:
+'/accounttransactions', or from hledger's print command.  Eg, this saves
+the first transaction of the sample journal to 'txn.json':
 
-$ hledger -f examples/sample.journal print -O json | python -m json.tool > txns.json
+$ hledger -f examples/sample.journal print -O json | python3 -c 'import json,sys; json.dump(json.load(sys.stdin)[0], sys.stdout, indent=4)' > txn.json
 
-   Here's how one transaction looks (remember, this JSON corresponds to
-hledger's Transaction and related data types):
+   Here's how it looks (remember, this JSON corresponds to hledger's
+Transaction and related data types):
 
 {
     "tcode": "",
@@ -480,27 +519,27 @@ hledger's Transaction and related data types):
         {
             "sourceColumn": 1,
             "sourceLine": 31,
-            "sourceName": "/Users/simon/src/hledger/examples/sample.journal"
+            "sourceName": "/home/user/hledger/examples/sample.journal"
         },
         {
             "sourceColumn": 1,
             "sourceLine": 34,
-            "sourceName": "/Users/simon/src/hledger/examples/sample.journal"
+            "sourceName": "/home/user/hledger/examples/sample.journal"
         }
     ],
     "tstatus": "Unmarked",
     "ttags": []
 }
 
-   And here's how to test adding it with curl.  This should add a new
-entry to your journal:
+   And here's how to add it with curl.  This should append a new entry
+to your journal file:
 
 $ curl http://127.0.0.1:5000/add -X PUT -H 'Content-Type: application/json' --data-binary @txn.json
 
 
 File: hledger-web.info,  Node: DEBUG OUTPUT,  Next: ENVIRONMENT,  Prev: JSON API,  Up: Top
 
-6 DEBUG OUTPUT
+7 DEBUG OUTPUT
 **************
 
 You can add '--debug[=N]' to the command line to log debug output.  N
@@ -514,7 +553,7 @@ can usually redirect stderr, eg:
 
 File: hledger-web.info,  Node: ENVIRONMENT,  Next: BUGS,  Prev: DEBUG OUTPUT,  Up: Top
 
-7 ENVIRONMENT
+8 ENVIRONMENT
 *************
 
 *LEDGER_FILE* The main journal file to use when not specified with
@@ -523,7 +562,7 @@ File: hledger-web.info,  Node: ENVIRONMENT,  Next: BUGS,  Prev: DEBUG OUTPUT,  U
 
 File: hledger-web.info,  Node: BUGS,  Prev: ENVIRONMENT,  Up: Top
 
-8 BUGS
+9 BUGS
 ******
 
 We welcome bug reports in the hledger issue tracker
@@ -537,14 +576,15 @@ We welcome bug reports in the hledger issue tracker
 
 Tag Table:
 Node: Top223
-Node: OPTIONS2533
-Node: PERMISSIONS12705
-Node: EDITING UPLOADING DOWNLOADING13960
-Node: RELOADING14878
-Node: JSON API15459
-Node: DEBUG OUTPUT21375
-Node: ENVIRONMENT21917
-Node: BUGS22153
+Node: OPTIONS2544
+Node: WEB UI12711
+Node: PERMISSIONS14292
+Node: EDITING UPLOADING DOWNLOADING15546
+Node: RELOADING16464
+Node: JSON API17045
+Node: DEBUG OUTPUT22793
+Node: ENVIRONMENT23335
+Node: BUGS23571
 
 End Tag Table
 
