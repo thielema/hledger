@@ -94,7 +94,7 @@ Then build with stack when you need the binary, eg before running functional tes
 ## Build and install
 
 This builds and also copies the hledger executables to `~/.local/bin` or the Windows equivalent
-(which you should [add to your `$PATH`](install.md#b)).
+(which you should [add to your `$PATH`](install.md#path)).
 
     stack install    # hledger hledger-ui ...
 
