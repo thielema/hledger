@@ -1426,7 +1426,7 @@ budgetReportAsSpreadsheet
 
 unsupportedLayout :: Layout -> a -> a
 unsupportedLayout lay =
-    error $ show lay ++ " not supported for the chosen output format."
+    error' $ show lay ++ " not supported for the chosen output format."
 
 setDisplayCommodityBare :: [CommoditySymbol] -> AmountFormat -> AmountFormat
 setDisplayCommodityBare cs fmt =
