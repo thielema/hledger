@@ -24,6 +24,7 @@ Thanks for your understanding! Here are the current hledger PR guidelines:
    New-contributor PRs that seem AI-generated will be closed.
 
 5. Code intended for the legacy hledger1 branch (hledger 1.x) must not use AI.
+   (Maintainers may make rare exceptions, for security fixes.)
 
 6. You must not use OpenAI's models (GPT series, o-series, etc).
 
