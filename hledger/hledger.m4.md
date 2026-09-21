@@ -6590,6 +6590,13 @@ hledger checks lot entries,
 tracks and infers lot movements (reporting any problems, such as disposal of nonexistent lots), 
 and calculates capital gains when lots are sold.
 
+Lot processing happens only for entries that use lot notation:
+[cost basis annotations](#cost-basis-annotations), [lot subaccounts](#lot-subaccounts),
+or commodities declared [lotful](#lotful-commodities).
+Journals without these are read as in hledger 1.
+If you have existing journals, or want to use them with both hledger 1 and hledger 2,
+see [hledger 1 and hledger 2](#hledger-1-and-hledger-2).
+
 For a more technical version of what's in this manual, see [SPEC-lots](/SPEC-lots.html).
 
 ## How to enable or disable lot tracking
@@ -7859,6 +7866,77 @@ If you're using version control, this can be a good time to commit:
 ```cli
 $ git commit -m 'txns' 2023.journal
 ```
+
+# hledger 1 and hledger 2
+
+hledger 2 (the 1.99.x previews, and 2.0 when released) reads hledger 1 journals,
+with a few differences described below.
+hledger 1 (1.52.x) continues to receive security fixes,
+and both can be installed side by side (eg by renaming one of the official binaries to `hledger-1.52`).
+
+## Migrating hledger 1 data to hledger 2
+
+Most hledger 1 journals work unchanged.
+Run `hledger check`, and your usual reports, with hledger 2 to find out.
+Things that can need attention:
+
+- **Cost basis annotations** like `{$50}`, which hledger 1 accepted but ignored (as Ledger-style lot prices),
+  are now processed: acquisitions create lots, and disposals must match existing lots.
+  hledger may report lot errors, such as disposing of a lot that was never acquired.
+  See [Lot reporting](#lot-reporting).
+- **Account names ending in `{...}`** are reserved for [lot subaccounts](#lot-subaccounts),
+  and are rejected unless the braces contain a valid lot name.
+  Rename such accounts, or use `-I` or `--ignore-lots`.
+- **Explicit gain postings** in disposal entries are checked against the calculated gain,
+  and a mismatch is an error.
+  Also, accounts with conventional names like `revenues:gain` or `equity:unrealised-gain`
+  are now given the Gain and UnrealisedGain [account types](#account-types),
+  and inferred gain postings will use them.
+  See [Gain postings](#gain-postings).
+- `-I` or `--ignore-lots` skips lot tracking, gain calculation and lot checks,
+  giving behaviour close to hledger 1's.
+- Other, non-lot-related changes are listed under Breaking changes in the
+  [release notes](https://hledger.org/relnotes.html) for each 1.99.x release.
+  In brief: when a CSV rules directive is declared more than once, the last one now wins;
+  the `accounts` and `payees` commands respect more query terms;
+  `any:` and `all:` queries also work in posting reports;
+  `--verbose-tags` is now a `print`/`rewrite` flag;
+  `commodities --used` no longer includes commodities from P directives;
+  the CSV `source` and `archive` rules use a journal-adjacent `data/` directory by default;
+  inferred amounts no longer affect display precision;
+  and hledger-web is read-only by default on a public address.
+- New commands: `get`, `holdings`, `transactions`. Removed: `demo`, `commands`.
+
+## Switching back to hledger 1
+
+Journals written for hledger 2 are mostly readable by hledger 1, with these caveats:
+
+- hledger 1 ignores cost basis annotations.
+  An acquisition written as `10 AAA {$50}` means `10 AAA` in hledger 1.
+  So you may need to write the transacted cost too: `10 AAA {$50} @ $50`.
+  (We recommend this anyway; see [Cost basis annotations](#cost-basis-annotations).)
+- hledger 1 rejects `type: U` account declarations (`type: G` is fine).
+  (hledger 2 doesn't need them, unless you want to customise the account used for unrealised gain.)
+- hledger 1 does not infer gain postings.
+  A disposal entry with only a realised gain posting written (`revenues:gain  $-50`)
+  is unbalanced in hledger 1.
+  Write the unrealised gain posting too (`equity:unrealised-gain  $50`), or write neither.
+  See [Recording gains](#recording-gains).
+- `print --lots` output includes lot subaccount names like `assets:stocks:{2026-01-01, $50}`;
+  hledger 1 reads these as ordinary subaccounts.
+- The `lots` tag on commodity and account declarations is an ordinary tag in hledger 1, and is ignored.
+- Commands and options new in hledger 2 are not available.
+
+## Keeping data usable with both
+
+To keep the same journal working in both hledger 1 and hledger 2:
+
+- write acquisitions with both cost basis and cost, with the same amount in each: `10 AAA {$50} @ $50`
+- write disposals with both gain postings, or with neither
+  (then hledger 2 infers them, and hledger 1 shows no gain)
+- name gain accounts conventionally (`revenues:gain`, `equity:unrealised-gain`) rather than declaring `type: U`
+- avoid account names ending in `{...}`
+- after changes, check the journal with both versions, eg `hledger check` and `hledger-1.52 check`
 
 # Migrating to a new file
 
