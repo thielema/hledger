@@ -61,7 +61,7 @@ and for more project scripts run `just` in the main repo.
 - Test examples, advice, and links in the docs
 - Run the latest release or developer build in daily use
 - Run [tests](DEVWORKFLOWS.md#run-package-tests)
-- Run [benchmarks](DEVWORKFLOWS.md#run-package-benchmarks)
+- Run [benchmarks](DEVWORKFLOWS.md#run-benchmarks)
 - Report packaging, documentation, UX, functional, performance issues (<https://bugs.hledger.org/new>)
 - Test new releases, report regressions and collect regression finder bounties
 - Discuss and help analyse problems via chat/mail list/issue tracker

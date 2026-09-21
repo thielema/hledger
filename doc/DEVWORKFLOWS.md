@@ -104,17 +104,13 @@ Runs the test suites defined by each hledger package (unit tests, doctests).
 
     stack test    # PKG...
 
-## Run package benchmarks
+## Run benchmarks
 
-Runs any performance reports defined by each hledger package.
-
-    stack bench    # PKG...
-
-## Run quickbench benchmarks
-
-Times the end-user commands in `bench.sh` using quickbench.
+Times the end-user commands in `bench.sh` using quickbench:
 
     just bench
+
+See [BENCHMARKS](BENCHMARKS.md) for this and the other ways to measure performance.
 
 ## Run functional tests
 
