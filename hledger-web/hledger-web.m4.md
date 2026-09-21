@@ -139,6 +139,38 @@ which although not shown in the UI, will restrict the data shown
 If you use the bash shell, you can auto-complete flags by pressing TAB in the command line.
 If this is not working see [Install > Shell completions](install.html#shell-completions).
 
+# WEB UI
+
+hledger-web's main views are:
+
+- the **journal view** (the home page), showing journal entries, newest first, with their postings; and
+- the **register view**, showing the transactions affecting one account (and its subaccounts),
+  with a running balance and a balance chart.
+
+The **sidebar** lists accounts and their balances (parent balances include subaccounts,
+and multiple commodities are shown one above the other).
+Click an account name to see its register, or a date to see that day's journal entries.
+
+The **search form** filters both views with hledger's [query](hledger.md#queries) syntax,
+eg `expenses date:thismonth`; the help dialog summarises the query types.
+The current view and search are reflected in the URL, so views can be bookmarked and shared.
+
+The **add form** (press `a`, or click "Add a transaction" in the journal view)
+adds a transaction to the main journal file, if the [access level](#permissions) allows it.
+It autocompletes account names and descriptions from your existing entries.
+
+The **help dialog** (press `?`, or click the question mark button) lists these keyboard shortcuts,
+which work when you are not typing in a field:
+
+- `h` or `?` - show or hide the help dialog
+- `j` - go to the journal view
+- `a` or `n` - add a transaction (escape to cancel)
+- `s` - show or hide the sidebar
+- `e` - show or hide empty accounts in the sidebar
+- `f` - focus the search form
+
+Editing, uploading and downloading journal files is described [below](#editing-uploading-downloading).
+
 # PERMISSIONS
 
 You can restrict who can access hledger-web by
@@ -267,17 +299,10 @@ There is also a basic [OpenAPI specification][openapi.yaml], also served at `/op
 
 [openapi.yaml]: https://github.com/hledgerorg/hledger/blob/main/hledger-web/config/openapi.yaml
 
-In some cases there is outer JSON corresponding to a "Report" type.
-To understand that, go to the
-[Hledger.Web.Handler.MiscR haddock](https://hackage.haskell.org/package/hledger-web/docs/Hledger-Web-Handler-MiscR.html)
-and look at the source for the appropriate handler to see what it returns.
-Eg for `/accounttransactions` it's
-[getAccounttransactionsR](https://hackage.haskell.org/package/hledger-web/docs/src/Hledger.Web.Handler.MiscR.html#getAccounttransactionsR),
-returning a "`accountTransactionsReport ...`".
-[Looking up](https://hoogle.haskell.org/?hoogle=accountTransactionsReport) the haddock for that
-we can see that /accounttransactions returns an 
+Some routes return a report type wrapping the data; eg `/accounttransactions` returns an
 [AccountTransactionsReport](https://hackage.haskell.org/package/hledger-lib/docs/Hledger-Reports-AccountTransactionsReport.html#t:AccountTransactionsReport),
-which consists of a report title and a list of AccountTransactionsReportItem (etc).
+a report title and a list of items.
+The handlers in [Hledger.Web.Handler.MiscR](https://hackage.haskell.org/package/hledger-web/docs/Hledger-Web-Handler-MiscR.html) show what each route returns.
 
 You can add a new transaction to the journal with a PUT request to `/add`,
 if hledger-web was started with `--allow=add` (the default when listening on a local-only address).
