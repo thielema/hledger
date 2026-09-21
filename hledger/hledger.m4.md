@@ -5468,65 +5468,6 @@ Examples:
 | `-p "every weekday"`         | dates will be Mon, Tue, Wed, Thu, Fri; <br>periods will be Mon, Tue, Wed, Thu, Fri-Sun |
 | `-p "every weekendday"`      | dates will be Sat, Sun; <br>periods will be Sat, Sun-Fri                               |
 
-# Report titles
-
-Some reports (`aregister`, `balance` (multi-period), `balancesheet`, `balancesheetequity`, `cashflow`, `holdings`, `incomestatement`) are displayed with
-a title by default, and others are not.  For most reports you can set a title with `--title='Some Text'`,
-or suppress the title with `--title=`.
-Titles are shown in text and HTML output (and in some commands' CSV/TSV output).
-In HTML output the title is an `<h3 class="report-title">` element, which you can style with a `hledger.css` file.
-
-Compound reports, like those just mentioned, also have subreport headings, like Assets and Liabilities in the balance sheet.
-You can customise these with `--subreport-titles=HEADING1|HEADING2..`,
-or suppress them with `--subreport-titles=`.
-
-In both `--title` and `--subreport-titles`, you can use `\n` to generate a newline.
-
-In [multi-period reports](#report-intervals)
-each period has a heading describing its date range or end date.
-When date ranges correspond to natural period boundaries,
-they are described compactly by default (month names are in english, currently).
-Eg: `2026`, `Q1`, `Jan`, `W02`.
-You can disable these compact descriptions by using `--period-titles=dates`;
-then periods will always be described as `STARTDATE..ENDDATE`.
-
-# Depth
-
-With the `--depth NUM` option (short form, usually preferred: `-NUM`), 
-reports will show accounts only to the specified depth, hiding deeper subaccounts.
-Use this when you want a summary with less detail.
-This flag has the same effect as a `depth:` query argument.
-So all of these are equivalent: `depth:2`, `--depth=2`, `-2`.
-
-You can also provide custom depths for specific accounts,
-by providing a `REGEX=NUM` argument instead of just `NUM`.
-For example, `--depth assets=2` (or `depth:assets=2`) will collapse accounts matching the regular expression "assets" to depth 2.
-So `assets:bank:savings` would be collapsed to `assets:bank`, but `liabilities:bank:credit card` would not be affected.
-
-If REGEX contains spaces or other special characters, enclose it in quotes in the [usual way](#special-characters).
-Eg: `--depth 'credit card=2'`
-
-## Combining depth options
-
-If a command line contains multiple general depth options, the last one wins. 
-(Useful for overriding a depth specified by scripts.)
-
-Or a command may contain a combination of general and custom depth options.
-In this case, the most specifically (deepest) matching option wins.
-Some examples:
-
-- `--depth assets=3 --depth expenses=2 --depth 1` would collapse
-  accounts containing "assets" to depth 3,
-  accounts containing "expenses" to depth 2,
-  and all other accounts to depth 1.
-
-- `--depth assets=1 --depth savings=2` would collapse
-  `assets:bank:savings` to depth 2
-  (not depth 1; because "savings" matches a deeper part of the account name than "assets").
-
-Note currently, to override a custom depth option `--depth REGEX=NUM` with a later option,
-the later option must use the same REGEX.
-
 # Queries
 
 Many hledger commands accept query arguments,
@@ -5839,6 +5780,43 @@ When account names are [rewritten](#alias-directive) with `--alias` or `alias`,
 When amounts are converted to other commodities in [cost](#cost-reporting) or [value](#value-reporting) reports,
 `cur:` and `amt:` match the old commodity symbol and the old amount quantity, not the new ones.
 
+# Depth
+
+With the `--depth NUM` option (short form, usually preferred: `-NUM`), 
+reports will show accounts only to the specified depth, hiding deeper subaccounts.
+Use this when you want a summary with less detail.
+This flag has the same effect as a `depth:` query argument.
+So all of these are equivalent: `depth:2`, `--depth=2`, `-2`.
+
+You can also provide custom depths for specific accounts,
+by providing a `REGEX=NUM` argument instead of just `NUM`.
+For example, `--depth assets=2` (or `depth:assets=2`) will collapse accounts matching the regular expression "assets" to depth 2.
+So `assets:bank:savings` would be collapsed to `assets:bank`, but `liabilities:bank:credit card` would not be affected.
+
+If REGEX contains spaces or other special characters, enclose it in quotes in the [usual way](#special-characters).
+Eg: `--depth 'credit card=2'`
+
+## Combining depth options
+
+If a command line contains multiple general depth options, the last one wins. 
+(Useful for overriding a depth specified by scripts.)
+
+Or a command may contain a combination of general and custom depth options.
+In this case, the most specifically (deepest) matching option wins.
+Some examples:
+
+- `--depth assets=3 --depth expenses=2 --depth 1` would collapse
+  accounts containing "assets" to depth 3,
+  accounts containing "expenses" to depth 2,
+  and all other accounts to depth 1.
+
+- `--depth assets=1 --depth savings=2` would collapse
+  `assets:bank:savings` to depth 2
+  (not depth 1; because "savings" matches a deeper part of the account name than "assets").
+
+Note currently, to override a custom depth option `--depth REGEX=NUM` with a later option,
+the later option must use the same REGEX.
+
 # Pivoting
 
 Normally, hledger groups amounts and displays their totals by account (name).
@@ -5902,187 +5880,27 @@ $ hledger balance Income:Dues --pivot kind:member
               -2 EUR
 ```
 
-# Generating data
+# Report titles
 
-hledger can enrich the data provided to it, or generate new data, in a number of ways.
-Mostly, this is done only if you request it:
+Some reports (`aregister`, `balance` (multi-period), `balancesheet`, `balancesheetequity`, `cashflow`, `holdings`, `incomestatement`) are displayed with
+a title by default, and others are not.  For most reports you can set a title with `--title='Some Text'`,
+or suppress the title with `--title=`.
+Titles are shown in text and HTML output (and in some commands' CSV/TSV output).
+In HTML output the title is an `<h3 class="report-title">` element, which you can style with a `hledger.css` file.
 
-- Missing amounts, costs, cost basis, and capital gain amounts are inferred automatically when possible.
-- Lot subaccounts are also inferred (invisibly by default; `--lots` makes them visible in reports).
-- The `--infer-equity` flag infers missing conversion equity postings from @/@@ costs.
-- The `--infer-costs` flag infers missing costs from conversion equity postings.
-- The `--infer-market-prices` flag infers `P` price directives from costs.
-- The `--auto` flag adds extra postings to transactions matched by [auto posting rules](#auto-postings).
-- The `--forecast` option generates transactions from [periodic transaction rules](#periodic-transactions).
-- The `balance --budget` report infers budget goals from periodic transaction rules.
-- Commands like `close`, `rewrite`, and `hledger-interest` generate transactions or postings.
-- CSV data is converted to transactions by applying CSV conversion rules.. etc.
+Compound reports, like those just mentioned, also have subreport headings, like Assets and Liabilities in the balance sheet.
+You can customise these with `--subreport-titles=HEADING1|HEADING2..`,
+or suppress them with `--subreport-titles=`.
 
-Such generated data is temporary, existing only at report time.
-You can convert it to permanent recorded data by, eg, capturing the output of `hledger print` and saving it in your journal file.
-This can sometimes be useful as a data entry aid.
+In both `--title` and `--subreport-titles`, you can use `\n` to generate a newline.
 
-If you are curious what data is being generated and why, run `hledger print -a` (equivalent to `--explicit --lots --verbose-tags`).
-`-x/--explicit` shows inferred amounts and conversion prices, 
-`--lots` shows lot subaccounts and lot-specific postings,
-and `--verbose-tags` shows the hidden tags which hledger uses for classifying things.
-
-# Detecting special postings
-
-hledger detects certain kinds of postings, both generated and non-generated, and tags them for additional processing.
-These are documented elsewhere, but this section gives an overview of the special posting detection rules.
-
-By default, the [tags](#tags) are hidden (with a `_` prefix), so they can be queried but they won't appear in `print` output.
-To also add visible tags, use `--verbose-tags` (useful for troubleshooting).
-
-| Tag                   | Detected pattern                                                                                                                                                         | Effect                                                                                                |
-|-----------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------|
-| `conversion-posting`  | A pair of adjacent, single-commodity, costless postings to `Conversion`-type accounts, with a nearby corresponding costful or potentially corresponding costless posting | Helps transaction balancer infer costs or avoid redundancy in commodity conversions                   |
-| `cost-posting`        | A costful posting whose amount and transacted cost correspond to a conversion postings pair; or a costless posting matching one of the pair                              | Helps transaction balancer infer costs or avoid redundancy in commodity conversions                   |
-| `generated-posting`   | Postings generated at runtime                                                                                                                                            | Helps users understand or find postings added at runtime by hledger                                   |
-| `ptype:acquire`       | Positive postings with [lot annotations](#cost-basis-annotations), or in a lotful commodity, with no matching counterposting                                                 | Creates a new lot                                                                                     |
-| `ptype:dispose`       | Negative postings with lot annotations, or in a lotful commodity, with no matching counterposting                                                                | Selects and reduces existing lots                                                                     |
-| `ptype:transfer-from` | The negative posting of a pair of counterpostings, at least one with lot annotation or a lotful commodity; or a negative lot posting with an equity counterpart (equity transfer) | Moves lots between accounts, preserving cost basis                                                    |
-| `ptype:transfer-to`   | The positive posting of a transfer pair; or a positive lot posting with an equity counterpart (equity transfer, e.g. opening balances)                                   | As above                                                                                              |
-| `ptype:gain`          | A user-written posting to a `Gain`-type account                                                                                                                          | Marks the user's explicit realised gain posting in a disposal                                         |
-| `ptype:rgain`         | A generated realised-gain posting on a `Gain`-type account                                                                                                               | Marks hledger-inferred realised capital gain/loss in a disposal                                       |
-| `ptype:ugain`         | A generated unrealised-gain posting on an `UnrealisedGain`-type account                                                                                                  | Marks the balancing posting so the disposal sums to zero at transacted cost                           |
-
-# Forecasting
-
-Forecasting, or speculative future reporting, can be useful for estimating future balances, or for exploring different future scenarios.
-
-The simplest and most flexible way to do it with hledger is to manually record a bunch of future-dated transactions. You could keep these in a separate `future.journal` and include that with `-f` only when you want to see them.
-
-## --forecast
-There is another way: with the `--forecast` option, hledger can generate temporary "forecast transactions" for reporting purposes, according to [periodic transaction rules](#periodic-transactions) defined in the journal. 
-Each rule can generate multiple recurring transactions, so by changing one rule you can change many forecasted transactions.
-
-Forecast transactions usually start after ordinary transactions end. By default, they begin after your latest-dated ordinary transaction, or today, whichever is later, and they end six months from today. (The exact rules are a little more complicated, and are given below.)
-
-This is the "forecast period", which need not be the same as the [report period](#report-period). 
-You can override it - eg to forecast farther into the future, or to force forecast transactions to overlap your ordinary transactions - by giving the --forecast option a [period expression](#period-expressions) argument, like `--forecast=..2099` or `--forecast=2023-02-15..`. Note that the `=` is required.
-
-## Inspecting forecast transactions
-
-`print` is the best command for inspecting and troubleshooting forecast transactions. Eg:
-```journal
-~ monthly from 2022-12-20    rent
-    assets:bank:checking
-    expenses:rent           $1000
-```
-```cli
-$ hledger print --forecast --today=2023/4/21
-2023-05-20 rent
-    ; generated-transaction: ~ monthly from 2022-12-20
-    assets:bank:checking
-    expenses:rent                  $1000
-
-2023-06-20 rent
-    ; generated-transaction: ~ monthly from 2022-12-20
-    assets:bank:checking
-    expenses:rent                  $1000
-
-2023-07-20 rent
-    ; generated-transaction: ~ monthly from 2022-12-20
-    assets:bank:checking
-    expenses:rent                  $1000
-
-2023-08-20 rent
-    ; generated-transaction: ~ monthly from 2022-12-20
-    assets:bank:checking
-    expenses:rent                  $1000
-
-2023-09-20 rent
-    ; generated-transaction: ~ monthly from 2022-12-20
-    assets:bank:checking
-    expenses:rent                  $1000
-```
-
-Here there are no ordinary transactions, so the forecasted transactions begin on the first occurrence after today's date.
-(You won't normally use `--today`; it's just to make these examples reproducible.)
-
-## Forecast reports
-
-Forecast transactions affect all reports, as you would expect. Eg:
-
-```cli
-$ hledger areg rent --forecast --today=2023/4/21
-Transactions in expenses:rent and subaccounts:
-2023-05-20 rent                 as:ba:checking               $1000         $1000
-2023-06-20 rent                 as:ba:checking               $1000         $2000
-2023-07-20 rent                 as:ba:checking               $1000         $3000
-2023-08-20 rent                 as:ba:checking               $1000         $4000
-2023-09-20 rent                 as:ba:checking               $1000         $5000
-```
-
-```cli
-$ hledger bal -M expenses --forecast --today=2023/4/21
-Balance changes in 2023-05-01..2023-09-30:
-
-               ||   May    Jun    Jul    Aug    Sep 
-===============++===================================
- expenses:rent || $1000  $1000  $1000  $1000  $1000 
----------------++-----------------------------------
-               || $1000  $1000  $1000  $1000  $1000 
-```
-
-## Forecast tags
-
-Forecast transactions generated by --forecast have a hidden tag, `_generated-transaction`. 
-So if you ever need to match forecast transactions, you could use `tag:_generated-transaction` (or just `tag:generated`) in a query.
-
-For troubleshooting, you can add the `--verbose-tags` flag. Then, visible `generated-transaction` tags will be added also,
-so you can view them with the `print` command. Their value indicates which periodic rule was responsible.
-
-## Forecast period, in detail
-
-Forecast start/end dates are chosen so as to do something useful by default in almost all situations, while also being flexible. Here are (with luck) the exact rules, to help with troubleshooting:
-
-The forecast period starts on:
-
-- the later of
-  - the start date in the periodic transaction rule
-  - the start date in `--forecast`'s argument
-- otherwise (if those are not available): the later of
-  - the report start date specified with `-b`/`-p`/`date:`
-  - the day after the latest ordinary transaction in the journal
-- otherwise (if none of these are available): today.
-
-The forecast period ends on:
-
-- the earlier of
-  - the end date in the periodic transaction rule
-  - the end date in `--forecast`'s argument
-- otherwise: the report end date specified with `-e`/`-p`/`date:`
-- otherwise: 180 days (~6 months) from today.
-
-## Forecast troubleshooting
-
-When --forecast is not doing what you expect, one of these tips should help:
-
-- Remember to use the `--forecast` option.
-- Remember to have at least one periodic transaction rule in your journal. 
-- Test with `print --forecast`.
-- Check for typos or too-restrictive start/end dates in your periodic transaction rule.
-- Leave at least 2 spaces between the rule's period expression and description fields.
-- Check for future-dated ordinary transactions suppressing forecasted transactions.
-- Try setting explicit report start and/or end dates with `-b`, `-e`, `-p` or `date:`
-- Try adding the `-E` flag to encourage display of empty periods/zero transactions.
-- Try setting explicit forecast start and/or end dates with `--forecast=START..END`
-- Consult [Forecast period, in detail](#forecast-period-in-detail), above.
-- Check inside the engine: add `--debug=2` (eg).
-
-# Budgeting
-
-With the balance command's [`--budget` report](#budget-report),
-each periodic transaction rule generates recurring budget goals in specified accounts,
-and goals and actual performance can be compared.
-See the balance command's doc below.
-
-You can generate budget goals and forecast transactions at the same time, from the same or different periodic transaction rules: `hledger bal -M --budget --forecast ...`
-
-See also: [Budgeting and Forecasting](/budgeting-and-forecasting.html).
+In [multi-period reports](#report-intervals)
+each period has a heading describing its date range or end date.
+When date ranges correspond to natural period boundaries,
+they are described compactly by default (month names are in english, currently).
+Eg: `2026`, `Q1`, `Jan`, `W02`.
+You can disable these compact descriptions by using `--period-titles=dates`;
+then periods will always be described as `STARTDATE..ENDDATE`.
 
 # Amount formatting
 
@@ -7790,6 +7608,188 @@ $ hledger print desc:sell -a
     equity:unrealised-gain                                        $100  ; ptype: ugain, generated-posting:
 ```
 
+
+# Generating data
+
+hledger can enrich the data provided to it, or generate new data, in a number of ways.
+Mostly, this is done only if you request it:
+
+- Missing amounts, costs, cost basis, and capital gain amounts are inferred automatically when possible.
+- Lot subaccounts are also inferred (invisibly by default; `--lots` makes them visible in reports).
+- The `--infer-equity` flag infers missing conversion equity postings from @/@@ costs.
+- The `--infer-costs` flag infers missing costs from conversion equity postings.
+- The `--infer-market-prices` flag infers `P` price directives from costs.
+- The `--auto` flag adds extra postings to transactions matched by [auto posting rules](#auto-postings).
+- The `--forecast` option generates transactions from [periodic transaction rules](#periodic-transactions).
+- The `balance --budget` report infers budget goals from periodic transaction rules.
+- Commands like `close`, `rewrite`, and `hledger-interest` generate transactions or postings.
+- CSV data is converted to transactions by applying CSV conversion rules.. etc.
+
+Such generated data is temporary, existing only at report time.
+You can convert it to permanent recorded data by, eg, capturing the output of `hledger print` and saving it in your journal file.
+This can sometimes be useful as a data entry aid.
+
+If you are curious what data is being generated and why, run `hledger print -a` (equivalent to `--explicit --lots --verbose-tags`).
+`-x/--explicit` shows inferred amounts and conversion prices, 
+`--lots` shows lot subaccounts and lot-specific postings,
+and `--verbose-tags` shows the hidden tags which hledger uses for classifying things.
+
+# Forecasting
+
+Forecasting, or speculative future reporting, can be useful for estimating future balances, or for exploring different future scenarios.
+
+The simplest and most flexible way to do it with hledger is to manually record a bunch of future-dated transactions. You could keep these in a separate `future.journal` and include that with `-f` only when you want to see them.
+
+## --forecast
+There is another way: with the `--forecast` option, hledger can generate temporary "forecast transactions" for reporting purposes, according to [periodic transaction rules](#periodic-transactions) defined in the journal. 
+Each rule can generate multiple recurring transactions, so by changing one rule you can change many forecasted transactions.
+
+Forecast transactions usually start after ordinary transactions end. By default, they begin after your latest-dated ordinary transaction, or today, whichever is later, and they end six months from today. (The exact rules are a little more complicated, and are given below.)
+
+This is the "forecast period", which need not be the same as the [report period](#report-period). 
+You can override it - eg to forecast farther into the future, or to force forecast transactions to overlap your ordinary transactions - by giving the --forecast option a [period expression](#period-expressions) argument, like `--forecast=..2099` or `--forecast=2023-02-15..`. Note that the `=` is required.
+
+## Inspecting forecast transactions
+
+`print` is the best command for inspecting and troubleshooting forecast transactions. Eg:
+```journal
+~ monthly from 2022-12-20    rent
+    assets:bank:checking
+    expenses:rent           $1000
+```
+```cli
+$ hledger print --forecast --today=2023/4/21
+2023-05-20 rent
+    ; generated-transaction: ~ monthly from 2022-12-20
+    assets:bank:checking
+    expenses:rent                  $1000
+
+2023-06-20 rent
+    ; generated-transaction: ~ monthly from 2022-12-20
+    assets:bank:checking
+    expenses:rent                  $1000
+
+2023-07-20 rent
+    ; generated-transaction: ~ monthly from 2022-12-20
+    assets:bank:checking
+    expenses:rent                  $1000
+
+2023-08-20 rent
+    ; generated-transaction: ~ monthly from 2022-12-20
+    assets:bank:checking
+    expenses:rent                  $1000
+
+2023-09-20 rent
+    ; generated-transaction: ~ monthly from 2022-12-20
+    assets:bank:checking
+    expenses:rent                  $1000
+```
+
+Here there are no ordinary transactions, so the forecasted transactions begin on the first occurrence after today's date.
+(You won't normally use `--today`; it's just to make these examples reproducible.)
+
+## Forecast reports
+
+Forecast transactions affect all reports, as you would expect. Eg:
+
+```cli
+$ hledger areg rent --forecast --today=2023/4/21
+Transactions in expenses:rent and subaccounts:
+2023-05-20 rent                 as:ba:checking               $1000         $1000
+2023-06-20 rent                 as:ba:checking               $1000         $2000
+2023-07-20 rent                 as:ba:checking               $1000         $3000
+2023-08-20 rent                 as:ba:checking               $1000         $4000
+2023-09-20 rent                 as:ba:checking               $1000         $5000
+```
+
+```cli
+$ hledger bal -M expenses --forecast --today=2023/4/21
+Balance changes in 2023-05-01..2023-09-30:
+
+               ||   May    Jun    Jul    Aug    Sep 
+===============++===================================
+ expenses:rent || $1000  $1000  $1000  $1000  $1000 
+---------------++-----------------------------------
+               || $1000  $1000  $1000  $1000  $1000 
+```
+
+## Forecast tags
+
+Forecast transactions generated by --forecast have a hidden tag, `_generated-transaction`. 
+So if you ever need to match forecast transactions, you could use `tag:_generated-transaction` (or just `tag:generated`) in a query.
+
+For troubleshooting, you can add the `--verbose-tags` flag. Then, visible `generated-transaction` tags will be added also,
+so you can view them with the `print` command. Their value indicates which periodic rule was responsible.
+
+## Forecast period, in detail
+
+Forecast start/end dates are chosen so as to do something useful by default in almost all situations, while also being flexible. Here are (with luck) the exact rules, to help with troubleshooting:
+
+The forecast period starts on:
+
+- the later of
+  - the start date in the periodic transaction rule
+  - the start date in `--forecast`'s argument
+- otherwise (if those are not available): the later of
+  - the report start date specified with `-b`/`-p`/`date:`
+  - the day after the latest ordinary transaction in the journal
+- otherwise (if none of these are available): today.
+
+The forecast period ends on:
+
+- the earlier of
+  - the end date in the periodic transaction rule
+  - the end date in `--forecast`'s argument
+- otherwise: the report end date specified with `-e`/`-p`/`date:`
+- otherwise: 180 days (~6 months) from today.
+
+## Forecast troubleshooting
+
+When --forecast is not doing what you expect, one of these tips should help:
+
+- Remember to use the `--forecast` option.
+- Remember to have at least one periodic transaction rule in your journal. 
+- Test with `print --forecast`.
+- Check for typos or too-restrictive start/end dates in your periodic transaction rule.
+- Leave at least 2 spaces between the rule's period expression and description fields.
+- Check for future-dated ordinary transactions suppressing forecasted transactions.
+- Try setting explicit report start and/or end dates with `-b`, `-e`, `-p` or `date:`
+- Try adding the `-E` flag to encourage display of empty periods/zero transactions.
+- Try setting explicit forecast start and/or end dates with `--forecast=START..END`
+- Consult [Forecast period, in detail](#forecast-period-in-detail), above.
+- Check inside the engine: add `--debug=2` (eg).
+
+# Budgeting
+
+With the balance command's [`--budget` report](#budget-report),
+each periodic transaction rule generates recurring budget goals in specified accounts,
+and goals and actual performance can be compared.
+See the balance command's doc below.
+
+You can generate budget goals and forecast transactions at the same time, from the same or different periodic transaction rules: `hledger bal -M --budget --forecast ...`
+
+See also: [Budgeting and Forecasting](/budgeting-and-forecasting.html).
+
+# Detecting special postings
+
+hledger detects certain kinds of postings, both generated and non-generated, and tags them for additional processing.
+These are documented elsewhere, but this section gives an overview of the special posting detection rules.
+
+By default, the [tags](#tags) are hidden (with a `_` prefix), so they can be queried but they won't appear in `print` output.
+To also add visible tags, use `--verbose-tags` (useful for troubleshooting).
+
+| Tag                   | Detected pattern                                                                                                                                                         | Effect                                                                                                |
+|-----------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------|
+| `conversion-posting`  | A pair of adjacent, single-commodity, costless postings to `Conversion`-type accounts, with a nearby corresponding costful or potentially corresponding costless posting | Helps transaction balancer infer costs or avoid redundancy in commodity conversions                   |
+| `cost-posting`        | A costful posting whose amount and transacted cost correspond to a conversion postings pair; or a costless posting matching one of the pair                              | Helps transaction balancer infer costs or avoid redundancy in commodity conversions                   |
+| `generated-posting`   | Postings generated at runtime                                                                                                                                            | Helps users understand or find postings added at runtime by hledger                                   |
+| `ptype:acquire`       | Positive postings with [lot annotations](#cost-basis-annotations), or in a lotful commodity, with no matching counterposting                                                 | Creates a new lot                                                                                     |
+| `ptype:dispose`       | Negative postings with lot annotations, or in a lotful commodity, with no matching counterposting                                                                | Selects and reduces existing lots                                                                     |
+| `ptype:transfer-from` | The negative posting of a pair of counterpostings, at least one with lot annotation or a lotful commodity; or a negative lot posting with an equity counterpart (equity transfer) | Moves lots between accounts, preserving cost basis                                                    |
+| `ptype:transfer-to`   | The positive posting of a transfer pair; or a positive lot posting with an equity counterpart (equity transfer, e.g. opening balances)                                   | As above                                                                                              |
+| `ptype:gain`          | A user-written posting to a `Gain`-type account                                                                                                                          | Marks the user's explicit realised gain posting in a disposal                                         |
+| `ptype:rgain`         | A generated realised-gain posting on a `Gain`-type account                                                                                                               | Marks hledger-inferred realised capital gain/loss in a disposal                                       |
+| `ptype:ugain`         | A generated unrealised-gain posting on an `UnrealisedGain`-type account                                                                                                  | Marks the balancing posting so the disposal sums to zero at transacted cost                           |
 
 # PART 4: COMMANDS
 
