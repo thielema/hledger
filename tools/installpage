@@ -3,7 +3,8 @@
 # Updates the mechanical version references in site/src/install.md:
 # the "current stable hledger release" line, the release binaries badge and link,
 # and the git checkout examples; and marks any packaged-version badges still showing
-# the old version as outdated (red). NEWVER defaults to ./.version (run on the release branch).
+# the old version as outdated (red). Also updates the --version example in
+# site/src/get-hledger-installed.md. NEWVER defaults to ./.version (run on the release branch).
 # Some things must still be updated by hand after release binaries are built:
 # the --version output examples, and test counts. Remaining old-version occurrences
 # are listed at the end for review. Run from the top of the hledger repo.
@@ -29,6 +30,9 @@ sed -i -E "
   s/-$OLDRE-brightgreen\.svg/-$OLD-e05d44.svg/g
 " "$f"
 
-echo "$f: updated $OLD -> $NEW; review with git -C site diff"
+g=site/src/get-hledger-installed.md
+sed -i -E "s/^hledger $OLDRE \.\.\.$/hledger $NEW .../" "$g"
+
+echo "$f, $g: updated $OLD -> $NEW; review with git -C site diff"
 echo "Remaining $OLD occurrences (update --version examples by hand after binaries are built):"
 grep -n "$OLD" "$f" || echo "(none)"
