@@ -1091,7 +1091,7 @@ unless overridden by an explicit `--color=y` or `--colour=y` option.
 
 hledger's usual data source is a plain text file containing journal entries in hledger `journal` format.
 If you're looking for a quick reference, jump ahead to the
-[journal cheatsheet](#journal-cheatsheet) (or use the table of contents at <https://hledger.org/hledger.html>).
+[journal cheatsheet](#journal-cheatsheet).
 
 This file represents an accounting [General Journal](http://en.wikipedia.org/wiki/General_journal).
 The `.journal` file extension is most often used, though not strictly required.
@@ -1354,8 +1354,7 @@ the current transaction, the default year set with a [`Y` directive](#y-directiv
 or the current date when the command is run.
 Some examples: `2010-01-31`, `2010/01/31`, `2010.1.31`, `1/31`.
 
-(The UI also accepts simple dates, as well as the more flexible [smart
-dates](#smart-dates) documented in the hledger manual.)
+(On the command line and in the UIs, you can also use the more flexible [smart dates](#smart-dates).)
 
 ### Posting dates
 
@@ -2006,18 +2005,9 @@ Balance assertion failure messages show exact amounts.
 
 ### Assertions and hledger add
 
-Balance assertions can be included in the amounts given in `add`. 
-All types of assertions are supported, and assertions can be used as 
-in a normal journal file. 
-
-All transactions, not just those that have an explicit assertion, 
-are validated against the existing assertions in the journal. 
-This means it is possible for an added transaction to fail even if its
-assertions are correct as of the transaction date.
-
-If this assertion checking is not desired, then it can be disabled with `-I`.
-
-However, [balance assignments](#balance-assignments) are currently not supported.
+The `add` command also accepts balance assertions (and assignments),
+and re-checks all of the journal's assertions as you enter amounts;
+see [add and balance assertions](#add-and-balance-assertions).
 
 ## Posting comments
 
