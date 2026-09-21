@@ -2025,8 +2025,8 @@ Note that hledger\(aqs account names, like Ledger\(aqs, may contain
 single spaces.
 Because of this, they must be separated from anything following them on
 the same line by \f[B]two or more spaces\f[R].
-(One or more tabs also work, for Ledger compatibility; but spaces are
-preferred.)
+(Two or more tabs also work; but spaces are preferred.
+A single tab is not a separator, unlike in Ledger.)
 .PP
 This lets us use expressive account names, while still keeping the
 syntax light.
@@ -8681,6 +8681,12 @@ hledger checks lot entries, tracks and infers lot movements (reporting
 any problems, such as disposal of nonexistent lots), and calculates
 capital gains when lots are sold.
 .PP
+Lot processing happens only for entries that use lot notation: cost
+basis annotations, lot subaccounts, or commodities declared lotful.
+Journals without these are read as in hledger 1.
+If you have existing journals, or want to use them with both hledger 1
+and hledger 2, see hledger 1 and hledger 2.
+.PP
 For a more technical version of what\(aqs in this manual, see
 SPEC\-lots.
 .SS How to enable or disable lot tracking
@@ -13705,6 +13711,76 @@ T}@T{
 T}
 .TE
 .PP
+Choice of layouts for budget reports is more restricted:
+.PP
+.TS
+tab(@);
+l l l l l l.
+T{
+\-
+T}@T{
+txt
+T}@T{
+csv
+T}@T{
+html
+T}@T{
+json
+T}@T{
+sql
+T}
+_
+T{
+wide
+T}@T{
+Y
+T}@T{
+Y
+T}@T{
+Y
+T}@T{
+T}@T{
+T}
+T{
+tall
+T}@T{
+Y
+T}@T{
+T}@T{
+T}@T{
+T}@T{
+T}
+T{
+bare
+T}@T{
+Y
+T}@T{
+Y
+T}@T{
+Y
+T}@T{
+T}@T{
+T}
+T{
+barewide
+T}@T{
+T}@T{
+Y
+T}@T{
+Y
+T}@T{
+T}@T{
+T}
+T{
+tidy
+T}@T{
+T}@T{
+T}@T{
+T}@T{
+T}@T{
+T}
+.TE
+.PP
 Examples:
 .SS Wide layout
 With many commodities, reports can be very wide:
@@ -15282,6 +15358,105 @@ If you\(aqre using version control, this can be a good time to commit:
 .EX
 $ git commit \-m \(aqtxns\(aq 2023.journal
 .EE
+.SH hledger 1 and hledger 2
+hledger 2 (the 1.99.x previews, and 2.0 when released) reads hledger 1
+journals, with a few differences described below.
+hledger 1 (1.52.x) continues to receive security fixes, and both can be
+installed side by side (eg by renaming one of the official binaries to
+\f[CR]hledger\-1.52\f[R]).
+.SS Migrating hledger 1 data to hledger 2
+Most hledger 1 journals work unchanged.
+Run \f[CR]hledger check\f[R], and your usual reports, with hledger 2 to
+find out.
+Things that can need attention:
+.IP \(bu 2
+\f[B]Cost basis annotations\f[R] like \f[CR]{$50}\f[R], which hledger 1
+accepted but ignored (as Ledger\-style lot prices), are now processed:
+acquisitions create lots, and disposals must match existing lots.
+hledger may report lot errors, such as disposing of a lot that was never
+acquired.
+See Lot reporting.
+.IP \(bu 2
+\f[B]Account names ending in \f[CB]{...}\f[B]\f[R] are reserved for lot
+subaccounts, and are rejected unless the braces contain a valid lot
+name.
+Rename such accounts, or use \f[CR]\-I\f[R] or
+\f[CR]\-\-ignore\-lots\f[R].
+.IP \(bu 2
+\f[B]Explicit gain postings\f[R] in disposal entries are checked against
+the calculated gain, and a mismatch is an error.
+Also, accounts with conventional names like \f[CR]revenues:gain\f[R] or
+\f[CR]equity:unrealised\-gain\f[R] are now given the Gain and
+UnrealisedGain account types, and inferred gain postings will use them.
+See Gain postings.
+.IP \(bu 2
+\f[CR]\-I\f[R] or \f[CR]\-\-ignore\-lots\f[R] skips lot tracking, gain
+calculation and lot checks, giving behaviour close to hledger 1\(aqs.
+.IP \(bu 2
+Other, non\-lot\-related changes are listed under Breaking changes in
+the release notes for each 1.99.x release.
+In brief: when a CSV rules directive is declared more than once, the
+last one now wins; the \f[CR]accounts\f[R] and \f[CR]payees\f[R]
+commands respect more query terms; \f[CR]any:\f[R] and \f[CR]all:\f[R]
+queries also work in posting reports; \f[CR]\-\-verbose\-tags\f[R] is
+now a \f[CR]print\f[R]/\f[CR]rewrite\f[R] flag;
+\f[CR]commodities \-\-used\f[R] no longer includes commodities from P
+directives; the CSV \f[CR]source\f[R] and \f[CR]archive\f[R] rules use a
+journal\-adjacent \f[CR]data/\f[R] directory by default; inferred
+amounts no longer affect display precision; and hledger\-web is
+read\-only by default on a public address.
+.IP \(bu 2
+New commands: \f[CR]get\f[R], \f[CR]holdings\f[R],
+\f[CR]transactions\f[R].
+Removed: \f[CR]demo\f[R], \f[CR]commands\f[R].
+.SS Switching back to hledger 1
+Journals written for hledger 2 are mostly readable by hledger 1, with
+these caveats:
+.IP \(bu 2
+hledger 1 ignores cost basis annotations.
+An acquisition written as \f[CR]10 AAA {$50}\f[R] means
+\f[CR]10 AAA\f[R] in hledger 1.
+So you may need to write the transacted cost too:
+\f[CR]10 AAA {$50} \(at $50\f[R].
+(We recommend this anyway; see Cost basis annotations.)
+.IP \(bu 2
+hledger 1 rejects \f[CR]type: U\f[R] account declarations
+(\f[CR]type: G\f[R] is fine).
+(hledger 2 doesn\(aqt need them, unless you want to customise the
+account used for unrealised gain.)
+.IP \(bu 2
+hledger 1 does not infer gain postings.
+A disposal entry with only a realised gain posting written
+(\f[CR]revenues:gain  $\-50\f[R]) is unbalanced in hledger 1.
+Write the unrealised gain posting too
+(\f[CR]equity:unrealised\-gain  $50\f[R]), or write neither.
+See Recording gains.
+.IP \(bu 2
+\f[CR]print \-\-lots\f[R] output includes lot subaccount names like
+\f[CR]assets:stocks:{2026\-01\-01, $50}\f[R]; hledger 1 reads these as
+ordinary subaccounts.
+.IP \(bu 2
+The \f[CR]lots\f[R] tag on commodity and account declarations is an
+ordinary tag in hledger 1, and is ignored.
+.IP \(bu 2
+Commands and options new in hledger 2 are not available.
+.SS Keeping data usable with both
+To keep the same journal working in both hledger 1 and hledger 2:
+.IP \(bu 2
+write acquisitions with both cost basis and cost, with the same amount
+in each: \f[CR]10 AAA {$50} \(at $50\f[R]
+.IP \(bu 2
+write disposals with both gain postings, or with neither (then hledger 2
+infers them, and hledger 1 shows no gain)
+.IP \(bu 2
+name gain accounts conventionally (\f[CR]revenues:gain\f[R],
+\f[CR]equity:unrealised\-gain\f[R]) rather than declaring
+\f[CR]type: U\f[R]
+.IP \(bu 2
+avoid account names ending in \f[CR]{...}\f[R]
+.IP \(bu 2
+after changes, check the journal with both versions, eg
+\f[CR]hledger check\f[R] and \f[CR]hledger\-1.52 check\f[R]
 .SH Migrating to a new file
 At the end of the year, you may want to continue your journal in a new
 file, so that old transactions don\(aqt slow down or clutter your
