@@ -567,7 +567,7 @@ data BalancingState s = BalancingState {
    bsStyles       :: Maybe (M.Map CommoditySymbol AmountStyle)  -- ^ commodity display styles
   ,bsUnassignable :: S.Set AccountName                          -- ^ accounts where balance assignments may not be used (because of auto posting rules)
   ,bsAssrt        :: AssertionsMode s                           -- ^ whether/how to check balance assertions
-  ,bsAccountTypes :: M.Map AccountName AccountType              -- ^ account type map (for excluding Gain postings from balancing)
+  ,bsAccountTypes :: M.Map AccountName AccountType              -- ^ account type map (used when splitting lot fee outflows)
   ,bsLotfulCommodities :: S.Set CommoditySymbol                 -- ^ commodities declared lotful (for guiding balancing cost inference)
   ,bsVerboseTags  :: Bool                                       -- ^ make tags added by balancing helpers (eg lot fee splits) visible in comments ?
    -- mutable
