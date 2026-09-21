@@ -1487,7 +1487,7 @@ In hledger docs you may see them referred to as A, L, E, R, X for short.
 Note that hledger's account names, like Ledger's, may contain single spaces.
 Because of this, they must be separated from anything following them on the same line
 by **two or more spaces**. 
-(One or more tabs also work, for Ledger compatibility; but spaces are preferred.)
+(Two or more tabs also work; but spaces are preferred. A single tab is not a separator, unlike in Ledger.)
 
 This lets us use expressive account names, while still keeping the syntax light.
 Here are some examples:

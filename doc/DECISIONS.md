@@ -112,9 +112,10 @@ and won't provide enough benefit over docs and examples.
 
 ### Syntax and parsing relaxations
 
-### A single tab is accepted as the "two space delimiter"
+### A single tab is not accepted as the "two space delimiter"
 
-For Ledger compatibility.
+This was added in 1.99.4 for Ledger compatibility, then reverted in 2026-09,
+because it added a source of incompatibility between hledger 1 and hledger 2.
 
 ### Apostrophe and underscore are accepted as digit group marks.
 
