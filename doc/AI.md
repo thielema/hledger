@@ -99,28 +99,21 @@ The deeper goals we really care about are fairness, rule of law, innovation, sta
 
 ### AI-generated code has unclear copyright / license ?
 
-sm: I'm assuming it's equivalent to code written by the human committer until we hear otherwise.
+Remarks from gecko, summarised:
+US courts have not recognised copyright in works that lack a human author, including works generated autonomously by AI.
+In March 2025 the U.S. Court of Appeals for the D.C. Circuit affirmed, in Thaler v. Perlmutter,
+that the Copyright Act "requires all eligible work to be authored in the first instance by a human being".
+The Congressional Research Service's [LSB10922](https://www.congress.gov/crs-product/LSB10922) adds that
+"human authorship is an essential part of a valid copyright claim", and that
+"what matters is the extent to which the human had creative control over the work's expression".
+Other jurisdictions, such as Europe, have their own rules.
+So if fully AI-generated code were added to hledger, it might not be copyrightable,
+could not then be licensed under the GPL, and the project could end up holding unlicensed code.
+
+My (SM's) position: I'm assuming AI-assisted code is equivalent to code written by the human committer, until we hear otherwise.
 I don't see how anything else is practical at present.
-
-gecko: several explicit court rulings in the USA have clearly outlined that AI generated code is not human work, it's machine generated, and therefore no copyright exists for it.
-Please see the official website of US congress for more explanation about their legal basis for this (below).
-Only in some cases will copyright for AI code be valid.
-In March 2025, the U.S. Court of Appeals for the D.C. Circuit affirmed the district court's decision in Thaler v. Perlmutter, holding that the Copyright Act "requires all eligible work to be authored in the first instance by a human being."
-But again Europe has different laws around this too, I am unfamiliar with their laws.
-It would be cool if we could simply say the human committer is the author but legally that's invalid and wrong, and if fully AI generated code is added to hledger, it's possible governments will decide this can't be copyrighted because it's not human work.
-In this case those changes can't be licensed under the GPL or anything too.
-This creates a situation where hledger may have large amounts of unlicensed code.
-
-<https://www.congress.gov/crs-product/LSB10922>:
-
-> U.S. courts to date have not recognized copyright in works that lack a human author—including works created autonomously by AI systems.
-
-> "human authorship is an essential part of a valid copyright claim"
-
-> the AI Guidance states that "what matters is the extent to which the human had creative control over the work's expression."
-
-sm: I feel like the lots branch is essentially human-authored, using powerful tools. 
-Similar in principle to how the compiled machine code was human-authored, using a compiler to generate it. 
+The lots work is essentially human-authored, using powerful tools -
+similar in principle to how compiled machine code is human-authored, using a compiler to generate it.
 Of course it's a spectrum, and we'll find out what the various courts decide.
 
 ### Is AI-generated code a copyright time bomb ?
