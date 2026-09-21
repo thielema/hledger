@@ -401,8 +401,8 @@ General input flags:
      \-\-txn\-balancing=...    how to check that transactions are balanced:
                             \(aqold\(aq:   \- use global display precision
                             \(aqexact\(aq: \- use transaction precision (default)
-     \-\-infer\-costs          infer conversion equity postings from costs
-     \-\-infer\-equity         infer costs from conversion equity postings
+     \-\-infer\-costs          infer costs from conversion equity postings
+     \-\-infer\-equity         infer conversion equity postings from costs
      \-\-infer\-market\-prices  infer market prices from costs
      \-\-pivot=TAGNAME        use a different field or tag as account names
   \-s \-\-strict               do extra error checks (and override \-I)
@@ -487,10 +487,10 @@ right\-most wins.
 prefix in \-\-help.)
 .PP
 With most commands, arguments are interpreted as a hledger query which
-filter the data.
+filters the data.
 Some queries can be expressed either with options or with arguments.
-.PP
-Below are more tips for using the command line interface \- feel free to
+.SH Command line tips
+Here are some tips for using hledger at the command line; feel free to
 skip these until you need them.
 .SS Special characters
 In commands you type at the command line, certain characters have
@@ -853,7 +853,15 @@ cur:\(rs$
 .EX
 $ hledger bal \(atcash.args
 .EE
-.SS Config files
+.SS Shell completions
+If you use the bash or zsh shells, you can optionally set up
+context\-sensitive autocompletion for hledger command lines.
+Try pressing \f[CR]hledger<SPACE><TAB><TAB>\f[R] (should list all
+hledger commands) or \f[CR]hledger reg acct:<TAB><TAB>\f[R] (should list
+your top\-level account names).
+If completions aren\(aqt working, or for more details, see Install >
+Shell completions.
+.SH Config files
 You can configure default command line options and arguments
 conveniently in a hledger config file.
 Config file options will be inserted near the start of your command
@@ -964,20 +972,11 @@ in the current directory or a parent directory, will not run \- this
 prevents a config file from an untrusted downloaded or shared directory
 from running arbitrary shell commands.
 .SS Config file troubleshooting
-There aren\(aqt many hledger features that need a warning, but this is
-one !
-.PD 0
-.P
-.PD
-A default config file (the kind that hledger runs automatically, without
-needing a \-\-conf option) is very convenient.
-But, it complicates command line processing and can surprise you \- eg
-quietly changing report output, or breaking your hledger\-using
-scripts/applications, which you might not notice until much later.
-.PP
-This mainly arises when you are first using config files.
-And once you discover this kind of problem, it will be easy to fix.
-Here are some tips:
+A default config file (one which hledger finds and uses automatically,
+without a \f[CR]\-\-conf\f[R] option) is convenient, but it can surprise
+you, eg by quietly changing report output, or breaking scripts which use
+hledger.
+Some tips:
 .IP "1." 3
 Be mindful about what you put in your config file; consider the effect
 on all your reports.
@@ -990,29 +989,12 @@ Run \f[CR]hledger setup\f[R] to list the currently active config file.
 .IP "4." 3
 Add \f[CR]\-\-debug\f[R] or \f[CR]\-\-debug=8\f[R] to any command to see
 config/command line debug output.
-.PP
-When you are writing scripts, or sharing examples with other people,
-keep in mind that there could be a config file changing hledger\(aqs
-behaviour, so you might want to add \f[CR]\-n\f[R] to make your hledger
-commands more robust.
-.PP
-If you prefer to just avoid this feature:
-.IP \(bu 2
-Don\(aqt use a default config file.
-.IP \(bu 2
-If you download hledger data from elsewhere, watch out for directories
-containing a hledger.conf file.
-.IP \(bu 2
-If you\(aqre feeling paranoid, use the \f[CR]\-n/\-\-no\-conf\f[R] flag
-always, eg by running hledger via a script or alias.
-.SS Shell completions
-If you use the bash or zsh shells, you can optionally set up
-context\-sensitive autocompletion for hledger command lines.
-Try pressing \f[CR]hledger<SPACE><TAB><TAB>\f[R] (should list all
-hledger commands) or \f[CR]hledger reg acct:<TAB><TAB>\f[R] (should list
-your top\-level account names).
-If completions aren\(aqt working, or for more details, see Install >
-Shell completions.
+.IP "5." 3
+In scripts, and in examples you share with others, add \f[CR]\-n\f[R] so
+that a config file can\(aqt change the result.
+.IP "6." 3
+When you download hledger data from elsewhere, watch out for directories
+containing a \f[CR]hledger.conf\f[R] file.
 .SH Output
 .SS Output destination
 hledger commands send their output to the terminal by default.
@@ -1255,6 +1237,11 @@ Besides using a pager, helpful techniques for this situation include
 \f[CR]\-\-layout=bare\f[R], \f[CR]\-X COMM\f[R], \f[CR]cur:\f[R],
 \f[CR]\-\-transpose\f[R], \f[CR]\-\-tree\f[R], \f[CR]\-\-depth\f[R],
 \f[CR]\-\-drop\f[R], switching to html output, etc.
+.PP
+The display style of amounts (symbol placement, decimal and digit group
+marks, number of decimal digits) is inferred per commodity, and can be
+overridden with \f[CR]\-c/\-\-commodity\-style\f[R]; see Amount
+formatting.
 .SS Box\-drawing characters
 hledger draws simple table borders by default, to minimise the risk of
 display problems caused by a terminal/font not supporting box\-drawing
@@ -1332,25 +1319,21 @@ system locale\(aqs text encoding (see Text encoding).
 In CSV or TSV output, digit group marks (such as thousands separators)
 are disabled automatically.
 .SS FODS output
-FODS is the OpenDocument Spreadsheet format as plain XML, as accepted by
+FODS is the OpenDocument Spreadsheet format as plain XML, as read by
 LibreOffice and OpenOffice.
-If you use their spreadsheet applications, this is better than CSV
-because it works across locales (decimal point vs.
-decimal comma, character encoding stored in XML header, thus no problems
-with umlauts), it supports fixed header rows and columns, cell types
-(string vs.
-number vs.
-date), separation of number and currency (currency is displayed but the
-cell type is still a number accessible for computation), styles (bold),
-borders.
-Btw.
-you can still extract CSV from FODS/ODS using various utilities like
+For those spreadsheet applications it is better than CSV.
+It works across locales: decimal point or comma, and the character
+encoding is stored in the XML header, so non\-ascii text is safe.
+It supports fixed header rows and columns, cell types (string, number,
+date), styles (bold) and borders.
+And it keeps number and currency separate, so amounts show their
+currency but remain numbers usable in formulas.
+You can still extract CSV from FODS/ODS if needed, with utilities like
 \f[CR]libreoffice \-\-headless\f[R] or ods2csv.
 .PP
-For digit group marks, ODS has not as many options as hledger.
-It only supports thousands separators in the respective locale.
-Thus FODS export enables thousands separators if your commodity style
-contains any digit groups.
+ODS supports only the locale\(aqs thousands separator as a digit group
+mark, so FODS output enables thousands separators if your commodity
+style has any digit groups.
 .SS Ledger output
 This is a Ledger\-specific journal format supported by the
 \f[CR]print\f[R] command.
@@ -1397,84 +1380,77 @@ prepended; eg with \f[CR]account bonds  ; type:A\f[R],
 \f[CR]bonds:treasury\f[R] becomes \f[CR]Assets:Bonds:Treasury\f[R].
 Otherwise, you should use \f[CR]\-\-alias\f[R] (see Account aliases, or
 this hledger2beancount.conf file).
-.SS Beancount account names
-Aside from the top\-level names, hledger will adjust your account names
-to make valid Beancount account names, by capitalising each part,
-replacing spaces and underscores with \f[CR]\-\f[R], replacing other
-unsupported characters with \f[CR]C<HEXBYTES>\f[R], prepending
-\f[CR]A\f[R] to account name parts which don\(aqt begin with a letter or
-digit, and appending \f[CR]:A\f[R] to account names which have only one
-part.
-.SS Beancount commodity names
-hledger will adjust your commodity names to make valid Beancount
+.PP
+Other adjustments hledger makes:
+.IP \(bu 2
+\f[B]Account names:\f[R] aside from the top\-level names, hledger makes
+valid Beancount account names by capitalising each part, replacing
+spaces and underscores with \f[CR]\-\f[R], replacing other unsupported
+characters with \f[CR]C<HEXBYTES>\f[R], prepending \f[CR]A\f[R] to parts
+which don\(aqt begin with a letter or digit, and appending \f[CR]:A\f[R]
+to account names which have only one part.
+.IP \(bu 2
+\f[B]Commodity names:\f[R] hledger makes valid Beancount
 commodity/currency names, which must be 2\-24 uppercase letters, digits,
 or \f[CR]\(aq\f[R], \f[CR].\f[R], \f[CR]_\f[R], \f[CR]\-\f[R], beginning
 with a letter and ending with a letter or digit.
-hledger will convert known currency symbols to ISO 4217 currency codes,
-capitalise letters, replace spaces with \f[CR]\-\f[R], replace other
-unsupported characters with \f[CR]C<HEXBYTES>\f[R], and prepend or
-append \f[CR]C\f[R] if needed.
-One\-letter symbols will be doubled.
-The no\-symbol commodity will become \f[CR]CC\f[R].
-(Note, hledger tries to keep your commodities distinct, but collisions
-are possible with short alphanumeric symbols like \f[CR]CC\f[R],
-\f[CR]C\f[R], and no\-symbol, which are distinct in hledger but all
-become \f[CR]CC\f[R] in beancount.)
-.SS Beancount balance assignments
-Beancount doesn\(aqt support those; any balance assignments will be
-converted to explicit amounts.
-.SS Beancount virtual postings
-Beancount doesn\(aqt allow virtual postings; if you have any, they will
-be omitted from beancount output.
-.SS Beancount metadata
-hledger tags will be converted to Beancount metadata (except for tags
-whose name begins with \f[CR]_\f[R]).
-Metadata names will be adjusted to be Beancount\-compatible: beginning
-with a lowercase letter, at least two characters long, and with
-unsupported characters encoded.
-Metadata values will use Beancount\(aqs string type.
-.PP
-In hledger, objects can have the same tag repeated with multiple values.
-Eg an \f[CR]assets:cash\f[R] account might have both
-\f[CR]type:Asset\f[R] and \f[CR]type:Cash\f[R] tags.
-For Beancount these will be combined into one, with the values combined,
-comma separated.
-Eg: \f[CR]type: \(dqAsset, Cash\(dq\f[R].
-.SS Beancount costs
-Beancount doesn\(aqt allow redundant costs and conversion postings as
-hledger does.
-If you have any of these, the conversion postings will be omitted.
-Currently we support at most one cost + conversion postings group per
-transaction.
-.SS Beancount price directives
-The 1:1 price directives which hledger infers from commodity aliases are
-normally dated \f[CR]0000\-01\-01\f[R]; in Beancount output they are
-dated \f[CR]0001\-01\-01\f[R] instead.
-.SS Beancount directives
-With \f[CR]print \-\-export\f[R], hledger generates a
-\f[CR]commodity\f[R] directive for each declared commodity, and an
-\f[CR]open\f[R] directive for each declared or used account, dated on
-the account\(aqs earliest posting (or the earliest transaction date).
-Account and commodity tags are converted to metadata on these
-directives, and an account\(aqs \f[CR]lots:\f[R] tag becomes its
-Beancount booking method.
+Known currency symbols become ISO 4217 currency codes; otherwise letters
+are capitalised, spaces become \f[CR]\-\f[R], other unsupported
+characters become \f[CR]C<HEXBYTES>\f[R], and \f[CR]C\f[R] is prepended
+or appended if needed.
+One\-letter symbols are doubled, and the no\-symbol commodity becomes
+\f[CR]CC\f[R].
+(hledger tries to keep your commodities distinct, but collisions are
+possible with short symbols like \f[CR]CC\f[R], \f[CR]C\f[R] and
+no\-symbol, which are distinct in hledger but all become \f[CR]CC\f[R]
+in Beancount.)
+.IP \(bu 2
+\f[B]Balance assignments\f[R] are not supported by Beancount, so they
+are converted to explicit amounts.
+.IP \(bu 2
+\f[B]Virtual postings\f[R] are not allowed by Beancount, so any virtual
+postings are omitted.
+.IP \(bu 2
+\f[B]Tags\f[R] become Beancount metadata (except tags whose name begins
+with \f[CR]_\f[R]).
+Metadata names are adjusted to be Beancount\-compatible: beginning with
+a lowercase letter, at least two characters long, with unsupported
+characters encoded; values use Beancount\(aqs string type.
+A tag repeated with multiple values (eg an account with both
+\f[CR]type:Asset\f[R] and \f[CR]type:Cash\f[R]) becomes one metadata
+entry with the values comma separated:
+\f[CR]type: \(dqAsset, Cash\(dq\f[R].
+.IP \(bu 2
+\f[B]Costs:\f[R] Beancount doesn\(aqt allow redundant costs and
+conversion postings as hledger does; if you have any, the conversion
+postings are omitted.
+Currently at most one cost + conversion postings group per transaction
+is supported.
+.IP \(bu 2
+\f[B]Price directives:\f[R] the 1:1 prices which hledger infers from
+commodity aliases are normally dated \f[CR]0000\-01\-01\f[R]; in
+Beancount output they are dated \f[CR]0001\-01\-01\f[R].
+.IP \(bu 2
+\f[B]Directives:\f[R] with \f[CR]print \-\-export\f[R], hledger
+generates a \f[CR]commodity\f[R] directive for each declared commodity,
+and an \f[CR]open\f[R] directive for each declared or used account,
+dated on the account\(aqs earliest posting (or the earliest transaction
+date).
+Account and commodity tags become metadata on these directives, and an
+account\(aqs \f[CR]lots:\f[R] tag becomes its Beancount booking method.
 Other hledger directives have no Beancount equivalent and are dropped.
-.SS Beancount tolerance
-With \f[CR]print \-\-export\f[R], a sample
-\f[CR]inferred_tolerance_default\f[R] option is provided (commented
-out).
+.IP \(bu 2
+\f[B]Tolerance:\f[R] with \f[CR]print \-\-export\f[R], a sample
+\f[CR]inferred_tolerance_default\f[R] option is provided, commented out.
 If Beancount complains that transactions aren\(aqt balanced, this is an
-easy way to work around it.
-.SS Beancount operating currency
-Declaring an operating currency (or several) improves Beancount and Fava
-reports.
-With \f[CR]print \-\-export\f[R], hledger will declare each currency
-used in cost amounts as an operating currency.
+easy workaround.
+.IP \(bu 2
+\f[B]Operating currency:\f[R] declaring one or more improves Beancount
+and Fava reports.
+With \f[CR]print \-\-export\f[R], hledger declares each currency used in
+cost amounts as an operating currency.
 If needed, replace these with your own declaration, like
-.IP
-.EX
-option \(dqoperating_currency\(dq \(dqUSD\(dq
-.EE
+\f[CR]option \(dqoperating_currency\(dq \(dqUSD\(dq\f[R].
 .SS SQL output
 SQL output is expected to work at least with SQLite, MySQL and Postgres.
 .PP
@@ -1491,8 +1467,6 @@ Eg:
 .EX
 $ hledger print \-O sql | sed \(aqs/id serial/id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL/g\(aq | ...
 .EE
-.PP
-This is not yet much used; feedback is welcome.
 .SS JSON output
 Our JSON is rather large and verbose, since it is a faithful
 representation of hledger\(aqs internal data types.
@@ -1505,34 +1479,7 @@ hledger stores numbers with sometimes up to 255 significant digits.
 This is too many digits for most JSON consumers, so in JSON output we
 round numbers to at most 10 decimal places.
 (We don\(aqt limit the number of integer digits.)
-If you find this causing problems, please let us know.
 Related: #1195
-.PP
-This is not yet much used; feedback is welcome.
-.SS Commodity styles
-When displaying amounts, hledger infers a standard display style for
-each commodity/currency, as described below in Commodity display style.
-.PP
-If needed, this can be overridden by a
-\f[CR]\-c/\-\-commodity\-style\f[R] option (though for cost amounts and
-amounts displayed by the \f[CR]print\f[R] command, it affects only the
-symbol placement and digit group/decimal marks; those amounts are always
-displayed with all decimal digits).
-For example, the following will force dollar amounts to be displayed as
-shown:
-.IP
-.EX
-$ hledger print \-c \(aq$1.000,0\(aq
-.EE
-.PP
-This option can be repeated to set the display style for multiple
-commodities/currencies.
-Its argument is as described in the commodity directive.
-Note that omitting the commodity symbol will set the display style for
-just the no\-symbol commodity, not all commodities.
-.PP
-In some cases hledger will adjust number formatting to improve their
-parseability (such as adding trailing decimal marks when needed).
 .SS Debug output
 We intend hledger to be relatively easy to troubleshoot, introspect and
 develop.
@@ -1585,8 +1532,7 @@ output, unless overridden by an explicit \f[CR]\-\-color=y\f[R] or
 hledger\(aqs usual data source is a plain text file containing journal
 entries in hledger \f[CR]journal\f[R] format.
 If you\(aqre looking for a quick reference, jump ahead to the journal
-cheatsheet (or use the table of contents at
-https://hledger.org/hledger.html).
+cheatsheet.
 .PP
 This file represents an accounting General Journal.
 The \f[CR].journal\f[R] file extension is most often used, though not
@@ -1829,8 +1775,8 @@ context: the current transaction, the default year set with a
 Some examples: \f[CR]2010\-01\-31\f[R], \f[CR]2010/01/31\f[R],
 \f[CR]2010.1.31\f[R], \f[CR]1/31\f[R].
 .PP
-(The UI also accepts simple dates, as well as the more flexible smart
-dates documented in the hledger manual.)
+(On the command line and in the UIs, you can also use the more flexible
+smart dates.)
 .SS Posting dates
 You can give individual postings a different date from their parent
 transaction, by adding a posting comment containing a tag (see below)
@@ -1952,7 +1898,7 @@ up\-to\-date state of your finances.
 .SS Code
 After the status mark, but before the description, you can optionally
 write a transaction \(dqcode\(dq, such as a check number or transaction
-id, enclosed in parentheses,
+id, enclosed in parentheses.
 .PP
 This has a few limitations: The code must not contain a closing
 parenthesis (or it will be truncated).
@@ -1990,8 +1936,6 @@ commands, or pivot on \f[CR]payee\f[R] or \f[CR]note\f[R].
 Note: in transactions with no \f[CR]|\f[R] character, description,
 payee, and note all have the same value.
 Once a \f[CR]|\f[R] is added, they become distinct.
-(If you\(aqd like to change this behaviour, please propose it on the
-mail list.)
 .PP
 If you want more strict error checking, you can declare the valid payee
 names with payee directives, and then enforce these with hledger check
@@ -2270,28 +2214,14 @@ displays them in output.
 This is explained in Commodity display style below.
 .PP
 .SS Costs
-In traditional double entry bookkeeping, to record a transaction where
-one commodity is exchanged for another, you add extra equity postings to
-balance the two commodities.
-Eg:
-.IP
-.EX
-2026\-01\-01 buy euros
-  assets:dollars     $\-123
-  equity:conversion   $123
-  equity:conversion  €\-100
-  assets:euros        €100
-.EE
-.PP
-hledger offers a more convenient notation: instead of equity postings,
-you can write \f[CR]\(at UNITPRICE\f[R] or
-\f[CR]\(at\(at TOTALPRICE\f[R] after a posting amount, recording the
-transacted price or conversion rate.
+When one commodity is exchanged for another \- a currency conversion, or
+a purchase or sale of stock \- you can record the transacted price or
+conversion rate by writing \f[CR]\(at UNITCOST\f[R] or
+\f[CR]\(at\(at TOTALCOST\f[R] after a posting amount.
 (hledger docs generically call this a \(dqcost\(dq, whether buying or
 selling, though \(dqcost\(dq is an overloaded word.
 \(dqTransacted cost\(dq or \(dqtransacted price\(dq is more precise.)
-.PP
-So you could write the above as:
+Eg:
 .IP
 .EX
 2026\-01\-01 buy euros
@@ -2311,10 +2241,9 @@ The cost should normally be a positive amount.
 Negative costs are supported, but can be confusing, as discussed at
 \-\-infer\-market\-prices: market prices from transactions.
 .PP
-Costs participate in transaction balancing.
-Amounts are converted to their cost before checking if the transaction
-is balanced.
-You could also write the above less redundantly, like so:
+Costs participate in transaction balancing: amounts are converted to
+their cost before checking if the transaction is balanced.
+So you could also write the above less redundantly, like so:
 .IP
 .EX
 2026\-01\-01 buy euros
@@ -2350,48 +2279,13 @@ above.
 This form is the easiest to make undetected errors with; so it is
 rejected by \f[CR]hledger check balanced\f[R], and by strict mode.
 .PP
-Advantages of cost notation:
-.IP "1." 3
-it\(aqs more compact and easier to read and write
-.IP "2." 3
-hledger reports can show such amounts converted to their cost, when you
-add the \f[CR]\-B/\-\-cost\f[R] flag (see Cost reporting).
+Reports can show amounts converted to their cost when you add the
+\f[CR]\-B/\-\-cost\f[R] flag.
 .PP
-Advantages of equity postings
-.IP "1." 3
-they help to keep the accounting equation balanced (if you care about
-that)
-.IP "2." 3
-they translate easily to any other double entry accounting system.
-.PP
-Most hledger users use cost notation and don\(aqt use equity postings.
-.PP
-But you can always convert cost notation to equity postings by adding
-\f[CR]\-\-infer\-equity\f[R].
-Eg try \f[CR]hledger print \-x \-\-infer\-equity\f[R].
-.PP
-And you can usually convert equity postings to cost notation by adding
-\f[CR]\-\-infer\-costs\f[R] (see Requirements for detecting equity
-conversion postings).
-Eg try \f[CR]hledger print \-x \-\-infer\-costs\f[R].
-.PP
-Finally: using both equity postings and cost notation at the same time
-is allowed, as long as the journal entry is well formed such that the
-equity postings / cost equivalences can be detected.
-(Otherwise you\(aqll get an error message saying that the transaction is
-unbalanced.):
-.IP
-.EX
-2026\-01\-01 buy euros
-  assets:dollars     $\-123
-  equity:conversion   $123
-  equity:conversion  €\-100
-  assets:euros        €100 \(at $1.23
-.EE
-.PP
-So in principle you could enable both \f[CR]\-\-infer\-equity\f[R] and
-\f[CR]\-\-infer\-costs\f[R] in your config file, and your reports would
-have the advantages of both.
+Costs can also be recorded in a more traditional double entry way, with
+equity postings; or with both notations at once.
+See Cost reporting for a comparison of these styles, and how hledger can
+convert between them.
 .SS Cost basis
 This section briefly describes the \f[CR]{}\f[R] cost basis syntax, used
 to record the nominal cost of an investment being acquired, or to select
@@ -2491,15 +2385,10 @@ To work around this, arrange your files in a hierarchy with
 Or, you could concatenate the files temporarily, and process them like
 one big file.
 .PP
-Why does it work this way ?
-It might be related to hledger\(aqs goal of stable predictable reports.
-File hierarchy is considered \(dqpermanent\(dq, part of your data, while
-the order of command line options/arguments is not.
-We don\(aqt want transient changes to be able to change the meaning of
-the data.
-Eg it would be frustrating if tomorrow all your balance assertions broke
-because you wrote command line arguments in a different order.
-(Discussion welcome.)
+This is for stable, predictable reports: the file hierarchy is part of
+your data, while the order of command line arguments is not, and
+reordering your arguments should not change whether your assertions
+pass.
 .SS Assertions and costs
 Balance assertions ignore costs, and should normally be written without
 one:
@@ -2602,6 +2491,7 @@ parent account instead.
 (The restriction is because transaction balancing amounts, balance
 assignments, and balance assertions must be calculated and checked
 before lot movements are known.)
+See also Lot postings and balance assertions.
 .SS Assertions and status
 Balance assertions always consider postings of all statuses (unmarked,
 pending, or cleared); they are not affected by the
@@ -2636,20 +2526,9 @@ Eg a commodity directive may limit the display precision, but this will
 not affect balance assertions.
 Balance assertion failure messages show exact amounts.
 .SS Assertions and hledger add
-Balance assertions can be included in the amounts given in
-\f[CR]add\f[R].
-All types of assertions are supported, and assertions can be used as in
-a normal journal file.
-.PP
-All transactions, not just those that have an explicit assertion, are
-validated against the existing assertions in the journal.
-This means it is possible for an added transaction to fail even if its
-assertions are correct as of the transaction date.
-.PP
-If this assertion checking is not desired, then it can be disabled with
-\f[CR]\-I\f[R].
-.PP
-However, balance assignments are currently not supported.
+The \f[CR]add\f[R] command also accepts balance assertions (and
+assignments), and re\-checks all of the journal\(aqs assertions as you
+enter amounts; see add and balance assertions.
 .SS Posting comments
 Text following \f[CR];\f[R], at the end of a posting line, and/or on
 indented lines immediately below it, form comments for that posting.
@@ -2727,15 +2606,15 @@ Here\(aqs a transaction with a tag:
     expenses:food       $1
 .EE
 .PP
-A tag can have a value, a single line of text written after the colon.
-Tag values can\(aqt contain newlines.:
+A tag can have a value: a single line of text written after the colon
+(tag values can\(aqt contain newlines):
 .IP
 .EX
 2025\-01\-01 groceries        ; tag1: this is tag1\(aqs value
 .EE
 .PP
-Multiple tags can be separated by comma.
-Tag values can\(aqt contain commas.:
+Multiple tags can be separated by comma (so tag values can\(aqt contain
+commas):
 .IP
 .EX
 2025\-01\-01 groceries        ; tag1:value 1, tag2:value 2, comment text
@@ -3929,7 +3808,7 @@ wave.):
     expenses:rent          $2000
     assets:bank:checking
 
-# every 15th of month in 2023\(aqs first quarter:
+# every 15th of month in 2023\(aqs second quarter:
 \(ti monthly from 2023\-04\-15 to 2023\-06\-16
     expenses:utilities          $400
     assets:bank:checking
@@ -4429,53 +4308,11 @@ In Ledger, these annotations after an amount help specify or select a
 lot\(aqs cost basis: \f[CR]{LOTUNITCOST}\f[R] or
 \f[CR]{{LOTTOTALCOST}}\f[R], \f[CR][LOTDATE]\f[R], and/or
 \f[CR](LOTNOTE)\f[R].
-hledger will read these, as an alternative to its own cost basis
-syntax).
+hledger will read these, as an alternative to its own cost basis syntax.
 .PP
-We also read Ledger\(aqs fixed price) syntax, \f[CR]{=LOTUNITCOST}\f[R]
+We also read Ledger\(aqs fixed price syntax, \f[CR]{=LOTUNITCOST}\f[R]
 or \f[CR]{{=LOTTOTALCOST}}\f[R], treating it as equivalent to
-\f[CR]{LOTUNITCOST}\f[R] or \f[CR]{{LOTTOTALCOST}}\f[R],
-.PP
-Also, for the record:
-.PP
-\f[B]Beancount\f[R] has simpler notation and different behaviour:
-.IP \(bu 2
-\f[CR]\(at UNITCOST\f[R] and \f[CR]\(at\(at TOTALCOST\f[R]
-.RS 2
-.IP \(bu 2
-expresses a cost without creating a lot, as in hledger
-.IP \(bu 2
-when buying (acquiring) or selling (disposing of) a lot, and combined
-with \f[CR]{...}\f[R]: is not used except to document the cost/selling
-price
-.RE
-.IP \(bu 2
-\f[CR]{UNITCOST}\f[R] and \f[CR]{{TOTALCOST}}\f[R]
-.RS 2
-.IP \(bu 2
-when buying, expresses the cost for transaction balancing, and also
-creates a lot with this cost basis attached
-.IP \(bu 2
-when selling,
-.RS 2
-.IP \(bu 2
-selects a lot by its cost basis
-.IP \(bu 2
-raises an error if that lot is not present or can not be selected
-unambiguously (depending on booking method configured)
-.IP \(bu 2
-expresses the selling price for transaction balancing
-.RE
-.RE
-.IP \(bu 2
-\f[CR]{}\f[R], \f[CR]{YYYY\-MM\-DD}\f[R], \f[CR]{\(dqLABEL\(dq}\f[R],
-\f[CR]{UNITCOST, \(dqLABEL\(dq}\f[R],
-\f[CR]{UNITCOST, YYYY\-MM\-DD, \(dqLABEL\(dq}\f[R]
-.RS 2
-.IP \(bu 2
-when selling, other combinations of date/cost/label, like the above, are
-accepted for selecting the lot.
-.RE
+\f[CR]{LOTUNITCOST}\f[R] or \f[CR]{{LOTTOTALCOST}}\f[R].
 .PP
 .SH CSV
 hledger can read transactions from CSV (comma\-separated values) files.
@@ -4768,27 +4605,17 @@ If you need to read CSV files which have some other encoding, you can do
 it by adding \f[CR]encoding ENCODING\f[R] to your CSV rules.
 Eg: \f[CR]encoding iso\-8859\-1\f[R].
 .PP
-The following encodings are supported:
-.PP
-\f[CR]ascii\f[R], \f[CR]utf\-8\f[R], \f[CR]utf\-16\f[R],
-\f[CR]utf\-32\f[R], \f[CR]iso\-8859\-1\f[R], \f[CR]iso\-8859\-2\f[R],
-\f[CR]iso\-8859\-3\f[R], \f[CR]iso\-8859\-4\f[R],
-\f[CR]iso\-8859\-5\f[R], \f[CR]iso\-8859\-6\f[R],
-\f[CR]iso\-8859\-7\f[R], \f[CR]iso\-8859\-8\f[R],
-\f[CR]iso\-8859\-9\f[R], \f[CR]iso\-8859\-10\f[R],
-\f[CR]iso\-8859\-11\f[R], \f[CR]iso\-8859\-13\f[R],
-\f[CR]iso\-8859\-14\f[R], \f[CR]iso\-8859\-15\f[R],
-\f[CR]iso\-8859\-16\f[R], \f[CR]cp1250\f[R], \f[CR]cp1251\f[R],
-\f[CR]cp1252\f[R], \f[CR]cp1253\f[R], \f[CR]cp1254\f[R],
-\f[CR]cp1255\f[R], \f[CR]cp1256\f[R], \f[CR]cp1257\f[R],
-\f[CR]cp1258\f[R], \f[CR]koi8\-r\f[R], \f[CR]koi8\-u\f[R],
-\f[CR]gb18030\f[R], \f[CR]macintosh\f[R], \f[CR]jis\-x\-0201\f[R],
-\f[CR]jis\-x\-0208\f[R], \f[CR]iso\-2022\-jp\f[R],
-\f[CR]shift\-jis\f[R], \f[CR]cp437\f[R], \f[CR]cp737\f[R],
-\f[CR]cp775\f[R], \f[CR]cp850\f[R], \f[CR]cp852\f[R], \f[CR]cp855\f[R],
-\f[CR]cp857\f[R], \f[CR]cp860\f[R], \f[CR]cp861\f[R], \f[CR]cp862\f[R],
-\f[CR]cp863\f[R], \f[CR]cp864\f[R], \f[CR]cp865\f[R], \f[CR]cp866\f[R],
-\f[CR]cp869\f[R], \f[CR]cp874\f[R], \f[CR]cp932\f[R].
+The supported encodings are: \f[CR]ascii\f[R], \f[CR]utf\-8\f[R],
+\f[CR]utf\-16\f[R], \f[CR]utf\-32\f[R], \f[CR]iso\-8859\-1\f[R] to
+\f[CR]iso\-8859\-11\f[R] and \f[CR]iso\-8859\-13\f[R] to
+\f[CR]iso\-8859\-16\f[R], \f[CR]cp1250\f[R] to \f[CR]cp1258\f[R],
+\f[CR]koi8\-r\f[R], \f[CR]koi8\-u\f[R], \f[CR]gb18030\f[R],
+\f[CR]macintosh\f[R], \f[CR]jis\-x\-0201\f[R], \f[CR]jis\-x\-0208\f[R],
+\f[CR]iso\-2022\-jp\f[R], \f[CR]shift\-jis\f[R], \f[CR]cp437\f[R],
+\f[CR]cp737\f[R], \f[CR]cp775\f[R], \f[CR]cp850\f[R], \f[CR]cp852\f[R],
+\f[CR]cp855\f[R], \f[CR]cp857\f[R], \f[CR]cp860\f[R] to
+\f[CR]cp866\f[R], \f[CR]cp869\f[R], \f[CR]cp874\f[R], and
+\f[CR]cp932\f[R].
 .SS \f[CR]separator\f[R]
 You can use the \f[CR]separator\f[R] rule to read other kinds of
 character\-separated data.
@@ -5385,7 +5212,7 @@ match).
 Matcher lines beginning with \f[CR]& !\f[R] (or \f[CR]&& !\f[R]) are
 first negated and then AND\(aqed with the matcher above.
 .PP
-You can also combine multiple matchers one the same line separated by
+You can also combine multiple matchers on the same line separated by
 \f[CR]&&\f[R] (AND) or \f[CR]&& !\f[R] (AND NOT).
 Eg \f[CR]%description amazon && %date 2025\-01\-01\f[R] will match only
 when the description field contains \(dqamazon\(dq and the date field
@@ -5769,7 +5596,7 @@ A number of other tools and workflows, hledger\-specific and otherwise,
 exist for converting, deduplicating, classifying and managing CSV data.
 See:
 .IP \(bu 2
-https://hledger.org/cookbook.html#setups\-and\-workflows
+https://hledger.org/doc.html#setups\-and\-workflows
 .IP \(bu 2
 https://plaintextaccounting.org \-> data import/conversion
 .SS Regular expressions in CSV rules
@@ -6246,7 +6073,7 @@ i 2015/03/30 09:00:00 some account  optional description after 2 spaces ; option
 o 2015/03/30 09:20:00
 i 2015/03/31 22:21:45 another:account
 o 2015/04/01 02:00:34
-i 2015/04/02 12:00:00 another:account  ; this demonstrates multple sessions being clocked in
+i 2015/04/02 12:00:00 another:account  ; this demonstrates multiple sessions being clocked in
 i 2015/04/02 13:00:00 some account
 o 2015/04/02 14:00:00
 o 2015/04/02 15:00:00 another:account
@@ -6698,9 +6525,8 @@ previous month boundary, january 1st.
 \f[CR]hledger register \-\-monthly \-\-begin 1/5\f[R] will start the
 report on january 5th [1].
 .PP
-Also if you are generating transactions or budget goals with periodic
-transaction rules, their start date may be adjusted in a similar way (in
-certain situations).
+The start date of transactions generated by periodic transaction rules
+is chosen separately; see Forecast period, in detail.
 .SS End date adjustment
 A report\(aqs end date is always adjusted to include a whole number of
 intervals, so that the last subperiod has the same length as the others.
@@ -6997,81 +6823,6 @@ T}@T{
 dates will be Sat, Sun; periods will be Sat, Sun\-Fri
 T}
 .TE
-.SH Report titles
-Some reports (\f[CR]aregister\f[R], \f[CR]balance\f[R] (multi\-period),
-\f[CR]balancesheet\f[R], \f[CR]balancesheetequity\f[R],
-\f[CR]cashflow\f[R], \f[CR]holdings\f[R], \f[CR]incomestatement\f[R])
-are displayed with a title by default, and others are not.
-For most reports you can set a title with
-\f[CR]\-\-title=\(aqSome Text\(aq\f[R], or suppress the title with
-\f[CR]\-\-title=\f[R].
-Titles are shown in text and HTML output (and in some commands\(aq
-CSV/TSV output).
-In HTML output the title is an
-\f[CR]<h3 class=\(dqreport\-title\(dq>\f[R] element, which you can style
-with a \f[CR]hledger.css\f[R] file.
-.PP
-Compound reports, like those just mentioned, also have subreport
-headings, like Assets and Liabilities in the balance sheet.
-You can customise these with
-\f[CR]\-\-subreport\-titles=HEADING1|HEADING2..\f[R], or suppress them
-with \f[CR]\-\-subreport\-titles=\f[R].
-.PP
-In both \f[CR]\-\-title\f[R] and \f[CR]\-\-subreport\-titles\f[R], you
-can use \f[CR]\(rsn\f[R] to generate a newline.
-.PP
-In multi\-period reports each period has a heading describing its date
-range or end date.
-When date ranges correspond to natural period boundaries, they are
-described compactly by default (month names are in english, currently).
-Eg: \f[CR]2026\f[R], \f[CR]Q1\f[R], \f[CR]Jan\f[R], \f[CR]W02\f[R].
-You can disable these compact descriptions by using
-\f[CR]\-\-period\-titles=dates\f[R]; then periods will always be
-described as \f[CR]STARTDATE..ENDDATE\f[R].
-.SH Depth
-With the \f[CR]\-\-depth NUM\f[R] option (short form, usually preferred:
-\f[CR]\-NUM\f[R]), reports will show accounts only to the specified
-depth, hiding deeper subaccounts.
-Use this when you want a summary with less detail.
-This flag has the same effect as a \f[CR]depth:\f[R] query argument.
-So all of these are equivalent: \f[CR]depth:2\f[R],
-\f[CR]\-\-depth=2\f[R], \f[CR]\-2\f[R].
-.PP
-You can also provide custom depths for specific accounts, by providing a
-\f[CR]REGEX=NUM\f[R] argument instead of just \f[CR]NUM\f[R].
-For example, \f[CR]\-\-depth assets=2\f[R] (or
-\f[CR]depth:assets=2\f[R]) will collapse accounts matching the regular
-expression \(dqassets\(dq to depth 2.
-So \f[CR]assets:bank:savings\f[R] would be collapsed to
-\f[CR]assets:bank\f[R], but \f[CR]liabilities:bank:credit card\f[R]
-would not be affected.
-.PP
-If REGEX contains spaces or other special characters, enclose it in
-quotes in the usual way.
-Eg: \f[CR]\-\-depth \(aqcredit card=2\(aq\f[R]
-.SS Combining depth options
-If a command line contains multiple general depth options, the last one
-wins.
-(Useful for overriding a depth specified by scripts.)
-.PP
-Or a command may contain a combination of general and custom depth
-options.
-In this case, the most specifically (deepest) matching option wins.
-Some examples:
-.IP \(bu 2
-\f[CR]\-\-depth assets=3 \-\-depth expenses=2 \-\-depth 1\f[R] would
-collapse accounts containing \(dqassets\(dq to depth 3, accounts
-containing \(dqexpenses\(dq to depth 2, and all other accounts to depth
-1.
-.IP \(bu 2
-\f[CR]\-\-depth assets=1 \-\-depth savings=2\f[R] would collapse
-\f[CR]assets:bank:savings\f[R] to depth 2 (not depth 1; because
-\(dqsavings\(dq matches a deeper part of the account name than
-\(dqassets\(dq).
-.PP
-Note currently, to override a custom depth option
-\f[CR]\-\-depth REGEX=NUM\f[R] with a later option, the later option
-must use the same REGEX.
 .SH Queries
 Many hledger commands accept query arguments, which restrict their scope
 and let you report on a precise subset of your data.
@@ -7567,6 +7318,50 @@ account name.
 When amounts are converted to other commodities in cost or value
 reports, \f[CR]cur:\f[R] and \f[CR]amt:\f[R] match the old commodity
 symbol and the old amount quantity, not the new ones.
+.SH Depth
+With the \f[CR]\-\-depth NUM\f[R] option (short form, usually preferred:
+\f[CR]\-NUM\f[R]), reports will show accounts only to the specified
+depth, hiding deeper subaccounts.
+Use this when you want a summary with less detail.
+This flag has the same effect as a \f[CR]depth:\f[R] query argument.
+So all of these are equivalent: \f[CR]depth:2\f[R],
+\f[CR]\-\-depth=2\f[R], \f[CR]\-2\f[R].
+.PP
+You can also provide custom depths for specific accounts, by providing a
+\f[CR]REGEX=NUM\f[R] argument instead of just \f[CR]NUM\f[R].
+For example, \f[CR]\-\-depth assets=2\f[R] (or
+\f[CR]depth:assets=2\f[R]) will collapse accounts matching the regular
+expression \(dqassets\(dq to depth 2.
+So \f[CR]assets:bank:savings\f[R] would be collapsed to
+\f[CR]assets:bank\f[R], but \f[CR]liabilities:bank:credit card\f[R]
+would not be affected.
+.PP
+If REGEX contains spaces or other special characters, enclose it in
+quotes in the usual way.
+Eg: \f[CR]\-\-depth \(aqcredit card=2\(aq\f[R]
+.SS Combining depth options
+If a command line contains multiple general depth options, the last one
+wins.
+(Useful for overriding a depth specified by scripts.)
+.PP
+Or a command may contain a combination of general and custom depth
+options.
+In this case, the most specifically (deepest) matching option wins.
+Some examples:
+.IP \(bu 2
+\f[CR]\-\-depth assets=3 \-\-depth expenses=2 \-\-depth 1\f[R] would
+collapse accounts containing \(dqassets\(dq to depth 3, accounts
+containing \(dqexpenses\(dq to depth 2, and all other accounts to depth
+1.
+.IP \(bu 2
+\f[CR]\-\-depth assets=1 \-\-depth savings=2\f[R] would collapse
+\f[CR]assets:bank:savings\f[R] to depth 2 (not depth 1; because
+\(dqsavings\(dq matches a deeper part of the account name than
+\(dqassets\(dq).
+.PP
+Note currently, to override a custom depth option
+\f[CR]\-\-depth REGEX=NUM\f[R] with a later option, the later option
+must use the same REGEX.
 .SH Pivoting
 Normally, hledger groups amounts and displays their totals by account
 (name).
@@ -7655,348 +7450,37 @@ $ hledger balance Income:Dues \-\-pivot kind:member
 \-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
               \-2 EUR
 .EE
-.SH Generating data
-hledger can enrich the data provided to it, or generate new data, in a
-number of ways.
-Mostly, this is done only if you request it:
-.IP \(bu 2
-Missing amounts, costs, cost basis, and capital gain amounts are
-inferred automatically when possible.
-.IP \(bu 2
-Lot subaccounts are also inferred (invisibly by default;
-\f[CR]\-\-lots\f[R] makes them visible in reports).
-.IP \(bu 2
-The \f[CR]\-\-infer\-equity\f[R] flag infers missing conversion equity
-postings from \(at/\(at\(at costs.
-.IP \(bu 2
-The \f[CR]\-\-infer\-costs\f[R] flag infers missing costs from
-conversion equity postings.
-.IP \(bu 2
-The \f[CR]\-\-infer\-market\-prices\f[R] flag infers \f[CR]P\f[R] price
-directives from costs.
-.IP \(bu 2
-The \f[CR]\-\-auto\f[R] flag adds extra postings to transactions matched
-by auto posting rules.
-.IP \(bu 2
-The \f[CR]\-\-forecast\f[R] option generates transactions from periodic
-transaction rules.
-.IP \(bu 2
-The \f[CR]balance \-\-budget\f[R] report infers budget goals from
-periodic transaction rules.
-.IP \(bu 2
-Commands like \f[CR]close\f[R], \f[CR]rewrite\f[R], and
-\f[CR]hledger\-interest\f[R] generate transactions or postings.
-.IP \(bu 2
-CSV data is converted to transactions by applying CSV conversion rules..
-etc.
+.SH Report titles
+Some reports (\f[CR]aregister\f[R], \f[CR]balance\f[R] (multi\-period),
+\f[CR]balancesheet\f[R], \f[CR]balancesheetequity\f[R],
+\f[CR]cashflow\f[R], \f[CR]holdings\f[R], \f[CR]incomestatement\f[R])
+are displayed with a title by default, and others are not.
+For most reports you can set a title with
+\f[CR]\-\-title=\(aqSome Text\(aq\f[R], or suppress the title with
+\f[CR]\-\-title=\f[R].
+Titles are shown in text and HTML output (and in some commands\(aq
+CSV/TSV output).
+In HTML output the title is an
+\f[CR]<h3 class=\(dqreport\-title\(dq>\f[R] element, which you can style
+with a \f[CR]hledger.css\f[R] file.
 .PP
-Such generated data is temporary, existing only at report time.
-You can convert it to permanent recorded data by, eg, capturing the
-output of \f[CR]hledger print\f[R] and saving it in your journal file.
-This can sometimes be useful as a data entry aid.
+Compound reports, like those just mentioned, also have subreport
+headings, like Assets and Liabilities in the balance sheet.
+You can customise these with
+\f[CR]\-\-subreport\-titles=HEADING1|HEADING2..\f[R], or suppress them
+with \f[CR]\-\-subreport\-titles=\f[R].
 .PP
-If you are curious what data is being generated and why, run
-\f[CR]hledger print \-a\f[R] (equivalent to
-\f[CR]\-\-explicit \-\-lots \-\-verbose\-tags\f[R]).
-\f[CR]\-x/\-\-explicit\f[R] shows inferred amounts and conversion
-prices, \f[CR]\-\-lots\f[R] shows lot subaccounts and lot\-specific
-postings, and \f[CR]\-\-verbose\-tags\f[R] shows the hidden tags which
-hledger uses for classifying things.
-.SH Detecting special postings
-hledger detects certain kinds of postings, both generated and
-non\-generated, and tags them for additional processing.
-These are documented elsewhere, but this section gives an overview of
-the special posting detection rules.
+In both \f[CR]\-\-title\f[R] and \f[CR]\-\-subreport\-titles\f[R], you
+can use \f[CR]\(rsn\f[R] to generate a newline.
 .PP
-By default, the tags are hidden (with a \f[CR]_\f[R] prefix), so they
-can be queried but they won\(aqt appear in \f[CR]print\f[R] output.
-To also add visible tags, use \f[CR]\-\-verbose\-tags\f[R] (useful for
-troubleshooting).
-.PP
-.TS
-tab(@);
-lw(5.4n) lw(40.2n) lw(24.4n).
-T{
-Tag
-T}@T{
-Detected pattern
-T}@T{
-Effect
-T}
-_
-T{
-\f[CR]conversion\-posting\f[R]
-T}@T{
-A pair of adjacent, single\-commodity, costless postings to
-\f[CR]Conversion\f[R]\-type accounts, with a nearby corresponding
-costful or potentially corresponding costless posting
-T}@T{
-Helps transaction balancer infer costs or avoid redundancy in commodity
-conversions
-T}
-T{
-\f[CR]cost\-posting\f[R]
-T}@T{
-A costful posting whose amount and transacted cost correspond to a
-conversion postings pair; or a costless posting matching one of the pair
-T}@T{
-Helps transaction balancer infer costs or avoid redundancy in commodity
-conversions
-T}
-T{
-\f[CR]generated\-posting\f[R]
-T}@T{
-Postings generated at runtime
-T}@T{
-Helps users understand or find postings added at runtime by hledger
-T}
-T{
-\f[CR]ptype:acquire\f[R]
-T}@T{
-Positive postings with lot annotations, or in a lotful commodity, with
-no matching counterposting
-T}@T{
-Creates a new lot
-T}
-T{
-\f[CR]ptype:dispose\f[R]
-T}@T{
-Negative postings with lot annotations, or in a lotful commodity, with
-no matching counterposting
-T}@T{
-Selects and reduces existing lots
-T}
-T{
-\f[CR]ptype:transfer\-from\f[R]
-T}@T{
-The negative posting of a pair of counterpostings, at least one with lot
-annotation or a lotful commodity; or a negative lot posting with an
-equity counterpart (equity transfer)
-T}@T{
-Moves lots between accounts, preserving cost basis
-T}
-T{
-\f[CR]ptype:transfer\-to\f[R]
-T}@T{
-The positive posting of a transfer pair; or a positive lot posting with
-an equity counterpart (equity transfer, e.g.
-opening balances)
-T}@T{
-As above
-T}
-T{
-\f[CR]ptype:gain\f[R]
-T}@T{
-A user\-written posting to a \f[CR]Gain\f[R]\-type account
-T}@T{
-Marks the user\(aqs explicit realised gain posting in a disposal
-T}
-T{
-\f[CR]ptype:rgain\f[R]
-T}@T{
-A generated realised\-gain posting on a \f[CR]Gain\f[R]\-type account
-T}@T{
-Marks hledger\-inferred realised capital gain/loss in a disposal
-T}
-T{
-\f[CR]ptype:ugain\f[R]
-T}@T{
-A generated unrealised\-gain posting on an
-\f[CR]UnrealisedGain\f[R]\-type account
-T}@T{
-Marks the balancing posting so the disposal sums to zero at transacted
-cost
-T}
-.TE
-.SH Forecasting
-Forecasting, or speculative future reporting, can be useful for
-estimating future balances, or for exploring different future scenarios.
-.PP
-The simplest and most flexible way to do it with hledger is to manually
-record a bunch of future\-dated transactions.
-You could keep these in a separate \f[CR]future.journal\f[R] and include
-that with \f[CR]\-f\f[R] only when you want to see them.
-.SS \-\-forecast
-There is another way: with the \f[CR]\-\-forecast\f[R] option, hledger
-can generate temporary \(dqforecast transactions\(dq for reporting
-purposes, according to periodic transaction rules defined in the
-journal.
-Each rule can generate multiple recurring transactions, so by changing
-one rule you can change many forecasted transactions.
-.PP
-Forecast transactions usually start after ordinary transactions end.
-By default, they begin after your latest\-dated ordinary transaction, or
-today, whichever is later, and they end six months from today.
-(The exact rules are a little more complicated, and are given below.)
-.PP
-This is the \(dqforecast period\(dq, which need not be the same as the
-report period.
-You can override it \- eg to forecast farther into the future, or to
-force forecast transactions to overlap your ordinary transactions \- by
-giving the \-\-forecast option a period expression argument, like
-\f[CR]\-\-forecast=..2099\f[R] or
-\f[CR]\-\-forecast=2023\-02\-15..\f[R].
-Note that the \f[CR]=\f[R] is required.
-.SS Inspecting forecast transactions
-\f[CR]print\f[R] is the best command for inspecting and troubleshooting
-forecast transactions.
-Eg:
-.IP
-.EX
-\(ti monthly from 2022\-12\-20    rent
-    assets:bank:checking
-    expenses:rent           $1000
-.EE
-.IP
-.EX
-$ hledger print \-\-forecast \-\-today=2023/4/21
-2023\-05\-20 rent
-    ; generated\-transaction: \(ti monthly from 2022\-12\-20
-    assets:bank:checking
-    expenses:rent                  $1000
-
-2023\-06\-20 rent
-    ; generated\-transaction: \(ti monthly from 2022\-12\-20
-    assets:bank:checking
-    expenses:rent                  $1000
-
-2023\-07\-20 rent
-    ; generated\-transaction: \(ti monthly from 2022\-12\-20
-    assets:bank:checking
-    expenses:rent                  $1000
-
-2023\-08\-20 rent
-    ; generated\-transaction: \(ti monthly from 2022\-12\-20
-    assets:bank:checking
-    expenses:rent                  $1000
-
-2023\-09\-20 rent
-    ; generated\-transaction: \(ti monthly from 2022\-12\-20
-    assets:bank:checking
-    expenses:rent                  $1000
-.EE
-.PP
-Here there are no ordinary transactions, so the forecasted transactions
-begin on the first occurrence after today\(aqs date.
-(You won\(aqt normally use \f[CR]\-\-today\f[R]; it\(aqs just to make
-these examples reproducible.)
-.SS Forecast reports
-Forecast transactions affect all reports, as you would expect.
-Eg:
-.IP
-.EX
-$ hledger areg rent \-\-forecast \-\-today=2023/4/21
-Transactions in expenses:rent and subaccounts:
-2023\-05\-20 rent                 as:ba:checking               $1000         $1000
-2023\-06\-20 rent                 as:ba:checking               $1000         $2000
-2023\-07\-20 rent                 as:ba:checking               $1000         $3000
-2023\-08\-20 rent                 as:ba:checking               $1000         $4000
-2023\-09\-20 rent                 as:ba:checking               $1000         $5000
-.EE
-.IP
-.EX
-$ hledger bal \-M expenses \-\-forecast \-\-today=2023/4/21
-Balance changes in 2023\-05\-01..2023\-09\-30:
-
-               ||   May    Jun    Jul    Aug    Sep 
-===============++===================================
- expenses:rent || $1000  $1000  $1000  $1000  $1000 
-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-++\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
-               || $1000  $1000  $1000  $1000  $1000 
-.EE
-.SS Forecast tags
-Forecast transactions generated by \-\-forecast have a hidden tag,
-\f[CR]_generated\-transaction\f[R].
-So if you ever need to match forecast transactions, you could use
-\f[CR]tag:_generated\-transaction\f[R] (or just
-\f[CR]tag:generated\f[R]) in a query.
-.PP
-For troubleshooting, you can add the \f[CR]\-\-verbose\-tags\f[R] flag.
-Then, visible \f[CR]generated\-transaction\f[R] tags will be added also,
-so you can view them with the \f[CR]print\f[R] command.
-Their value indicates which periodic rule was responsible.
-.SS Forecast period, in detail
-Forecast start/end dates are chosen so as to do something useful by
-default in almost all situations, while also being flexible.
-Here are (with luck) the exact rules, to help with troubleshooting:
-.PP
-The forecast period starts on:
-.IP \(bu 2
-the later of
-.RS 2
-.IP \(bu 2
-the start date in the periodic transaction rule
-.IP \(bu 2
-the start date in \f[CR]\-\-forecast\f[R]\(aqs argument
-.RE
-.IP \(bu 2
-otherwise (if those are not available): the later of
-.RS 2
-.IP \(bu 2
-the report start date specified with
-\f[CR]\-b\f[R]/\f[CR]\-p\f[R]/\f[CR]date:\f[R]
-.IP \(bu 2
-the day after the latest ordinary transaction in the journal
-.RE
-.IP \(bu 2
-otherwise (if none of these are available): today.
-.PP
-The forecast period ends on:
-.IP \(bu 2
-the earlier of
-.RS 2
-.IP \(bu 2
-the end date in the periodic transaction rule
-.IP \(bu 2
-the end date in \f[CR]\-\-forecast\f[R]\(aqs argument
-.RE
-.IP \(bu 2
-otherwise: the report end date specified with
-\f[CR]\-e\f[R]/\f[CR]\-p\f[R]/\f[CR]date:\f[R]
-.IP \(bu 2
-otherwise: 180 days (\(ti6 months) from today.
-.SS Forecast troubleshooting
-When \-\-forecast is not doing what you expect, one of these tips should
-help:
-.IP \(bu 2
-Remember to use the \f[CR]\-\-forecast\f[R] option.
-.IP \(bu 2
-Remember to have at least one periodic transaction rule in your journal.
-.IP \(bu 2
-Test with \f[CR]print \-\-forecast\f[R].
-.IP \(bu 2
-Check for typos or too\-restrictive start/end dates in your periodic
-transaction rule.
-.IP \(bu 2
-Leave at least 2 spaces between the rule\(aqs period expression and
-description fields.
-.IP \(bu 2
-Check for future\-dated ordinary transactions suppressing forecasted
-transactions.
-.IP \(bu 2
-Try setting explicit report start and/or end dates with \f[CR]\-b\f[R],
-\f[CR]\-e\f[R], \f[CR]\-p\f[R] or \f[CR]date:\f[R]
-.IP \(bu 2
-Try adding the \f[CR]\-E\f[R] flag to encourage display of empty
-periods/zero transactions.
-.IP \(bu 2
-Try setting explicit forecast start and/or end dates with
-\f[CR]\-\-forecast=START..END\f[R]
-.IP \(bu 2
-Consult Forecast period, in detail, above.
-.IP \(bu 2
-Check inside the engine: add \f[CR]\-\-debug=2\f[R] (eg).
-.SH Budgeting
-With the balance command\(aqs \f[CR]\-\-budget\f[R] report, each
-periodic transaction rule generates recurring budget goals in specified
-accounts, and goals and actual performance can be compared.
-See the balance command\(aqs doc below.
-.PP
-You can generate budget goals and forecast transactions at the same
-time, from the same or different periodic transaction rules:
-\f[CR]hledger bal \-M \-\-budget \-\-forecast ...\f[R]
-.PP
-See also: Budgeting and Forecasting.
+In multi\-period reports each period has a heading describing its date
+range or end date.
+When date ranges correspond to natural period boundaries, they are
+described compactly by default (month names are in english, currently).
+Eg: \f[CR]2026\f[R], \f[CR]Q1\f[R], \f[CR]Jan\f[R], \f[CR]W02\f[R].
+You can disable these compact descriptions by using
+\f[CR]\-\-period\-titles=dates\f[R]; then periods will always be
+described as \f[CR]STARTDATE..ENDDATE\f[R].
 .SH Amount formatting
 .SS Commodity display style
 For the amounts in each commodity, hledger chooses a consistent display
@@ -8042,7 +7526,34 @@ default style, like \f[CR]$1000.00\f[R] (symbol on the left with no
 space, period as decimal mark, and two decimal digits).
 .PP
 Finally, commodity styles can be overridden by the
-\f[CR]\-c/\-\-commodity\-style\f[R] command line option.
+\f[CR]\-c/\-\-commodity\-style\f[R] command line option, described next.
+.PP
+.SS Commodity style override
+The \f[CR]\-c/\-\-commodity\-style\f[R] option overrides a
+commodity\(aqs declared or inferred display style, for the current
+command.
+Its argument is a sample amount, as in the commodity directive.
+Eg, to show dollar amounts with period digit group marks, comma decimal
+mark, and one decimal digit:
+.IP
+.EX
+$ hledger print \-c \(aq$1.000,0\(aq
+.EE
+.PP
+Some things to note:
+.IP \(bu 2
+The option can be repeated, to set the display style of several
+commodities.
+.IP \(bu 2
+Omitting the commodity symbol sets the style of just the no\-symbol
+commodity, not of all commodities.
+.IP \(bu 2
+For cost amounts, and amounts displayed by the \f[CR]print\f[R] command,
+it affects only the symbol placement and digit group/decimal marks;
+those amounts are always displayed with all of their decimal digits.
+.IP \(bu 2
+In some cases hledger will adjust number formatting to improve
+parseability, eg by adding trailing decimal marks when needed.
 .SS Rounding
 Amounts are stored internally as decimal numbers with up to 255 decimal
 places.
@@ -8146,7 +7657,8 @@ With the \f[CR]\-B/\-\-cost\f[R] flag, hledger can show amounts \(dqat
 cost\(dq, converted to the cost\(aqs commodity.
 .SS Recording costs
 We\(aqll explore several ways of recording transactions involving costs.
-These are also summarised at hledger Cookbook > Cost notation.
+These are also compared at Currency conversion > Four ways to record a
+conversion, compared.
 .PP
 Costs can be recorded explicitly in the journal, using the
 \f[CR]\(at UNITCOST\f[R] or \f[CR]\(at\(at TOTALCOST\f[R] notation
@@ -8222,8 +7734,9 @@ an imbalance in the Accounting Equation.
 This shows up as a non\-zero grand total in balance reports like
 \f[CR]hledger bse\f[R].
 .PP
-For most hledger users, this doesn\(aqt matter in practice and can
-safely be ignored !
+Most hledger users use cost notation and don\(aqt use equity postings;
+for them this imbalance doesn\(aqt matter in practice and can safely be
+ignored.
 But if you\(aqd like to learn more, keep reading.
 .PP
 Conventional DEB uses an extra pair of equity postings to balance the
@@ -8242,6 +7755,7 @@ Of course you can do this in hledger as well:
 .PP
 Now the transaction is perfectly balanced according to standard DEB, and
 \f[CR]hledger bse\f[R]\(aqs total will not be disrupted.
+It also translates easily to any other double entry accounting system.
 .PP
 And, hledger can still infer the cost for cost reporting, but it\(aqs
 not done by default \- you must add the \f[CR]\-\-infer\-costs\f[R] flag
@@ -8334,6 +7848,9 @@ form with:
 $ hledger print \-x \-\-infer\-costs \-\-infer\-equity
 .EE
 .PP
+Or you can enable both flags always, eg in your config file, and your
+reports will have the advantages of both.
+.PP
 Downsides:
 .IP \(bu 2
 The precise format of the journal entry becomes more important.
@@ -8377,16 +7894,6 @@ Reading variant 5 journal entries, combining cost notation and equity
 postings, has all the same requirements.
 When reading such an entry fails, hledger raises an \(dqunbalanced
 transaction\(dq error.
-.SS Infer cost and equity by default ?
-Should \f[CR]\-\-infer\-costs\f[R] and \f[CR]\-\-infer\-equity\f[R] be
-enabled by default ?
-Try using them always, eg with a shell alias:
-.IP
-.EX
-alias h=\(dqhledger \-\-infer\-equity \-\-infer\-costs\(dq
-.EE
-.PP
-and let us know what problems you find.
 .PP
 .SH Value reporting
 hledger can also show amounts \(dqat market value\(dq, converted to some
@@ -8810,8 +8317,6 @@ Related: #1625
 Here is a reference for how valuation is supposed to affect each part of
 hledger\(aqs reports.
 It may be useful when troubleshooting.
-If you find problems, please report them, ideally with a reproducible
-example.
 Related: #329, #1083.
 .PP
 First, a quick glossary:
@@ -9150,7 +8655,6 @@ T}
 .SH Lot reporting
 Automated lot tracking and capital gains reporting is one of the main
 new features of hledger 2.
-Your testing and feedback are important for making it better.
 .PP
 When you buy (acquire) some amount of an investment commodity (a lot),
 it can be important (depending on your local tax rules) to keep track of
@@ -9198,7 +8702,18 @@ annotations rather than the \f[CR]lots\f[R] tag.
 Or if it should be tracked everywhere except certain accounts (eg
 tax\-sheltered accounts where cost basis doesn\(aqt matter), use the
 \f[CR]lots\f[R] tag, and add a \f[CR]lots: NONE\f[R] tag to those
-accounts\(aq declarations to disable lot tracking there.
+accounts\(aq declarations to disable lot tracking there:
+.IP
+.EX
+account assets:ira      ; lots: NONE
+.EE
+.PP
+Postings in such accounts are not lot\-tracked and get no lot
+subaccounts or gain postings, unless they have explicit lot annotations,
+which always enable tracking.
+Moving a lotful commodity from a tracked account into such an account is
+a disposal; moving it out again needs a cost basis or price on the
+receiving posting.
 .PP
 The disposal order (AKA cost basis method \- which lots are consumed
 first) is FIFO by default; or as set by a \f[CR]lots\f[R] tag
@@ -9336,19 +8851,10 @@ The nominal acquisition cost (required).
 Usually this is what you paid for it.
 .PP
 In the journal, we can write \f[I]cost basis annotations\f[R], enclosed
-in {} after an amount.
-The syntax is described in Cost basis.
-These cost basis annotations often mention only part of the cost basis,
-typically the cost.
-Here are some examples:
-.IP
-.EX
-{$50}
-{1.000.000,33 EUR}
-{2026\-01\-15, $50}
-{2026\-01\-15, \(dq12:05\(dq, $50}
-{}
-.EE
+in {} after an amount (the syntax is described in Cost basis), above.
+These often mention only part of the cost basis, typically just the cost
+(\f[CR]{$50}\f[R]), or nothing at all (\f[CR]{}\f[R]); hledger infers
+the rest.
 .SS Lotful commodities
 A more convenient way to record lot transactions, is to declare
 commodities as \f[I]lotful\f[R], by adding a \f[CR]lots\f[R] tag in
@@ -9363,24 +8869,10 @@ This tells hledger that postings involving these commodities always
 involve lots, so it will infer cost basis annotations automatically, and
 you won\(aqt need to write them in the journal.
 .PP
-(The \f[CR]lots\f[R] tag can optionally have a value, specifying the
-order for disposing lots, discussed later in Cost basis methods.
-Note, account declarations can also have a \f[CR]lots\f[R] tag, but
-there it does not declare lotfulness, only disposal order; or, with the
-special value \f[CR]NONE\f[R], it disables lot tracking in that account
-and its subaccounts.
-Eg for a tax\-sheltered account where cost basis is irrelevant:
-.IP
-.EX
-account assets:ira      ; lots: NONE
-.EE
-.PP
-Postings there are not lot\-tracked and get no lot subaccounts or gain
-postings \- unless they have explicit lot annotations, which always
-enable tracking.
-Moving a lotful commodity from a tracked account into such an account is
-a disposal; moving it out again needs a cost basis or price on the
-receiving posting.)
+The \f[CR]lots\f[R] tag can also have a value, selecting the disposal
+order (see Cost basis methods); and on account declarations it disables
+or customises lot tracking per account, as described in How to enable or
+disable lot tracking above.
 .SS Lot subaccounts
 Internally, hledger tracks each lot in a subaccount, named like the cost
 basis.
@@ -9430,8 +8922,8 @@ including all cost basis parts \- date, label if any, and cost.
 .PP
 Note this enclosing the leaf account name (final account name component)
 in \f[CR]{\f[R] and \f[CR]}\f[R] is reserved syntax for lot subaccounts,
-and hledger will report an error if what\(aqs inside the braces is is
-not a valid lot name.
+and hledger will report an error if what\(aqs inside the braces is not a
+valid lot name.
 This is a breaking change from hledger 1.x, which had no special
 handling for such names.
 If you have such an account name and don\(aqt want hledger to reject it,
@@ -9577,10 +9069,12 @@ The destination amount, or the source amount, can also be elided, even
 when the other posting carries a lot selector (eg
 \f[CR]assets:broker \-10 ETSY {2026\-01\-01}\f[R] balanced by a bare
 \f[CR]assets:broker2\f[R] posting, or vice versa).
+.PP
 A consequence: a disposal entry mistakenly written without a selling
 price, and with the other amount left implicit, looks like a lot
 transfer, and is quietly read as one, without raising an error.
 If in doubt, \f[CR]print \-a\f[R] shows how an entry was read.
+.SS Transfer fees
 If the destination receives less than the source sends (eg due to a fee
 deducted by an exchange), record the fee as its own posting in the same
 commodity (eg \f[CR]expenses:fees 0.001 ETH \(at $3000\f[R], or without
@@ -9590,6 +9084,7 @@ hledger then automatically splits the source posting into a transfer
 portion and disposal portion(s), so that the fee disposals are detected
 correctly.
 Otherwise, mismatched sent/received totals are an error.
+.PP
 If a fee posting has a transacted price, its disposal portion carries it
 and a gain is calculated; otherwise the disposal is priceless and no
 gain is calculated.
@@ -9613,7 +9108,7 @@ Eg:
     expenses:fees   \-0.001 ETH
     assets:broker2   0.001 ETH {$0}
 .EE
-.PP
+.SS Capitalising fees
 hledger does not automatically capitalise fees into cost basis (as some
 tax treatments allow, for purchase or transfer fees).
 To capitalise an acquisition fee, fold it into the acquisition cost:
@@ -9627,6 +9122,7 @@ To capitalise an acquisition fee, fold it into the acquisition cost:
 This lot\(aqs cost basis is $51 per share.
 (Recording the commission as a separate expense posting would instead
 keep it out of the basis.)
+.PP
 Capitalising an in\-kind transfer fee \- keeping the remaining units\(aq
 total basis unchanged \- requires disposing of the position at its basis
 price (producing no gain) and re\-acquiring the remainder with the
@@ -9654,18 +9150,19 @@ A negative lot posting sells from one or more existing lots.
 .PP
 The disposal posting must have a transacted price (the selling price),
 either explicit or inferred: $90 here.
-(Exception: a priceless disposal is allowed when it is an in\-kind
-outflow \- when the entry\(aqs non\-asset postings receive the disposed
-units: the same commodity, in the same total quantity.
-Eg a transfer fee deducted in the commodity, or an in\-kind donation,
-possibly split across postings.
+.PP
+One exception: an \f[I]in\-kind disposal\f[R], where the entry\(aqs
+non\-asset postings receive the disposed units (the same commodity, in
+the same total quantity, possibly split across postings), may be
+priceless.
+Eg a transfer fee deducted in the commodity, or an in\-kind donation.
 This is a simple way to record such outflows when you don\(aqt need a
 gain calculated: the disposed units leave their lot(s) carrying their
 own cost basis, so the remaining units\(aq basis is unchanged, but no
-gain or loss is recognised and the receiving posting holds commodity
-units, not priced.
-To have the gain calculated, record the receiving posting with a
-transacted price.)
+gain or loss is recognised, and the receiving posting holds unpriced
+commodity units.
+To have the gain calculated, give the receiving posting a transacted
+price.
 .PP
 When the gain postings are inferred (not written explicitly), hledger
 sizes them from the disposal side only: the sum of
@@ -10116,6 +9613,8 @@ Otherwise the unrealised\-gain postings added to each disposal (see
 above) are counted as cash flows in and out of the investment,
 distorting the report.
 .SS Lot postings and balance assertions
+See also Assertions and lot subaccounts above.
+.PP
 On a dispose or transfer posting without an explicit lot subaccount, a
 balance assertion always refers to the parent account\(aqs balance.
 So if lot subaccounts are added with \f[CR]\-\-lots\f[R], the assertion
@@ -10228,18 +9727,350 @@ $ hledger print desc:sell \-x \-\-lots
     equity:unrealised\-gain                                        $100
 .EE
 .PP
-Use \f[CR]\-a\f[R]/\f[CR]\-\-all\f[R] (short for
-\f[CR]\-\-explicit \-\-lots \-\-verbose\-tags\f[R]) to also see the lot
-posting classifications (ptype tags), useful for troubleshooting:
+And as shown in First lots example, \f[CR]print \-a\f[R] also shows the
+lot posting classifications.
+.SH Generating data
+hledger can enrich the data provided to it, or generate new data, in a
+number of ways.
+Mostly, this is done only if you request it:
+.IP \(bu 2
+Missing amounts, costs, cost basis, and capital gain amounts are
+inferred automatically when possible.
+.IP \(bu 2
+Lot subaccounts are also inferred (invisibly by default;
+\f[CR]\-\-lots\f[R] makes them visible in reports).
+.IP \(bu 2
+The \f[CR]\-\-infer\-equity\f[R] flag infers missing conversion equity
+postings from \(at/\(at\(at costs.
+.IP \(bu 2
+The \f[CR]\-\-infer\-costs\f[R] flag infers missing costs from
+conversion equity postings.
+.IP \(bu 2
+The \f[CR]\-\-infer\-market\-prices\f[R] flag infers \f[CR]P\f[R] price
+directives from costs.
+.IP \(bu 2
+The \f[CR]\-\-auto\f[R] flag adds extra postings to transactions matched
+by auto posting rules.
+.IP \(bu 2
+The \f[CR]\-\-forecast\f[R] option generates transactions from periodic
+transaction rules.
+.IP \(bu 2
+The \f[CR]balance \-\-budget\f[R] report infers budget goals from
+periodic transaction rules.
+.IP \(bu 2
+Commands like \f[CR]close\f[R], \f[CR]rewrite\f[R], and
+\f[CR]hledger\-interest\f[R] generate transactions or postings.
+.IP \(bu 2
+CSV data is converted to transactions by applying CSV conversion rules..
+etc.
+.PP
+Such generated data is temporary, existing only at report time.
+You can convert it to permanent recorded data by, eg, capturing the
+output of \f[CR]hledger print\f[R] and saving it in your journal file.
+This can sometimes be useful as a data entry aid.
+.PP
+If you are curious what data is being generated and why, run
+\f[CR]hledger print \-a\f[R] (equivalent to
+\f[CR]\-\-explicit \-\-lots \-\-verbose\-tags\f[R]).
+\f[CR]\-x/\-\-explicit\f[R] shows inferred amounts and conversion
+prices, \f[CR]\-\-lots\f[R] shows lot subaccounts and lot\-specific
+postings, and \f[CR]\-\-verbose\-tags\f[R] shows the hidden tags which
+hledger uses for classifying things.
+.SH Forecasting
+Forecasting, or speculative future reporting, can be useful for
+estimating future balances, or for exploring different future scenarios.
+.PP
+The simplest and most flexible way to do it with hledger is to manually
+record a bunch of future\-dated transactions.
+You could keep these in a separate \f[CR]future.journal\f[R] and include
+that with \f[CR]\-f\f[R] only when you want to see them.
+.SS \-\-forecast
+There is another way: with the \f[CR]\-\-forecast\f[R] option, hledger
+can generate temporary \(dqforecast transactions\(dq for reporting
+purposes, according to periodic transaction rules defined in the
+journal.
+Each rule can generate multiple recurring transactions, so by changing
+one rule you can change many forecasted transactions.
+.PP
+Forecast transactions usually start after ordinary transactions end.
+By default, they begin after your latest\-dated ordinary transaction, or
+today, whichever is later, and they end six months from today.
+(The exact rules are a little more complicated, and are given below.)
+.PP
+This is the \(dqforecast period\(dq, which need not be the same as the
+report period.
+You can override it \- eg to forecast farther into the future, or to
+force forecast transactions to overlap your ordinary transactions \- by
+giving the \-\-forecast option a period expression argument, like
+\f[CR]\-\-forecast=..2099\f[R] or
+\f[CR]\-\-forecast=2023\-02\-15..\f[R].
+Note that the \f[CR]=\f[R] is required.
+.SS Inspecting forecast transactions
+\f[CR]print\f[R] is the best command for inspecting and troubleshooting
+forecast transactions.
+Eg:
 .IP
 .EX
-$ hledger print desc:sell \-a
-2026\-03\-01 sell some (FIFO, selects oldest lot first)
-    assets:stocks:{2026\-01\-15, $50}    \-5 AAPL {2026\-01\-15, $50} \(at $70  ; ptype: dispose
-    assets:cash                                                   $350
-    revenues:gain                                                $\-100  ; ptype: rgain, generated\-posting:
-    equity:unrealised\-gain                                        $100  ; ptype: ugain, generated\-posting:
+\(ti monthly from 2022\-12\-20    rent
+    assets:bank:checking
+    expenses:rent           $1000
 .EE
+.IP
+.EX
+$ hledger print \-\-forecast \-\-today=2023/4/21
+2023\-05\-20 rent
+    ; generated\-transaction: \(ti monthly from 2022\-12\-20
+    assets:bank:checking
+    expenses:rent                  $1000
+
+2023\-06\-20 rent
+    ; generated\-transaction: \(ti monthly from 2022\-12\-20
+    assets:bank:checking
+    expenses:rent                  $1000
+
+2023\-07\-20 rent
+    ; generated\-transaction: \(ti monthly from 2022\-12\-20
+    assets:bank:checking
+    expenses:rent                  $1000
+
+2023\-08\-20 rent
+    ; generated\-transaction: \(ti monthly from 2022\-12\-20
+    assets:bank:checking
+    expenses:rent                  $1000
+
+2023\-09\-20 rent
+    ; generated\-transaction: \(ti monthly from 2022\-12\-20
+    assets:bank:checking
+    expenses:rent                  $1000
+.EE
+.PP
+Here there are no ordinary transactions, so the forecasted transactions
+begin on the first occurrence after today\(aqs date.
+(You won\(aqt normally use \f[CR]\-\-today\f[R]; it\(aqs just to make
+these examples reproducible.)
+.SS Forecast reports
+Forecast transactions affect all reports, as you would expect.
+Eg:
+.IP
+.EX
+$ hledger areg rent \-\-forecast \-\-today=2023/4/21
+Transactions in expenses:rent and subaccounts:
+2023\-05\-20 rent                 as:ba:checking               $1000         $1000
+2023\-06\-20 rent                 as:ba:checking               $1000         $2000
+2023\-07\-20 rent                 as:ba:checking               $1000         $3000
+2023\-08\-20 rent                 as:ba:checking               $1000         $4000
+2023\-09\-20 rent                 as:ba:checking               $1000         $5000
+.EE
+.IP
+.EX
+$ hledger bal \-M expenses \-\-forecast \-\-today=2023/4/21
+Balance changes in 2023\-05\-01..2023\-09\-30:
+
+               ||   May    Jun    Jul    Aug    Sep 
+===============++===================================
+ expenses:rent || $1000  $1000  $1000  $1000  $1000 
+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-++\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
+               || $1000  $1000  $1000  $1000  $1000 
+.EE
+.SS Forecast tags
+Forecast transactions generated by \-\-forecast have a hidden tag,
+\f[CR]_generated\-transaction\f[R].
+So if you ever need to match forecast transactions, you could use
+\f[CR]tag:_generated\-transaction\f[R] (or just
+\f[CR]tag:generated\f[R]) in a query.
+.PP
+For troubleshooting, you can add the \f[CR]\-\-verbose\-tags\f[R] flag.
+Then, visible \f[CR]generated\-transaction\f[R] tags will be added also,
+so you can view them with the \f[CR]print\f[R] command.
+Their value indicates which periodic rule was responsible.
+.SS Forecast period, in detail
+Forecast start/end dates are chosen so as to do something useful by
+default in almost all situations, while also being flexible.
+Here are (with luck) the exact rules, to help with troubleshooting:
+.PP
+The forecast period starts on:
+.IP \(bu 2
+the later of
+.RS 2
+.IP \(bu 2
+the start date in the periodic transaction rule
+.IP \(bu 2
+the start date in \f[CR]\-\-forecast\f[R]\(aqs argument
+.RE
+.IP \(bu 2
+otherwise (if those are not available): the later of
+.RS 2
+.IP \(bu 2
+the report start date specified with
+\f[CR]\-b\f[R]/\f[CR]\-p\f[R]/\f[CR]date:\f[R]
+.IP \(bu 2
+the day after the latest ordinary transaction in the journal
+.RE
+.IP \(bu 2
+otherwise (if none of these are available): today.
+.PP
+The forecast period ends on:
+.IP \(bu 2
+the earlier of
+.RS 2
+.IP \(bu 2
+the end date in the periodic transaction rule
+.IP \(bu 2
+the end date in \f[CR]\-\-forecast\f[R]\(aqs argument
+.RE
+.IP \(bu 2
+otherwise: the report end date specified with
+\f[CR]\-e\f[R]/\f[CR]\-p\f[R]/\f[CR]date:\f[R]
+.IP \(bu 2
+otherwise: 180 days (\(ti6 months) from today.
+.SS Forecast troubleshooting
+When \-\-forecast is not doing what you expect, one of these tips should
+help:
+.IP \(bu 2
+Remember to use the \f[CR]\-\-forecast\f[R] option.
+.IP \(bu 2
+Remember to have at least one periodic transaction rule in your journal.
+.IP \(bu 2
+Test with \f[CR]print \-\-forecast\f[R].
+.IP \(bu 2
+Check for typos or too\-restrictive start/end dates in your periodic
+transaction rule.
+.IP \(bu 2
+Leave at least 2 spaces between the rule\(aqs period expression and
+description fields.
+.IP \(bu 2
+Check for future\-dated ordinary transactions suppressing forecasted
+transactions.
+.IP \(bu 2
+Try setting explicit report start and/or end dates with \f[CR]\-b\f[R],
+\f[CR]\-e\f[R], \f[CR]\-p\f[R] or \f[CR]date:\f[R]
+.IP \(bu 2
+Try adding the \f[CR]\-E\f[R] flag to encourage display of empty
+periods/zero transactions.
+.IP \(bu 2
+Try setting explicit forecast start and/or end dates with
+\f[CR]\-\-forecast=START..END\f[R]
+.IP \(bu 2
+Consult Forecast period, in detail, above.
+.IP \(bu 2
+Check inside the engine: add \f[CR]\-\-debug=2\f[R] (eg).
+.SH Budgeting
+With the balance command\(aqs \f[CR]\-\-budget\f[R] report, each
+periodic transaction rule generates recurring budget goals in specified
+accounts, and goals and actual performance can be compared.
+See the balance command\(aqs doc below.
+.PP
+You can generate budget goals and forecast transactions at the same
+time, from the same or different periodic transaction rules:
+\f[CR]hledger bal \-M \-\-budget \-\-forecast ...\f[R]
+.PP
+See also: Budgeting on hledger.org.
+.SH Detecting special postings
+hledger detects certain kinds of postings, both generated and
+non\-generated, and tags them for additional processing.
+These are documented elsewhere, but this section gives an overview of
+the special posting detection rules.
+.PP
+By default, the tags are hidden (with a \f[CR]_\f[R] prefix), so they
+can be queried but they won\(aqt appear in \f[CR]print\f[R] output.
+To also add visible tags, use \f[CR]\-\-verbose\-tags\f[R] (useful for
+troubleshooting).
+.PP
+.TS
+tab(@);
+lw(5.4n) lw(40.2n) lw(24.4n).
+T{
+Tag
+T}@T{
+Detected pattern
+T}@T{
+Effect
+T}
+_
+T{
+\f[CR]conversion\-posting\f[R]
+T}@T{
+A pair of adjacent, single\-commodity, costless postings to
+\f[CR]Conversion\f[R]\-type accounts, with a nearby corresponding
+costful or potentially corresponding costless posting
+T}@T{
+Helps transaction balancer infer costs or avoid redundancy in commodity
+conversions
+T}
+T{
+\f[CR]cost\-posting\f[R]
+T}@T{
+A costful posting whose amount and transacted cost correspond to a
+conversion postings pair; or a costless posting matching one of the pair
+T}@T{
+Helps transaction balancer infer costs or avoid redundancy in commodity
+conversions
+T}
+T{
+\f[CR]generated\-posting\f[R]
+T}@T{
+Postings generated at runtime
+T}@T{
+Helps users understand or find postings added at runtime by hledger
+T}
+T{
+\f[CR]ptype:acquire\f[R]
+T}@T{
+Positive postings with lot annotations, or in a lotful commodity, with
+no matching counterposting
+T}@T{
+Creates a new lot
+T}
+T{
+\f[CR]ptype:dispose\f[R]
+T}@T{
+Negative postings with lot annotations, or in a lotful commodity, with
+no matching counterposting
+T}@T{
+Selects and reduces existing lots
+T}
+T{
+\f[CR]ptype:transfer\-from\f[R]
+T}@T{
+The negative posting of a pair of counterpostings, at least one with lot
+annotation or a lotful commodity; or a negative lot posting with an
+equity counterpart (equity transfer)
+T}@T{
+Moves lots between accounts, preserving cost basis
+T}
+T{
+\f[CR]ptype:transfer\-to\f[R]
+T}@T{
+The positive posting of a transfer pair; or a positive lot posting with
+an equity counterpart (equity transfer, e.g.
+opening balances)
+T}@T{
+As above
+T}
+T{
+\f[CR]ptype:gain\f[R]
+T}@T{
+A user\-written posting to a \f[CR]Gain\f[R]\-type account
+T}@T{
+Marks the user\(aqs explicit realised gain posting in a disposal
+T}
+T{
+\f[CR]ptype:rgain\f[R]
+T}@T{
+A generated realised\-gain posting on a \f[CR]Gain\f[R]\-type account
+T}@T{
+Marks hledger\-inferred realised capital gain/loss in a disposal
+T}
+T{
+\f[CR]ptype:ugain\f[R]
+T}@T{
+A generated unrealised\-gain posting on an
+\f[CR]UnrealisedGain\f[R]\-type account
+T}@T{
+Marks the balancing posting so the disposal sums to zero at transacted
+cost
+T}
+.TE
 .SH PART 4: COMMANDS
 .PP
 Here are hledger\(aqs standard subcommands.
@@ -13485,8 +13316,7 @@ Note that \-\-value can also convert to cost, as a convenience; but
 actually \-\-cost and \-\-value are independent options, and could be
 used together.
 .SS Combining balance report modes
-Most combinations of these modes should produce reasonable reports, but
-if you find any that seem wrong or misleading, let us know.
+Most combinations of these modes produce reasonable reports.
 The following restrictions are applied:
 .IP \(bu 2
 \f[CR]\-\-valuechange\f[R] implies \f[CR]\-\-value=end\f[R]
@@ -15299,10 +15129,11 @@ This command runs the unit tests built in to hledger and hledger\-lib,
 printing the results on stdout.
 If any test fails, the exit code will be non\-zero.
 .PP
-This is mainly used by hledger developers, but you can also use it to
-sanity\-check the installed hledger executable on your platform.
-All tests are expected to pass \- if you ever see a failure, please
-report as a bug!
+You can use this as a sanity\-check of the hledger executable installed
+on your system.
+A failure is unlikely, since these and other much larger test suites run
+frequently during hledger development \- but if you see one, please
+report it as a bug!
 .PP
 Any arguments before a \f[CR]\-\-\f[R] argument will be passed to the
 \f[CR]tasty\f[R] test runner as test\-selecting \-p patterns, and any
@@ -15379,23 +15210,9 @@ In a powershell window, run
 And open a new powershell window.
 (Existing windows won\(aqt see the change.)
 .PP
-Warning, doing this from the Windows command line can be tricky; other
-methods you may find online:
-.IP \(bu 2
-may not affect the current window
-.IP \(bu 2
-may not be persistent
-.IP \(bu 2
-may not work unless you are an administrator
-.IP \(bu 2
-may limit values to 1024 characters
-.IP \(bu 2
-may break dynamic references to other variables
-.IP \(bu 2
-may require a new\-enough version of powershell
-.IP \(bu 2
-or may be intended for the older command window.
-.IP \(bu 2
+Other methods you may find online are often unreliable: they may not
+persist, may not affect the current window, or may need administrator
+rights or a newer powershell.
 If you still have trouble, see eg Setting Windows PowerShell environment
 variables or Adding path permanently to windows using powershell
 doesn\(aqt appear to work.
@@ -15483,7 +15300,7 @@ Some known issues and limitations:
 hledger uses the system\(aqs text encoding when reading non\-ascii text.
 If no system encoding is configured, or if the data\(aqs encoding is
 different, hledger will give an error.
-(See Text encoding, Troubleshooting.)
+(See Text encoding and Troubleshooting.)
 .PP
 On Microsoft Windows, depending what kind of terminal window you use,
 non\-ascii characters, ANSI text formatting, and/or the add command\(aqs
