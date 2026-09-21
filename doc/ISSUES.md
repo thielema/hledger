@@ -4,7 +4,7 @@ The hledger project\'s issue tracker is on github.
 
 Shortcut urls:
 
-- <https://issues.hledger.org>       - this page
+- <https://issues.hledger.org>       - open issues of all types in the github issue tracker
 - <https://wishes.hledger.org>       - open WISHes in the github issue tracker
 - <https://bugs.hledger.org>         - open BUGs in the github issue tracker
 - <https://bugs.hledger.org/new>     - report a new issue
@@ -27,6 +27,7 @@ Misc. issue queries:
 
 (Most older issues don't have impact/severity labels, so those reports are recent-biased)
 
+<a name="open-issues"></a>
 Open issues grouped by topic/type:
 
 <!-- 
