@@ -7872,7 +7872,7 @@ $ git commit -m 'txns' 2023.journal
 hledger 2 (the 1.99.x previews, and 2.0 when released) reads hledger 1 journals,
 with a few differences described below.
 hledger 1 (1.52.x) continues to receive security fixes,
-and both can be installed side by side (eg by renaming one of the official binaries to `hledger-1.52`).
+and both can be installed side by side (eg by renaming the hledger 1 binary to `hledger1`).
 
 ## Migrating hledger 1 data to hledger 2
 
@@ -7936,7 +7936,7 @@ To keep the same journal working in both hledger 1 and hledger 2:
   (then hledger 2 infers them, and hledger 1 shows no gain)
 - name gain accounts conventionally (`revenues:gain`, `equity:unrealised-gain`) rather than declaring `type: U`
 - avoid account names ending in `{...}`
-- after changes, check the journal with both versions, eg `hledger check` and `hledger-1.52 check`
+- after changes, check the journal with both versions, eg `hledger check` and `hledger1 check`
 
 # Migrating to a new file
 
