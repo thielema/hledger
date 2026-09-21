@@ -1748,25 +1748,11 @@ This is explained in [Commodity display style](#commodity-display-style) below.
 
 ## Costs
 
-In traditional double entry bookkeeping,
-to record a transaction where one commodity is exchanged for another,
-you add extra equity postings to balance the two commodities. Eg:
-
-```journal
-2026-01-01 buy euros
-  assets:dollars     $-123
-  equity:conversion   $123
-  equity:conversion  €-100
-  assets:euros        €100
-```
-
-hledger offers a more convenient notation:
-instead of equity postings, you can write `@ UNITPRICE` or `@@ TOTALPRICE` after a posting amount,
-recording the transacted price or conversion rate.
+When one commodity is exchanged for another - a currency conversion, or a purchase or sale of stock -
+you can record the transacted price or conversion rate by writing `@ UNITCOST` or `@@ TOTALCOST` after a posting amount.
 (hledger docs generically call this a "cost", whether buying or selling, though "cost" is an overloaded word.
 "Transacted cost" or "transacted price" is more precise.)
-
-So you could write the above as:
+Eg:
 
 ```journal
 2026-01-01 buy euros
@@ -1786,9 +1772,9 @@ The cost should normally be a positive amount.
 Negative costs are supported, but can be confusing, as discussed at 
 [--infer-market-prices: market prices from transactions](#--infer-market-prices-market-prices-from-transactions).
 
-Costs participate in transaction balancing.
-Amounts are converted to their cost before checking if the transaction is balanced.
-You could also write the above less redundantly, like so:
+Costs participate in transaction balancing:
+amounts are converted to their cost before checking if the transaction is balanced.
+So you could also write the above less redundantly, like so:
 
 ```journal
 2026-01-01 buy euros
@@ -1819,39 +1805,10 @@ Here we had to switch the order of postings, to get the same meaning as above.
 
 This form is the easiest to make undetected errors with; so it is rejected by `hledger check balanced`, and by strict mode.
 
-Advantages of cost notation:
+Reports can show amounts converted to their cost when you add the [`-B/--cost`](#reporting-at-cost) flag.
 
-1. it's more compact and easier to read and write
-2. hledger reports can show such amounts converted to their cost, when you add the [`-B/--cost`](#reporting-at-cost) flag (see [Cost reporting](#cost-reporting)).
-
-Advantages of equity postings
-
-1. they help to keep the accounting equation balanced (if you care about that)
-2. they translate easily to any other double entry accounting system.
-
-Most hledger users use cost notation and don't use equity postings.
-
-But you can always convert cost notation to equity postings by adding `--infer-equity`.
-Eg try `hledger print -x --infer-equity`.
-
-And you can usually convert equity postings to cost notation by adding `--infer-costs`
-(see [Requirements for detecting equity conversion postings](#requirements-for-detecting-equity-conversion-postings)).
-Eg try `hledger print -x --infer-costs`.
-
-Finally: using both equity postings and cost notation at the same time is allowed,
-as long as the journal entry is well formed such that the equity postings / cost equivalences can be detected.
-(Otherwise you'll get an error message saying that the transaction is unbalanced.):
-
-```journal
-2026-01-01 buy euros
-  assets:dollars     $-123
-  equity:conversion   $123
-  equity:conversion  €-100
-  assets:euros        €100 @ $1.23
-```
-
-So in principle you could enable both `--infer-equity` and `--infer-costs` in your config file,
-and your reports would have the advantages of both.
+Costs can also be recorded in a more traditional double entry way, with equity postings; or with both notations at once.
+See [Cost reporting](#cost-reporting) for a comparison of these styles, and how hledger can convert between them.
 
 ## Cost basis
 
@@ -6351,7 +6308,8 @@ and because of the "magical" transformation of one commodity into another,
 they cause an imbalance in the Accounting Equation.
 This shows up as a non-zero grand total in balance reports like `hledger bse`.
 
-For most hledger users, this doesn't matter in practice and can safely be ignored !
+Most hledger users use cost notation and don't use equity postings;
+for them this imbalance doesn't matter in practice and can safely be ignored.
 But if you'd like to learn more, keep reading.
 
 Conventional DEB uses an extra pair of equity postings to balance the transaction.
@@ -6369,6 +6327,7 @@ Of course you can do this in hledger as well:
 
 Now the transaction is perfectly balanced according to standard DEB,
 and `hledger bse`'s total will not be disrupted.
+It also translates easily to any other double entry accounting system.
 
 And, hledger can still infer the cost for cost reporting,
 but it's not done by default - you must add the `--infer-costs` flag like so:
