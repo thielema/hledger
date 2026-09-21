@@ -15,6 +15,19 @@ commit ...` — not in the main repo. That repo's commit messages are plain
 (no `;category:` prefix, no AI-disclosure line); match its existing log
 style, e.g. `install: update packaged-binary version badges`.
 
+## Temporary state since 2026-09-20: repology badges are static
+
+repology.org has been offline since 2026-09-13 (domain on registrar hold; see
+https://github.com/repology/repology-rs/issues/560). Until it returns, every
+repology badge line in install.md carries a static shields.io badge instead,
+with the original repology URL kept on the same line in an HTML comment:
+`<!-- repology: https://repology.org/badge/version-for-repo/REPO/hledger.svg -->`.
+While this lasts, treat those lines like the static badges below (check and
+update their versions), and update the date in the "**Note:**" paragraph at
+the top of the Packaged binaries section. When repology is back: swap each
+shields URL back for the URL in its comment, drop the comments and the note,
+and delete this section.
+
 ## Two kinds of badge — only one needs checking
 
 1. **repology badges** — `https://repology.org/badge/version-for-repo/REPO/hledger.svg`.
