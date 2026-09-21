@@ -292,7 +292,9 @@ Similarly, if mutually exclusive flags are used together, the right-most wins.
 With most commands, arguments are interpreted as a hledger [query](#queries) which filters the data.
 Some queries can be expressed either with options or with arguments.
 
-Below are more tips for using the command line interface -
+# Command line tips
+
+Here are some tips for using hledger at the command line;
 feel free to skip these until you need them.
 
 ## Special characters
@@ -568,8 +570,14 @@ cur:\$
 $ hledger bal @cash.args
 ```
 
+## Shell completions
 
-## Config files
+If you use the bash or zsh shells, you can optionally set up context-sensitive autocompletion for hledger command lines.
+Try pressing `hledger<SPACE><TAB><TAB>` (should list all hledger commands)
+or `hledger reg acct:<TAB><TAB>` (should list your top-level account names).
+If completions aren't working, or for more details, see [Install > Shell completions](install.html#shell-completions).
+
+# Config files
 
 You can configure default command line options and arguments conveniently in a hledger config file.
 Config file options will be inserted near the start of your command line,
@@ -602,7 +610,7 @@ You can ignore all config files by adding the `-n`/`--no-conf` flag to the comma
 This is recommended when using hledger in scripts.
 When both `--conf` and `--no-conf` options are used, the right-most wins.
 
-### Command aliases
+## Command aliases
 
 In a config file you can also define command aliases: your own custom commands,
 which expand to a longer command line (similar to git's aliases). (Since 1.99.4.)
@@ -658,7 +666,7 @@ or the XDG `hledger.conf`). Shell commands in a nearby automatically-found `hled
 in the current directory or a parent directory, will not run - this prevents a config file
 from an untrusted downloaded or shared directory from running arbitrary shell commands.
 
-### Config file troubleshooting
+## Config file troubleshooting
 
 There aren't many hledger features that need a warning, but this is one !\
 A default config file (the kind that hledger runs automatically, without needing a --conf option)
@@ -684,13 +692,6 @@ If you prefer to just avoid this feature:
 - Don't use a default config file.
 - If you download hledger data from elsewhere, watch out for directories containing a hledger.conf file.
 - If you're feeling paranoid, use the `-n/--no-conf` flag always, eg by running hledger via a script or alias.
-
-## Shell completions
-
-If you use the bash or zsh shells, you can optionally set up context-sensitive autocompletion for hledger command lines.
-Try pressing `hledger<SPACE><TAB><TAB>` (should list all hledger commands)
-or `hledger reg acct:<TAB><TAB>` (should list your top-level account names).
-If completions aren't working, or for more details, see [Install > Shell completions](install.html#shell-completions).
 
 # Output
 
