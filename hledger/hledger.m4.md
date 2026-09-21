@@ -289,7 +289,7 @@ If the same option appears more than once in a command line, usually the last (r
 Similarly, if mutually exclusive flags are used together, the right-most wins.
 (When flags are mutually exclusive, they'll usually have a group prefix in --help.)
 
-With most commands, arguments are interpreted as a hledger [query](hledger.md#queries) which filter the data.
+With most commands, arguments are interpreted as a hledger [query](#queries) which filters the data.
 Some queries can be expressed either with options or with arguments.
 
 Below are more tips for using the command line interface -
@@ -1453,7 +1453,7 @@ and no flags to see the most up-to-date state of your finances.
 ## Code
 
 After the status mark, but before the description,
-you can optionally write a transaction "code", such as a check number or transaction id, enclosed in parentheses,
+you can optionally write a transaction "code", such as a check number or transaction id, enclosed in parentheses.
 
 This has a few limitations:
 The code must not contain a closing parenthesis (or it will be truncated).
@@ -2140,13 +2140,13 @@ Here's a transaction with a tag:
     expenses:food       $1
 ```
 
-A tag can have a value, a single line of text written after the colon. Tag values can't contain newlines.:
+A tag can have a value: a single line of text written after the colon (tag values can't contain newlines):
 
 ```journal
 2025-01-01 groceries        ; tag1: this is tag1's value
 ```
 
-Multiple tags can be separated by comma. Tag values can't contain commas.:
+Multiple tags can be separated by comma (so tag values can't contain commas):
 
 ```journal
 2025-01-01 groceries        ; tag1:value 1, tag2:value 2, comment text
@@ -3012,7 +3012,7 @@ with the date replaced by a tilde (`~`) followed by a
     expenses:rent          $2000
     assets:bank:checking
 
-# every 15th of month in 2023's first quarter:
+# every 15th of month in 2023's second quarter:
 ~ monthly from 2023-04-15 to 2023-06-16
     expenses:utilities          $400
     assets:bank:checking
@@ -3473,11 +3473,11 @@ In hledger, these are equivalent to `@` and `@@`.
 
 In Ledger, these annotations after an amount help specify or select a lot's [cost basis](#cost-basis):
 `{LOTUNITCOST}` or `{{{{LOTTOTALCOST}}}}`, `[LOTDATE]`, and/or `(LOTNOTE)`.
-hledger will read these, as an alternative to its own [cost basis syntax](#cost-basis)).
+hledger will read these, as an alternative to its own [cost basis syntax](#cost-basis).
 
-We also read Ledger's [fixed price][ledger: fixing lot prices]) syntax,
+We also read Ledger's [fixed price][ledger: fixing lot prices] syntax,
 `{=LOTUNITCOST}` or `{{{{=LOTTOTALCOST}}}}`,
-treating it as equivalent to `{LOTUNITCOST}` or `{{{{LOTTOTALCOST}}}}`,
+treating it as equivalent to `{LOTUNITCOST}` or `{{{{LOTTOTALCOST}}}}`.
 
 [ledger: fixing lot prices]:        https://www.ledger-cli.org/3.0/doc/ledger3.html#Fixing-Lot-Prices
 [ledger: virtual posting costs]:    https://www.ledger-cli.org/3.0/doc/ledger3.html#Virtual-posting-costs
@@ -4262,7 +4262,7 @@ When an if block has multiple matchers, each on its own line,
 - Matcher lines beginning with `&` (or `&&`) are AND'ed with the matcher above (all in the AND'ed group must match).
 - Matcher lines beginning with `& !` (or `&& !`) are first negated and then AND'ed with the matcher above.
 
-You can also combine multiple matchers one the same line separated by `&&` (AND) or `&& !` (AND NOT).
+You can also combine multiple matchers on the same line separated by `&&` (AND) or `&& !` (AND NOT).
 Eg `%description amazon && %date 2025-01-01` will match only when the
 description field contains "amazon" and the date field contains "2025-01-01".
 
@@ -4609,7 +4609,7 @@ A number of other tools and workflows, hledger-specific and otherwise,
 exist for converting, deduplicating, classifying and managing CSV
 data. See:
 
-- <https://hledger.org/cookbook.html#setups-and-workflows>
+- <https://hledger.org/doc.html#setups-and-workflows>
 - <https://plaintextaccounting.org> -> data import/conversion
 
 ### Regular expressions in CSV rules
@@ -4971,7 +4971,7 @@ i 2015/03/30 09:00:00 some account  optional description after 2 spaces ; option
 o 2015/03/30 09:20:00
 i 2015/03/31 22:21:45 another:account
 o 2015/04/01 02:00:34
-i 2015/04/02 12:00:00 another:account  ; this demonstrates multple sessions being clocked in
+i 2015/04/02 12:00:00 another:account  ; this demonstrates multiple sessions being clocked in
 i 2015/04/02 13:00:00 some account
 o 2015/04/02 14:00:00
 o 2015/04/02 15:00:00 another:account
@@ -5520,7 +5520,7 @@ Also, `weekday` and `weekendday` are shorthand for `mon,tue,wed,thu,fri` and `sa
 
 This is mainly intended for use with `--forecast`, to generate 
 [periodic transactions](#periodic-transactions) on arbitrary days of the week.
-It may be less useful with `-p`, since it divides each week into subperiods  of unequal length, which is unusual.
+It may be less useful with `-p`, since it divides each week into subperiods of unequal length, which is unusual.
 (Related: [#1632](https://github.com/hledgerorg/hledger/pull/1632))
 
 Examples:
@@ -6281,7 +6281,7 @@ With the `-B/--cost` flag, hledger can show amounts "at cost", converted to the 
 ## Recording costs
 
 We'll explore several ways of recording transactions involving costs.
-These are also summarised at [hledger Cookbook > Cost notation](/cost-notation.md).
+These are also compared at [Currency conversion > Four ways to record a conversion, compared](/currency-conversion.md#four-ways-to-record-a-conversion-compared).
 
 Costs can be recorded explicitly in the journal, using the `@ UNITCOST` or `@@ TOTALCOST` notation described in [Journal > Costs](#costs):
 
@@ -7184,7 +7184,7 @@ Unlike cost basis annotations, lot subaccount names must be complete,
 including all cost basis parts - date, label if any, and cost.
 
 Note this enclosing the leaf account name (final account name component) in `{` and `}` is reserved syntax for lot subaccounts,
-and hledger will report an error if what's inside the braces is is not a valid lot name.
+and hledger will report an error if what's inside the braces is not a valid lot name.
 This is a breaking change from hledger 1.x, which had no special handling for such names.
 If you have such an account name and don't want hledger to reject it,
 you can pass `--ignore-lots` (or `-I`) to skip most lot processing,
@@ -8076,7 +8076,7 @@ Some known issues and limitations:
 hledger uses the system's text encoding when reading non-ascii text.
 If no system encoding is configured, or if the data's encoding is different,
 hledger will give an error.
-(See Text encoding, Troubleshooting.)
+(See [Text encoding](#text-encoding) and [Troubleshooting](#troubleshooting).)
 
 On Microsoft Windows, depending what kind of terminal window you use,
 non-ascii characters, ANSI text formatting, and/or the add command's TAB key, may not be fully supported.
