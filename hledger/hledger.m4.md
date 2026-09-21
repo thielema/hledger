@@ -1971,6 +1971,7 @@ instead.
 
 (The restriction is because transaction balancing amounts, balance assignments,
 and balance assertions must be calculated and checked before lot movements are known.)
+See also [Lot postings and balance assertions](#lot-postings-and-balance-assertions).
 
 ### Assertions and status
 
@@ -3412,28 +3413,6 @@ treating it as equivalent to `{LOTUNITCOST}` or `{{{{LOTTOTALCOST}}}}`.
 [ledger: buying and selling stock]: https://www.ledger-cli.org/3.0/doc/ledger3.html#Buying-and-Selling-Stock
 [ledger: lot dates]:                https://www.ledger-cli.org/3.0/doc/ledger3.html#Lot-dates
 [ledger: lot notes]:                https://www.ledger-cli.org/3.0/doc/ledger3.html#Lot-notes
-
-Also, for the record:
-
-**Beancount** has simpler [notation][beancount: costs and prices] and different [behaviour][beancount: how inventories work]:
-
-- `@ UNITCOST` and `@@ TOTALCOST`
-  - expresses a cost without creating a lot, as in hledger
-  - when buying (acquiring) or selling (disposing of) a lot, and combined with `{...}`: 
-    is not used except to document the cost/selling price
-
-- `{UNITCOST}` and `{{{{TOTALCOST}}}}`
-  - when buying, expresses the cost for transaction balancing, and also creates a lot with this cost basis attached
-  - when selling,
-    - selects a lot by its cost basis
-    - raises an error if that lot is not present or can not be selected unambiguously (depending on booking method configured)
-    - expresses the selling price for transaction balancing
-
-- `{}`, `{YYYY-MM-DD}`, `{"LABEL"}`, `{UNITCOST, "LABEL"}`, `{UNITCOST, YYYY-MM-DD, "LABEL"}`
-  - when selling, other combinations of date/cost/label, like the above, are accepted for selecting the lot.
-
-[beancount: costs and prices]:      https://beancount.github.io/docs/beancount_language_syntax.html#costs-and-prices
-[beancount: how inventories work]:  https://beancount.github.io/docs/how_inventories_work.html
 
 
 <a name="csv-format"></a>
@@ -6744,7 +6723,16 @@ A posting with any of these is called a lot posting.
 If you want a commodity tracked lotfully in only some accounts, use annotations rather than the `lots` tag.
 Or if it should be tracked everywhere except certain accounts (eg tax-sheltered accounts
 where cost basis doesn't matter), use the `lots` tag,
-and add a `lots: NONE` tag to those accounts' declarations to disable lot tracking there.
+and add a `lots: NONE` tag to those accounts' declarations to disable lot tracking there:
+
+```journal
+account assets:ira      ; lots: NONE
+```
+
+Postings in such accounts are not lot-tracked and get no lot subaccounts or gain postings,
+unless they have explicit lot annotations, which always enable tracking.
+Moving a lotful commodity from a tracked account into such an account is a disposal;
+moving it out again needs a cost basis or price on the receiving posting.
 
 The disposal order (AKA cost basis method - which lots are consumed first)
 is FIFO by default; or as set by a `lots` tag *value* on the commodity or account declaration
@@ -6871,16 +6859,10 @@ In hledger, a lot's cost basis has 2-3 parts:
 2. A short text label (optional). This can be used to distinguish lots acquired on the same date.
 3. The nominal acquisition cost (required). Usually this is what you paid for it.
 
-In the journal, we can write *cost basis annotations*, enclosed in {} after an amount.
-The syntax is described in [Cost basis](#cost-basis).
-These cost basis annotations often mention only part of the cost basis, typically the cost.
-Here are some examples:
-
-    {$50}
-    {1.000.000,33 EUR}
-    {2026-01-15, $50}
-    {2026-01-15, "12:05", $50}
-    {}
+In the journal, we can write *cost basis annotations*, enclosed in {} after an amount
+(the syntax is described in [Cost basis](#cost-basis)), above.
+These often mention only part of the cost basis, typically just the cost (`{$50}`),
+or nothing at all (`{}`); hledger infers the rest.
 
 ### Lotful commodities
 
@@ -6894,21 +6876,9 @@ commodity AAPL          ; lots:
 This tells hledger that postings involving these commodities always involve lots,
 so it will infer cost basis annotations automatically, and you won't need to write them in the journal.
 
-(The `lots` tag can optionally have a value, specifying the order for disposing lots,
-discussed later in [Cost basis methods](#cost-basis-methods).
-Note, account declarations can also have a `lots` tag, but there it does not declare lotfulness,
-only disposal order; or, with the special value `NONE`, it disables lot tracking
-in that account and its subaccounts. Eg for a tax-sheltered account
-where cost basis is irrelevant:
-
-```journal
-account assets:ira      ; lots: NONE
-```
-
-Postings there are not lot-tracked and get no lot subaccounts or gain postings -
-unless they have explicit lot annotations, which always enable tracking.
-Moving a lotful commodity from a tracked account into such an account is a disposal;
-moving it out again needs a cost basis or price on the receiving posting.)
+The `lots` tag can also have a value, selecting the disposal order (see [Cost basis methods](#cost-basis-methods));
+and on account declarations it disables or customises lot tracking per account,
+as described in [How to enable or disable lot tracking](#how-to-enable-or-disable-lot-tracking) above.
 
 ### Lot subaccounts
 
@@ -7080,15 +7050,20 @@ one source posting can feed several destination accounts, or several sources one
 The destination amount, or the source amount, can also be elided, even when
 the other posting carries a lot selector (eg `assets:broker -10 ETSY {2026-01-01}`
 balanced by a bare `assets:broker2` posting, or vice versa).
+
 A consequence: a disposal entry mistakenly written without a selling price,
-and with the other amount left implicit, looks like a lot transfer, and 
+and with the other amount left implicit, looks like a lot transfer, and
 is quietly read as one, without raising an error. If in doubt, `print -a` shows how an entry was read.
+
+#### Transfer fees
+
 If the destination receives less than the source sends (eg due to a fee deducted by an exchange),
 record the fee as its own posting in the same commodity (eg `expenses:fees 0.001 ETH @ $3000`, or without the price);
 several fee postings which together add up to the missing quantity also work.
 hledger then automatically splits the source posting into a transfer portion and disposal portion(s),
 so that the fee disposals are detected correctly.
 Otherwise, mismatched sent/received totals are an error.
+
 If a fee posting has a transacted price, its disposal portion carries it and a gain is calculated;
 otherwise the disposal is priceless and no gain is calculated.
 The fee's disposal selects lots before the transfer does, using the
@@ -7109,6 +7084,8 @@ give it a real or dummy cost basis (or price) annotation, which keeps it out of 
     assets:broker2   0.001 ETH {$0}
 ```
 
+#### Capitalising fees
+
 hledger does not automatically capitalise fees into cost basis
 (as some tax treatments allow, for purchase or transfer fees).
 To capitalise an acquisition fee, fold it into the acquisition cost:
@@ -7121,6 +7098,7 @@ To capitalise an acquisition fee, fold it into the acquisition cost:
 
 This lot's cost basis is $51 per share.
 (Recording the commission as a separate expense posting would instead keep it out of the basis.)
+
 Capitalising an in-kind transfer fee - keeping the remaining units' total basis unchanged -
 requires disposing of the position at its basis price (producing no gain)
 and re-acquiring the remainder with the combined basis, eg:
@@ -7147,15 +7125,15 @@ A negative lot posting sells from one or more existing lots.
 ```
 
 The disposal posting must have a transacted price (the selling price), either explicit or inferred: $90 here.
-(Exception: a priceless disposal is allowed when it is an in-kind outflow -
-when the entry's non-asset postings receive the disposed units:
-the same commodity, in the same total quantity. Eg a transfer fee deducted
-in the commodity, or an in-kind donation, possibly split across postings.
+
+One exception: an *in-kind disposal*, where the entry's non-asset postings receive the disposed units
+(the same commodity, in the same total quantity, possibly split across postings), may be priceless.
+Eg a transfer fee deducted in the commodity, or an in-kind donation.
 This is a simple way to record such outflows when you don't need a gain calculated:
 the disposed units leave their lot(s) carrying their own cost basis,
-so the remaining units' basis is unchanged, but no gain or loss is recognised
-and the receiving posting holds commodity units, not priced.
-To have the gain calculated, record the receiving posting with a transacted price.)
+so the remaining units' basis is unchanged, but no gain or loss is recognised,
+and the receiving posting holds unpriced commodity units.
+To have the gain calculated, give the receiving posting a transacted price.
 
 When the gain postings are inferred (not written explicitly),
 hledger sizes them from the disposal side only:
@@ -7487,7 +7465,9 @@ $ hledger roi --inv assets:stocks --pnl 'revenues:gain|equity:unrealised-gain'
 Otherwise the unrealised-gain postings added to each disposal (see above)
 are counted as cash flows in and out of the investment, distorting the report.
 
-## Lot postings and balance assertions 
+## Lot postings and balance assertions
+
+See also [Assertions and lot subaccounts](#assertions-and-lot-subaccounts) above.
 
 On a dispose or transfer posting without an explicit lot subaccount, a [balance assertion](#balance-assertions)
 always refers to the parent account's balance. So if lot subaccounts are added with `--lots`, the assertion is not affected.
@@ -7589,15 +7569,7 @@ $ hledger print desc:sell -x --lots
     equity:unrealised-gain                                        $100
 ```
 
-Use `-a`/`--all` (short for `--explicit --lots --verbose-tags`) to also see the lot posting classifications (ptype tags), useful for troubleshooting:
-```
-$ hledger print desc:sell -a
-2026-03-01 sell some (FIFO, selects oldest lot first)
-    assets:stocks:{2026-01-15, $50}    -5 AAPL {2026-01-15, $50} @ $70  ; ptype: dispose
-    assets:cash                                                   $350
-    revenues:gain                                                $-100  ; ptype: rgain, generated-posting:
-    equity:unrealised-gain                                        $100  ; ptype: ugain, generated-posting:
-```
+And as shown in [First lots example](#first-lots-example), `print -a` also shows the lot posting classifications.
 
 
 # Generating data
