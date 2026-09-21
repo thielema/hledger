@@ -42,7 +42,6 @@ and then symlinked into the hledger_site repo for rendering on hledger.org.
 - [RELEASING](RELEASING.md) - release process
 - [VERSIONNUMBERS](VERSIONNUMBERS.md) - version numbering policy
 - [DOCS](DOCS.md) - documentation structure and maintenance
-- [MOCKUPS](MOCKUPS.md) - old mockups and draft ideas
 
 **Project**
 
