@@ -96,8 +96,8 @@ General input flags:
      --txn-balancing=...    how to check that transactions are balanced:
                             'old':   - use global display precision
                             'exact': - use transaction precision (default)
-     --infer-costs          infer conversion equity postings from costs
-     --infer-equity         infer costs from conversion equity postings
+     --infer-costs          infer costs from conversion equity postings
+     --infer-equity         infer conversion equity postings from costs
      --infer-market-prices  infer market prices from costs
      --pivot=TAGNAME        use a different field or tag as account names
   -s --strict               do extra error checks (and override -I)
