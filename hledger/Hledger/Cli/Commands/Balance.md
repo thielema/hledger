@@ -618,8 +618,7 @@ but actually --cost and --value are independent options, and could be used toget
 
 #### Combining balance report modes
 
-Most combinations of these modes should produce reasonable reports,
-but if you find any that seem wrong or misleading, let us know.
+Most combinations of these modes produce reasonable reports.
 The following restrictions are applied:
 
 - `--valuechange` implies `--value=end`
