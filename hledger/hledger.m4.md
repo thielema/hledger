@@ -215,7 +215,6 @@ Some commands to start with:
 
 - `hledger add` - add transactions, with interactive prompts
 - `hledger print` - show journal entries
-- `hledger balance` (`bal`) - show account balances
 - `hledger aregister assets:checking` (`areg`) - show one account's transactions and running balance
 - `hledger balancesheet` (`bs`) - show assets, liabilities and net worth
 - `hledger incomestatement` (`is`) - show revenues and expenses
@@ -432,8 +431,8 @@ unless overridden by an explicit `--color=y` or `--colour=y` option.
 
 <a name="commands-overview"></a>
 
-Here are hledger's standard [subcommands](#commands).
-You can list these by running `hledger help commands`.
+Here are hledger's standard [commands](#commands).
+You can list these by running `hledger help commands`, or as a more compact list by running `hledger`.
 If you have installed more [add-on commands](../scripts.md), they also will be listed.
 
 In the following command docs, each command's specific options are shown.
@@ -6980,7 +6979,7 @@ This can sometimes be useful as a data entry aid.
 If you are curious what data is being generated and why, run `hledger print -a` (equivalent to `--explicit --lots --verbose-tags`).
 `-x/--explicit` shows inferred amounts and conversion prices, 
 `--lots` shows lot subaccounts and lot-specific postings,
-and `--verbose-tags` shows the hidden tags which hledger uses for classifying things.
+and `--verbose-tags` shows the hidden tags which hledger uses for analysing transactions .
 
 # Forecasting
 
@@ -7118,13 +7117,13 @@ You can generate budget goals and forecast transactions at the same time, from t
 
 See also: [Budgeting](/budgeting.html) on hledger.org.
 
-# Detecting special postings
+# Posting types
 
-hledger detects certain kinds of postings, both generated and non-generated, and tags them for additional processing.
-These are documented elsewhere, but this section gives an overview of the special posting detection rules.
+hledger detects and tags certain kinds of postings, to help it understand complex transactions.
+Here is quick overview of the posting detection rules.
 
-By default, the [tags](#tags) are hidden (with a `_` prefix), so they can be queried but they won't appear in `print` output.
-To also add visible tags, use `--verbose-tags` (useful for troubleshooting).
+By default, these [tags](#tags) are hidden (with a `_` prefix), so they can be queried but they won't appear in `print` output.
+To also add visible tags, for troubleshooting, use `print`'s `--verbose-tags` or `-a/--all` flags.
 
 | Tag                   | Detected pattern                                                                                                                                                         | Effect                                                                                                |
 |-----------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------|
@@ -7875,6 +7874,15 @@ If you're using version control, this can be a good time to commit:
 $ git commit -m 'txns' 2023.journal
 ```
 
+# Closing a journal file
+
+At the end of the year, you may want to continue your journal in a new file,
+so that old transactions don't slow down or clutter your reports,
+and to help ensure the integrity of your accounting history.
+See the [close command](#close).
+
+If using version control, don't forget to `git add` the new file.
+
 # hledger 1 and hledger 2
 
 hledger 2 (the 1.99.x previews, and 2.0 when released) reads hledger 1 journals,
@@ -7945,15 +7953,6 @@ To keep the same journal working in both hledger 1 and hledger 2:
 - name gain accounts conventionally (`revenues:gain`, `equity:unrealised-gain`) rather than declaring `type: U`
 - avoid account names ending in `{...}`
 - after changes, check the journal with both versions, eg `hledger check` and `hledger1 check`
-
-# Migrating to a new file
-
-At the end of the year, you may want to continue your journal in a new file,
-so that old transactions don't slow down or clutter your reports,
-and to help ensure the integrity of your accounting history.
-See the [close command](#close).
-
-If using version control, don't forget to `git add` the new file.
 
 
 # BUGS
