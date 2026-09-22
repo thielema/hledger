@@ -276,6 +276,7 @@ module Hledger.Cli.Commands.Balance (
  ,tidyColumnLabels
  ,nbsp
  ,RowClass(..)
+ ,accountClass
   -- ** Tests
  ,tests_Balance
 ) where
@@ -451,6 +452,9 @@ balance opts@CliOpts{reportspec_=rspec} j = case balancecalc_ ropts of
     fmt         = outputFormatFromOpts opts
 
 -- Rendering
+
+accountClass :: Ods.Class
+accountClass = Ods.Class "account"
 
 data RowClass = Value | Total
     deriving (Eq, Ord, Enum, Bounded, Show)
@@ -735,7 +739,7 @@ balanceReportAsSpreadsheetParts fmt opts (items, total) =
               setAccountAnchor
                   (guard (rc==Value) >> balance_base_url_ opts)
                   (querystring_ opts) name $
-              (\c -> c{Ods.cellClass = Ods.Class "account"}) $
+              (\c -> c{Ods.cellClass = accountClass}) $
               cell $ case rc of
                 Total -> dispName  -- show the total row heading as is; --drop etc. don't apply (#2688)
                 Value -> renderBalanceAcct opts nbsp (name, dispName, dep) in
@@ -799,9 +803,8 @@ multiBalanceReportAsSpreadsheetParts fmt opts@ReportOpts{..}
   allCommodities (PeriodicReport colspans items tr) =
     (allHeaders, concatMap fullRowAsTexts items, addTotalBorders totalrows)
   where
-    accountCell label =
-        (Ods.defaultCell label) {Ods.cellClass = Ods.Class "account"}
-    hCell cls label = (headerCell label) {Ods.cellClass = Ods.Class cls}
+    accountCell label = (Ods.defaultCell label) {Ods.cellClass = accountClass}
+    hCell cls label = (headerCell label) {Ods.cellClass = cls}
     allHeaders =
       case layout_ of
       LayoutBareWide ->
@@ -812,7 +815,7 @@ multiBalanceReportAsSpreadsheetParts fmt opts@ReportOpts{..}
       _ -> [headers]
     headers =
       addHeaderBorders $
-      hCell "account" "account" :
+      hCell accountClass "account" :
       case layout_ of
       LayoutTidy -> map headerCell tidyColumnLabels
       LayoutBareWide -> dateHeaders >> map headerCell allCommodities
@@ -820,11 +823,11 @@ multiBalanceReportAsSpreadsheetParts fmt opts@ReportOpts{..}
       _          -> dateHeaders
     -- The headings over columns of figures are marked as such, so that a
     -- stylesheet can align them with the figures below (cf amountClass).
-    amountHeader c = c{Ods.cellClass = Ods.Class "amount"}
+    amountHeader c = c{Ods.cellClass = amountClass Value}
     dateHeaders =
       (if not summary_only_ then map (amountHeader . headerDateSpanCell period_titles_ balance_base_url_ querystring_) colspans  else [] )++
-      [hCell "amount rowtotal" "total" | multiBalanceHasTotalsColumn opts] ++
-      [hCell "amount rowaverage" "average" | average_]
+      [hCell (rowTotalClass Value) "total" | multiBalanceHasTotalsColumn opts] ++
+      [hCell (rowAverageClass Value) "average" | average_]
     fullRowAsTexts row =
         addRowSpanHeader anchorCell $
         rowAsText Value (dateSpanCell period_titles_ balance_base_url_ querystring_ acctName) row
