@@ -1,0 +1,66 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: de\n"
+
+msgid "None"
+msgstr " "
+
+msgid "Account"
+msgstr "Account"
+
+msgid "Revenues"
+msgstr "Revenues"
+
+msgid "Expenses"
+msgstr "Expenses"
+
+msgid "Assets"
+msgstr "Assets"
+
+msgid "Liabilities"
+msgstr "Liabilities"
+
+msgid "Equity"
+msgstr "Equity"
+
+msgid "CashFlows"
+msgstr "Cash flows"
+
+msgid "Net"
+msgstr "Net:"
+
+msgid "Total"
+msgstr "Total:"
+
+msgid "Average"
+msgstr "Average"
+
+msgid "RightTotal"
+msgstr "  Total"
+
+msgid "RightAverage"
+msgstr "Average"
+
+
+msgid "Commodity"
+msgstr "Commodity"
+
+msgid "Balance"
+msgstr "Balance"
+
+msgid "Budget"
+msgstr "Budget"
+
+
+msgid "IncomeStatement"
+msgstr "Income Statement"
+
+msgid "BalanceSheet"
+msgstr "Balance Sheet"
+
+msgid "BalanceSheetWithEquity"
+msgstr "Balance Sheet With Equity"
+
+msgid "CashflowStatement"
+msgstr "Cashflow Statement"
