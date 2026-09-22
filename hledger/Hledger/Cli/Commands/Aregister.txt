@@ -15,6 +15,10 @@ Flags:
   -H --historical           accumulation mode: show historical running
                             total/balance (includes postings before report
                             start date) (default)
+  -r --related              show the other accounts in each transaction
+                            (default)
+     --matched              show the matched accounts (this account or its
+                            subaccounts) instead
      --invert               display all amounts with reversed sign
      --drop=N               omit N leading account name parts
      --heading=YN           show heading row above table: yes (default) or no
@@ -69,6 +73,18 @@ Each aregister line item shows:
   (probably abbreviated)
 - the total change to this account's balance from this transaction
 - the account's historical running balance after this transaction.
+
+The account column normally shows the other accounts in each transaction
+(this is also selectable with -r/--related). With --matched, it shows
+the matched accounts instead: this account, or the subaccounts of it
+that were posted to. This is useful when the account has subaccounts,
+eg:
+
+$ hledger areg expenses --matched
+
+shows which expense categories each transaction touched. Any additional
+query arguments also narrow the matched accounts shown. The amounts and
+running balance are the same in both modes.
 
 Transactions making a net change of zero are not shown by default; add
 the -E/--empty flag to show them.

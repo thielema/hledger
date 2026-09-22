@@ -159,3 +159,41 @@ My Title
 
 $ hledger -f - areg a --title=
 2025-06-12                      a                               $1            $1
+
+# By default the account column shows the other accounts in each transaction.
+# With --matched, it shows the matched accounts instead: this account, or the
+# subaccounts of it that were posted to. Useful for a parent account. (#2540)
+<
+2020-01-01 Vendor A
+  expenses:foo      $1000
+  expenses:bankfee     $5
+  assets:bank
+
+2020-01-01 Vendor B
+  expenses:bar      $1000
+  expenses:bankfee     $5
+  assets:bank
+
+# ** 12. --matched shows the matched subaccounts; amounts are unchanged.
+$ hledger -f- areg expenses --matched
+Transactions in expenses and subaccounts:
+2020-01-01 Vendor A             ex:foo, ex:bankfee           $1005         $1005
+2020-01-01 Vendor B             ex:bar, ex:bankfee           $1005         $2010
+
+# ** 13. Additional query arguments also narrow the matched accounts shown.
+$ hledger -f- areg expenses --matched fee
+Transactions in expenses and subaccounts (matching query):
+2020-01-01 Vendor A             ex:bankfee                      $5            $5
+2020-01-01 Vendor B             ex:bankfee                      $5           $10
+
+# ** 14. -r/--related selects the default; the last of these flags wins.
+$ hledger -f- areg expenses --matched -r
+Transactions in expenses and subaccounts:
+2020-01-01 Vendor A             as:bank                      $1005         $1005
+2020-01-01 Vendor B             as:bank                      $1005         $2010
+
+# ** 15. For an account with no subaccounts, --matched just shows that account.
+$ hledger -f- areg bank --matched
+Transactions in assets:bank and subaccounts:
+2020-01-01 Vendor A             as:bank                     $-1005        $-1005
+2020-01-01 Vendor B             as:bank                     $-1005        $-2010
