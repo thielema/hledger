@@ -28,6 +28,7 @@ import Data.List.NonEmpty qualified as NonEmpty
 import Data.Text qualified as T
 import Data.Text.Lazy qualified as TL
 import Data.Text.Lazy.Builder qualified as TB
+import Data.Gettext (Catalog, loadCatalog)
 import Data.Time.Calendar (Day, addDays)
 import System.Console.CmdArgs.Explicit as C (Mode, flagNone, flagReq)
 import System.IO qualified as IO
@@ -45,6 +46,7 @@ import Hledger.Write.Html (formatRow, formatTitle, htmlAsLazyText, nl, Html, toH
 import Hledger.Write.Html.Attribute (stylesheet, tableStyle)
 import Hledger.Write.Ods (printFods)
 import Hledger.Write.Spreadsheet qualified as Spr
+import Hledger.Cli.Message qualified as Msg
 
 -- | Description of a compound balance report command,
 -- from which we generate the command's cmdargs mode and IO action.
@@ -61,8 +63,9 @@ import Hledger.Write.Spreadsheet qualified as Spr
 --
 data CompoundBalanceCommandSpec = CompoundBalanceCommandSpec {
   cbcdoc      :: CommandHelpStr,                  -- ^ the command's name(s) and documentation
-  cbctitle    :: String,                          -- ^ overall report title
-  cbcqueries  :: [CBCSubreportSpec DisplayName],  -- ^ subreport details
+  cbctitle    :: Msg.Message,                     -- ^ overall report title
+  cbcqueries  :: [CBCSubreportSpec Msg.Message DisplayName],
+                                                  -- ^ subreport details
   cbcaccum    :: BalanceAccumulation              -- ^ how to accumulate balances (per-period, cumulative, historical)
                                                   --   (overrides command line flags)
 }
@@ -136,8 +139,14 @@ compoundBalanceCommandMode CompoundBalanceCommandSpec{..} =
 
 -- | Generate a runnable command from a compound balance command specification.
 compoundBalanceCommand :: CompoundBalanceCommandSpec -> (CliOpts -> Journal -> IO ())
-compoundBalanceCommand CompoundBalanceCommandSpec{..} opts@CliOpts{reportspec_=rspec, rawopts_=rawopts} j = do
-    writeOutputLazyText opts $ render $ styleAmounts styles cbr
+compoundBalanceCommand spec opts j =
+  compoundBalanceCommandWithCatalog spec opts j
+    =<< traverse loadCatalog (catalog_file_ opts)
+
+compoundBalanceCommandWithCatalog ::
+  CompoundBalanceCommandSpec -> CliOpts -> Journal -> Maybe Catalog -> IO ()
+compoundBalanceCommandWithCatalog CompoundBalanceCommandSpec{..} opts@CliOpts{reportspec_=rspec, rawopts_=rawopts} j maybeCat = do
+  writeOutputLazyText opts $ render $ styleAmounts styles cbr
   where
     styles = journalCommodityStylesWith HardRounding j
     ropts@ReportOpts{..} = _rsReportOpts rspec
@@ -145,11 +154,12 @@ compoundBalanceCommand CompoundBalanceCommandSpec{..} opts@CliOpts{reportspec_=r
     mbalanceAccumulationOverride = balanceAccumulationOverride rawopts
     balanceaccumulation = fromMaybe cbcaccum mbalanceAccumulationOverride
     -- Set balance type in the report options.
-    ropts' = ropts{balanceaccum_=balanceaccumulation}
+    ropts' = ropts{balanceaccum_=balanceaccumulation, catalog_ = maybeCat}
+    msg = Msg.getText maybeCat
 
     title =
          maybe "" (<>" ") mintervalstr
-      <> T.pack cbctitle
+      <> msg cbctitle
       <> " "
       <> titledatestr
       <> maybe "" (" "<>) mtitleclarification
@@ -203,9 +213,14 @@ compoundBalanceCommand CompoundBalanceCommandSpec{..} opts@CliOpts{reportspec_=r
     -- make a CompoundBalanceReport. The default heading is the auto-generated
     -- title above; --title=TEXT overrides it (and =empty suppresses).
     -- --subreport-titles=A|B|... overrides per-subreport titles.
+    cbr' :: CompoundPeriodicReport Msg.Message DisplayName MixedAmount
     cbr' = compoundBalanceReport rspec{_rsReportOpts=ropts'} j cbcqueries
+    cbr  :: CompoundPeriodicReport T.Text DisplayName MixedAmount
     cbr  = applySubreportTitles ropts' $
-           cbr'{cbrTitle = effectiveTitle ropts' title}
+           cbr'{cbrTitle = effectiveTitle ropts' title,
+                cbrSubreports = map (mapFst3 msg) $ cbrSubreports cbr'}
+    -- ToDo: move to Utils
+    mapFst3 f (a,b,c) = (f a, b, c)
 
     -- render appropriately
     render = case outputFormatFromOpts opts of
@@ -224,7 +239,10 @@ compoundBalanceCommand CompoundBalanceCommandSpec{..} opts@CliOpts{reportspec_=r
 -- A `|`-separated argument overrides the corresponding subreport titles, in
 -- order; subreports beyond the supplied list keep their default title. An
 -- explicit empty argument suppresses all default subreport titles.
-applySubreportTitles :: ReportOpts -> CompoundPeriodicReport a b -> CompoundPeriodicReport a b
+applySubreportTitles ::
+  ReportOpts ->
+  CompoundPeriodicReport T.Text a b ->
+  CompoundPeriodicReport T.Text a b
 applySubreportTitles ropts cbr@CompoundPeriodicReport{cbrSubreports=subs} =
   case subreport_titles_ ropts of
     Nothing -> cbr
@@ -283,12 +301,14 @@ Balance Sheet
  Total       ||           1        1        1
 
 -}
-compoundBalanceReportAsText :: ReportOpts -> CompoundPeriodicReport DisplayName MixedAmount -> TL.Text
+compoundBalanceReportAsText ::
+  ReportOpts -> CompoundPeriodicReport T.Text DisplayName MixedAmount -> TL.Text
 compoundBalanceReportAsText ropts (CompoundPeriodicReport title _colspans subreports totalsrow) =
   TB.toLazyText $
     titleBuilder <>
     multiBalanceReportTableAsText ropts bigtablewithtotalsrow
   where
+    msg = Msg.getText (catalog_ ropts)
     titleBuilder | T.null title = mempty
                  | otherwise    = TB.fromText title <> TB.fromText "\n\n"
     bigtable =
@@ -315,7 +335,7 @@ compoundBalanceReportAsText ropts (CompoundPeriodicReport title _colspans subrep
           --  ]
           coltotalslines = multiBalanceRowAsText ropts allCommodities totalsrow
           totalstable = Table
-            (Group NoLine $ map Header $ "Net:" : replicate (length coltotalslines - 1) "")  -- row headers
+            (Group NoLine $ map Header $ msg Msg.Net : replicate (length coltotalslines - 1) "")  -- row headers
             (Header [])     -- column headers, concatTables will discard these
             coltotalslines  -- cell values         
 
@@ -343,12 +363,14 @@ compoundBalanceReportAsText ropts (CompoundPeriodicReport title _colspans subrep
 -- Subreports' CSV is concatenated, with the headings rows replaced by a
 -- subreport title row, and an overall title row, one headings row, and an
 -- optional overall totals row is added.
-compoundBalanceReportAsCsv :: ReportOpts -> CompoundPeriodicReport DisplayName MixedAmount -> CSV
+compoundBalanceReportAsCsv ::
+  ReportOpts -> CompoundPeriodicReport T.Text DisplayName MixedAmount -> CSV
 compoundBalanceReportAsCsv ropts cbr =
     let spreadsheet =
             snd $ snd $
             compoundBalanceReportAsSpreadsheet
-                machineFmt "Account" Nothing ropts cbr
+                machineFmt (msg Msg.Account) Nothing ropts cbr
+        msg = Msg.getText (catalog_ ropts)
         title = cbrTitle cbr
         titleRows | T.null title = []
                   | otherwise =
@@ -358,7 +380,8 @@ compoundBalanceReportAsCsv ropts cbr =
         titleRows ++ NonEmpty.toList spreadsheet
 
 -- | Render a compound balance report as HTML.
-compoundBalanceReportAsHtml :: ReportOpts -> CompoundPeriodicReport DisplayName MixedAmount -> Html
+compoundBalanceReportAsHtml ::
+  ReportOpts -> CompoundPeriodicReport T.Text DisplayName MixedAmount -> Html
 compoundBalanceReportAsHtml ropts cbr =
   let (title, (_fixed, cells)) =
           compoundBalanceReportAsSpreadsheet
@@ -380,16 +403,17 @@ compoundBalanceReportAsHtml ropts cbr =
 -- | Render a compound balance report as Spreadsheet.
 compoundBalanceReportAsSpreadsheet ::
   AmountFormat -> T.Text -> Maybe T.Text ->
-  ReportOpts -> CompoundPeriodicReport DisplayName MixedAmount ->
+  ReportOpts -> CompoundPeriodicReport T.Text DisplayName MixedAmount ->
   (T.Text, ((Int, Int), NonEmpty [Spr.Cell Spr.NumLines T.Text]))
 compoundBalanceReportAsSpreadsheet fmt accountLabel maybeBlank ropts cbr =
   let
     CompoundPeriodicReport title colspans subreports totalrow = cbr
+    msg = Msg.getText (catalog_ ropts)
     leadingHeaders =
       Spr.headerCell accountLabel :
       case layout_ ropts of
           LayoutTidy -> map Spr.headerCell tidyColumnLabels
-          LayoutBare -> [Spr.headerCell "Commodity"]
+          LayoutBare -> [Spr.headerCell $ msg Msg.Commodity]
           _ -> []
     dataHeaders =
       (guard (layout_ ropts /= LayoutTidy) >>) $
@@ -397,8 +421,8 @@ compoundBalanceReportAsSpreadsheet fmt accountLabel maybeBlank ropts cbr =
         (reportPeriodName
             (period_titles_ ropts) (balanceaccum_ ropts) colspans)
         (if not (summary_only_ ropts) then colspans else []) ++
-      (guard (multiBalanceHasTotalsColumn ropts) >> ["Total"]) ++
-      (guard (average_ ropts) >> ["Average"])
+      (guard (multiBalanceHasTotalsColumn ropts) >> [msg Msg.Total]) ++
+      (guard (average_ ropts) >> [msg Msg.Average])
     headerrow =
       leadingHeaders ++
       concatMap (Spr.horizontalSpan subColumns . Spr.headerCell) dataHeaders
@@ -446,7 +470,7 @@ compoundBalanceReportAsSpreadsheet fmt accountLabel maybeBlank ropts cbr =
                              -- make a table of rendered lines of the report totals row
         & map (map (fmap wbToText))
         & Spr.addRowSpanHeader
-            ((Spr.defaultCell "Net:") {Spr.cellClass = accountClass})
+            ((Spr.defaultCell $ msg Msg.Net) {Spr.cellClass = accountClass})
                              -- insert a headings column, with Net: on the first line only
         & addTotalBorders    -- marking the first row for special styling
 
