@@ -981,6 +981,9 @@ multiBalanceReportAsPartTable
     multiColumnTableInterRowBorder    = NoLine
     multiColumnTableInterColumnBorder = if pretty_ opts then SingleLine else NoLine
 
+-- | All commodities appearing in these report rows, sorted.
+-- Used as the commodity column order for LayoutBareWide; it must cover
+-- every row rendered, see 'setDisplayCommodityBare'.
 allCommoditiesFromPeriodicReport ::
     [PeriodicReportRow a MixedAmount] -> [CommoditySymbol]
 allCommoditiesFromPeriodicReport =
@@ -1428,6 +1431,17 @@ unsupportedLayout :: Layout -> a -> a
 unsupportedLayout lay =
     error' $ show lay ++ " not supported for the chosen output format."
 
+-- | Adjust an amount format for bare layouts, which show commodity symbols
+-- in their own column(s): hide the symbols and show amounts in the given
+-- commodity order.
+--
+-- Caution: the order list must include every commodity that will be
+-- rendered with this format. 'orderedAmounts' renders exactly one amount
+-- per listed commodity, so an amount whose commodity is missing from the
+-- list is silently dropped (a listed commodity with no amount shows as zero).
+-- For LayoutBareWide the list is the whole report's commodities, gathered by
+-- 'allCommoditiesFromPeriodicReport' or 'allCommoditiesFromSubreports';
+-- for LayoutBare and LayoutTidy it is the row's own commodities.
 setDisplayCommodityBare :: [CommoditySymbol] -> AmountFormat -> AmountFormat
 setDisplayCommodityBare cs fmt =
     fmt{

@@ -452,6 +452,10 @@ compoundBalanceReportAsSpreadsheet fmt accountLabel maybeBlank ropts cbr =
         ((1, multiBalanceReportNumHeaderColumns $ layout_ ropts),
             headerrow :| concatMap subreportrows subreports ++ totalrows))
 
+-- | All commodities appearing in any of these subreports, sorted.
+-- Used as the commodity column order for LayoutBareWide across the whole
+-- compound report; it must cover every row rendered, including the totals
+-- row, see 'setDisplayCommodityBare' in "Hledger.Cli.Commands.Balance".
 allCommoditiesFromSubreports ::
     [(text, PeriodicReport a MixedAmount, bool)] -> [CommoditySymbol]
 allCommoditiesFromSubreports =
