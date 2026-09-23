@@ -6094,22 +6094,19 @@ Now, you can also do it yourself with hledger.
 
 Automated lot tracking and capital gains reporting is the biggest new feature of hledger 2.
 Lot tracking was first shipped in Ledger, then improved in Beancount; hledger 2 evolves PTA lot tracking further,
-making it more powerful and ergonomic. Several kinds of lot notation are supported;
-you can record all details explicitly, or use more convenient low-boilerplate entries, letting hledger infer the missing parts.
-hledger checks lot entries, tracks, infers and validates lot movements, and calculates capital gains when lots are sold.
+making it more powerful and ergonomic. 
+You can record lot details explicitly, or let hledger infer them.
+hledger checks lot entries; tracks, infers and validates lot movements; and calculates capital gains when lots are sold.
 
-Lot processing happens only for entries that use lot notation:
-[cost basis annotations](#cost-basis-annotations), [lot subaccounts](#lot-subaccounts),
-or commodities declared [lotful](#lotful-commodities).
-Journals without these are read as in hledger 1.
-If you have existing journals, or want to use them with both hledger 1 and hledger 2,
+Note hledger 2's lot processing happens only for entries that use lot notation, or where lots are inferred.
+If you have hledger 1 journal files that you want to migrate, or use with both hledger 1 and hledger 2,
 see [hledger 1 and hledger 2](#hledger-1-and-hledger-2).
 
 For a more technical version of what's in this manual, see [SPEC-lots](/SPEC-lots.html).
 
 ## First lots example
 
-hledger's lot tracking does not require much extra notation. Here is a small example, using @ syntax.
+hledger's lot tracking does not require much extra work. Here is a small example, using just the familiar @ syntax, and new `lots` tag.
 ([Three ways to write lot entries](#three-ways-to-write-lot-entries) below shows the other notations.):
 
 ```journal
