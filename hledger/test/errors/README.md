@@ -183,24 +183,24 @@ Click error names to see an example. The table headings mean:
 | [csvamountonenonzero](#csvamountonenonzero)           | ✓          | ✓    | -      | ✓       | ✓        |
 | [csvamountparse](#csvamountparse)                     | ✓          | ✓    | -      | ✓       | ✓        |
 | [csvbalanceparse](#csvbalanceparse)                   | ✓          | ✓    | -      | ✓       | ✓        |
-| [csvbalancetypeparse](#csvbalancetypeparse)           | ✓          | ✓    | -      | ✓       | ✓        |
+| [csvbalancetypeparse](#csvbalancetypeparse)           | ✓          | ✓    | ✓      | ✓✓      | ✓        |
 | [csvdateformat](#csvdateformat)                       | ✓          | ✓    | -      | ✓       | ✓        |
 | [csvdateparse](#csvdateparse)                         | ✓          | ✓    | -      | ✓       | ✓        |
 | [csvdaterule](#csvdaterule)                           |            |      |        |         |          |
-| [csvdecimalmarkparse](#csvdecimalmarkparse)           |            |      |        |         |          |
+| [csvdecimalmarkparse](#csvdecimalmarkparse)           | ✓          | ✓    | ✓      | ✓✓      | ✓        |
 | [csvifblocknomatchers](#csvifblocknomatchers)         |            | ✓    | ✓      | ✓       | ✓        |
 | [csvifblocknonempty](#csvifblocknonempty)             |            | ✓    | ✓      | ✓       | ✓        |
 | [csviftablefieldnames](#csviftablefieldnames)         |            | ✓    | ✓      | ✓✓      | ✓        |
 | [csviftablenonempty](#csviftablenonempty)             |            | ✓    | ✓      | ✓       | ✓        |
 | [csviftablevaluecount](#csviftablevaluecount)         |            | ✓    | ✓      | ✓       | ✓        |
-| [csvskipvalue](#csvskipvalue)                         |            |      |        |         |          |
+| [csvskipvalue](#csvskipvalue)                         | ✓          | ✓    | ✓      | ✓✓      | ✓        |
 | [csvstatusparse](#csvstatusparse)                     | ✓          | ✓    | -      | ✓       | ✓        |
-| [csvtwofields](#csvtwofields)                         |            |      |        |         |          |
+| [csvtwofields](#csvtwofields)                         | ✓          | ✓    | -      | ✓       | ✓        |
 | [csvstdinrules](#csvstdinrules)                       |            |      |        |         |          |
 
 
 <!-- GENERATED: -->
-hledger 1.99-gbee1570dc-20260923 error messages:
+hledger 1.99-g50c8a6303-20260923 error messages:
 
 ### accounts
 ```
@@ -566,16 +566,11 @@ expecting '+', '-', or number
 
 ### csvbalancetypeparse
 ```
-hledger: Error: /path/to/csvbalancetypeparse.csv:3:
-3 | 2022-01-01,1
-
+hledger: Error: /path/to/csvbalancetypeparse.csv.rules:4:14:
+  |
+4 | balance-type badtype
+  |              ^
 balance-type "badtype" is invalid. Use =, ==, =* or ==*.
-record: 2022-01-01,1
-  %1   2022-01-01
-  %2   1
-hledger field assignment rules:
-  balance:     %2                            (/path/to/csvbalancetypeparse.csv.rules:3)
-  date:        %1                            (/path/to/csvbalancetypeparse.csv.rules:2)
 ```
 
 
@@ -620,7 +615,11 @@ Please specify (at top level) the date field. Eg: date %1
 
 ### csvdecimalmarkparse
 ```
-hledger: Error: decimal-mark's argument should be "." or "," (not "badmark")
+hledger: Error: /path/to/csvdecimalmarkparse.csv.rules:4:14:
+  |
+4 | decimal-mark badmark
+  |              ^
+decimal-mark's argument should be "." or "," (not "badmark")
 ```
 
 
@@ -681,7 +680,11 @@ line of conditional table should have 2 values, but this one has only 1
 
 ### csvskipvalue
 ```
-hledger: Error: /path/to/csvskipvalue.csv.rules: could not parse skip value: badval
+hledger: Error: /path/to/csvskipvalue.csv.rules:2:6:
+  |
+2 | skip badval
+  |      ^
+skip's argument should be a number of lines, or nothing (not "badval")
 ```
 
 
@@ -702,7 +705,11 @@ expecting '!', '*', or end of input
 
 ### csvtwofields
 ```
-hledger: Error: CSV record ["b"] has less than two fields
+hledger: Error: /path/to/csvtwofields.csv:4:
+4 | b
+
+This CSV record has less than two fields.
+Perhaps the separator is wrong (it can be set with a separator rule).
 ```
 
 

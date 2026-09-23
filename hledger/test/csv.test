@@ -1648,6 +1648,23 @@ $  ./csvtest.sh
 
 >=0
 
+# ** 87. Trailing whitespace after decimal-mark, balance-type and skip values is ignored.
+<
+Date,Amount,Balance
+2026-01-01,"1,5",10
+RULES
+skip 1  
+fields date, amount, balance
+decimal-mark ,  
+balance-type ==  
+account1 assets:bank
+$  ./csvtest.sh
+2026-01-01
+    assets:bank                                    1,5 == 10
+    income:unknown                                -1,5
+
+>=0
+
 # ** .
 #<
 #$  ./csvtest.sh

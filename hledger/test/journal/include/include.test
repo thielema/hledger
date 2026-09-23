@@ -323,13 +323,17 @@ $ hledger -f - print
 
 >=
 
-# ** 32. A CSV conversion error in an included file shows the include file stack, like other errors.
+# ** 32. An error in an included CSV file's rules shows the include file stack, like other errors.
 <
 include nested/sub.j
 $ hledger -f - print 2>&1 | sed 's|/.*/||'
 hledger: Error: in file included from -,
 in file included from sub.j,
-bad.csv.rules: could not parse skip value: badval
+bad.csv.rules:2:6:
+  |
+2 | skip badval
+  |      ^
+skip's argument should be a number of lines, or nothing (not "badval")
 
 # ** 33. A missing rules file for an included CSV file is an error.
 <

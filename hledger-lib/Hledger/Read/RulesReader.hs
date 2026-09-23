@@ -899,10 +899,32 @@ directivep :: CsvRulesParser (DirectiveName, Text)
 directivep = (do
   lift $ dbgparse 8 "trying directive"
   d <- choiceInState $ map (lift . string) directives
-  v <- (((char ':' >> lift (many spacenonewline)) <|> lift (some spacenonewline)) >> directivevalp)
-       <|> (optional (char ':') >> lift skipNonNewlineSpaces >> lift eolof >> return "")
+  (voff, v) <- (((char ':' >> lift (many spacenonewline)) <|> lift (some spacenonewline)) >> ((,) <$> getOffset <*> directivevalp))
+       <|> (optional (char ':') >> lift skipNonNewlineSpaces >> lift eolof >> return (0, ""))
+  checkDirectiveValue voff d v
   return (d, v)
   ) <?> "directive"
+
+-- | Check the value of directives which take a specific kind of value, when parsing,
+-- so that a bad value is reported with its position in the rules file.
+-- (The same checks are made where the values are used, for rules built without parsing.)
+-- Surrounding whitespace is ignored here, so as not to reject old rules files
+-- which loaded before (eg with a trailing space after an unused balance-type).
+checkDirectiveValue :: Int -> DirectiveName -> Text -> CsvRulesParser ()
+checkDirectiveValue off d v0 = let v = T.strip v0 in case d of
+  _ | T.null v -> return ()  -- (an empty value is checked, if needed, where it's used)
+  "decimal-mark" | not (isValidDecimalMark v) ->
+    bad $ "decimal-mark's argument should be \".\" or \",\" (not \"" <> v <> "\")"
+  "skip" | isNothing (readMay (T.unpack v) :: Maybe Int) ->
+    bad $ "skip's argument should be a number of lines, or nothing (not \"" <> v <> "\")"
+  "balance-type" | isNothing (parseBalanceAssertionType $ T.unpack v) ->
+    bad $ "balance-type \"" <> v <> "\" is invalid. Use =, ==, =* or ==*."
+  _ -> return ()
+  where
+    bad = customFailure . parseErrorAt off . T.unpack
+    isValidDecimalMark t = case T.uncons t of
+      Just (c, rest) -> T.null rest && isDecimalMark c
+      Nothing        -> False
 
 directives :: [Text]
 directives =
@@ -1483,7 +1505,7 @@ readJournalFromCsv rulesfile rules csvfile csvtext sep = do
     csvrecords2 <- liftEither $ first ((rulesfile <> ": ") <>) $
       applyConditionalSkips rules csvrecords1 >>= applyMergeRules rules
     -- and check the remaining records for any obvious problems
-    csvrecords <- liftEither $ dbg7 "validateCsv" <$> validateCsv csvrecords2
+    csvrecords <- liftEither $ dbg7 "validateCsv" <$> validateCsv parsecfilename csvrecords2
     dbg6IO "first 3 csv records" $ take 3 csvrecords
 
     -- transactionFromCsvRecord below will replace characters which journal format can't
@@ -1689,16 +1711,18 @@ ruleRecordCount rules r name =
         Just n | n >= 1 -> Right $ Just n
         _ -> Left $ printf "could not parse %s value as a positive number: %s" (T.unpack name) (T.unpack x)
 
--- | Do some validation on the parsed CSV records:
+-- | Do some validation on the parsed CSV records (from the named file):
 -- check that they all have at least two fields.
-validateCsv :: [LocatedCsvRecordGroup] -> Either String [LocatedCsvRecordGroup]
-validateCsv [] = Right []
-validateCsv rs@(_first:_) =
-  case lessthan2 of
-    Just r  -> Left $ printf "CSV record %s has less than two fields" (show r)
-    Nothing -> Right rs
+validateCsv :: FilePath -> [LocatedCsvRecordGroup] -> Either String [LocatedCsvRecordGroup]
+validateCsv f rs =
+  case [g | g@(_, recs) <- rs, any ((<2).length) recs] of
+    ((l1,l2), recs):_ -> Left $ T.unpack $
+      csvRecordErrPrefix (mkpos l1, mkpos (l2+1)) recs
+      <> "This CSV record has less than two fields.\n"
+      <> "Perhaps the separator is wrong (it can be set with a separator rule)."
+    [] -> Right rs
   where
-    lessthan2 = headMay $ filter ((<2).length) $ concatMap snd rs
+    mkpos l = SourcePos f (mkPos l) (mkPos 1)
 
 -- -- | The highest (0-based) field index referenced in the field
 -- -- definitions, or -1 if no fields are defined.
@@ -2083,7 +2107,7 @@ showRecordFields rules rows = T.stripEnd $ T.unlines $ showRecord rows : concatM
 -- If the rule is present with an invalid argument, raise an error.
 parseDecimalMark :: CsvRules -> Maybe DecimalMark
 parseDecimalMark rules = do
-    s <- rules `csvRule` "decimal-mark"
+    s <- T.strip <$> rules `csvRule` "decimal-mark"
     case T.uncons s of
         Just (c, rest) | T.null rest && isDecimalMark c -> return c
         _ -> error' . T.unpack $ "decimal-mark's argument should be \".\" or \",\" (not \""<>s<>"\")"
@@ -2101,7 +2125,7 @@ mkBalanceAssertion errpfx rules record pos amt = assrt{baamount=amt, baposition=
       case getDirective "balance-type" rules of
         Nothing -> nullassertion
         Just x  ->
-          case parseBalanceAssertionType $ T.unpack x of
+          case parseBalanceAssertionType $ T.unpack $ T.strip x of
             Just (total, inclusive) -> nullassertion{batotal=total, bainclusive=inclusive}
             Nothing -> error' . T.unpack $ errpfx <> T.unlines  -- PARTIAL:
               [ "balance-type \"" <> x <>"\" is invalid. Use =, ==, =* or ==*."
