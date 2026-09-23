@@ -108,6 +108,16 @@ journalFinalise
                                        -- and no later stage errored, report it now
 ```
 
+### Skipping the lot stages
+
+Before running the pipeline, `journalFinalise` checks `journalHasLotFeatures`: does any
+commodity have a `lots:` tag, any account declaration a `lots:` tag, or any posting (in
+transactions, periodic transaction rules or auto posting rules) a cost basis annotation or a
+lot subaccount name ? If not, the lot stages (9, 10, 11, 14, 22-24, 26 and 27) are skipped,
+since they would leave the journal unchanged; on large journals this saves about a fifth of
+the read time. Likewise the balancer skips its per-entry gain tagging and fee splitting for
+entries with no cost basis annotations when no commodity is lotful.
+
 ## Sequencing constraints
 
 These are the known ordering requirements between steps.

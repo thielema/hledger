@@ -753,8 +753,14 @@ journalDeclaredAccountTypes Journal{jdeclaredaccounttypes} =
 -- Tags are added to ptags (making them queryable) but not to pcomment (so they don't appear in print output).
 -- If a tag already exists on the posting, it is not changed (the account tag will be ignored).
 journalPostingsAddAccountTags :: Journal -> Journal
-journalPostingsAddAccountTags j = journalMapPostings addtags j
-  where addtags p = p `postingAddTags` (journalInheritedAccountTags j $ paccount p)
+journalPostingsAddAccountTags j
+  | M.null (jdeclaredaccounttags j) = j  -- no account tags declared, nothing to add
+  | otherwise = journalMapPostings addtags j
+  where
+    addtags p = p `postingAddTags` M.findWithDefault (inheritedtags $ paccount p) (paccount p) inheritedtagsbyaccount
+    -- the inherited tags of each posted-to account, calculated once per account
+    inheritedtagsbyaccount = M.fromList [(a, inheritedtags a) | a <- journalAccountNamesUsed j]
+    inheritedtags = journalInheritedAccountTags j
 
 -- | Remove all tags from the journal's postings except those provided by their account.
 -- This is useful for the accounts report.
@@ -902,7 +908,9 @@ journalCheckLotsTagValues j = do
 -- Tags are added to ptags (making them queryable) but not to pcomment (so they don't appear in print output).
 -- If a tag already exists on the posting, it is not changed (the commodity tag will be ignored).
 journalPostingsAddCommodityTags :: Journal -> Journal
-journalPostingsAddCommodityTags j = journalMapPostings addtags j
+journalPostingsAddCommodityTags j
+  | M.null (jdeclaredcommoditytags j) = j  -- no commodity tags declared, nothing to add
+  | otherwise = journalMapPostings addtags j
   where
     addtags p = p `postingAddTags` concatMap (journalCommodityTags j) (postingCommodities p)
 

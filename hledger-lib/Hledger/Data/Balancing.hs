@@ -234,13 +234,16 @@ balanceSingleTransaction bopts = fmap fst . balanceTransactionHelper bopts
 -- will classify the split postings (#2686, #2692).
 balanceTransactionHelperMaybeSplittingLotFees :: BalancingOpts -> Transaction -> Either String (Transaction, [(AccountName, MixedAmount)])
 balanceTransactionHelperMaybeSplittingLotFees bopts t0
-  | S.null lotfulcomms = balanceTransactionHelper bopts t  -- not a lots journal
+  | not haslots = balanceTransactionHelper bopts t0  -- no lots involved, nothing to tag or split
+  | S.null lotfulcomms = balanceTransactionHelper bopts t  -- no lotful commodities declared, no fee splitting
   | length (tpostings t2) == length (tpostings t) = balanceTransactionHelper bopts t  -- no split applied
   | otherwise = case balanceTransactionHelper bopts t2 of
       r@(Right _) -> r
       Left _      -> balanceTransactionHelper bopts t
   where
     lotfulcomms = lotful_commodities_ bopts
+    -- Could this entry involve lots ? Only if some commodity is lotful or some amount has a cost basis.
+    haslots = not (S.null lotfulcomms) || any (any (isJust . acostbasis) . amountsRaw . pamount) (tpostings t0)
     -- Tag any user-written gain postings in a disposal first, so the balancer
     -- sets them aside. (journalFinalise does this too, but callers balancing a
     -- single entry, like hledger add, rely on it happening here.)

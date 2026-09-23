@@ -92,6 +92,7 @@ journalCalculateLots:
 {-# LANGUAGE NamedFieldPuns #-}
 
 module Hledger.Data.Lots (
+  journalHasLotFeatures,
   journalClassifyLotPostings,
   journalStripBalancerCopiedBases,
   transactionAutoSplitFeeOutflows,
@@ -133,7 +134,7 @@ import Hledger.Data.AccountName (accountNameType, parentAccountNames)
 import Hledger.Data.AccountType (isAssetType, isEquityType, isLiabilityType)
 import Hledger.Data.Amount (AmountFormat(..), amountRoundedQuantity, amountSetPrecisionMin, amountSetQuantity, amountsRaw, divideAmountAndUpdatePrecision, isNegativeAmount, maNegate, maSum, mapMixedAmount, mixedAmount, mixedAmountCost, mixedAmountIsZero, mixedAmountLooksZero, nullmixedamt, noCostFmt, oneLineNoCostFmt, showAmountWith, showAmountsDistinctly, showMixedAmountOneLine, showMixedAmountsDistinctly)
 import Hledger.Data.Errors (makeAccountTagErrorExcerpt, makeCommodityTagErrorExcerpt, makePostingErrorExcerptByIndex, makeTransactionErrorExcerpt, transactionFindPostingIndex)
-import Hledger.Data.Journal (journalAccountType, journalAccountUsesNoLots, journalBaseGainAccount, journalCommodityLotsMethod, journalCommodityStylesWith, journalCommodityUsesLots, journalInheritedAccountTags, journalMapPostings, journalMapTransactions, journalPostings, journalTieTransactions, parseReductionMethod)
+import Hledger.Data.Journal (journalAccountLotsTags, journalAccountType, journalAccountUsesNoLots, journalBaseGainAccount, journalCommodityLotsMethod, journalCommodityStylesWith, journalCommodityUsesLots, journalInheritedAccountTags, journalLotfulCommodities, journalMapPostings, journalMapTransactions, journalPostings, journalTieTransactions, parseReductionMethod)
 import Hledger.Data.Posting (generatedPostingTagName, hasAmount, isReal, isVirtual, lotParentAssertionTagName, lotsplitPostingTagName, nullposting, originalPosting, postingAddHiddenAndMaybeVisibleTag, postingHasTag, postingStripCosts, feesplitPostingTagName)
 import Hledger.Data.Transaction (transactionCommodityStyles, txnTieKnot)
 import Hledger.Data.Types
@@ -480,6 +481,25 @@ mergeCostBasis a b = do
       | otherwise = Left $ "conflicting cost basis cost"
                       ++ ": account name has " ++ showAmountWith noCostFmt x
                       ++ " but amount has " ++ showAmountWith noCostFmt y
+
+-- | Does this journal use lots at all ? True if any commodity is declared
+-- lotful, any account declaration has a lots: tag, or any posting (in
+-- transactions, periodic transaction rules or auto posting rules) has a cost
+-- basis annotation or a lot subaccount name. When false, the lot-related
+-- finalisation stages would all be no-ops, so journalFinalise skips them.
+journalHasLotFeatures :: Journal -> Bool
+journalHasLotFeatures j =
+     not (S.null $ journalLotfulCommodities j)
+  || not (M.null $ journalAccountLotsTags j)
+  || any postingHasLotFeature allpostings
+  where
+    allpostings =
+         journalPostings j
+      ++ concatMap ptpostings (jperiodictxns j)
+      ++ [tmprPosting r | tm <- jtxnmodifiers j, r <- tmpostingrules tm]
+    postingHasLotFeature p =
+         any (isJust . acostbasis) (amountsRaw $ pamount p)
+      || isJust (lotSubaccountName $ paccount p)
 
 -- Classification (pipeline stage 1)
 

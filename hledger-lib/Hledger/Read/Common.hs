@@ -370,8 +370,10 @@ journalFinalise iopts@InputOpts{auto_,balancingopts_,ignore_lots_,infer_costs_,i
     checking checkname = "check" `elem` args && checkname `elem` args where args = progArgs
     checkordereddates = checking "ordereddates"
     checkassertions = not ignore_assertions_ || strict_ || checking "assertions"
-    checklots       = not ignore_lots_       || strict_ || checking "lots"
-    lenientlots     = not checklots
+    lotschecking    = not ignore_lots_       || strict_ || checking "lots"  -- are lot checks wanted ?
+    lenientlots     = not lotschecking
+    haslots         = journalHasLotFeatures pj  -- does the journal use lots at all ? if not, the lot stages are skipped, they would do nothing
+    checklots       = haslots && lotschecking   -- run the lot classification, calculation and checking stages ?
     checkbasis      = checking "basis"
 
   t <- liftIO getPOSIXTime
@@ -401,9 +403,9 @@ journalFinalise iopts@InputOpts{auto_,balancingopts_,ignore_lots_,infer_costs_,i
       -- by --strict or `hledger check lots`) they are lenient, skipping their
       -- errors and leaving the affected postings/transactions unchanged.
       -- They run before auto postings, whose preliminary balancing needs them too.
-      >>= journalInferBasisFromAccountNames lenientlots                           -- infer cost basis from lot subaccount names (validating them, unless lenient)
-      <&> journalInferPostingsTransactedCost                                      -- in acquire-shaped postings, infer a transacted cost from cost basis
-      >>= journalTagGainPostings lenientlots verbose_tags_                        -- in disposals, tag user-written gain postings so the balancer sets them aside
+      >>= (if haslots then journalInferBasisFromAccountNames lenientlots else pure)  -- infer cost basis from lot subaccount names (validating them, unless lenient)
+      <&> (if haslots then journalInferPostingsTransactedCost else id)              -- in acquire-shaped postings, infer a transacted cost from cost basis
+      >>= (if haslots then journalTagGainPostings lenientlots verbose_tags_ else pure)  -- in disposals, tag user-written gain postings so the balancer sets them aside
 
       -- Auto postings
       >>= (if auto_ && not (null $ jtxnmodifiers pj)
@@ -455,7 +457,7 @@ journalFinalise iopts@InputOpts{auto_,balancingopts_,ignore_lots_,infer_costs_,i
           >>= (if checklots then journalCalculateLots verbose_tags_          else pure)  -- evaluate lot selectors, calculate lot balances, add lot subaccounts
           >>= (if checkbasis then journalCheckAcquireBasis                   else pure)  -- if `hledger check basis`, error on any acquire with cost basis ≠ transacted cost
           >>= (if checklots then journalAddOrCheckGainPostings verbose_tags_ else pure)  -- in disposal transactions, add the realised-gain posting, or check a user-written one
-          <&> journalStripBalancerCopiedBases                                            -- remove balancer-copied basis annotations, kept until now as classification evidence
+          <&> (if haslots then journalStripBalancerCopiedBases else id)                  -- remove balancer-copied basis annotations, kept until now as classification evidence
 
         -- Now report any balance assertion failure detected above.
         maybe (Right j3) Left massertionerr)

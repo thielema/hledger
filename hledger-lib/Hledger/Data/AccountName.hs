@@ -151,7 +151,7 @@ accountNameFromComponents :: [Text] -> AccountName
 accountNameFromComponents = T.intercalate acctsep
 
 accountLeafName :: AccountName -> Text
-accountLeafName = last . accountNameComponents
+accountLeafName = T.takeWhileEnd (/= acctsepchar)
 
 -- | Truncate all account name components but the last to two characters.
 accountSummarisedName :: AccountName -> Text
@@ -273,8 +273,10 @@ topAccountNames = filter ((1==) . accountNameLevel) . expandAccountNames
 topAccountName :: AccountName -> AccountName
 topAccountName = T.takeWhile (/= acctsepchar)
 
+-- | The parent of an account name, or "" if it has none. ("a:b:c" -> "a:b").
+-- Returns a slice of the name, without copying.
 parentAccountName :: AccountName -> AccountName
-parentAccountName = accountNameFromComponents . init . accountNameComponents
+parentAccountName = T.dropEnd 1 . T.dropWhileEnd (/= acctsepchar)
 
 parentAccountNames :: AccountName -> [AccountName]
 parentAccountNames a = parentAccountNames' $ parentAccountName a
