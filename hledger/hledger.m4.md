@@ -6190,6 +6190,18 @@ Holdings on 2026-03-31
                ||                                           $250   $360  100.0%   $110   44.0%   $100  1865.3% 
 ```
 
+You can add `--lots` to see the individual lots (this works with all reports):
+```
+$ hledger holdings -e 2026-04-01 --lots
+Holdings on 2026-03-31
+
+                                 ||       Date  Age   Units  Unit cost  Price  Cost  Value  Weight  UGain  UGain%  RGain     XIRR 
+=================================++===============================================================================================
+ assets:stocks:{2026-01-15, $50} || 2026-01-15  75d  5 AAPL        $50    $72  $250   $360  100.0%   $110   44.0%   $100  1865.3% 
+---------------------------------++-----------------------------------------------------------------------------------------------
+                                 ||                  5 AAPL        $50         $250   $360  100.0%   $110   44.0%   $100  1865.3% 
+```
+
 [XIRR]: https://en.wikipedia.org/wiki/Internal_rate_of_return
 
 ## How to enable or disable lot tracking
@@ -6271,7 +6283,7 @@ as described in [How to enable or disable lot tracking](#how-to-enable-or-disabl
 Internally, hledger tracks each lot in a subaccount, named like the cost basis.
 You don't need to write these subaccounts in the journal; hledger infers them automatically.
 They are hidden from reports by default, since there can be many lots.
-To show them, add the `--lots` flag to any report, as in [First lots example](#first-lots-example) above
+To show them, add the `--lots` flag to any report
 (the [holdings](#holdings) command is designed for viewing them).
 
 If you do write a lot subaccount in the journal,
