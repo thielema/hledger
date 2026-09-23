@@ -49,6 +49,15 @@ print, register and balance reports (quick timings by default, or criterion meas
 It is currently disabled (`buildable: false` in hledger/package.yaml) to save build time,
 so `stack bench hledger` does nothing; to use it, enable it there.
 
+## Phase timings
+
+Running any hledger command with `--debug=1` (or higher) reports on stderr the run time and
+memory allocation of each phase: reading and parsing the data, each stage of journal finalising,
+and the command itself (see `dbgTime` in Hledger.Utils.Debug). Each stage's result is fully
+evaluated to measure it (and the cost of that evaluation is excluded), so this describes a strict
+evaluation of the pipeline, but the totals closely match normal runs. Allocation figures are
+deterministic, so they are a reliable guide even on a busy machine.
+
 ## Fine-grained measurements
 
 For quick, fine-grained measurements when troubleshooting or optimising, see

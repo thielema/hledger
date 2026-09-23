@@ -237,7 +237,7 @@ The main hledger programs accept `--debug[=N]` (N from 1 to 9), which prints deb
 In code, use the `dbg0`..`dbg9` helpers from
 [Hledger.Utils.Debug](https://github.com/hledgerorg/hledger/blob/main/hledger-lib/Hledger/Utils/Debug.hs),
 eg `dbg4 "report" x` prints a label and the pretty-printed value when the debug level is 4 or more.
-Levels are used roughly as: 0 for unconditional logging during development, 1 warnings and common troubleshooting, 
+Levels are used roughly as: 0 for unconditional logging during development, 1 warnings, common troubleshooting info and phase timings,
 3-5 report options and generation, 6-7 input file reading, 8 command line parsing, 9 anything else; see the module's haddock.
 
 ## Tests

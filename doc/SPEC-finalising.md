@@ -123,6 +123,12 @@ running account balances) exists only to enact balance assignments and check bal
 assertions, so it is skipped when the journal has no balance assignments and no assertions
 to check.
 
+### Timing the stages
+
+With `--debug=1` or higher, `journalFinalise` reports each stage's run time and memory allocation
+on stderr (via `dbgTime` in Hledger.Utils.Debug), fully evaluating each stage's result so that
+its work is charged to it. Skipped stages are not shown.
+
 ## Sequencing constraints
 
 These are the known ordering requirements between steps.

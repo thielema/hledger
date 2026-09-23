@@ -7301,6 +7301,9 @@ We intend hledger to be relatively easy to troubleshoot, introspect and develop.
 You can add `--debug[=N]` to any hledger command line to see additional debug output.
 N ranges from 1 (least output, the default) to 9 (maximum output).
 Typically you would start with 1 and increase until you are seeing enough.
+At level 1 or higher, the output includes timing lines, showing the run time and memory allocation
+of each phase of hledger's work: reading and parsing data, each stage of journal finalising, and running the command.
+These can show where the time goes when processing a large journal.
 Debug output goes to stderr, and is not affected by `-o/--output-file` (unless you redirect stderr to stdout, eg: `2>&1`).
 It will be interleaved with normal output, which can help reveal when parts of the code are evaluated.
 To capture debug output in a log file instead, you can usually redirect stderr, eg:

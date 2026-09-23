@@ -188,6 +188,7 @@ main = handleExit $ withGhcDebug' $ do
 
   dbgio "running" prognameandversion
   starttime <- getPOSIXTime
+  dbgTimeResetIO  -- start the clock for --debug's phase timings
   -- give ghc-debug a chance to take control
   when (ghcDebugMode == GDPauseAtStart) $ ghcDebugPause'
   -- Search PATH for addon commands. Exclude any that match builtin command names.
@@ -393,6 +394,8 @@ main = handleExit $ withGhcDebug' $ do
   dbgio "query from opts & args" (_rsQuery $ reportspec_ opts)
 
   -- Ensure that anything calling getArgs later will see all args, including config file args.
+  dbgTimeIO 1 "startup" ()
+
   -- Some things (--color, --debug, some checks in journalFinalise) are detected by unsafePerformIO,
   -- eg in Hledger.Utils.IO.progArgs, which means they aren't be seen in a config file
   -- (because many things before this point have forced the one-time evaluation of progArgs).
@@ -490,6 +493,7 @@ main = handleExit $ withGhcDebug' $ do
         <> if null confcmdargs then "" else "\ncommand arguments added from config file: "++show confcmdargs
 
   -- 7. And we're done.
+  dbgTimeIO 1 (if null cmdname then "(no command)" else cmdname) ()
   -- Give ghc-debug a final chance to take control.
   when (ghcDebugMode == GDPauseAtEnd) $ ghcDebugPause'
 
