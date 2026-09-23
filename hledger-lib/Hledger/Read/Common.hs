@@ -522,7 +522,7 @@ journalInferBasisFromAccountNames lenient j = do
         let updateAmt a = case acostbasis a of
               Nothing -> Right a{acostbasis = Just cb}
               Just existing -> do
-                merged <- mergeCostBasis cb existing
+                merged <- first (lotConflictErr p) $ mergeCostBasis cb existing
                 Right a{acostbasis = Just merged}
         amts' <- mapM updateAmt (amountsRaw (pamount p))
         Right p{pamount = foldMap mixedAmount amts'}
@@ -530,9 +530,17 @@ journalInferBasisFromAccountNames lenient j = do
     -- Wrap a lot-subaccount parse error with a verbose source-position excerpt
     -- highlighting the posting's account name, and remind the reader that final
     -- @:{...}@ components are reserved for lot subaccount syntax.
-    lotErr p msg = printf
-      "%s:%d:\n%s\n%s\n\nA final account name part enclosed in { } must be a valid lot subaccount name.\nPlease adjust the account name, or use --ignore-lots/-I."
-      f line ex msg
+    lotErr p msg = lotPosErr p $ msg
+      ++ "\n\nA final account name part enclosed in { } must be a valid lot subaccount name."
+      ++ "\nPlease adjust the account name, or use --ignore-lots/-I."
+
+    -- Likewise for a lot subaccount name which disagrees with the amount's lot annotation.
+    lotConflictErr p msg = lotPosErr p $ msg
+      ++ "\n\nThe lot subaccount name and the amount's lot annotation must agree."
+      ++ "\nPlease make them match, or remove one of them."
+
+    lotPosErr :: Posting -> String -> String
+    lotPosErr p msg = printf "%s:%d:\n%s\n%s" f line ex msg
       where (f, line, _, ex) = makePostingAccountErrorExcerpt p
 
 setYear :: Year -> JournalParser m ()

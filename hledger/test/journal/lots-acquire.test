@@ -313,7 +313,8 @@ $ hledger -f- print --lots -x
 
 >=
 
-# ** 23. Conflicting cost basis between lot subaccount and amount annotation is an error.
+# ** 23. Conflicting cost basis between lot subaccount and amount annotation is an error,
+# pointing at the posting.
 <
 commodity AAPL  ; lots:
 
@@ -322,7 +323,11 @@ commodity AAPL  ; lots:
     assets:cash
 
 $ hledger -f- print --lots
->2 /conflicting cost basis cost/
+>2 /-:4:
+(.*
+)*4 \|     assets:stocks:\{2026-01-15, \$50\} +10 AAPL \{\$99\}
+(.*
+)*conflicting cost basis cost/
 >=1
 
 # ** 24. Inferred transacted cost is attached to the lotful posting (commodity lots: tag).

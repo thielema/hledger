@@ -1970,7 +1970,7 @@ processAcquirePosting styles j needsLabels txnDate t lotState idx p = do
         let bareAmts = [a | a <- amountsRaw (pamount p), not (isNegativeAmount a)]
         case bareAmts of
           [a] -> Right (a, CostBasis Nothing Nothing Nothing, True)
-          _   -> Left $ showPos ++ "acquire posting has no cost basis"
+          _   -> Left $ postingAtErrPrefix t idx ++ "acquire posting has no cost basis"
 
     let commodity = acommodity lotAmt
         date      = fromMaybe txnDate (cbDate cb)
@@ -2022,7 +2022,7 @@ processAcquirePosting styles j needsLabels txnDate t lotState idx p = do
         -- every existing pool lot's cbCost has been rewritten to that new cost).
         (lotBasisStored, lotState0) <-
           if methodIsAverage method
-          then updatePoolOnAcquire showPos (methodIsGlobal method)
+          then updatePoolOnAcquire (postingAtErrPrefix t idx) (methodIsGlobal method)
                  baseAcct commodity (aquantity lotAmt) lotBasis lotState
           else Right (lotBasis, lotState)
 
@@ -2059,7 +2059,7 @@ processAcquirePosting styles j needsLabels txnDate t lotState idx p = do
         when hasExplicitLotAcct $
           case mergeCostBasisForMethod method cb fullCb of
             Right _ -> Right ()
-            Left _  -> Left $ showPos ++ "lot subaccount " ++ T.unpack (paccount p)
+            Left _  -> Left $ postingAtErrPrefix t idx ++ "lot subaccount " ++ T.unpack (paccount p)
                               ++ " does not match the resolved lot " ++ T.unpack expectedAcct
 
         -- Only a live lot (with account entries) is a duplicate; a tombstone
@@ -2067,7 +2067,7 @@ processAcquirePosting styles j needsLabels txnDate t lotState idx p = do
         -- explicitly-labelled acquisition, eg re-opening balances after
         -- close --clopen --lots.
         when (maybe False (not . M.null) (M.lookup lotId existingLots)) $
-          Left $ showPos ++ "duplicate lot id: " ++ T.unpack lotName
+          Left $ postingAtErrPrefix t idx ++ "duplicate lot id: " ++ T.unpack lotName
                   ++ " for commodity " ++ T.unpack commodity
 
         let p' = p{paccount = expectedAcct
@@ -2079,7 +2079,6 @@ processAcquirePosting styles j needsLabels txnDate t lotState idx p = do
                            ++ " on " ++ T.unpack baseAcct)
                (lotState', p')
   where
-    showPos = txnErrPrefix t
     -- A lot name with an example cost added (cost is shown last), eg {2026-01-01} -> {2026-01-01, $50}.
     withExampleCost name
       | name == "{}" = "{$50}"
