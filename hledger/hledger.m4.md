@@ -6152,22 +6152,8 @@ $ hledger print
 
 ```
 
-Adding `--lots` shows the lots, as subaccounts. (This flag works with all reports.):
-
-```cli
-$ hledger print --lots
-2026-01-15 buy
-    assets:cash                                $-500
-    assets:stocks:{2026-01-15, $50}               10 AAPL @ $50
-
-2026-02-01 sell some
-    assets:stocks:{2026-01-15, $50}               -5 AAPL @ $70
-    assets:cash                                 $350
-    revenues:gain                              $-100
-
-```
-
-Or use `print -a` (short for `--all`) to show maximum detail:
+`print`'s `-a` flag (short for `--all`) shows maximum detail, including the lots as subaccounts and tags showing how the entry was analysed.
+Or use `--lots` to just add the lot subaccounts. (`--lots` works with all reports.)
 
 ```cli
 $ hledger print -a
@@ -6286,25 +6272,8 @@ as described in [How to enable or disable lot tracking](#how-to-enable-or-disabl
 Internally, hledger tracks each lot in a subaccount, named like the cost basis.
 You don't need to write these subaccounts in the journal; hledger infers them automatically.
 They are hidden from reports by default, since there can be many lots.
-To show them, just add the `--lots` flag to any report
-(the [holdings](#holdings) command is designed for viewing them).  Eg:
-
-```journal
-2026-01-15 buy
-    assets:stocks    10 AAPL {$50}
-    assets:cash     -$500
-```
-```cli
-$ hledger print
-2026-01-15 buy
-    assets:stocks    10 AAPL {$50}
-    assets:cash              $-500
-
-$ hledger print --lots
-2026-01-15 buy
-    assets:stocks:{2026-01-15, $50}    10 AAPL {$50}
-    assets:cash                                $-500
-```
+To show them, add the `--lots` flag to any report, as in [First lots example](#first-lots-example) above
+(the [holdings](#holdings) command is designed for viewing them).
 
 If you do write a lot subaccount in the journal,
 it is equivalent to writing a cost basis annotation on the amount:
@@ -6324,12 +6293,10 @@ $ hledger print
 Unlike cost basis annotations, lot subaccount names must be complete,
 including all cost basis parts - date, label if any, and cost.
 
-Note this enclosing the leaf account name (final account name component) in `{` and `}` is reserved syntax for lot subaccounts,
-and hledger will report an error if what's inside the braces is not a valid lot name.
-This is a breaking change from hledger 1.x, which had no special handling for such names.
-If you have such an account name and don't want hledger to reject it,
-you can pass `--ignore-lots` (or `-I`) to skip most lot processing,
-allowing `:{...}` names to be treated as ordinary subaccounts.
+A final account name part enclosed in `{` and `}` is reserved for lot subaccounts;
+hledger reports an error if the braces don't contain a valid lot name
+(`-I`/`--ignore-lots` treats such names as ordinary subaccounts;
+see also [hledger 1 and hledger 2](#hledger-1-and-hledger-2)).
 
 When [strictly checking account names](#account-error-checking), lot subaccounts are ignored -
 you only need to declare the base account (eg `assets:stocks`), not the lot subaccounts.
@@ -6337,8 +6304,8 @@ you only need to declare the base account (eg `assets:stocks`), not the lot suba
 ### Three ways to write lot entries
 
 <a name="lot-reporting-example"></a>
-The same two acquisitions and a disposal, written in each notation.
-With explicit lot subaccounts (this notation can dispose only by specifically identifying the lots involved):
+Here are two acquisitions and a disposal, written in three ways.
+First, with explicit lot subaccounts (this notation can dispose only by specifically identifying the lots involved):
 
 ```journal
 2026-01-15 buy low
@@ -6349,12 +6316,12 @@ With explicit lot subaccounts (this notation can dispose only by specifically id
     assets:stocks:{2026-02-01, $60}      10 AAPL
     assets:cash                       -$600
 
-2026-03-01 sell some   ; specific identification
+2026-03-01 sell some
     assets:stocks:{2026-01-15, $50}      -5 AAPL @ $70
     assets:cash                        $350
 ```
 
-With cost basis annotations:
+Second, with cost basis annotations (here the `{}` selector means: use the default method, FIFO):
 
 ```journal
 2026-01-15 buy low
@@ -6365,30 +6332,14 @@ With cost basis annotations:
     assets:stocks      10 AAPL {$60}
     assets:cash     -$600
 
-2026-03-01 sell some   ; default method (FIFO)
+2026-03-01 sell some
     assets:stocks      -5 AAPL {} @ $70
     assets:cash      $350
 ```
 
-With a `lots` tag on the commodity, the most concise form:
+Third, with a `lots` tag on the commodity, no annotations are needed at all, as in [First lots example](#first-lots-example) above.
 
-```journal
-commodity AAPL         ; lots:
-
-2026-01-15 buy low
-    assets:stocks      10 AAPL
-    assets:cash     -$500
-
-2026-02-01 buy high
-    assets:stocks      10 AAPL
-    assets:cash     -$600
-
-2026-03-01 sell some   ; AAPL's method (FIFO)
-    assets:stocks      -5 AAPL @ $70
-    assets:cash      $350
-```
-
-All three produce the same lots and the same $100 gain; [Lot reports](#lot-reports) below shows them.
+All three notations produce the same lots and the same $100 gain; [Lot reports](#lot-reports) below shows them.
 
 ### Lot ids
 
@@ -6590,56 +6541,25 @@ These methods are supported:
 | **HIFOALL**        | highest cost first (all accounts) | each lot's cost             | "
 | **AVERAGEALL**     | oldest first (all accounts)       | average cost (all accounts) | Sufficient lot(s) exist across all accounts.
 
-**SPECID** (specific identification) is what you're using when the journal entry contains 
-explicit lot selectors like `{2026-01-15, $50}` or `{$50}`,
-or an explicit lot subaccount like `assets:broker:{2026-01-15, $50}`.
-Selecting by date (and label, if any) is recommended.
-Cost-only selectors like `{$50}` are less robust: since costs displayed in lot
-names may be rounded (see [Cost basis precision](#cost-basis-precision)),
-distinct lots can display the same cost, and a cost-only selector could then
-match more lots than intended. (With SPECID this is reported as an ambiguity
-error; with other methods the lots are consumed in the method's order.)
+**SPECID** (specific identification) is what you're using when a disposal names its lot(s),
+with a lot selector like `{2026-01-15, $50}` or an explicit lot subaccount.
+Select by date (and label) rather than by cost alone: costs shown in lot names may be rounded
+(see [Cost basis precision](#cost-basis-precision)), so a cost-only selector like `{$50}` can match more lots than intended
+(an ambiguity error under SPECID; under other methods, consumed in the method's order).
 
-**FIFO** (first in first out). Dispose of the oldest lot first.
+**AVERAGE** keeps one running average cost per account (pool), recalculated at each acquisition
+and applied to every lot in the pool; disposals use it, consuming lots in FIFO order
+so acquisition dates stay meaningful for holding periods.
+Lot names omit the cost (`{2026-01-15}`), the average appears in the [holdings](#holdings) Avg cost column
+and in disposal postings shown by `print -x`,
+and transferring lots into or out of the pool carries the average with them
+(a lot's original cost can't be recovered from a pool).
 
-**LIFO** (last in first out). Dispose of the youngest lot first.
-
-**HIFO** (highest-in-first-out) selects the lot with the highest per-unit cost first,
-which can be useful for tax optimization.
-
-**AVERAGE** maintains an average per-unit cost shared by every lot in
-the per-account pool. Each new acquisition recalculates this average cost
-and applies it to every lot in the pool.
-Disposals use this average cost, and consume lots in FIFO order
-(so acquisition dates remain meaningful for calculating short-term/long-term holding-period).
-Under AVERAGE, the lot subaccount name omits the cost component
-(`{2026-01-15}` rather than `{2026-01-15, $50}`) so it stays stable
-across acquisitions. 
-The average cost can be seen in the [holdings](#holdings) report's Avg cost column,
-which shows each pool's running average as of the report date.
-It also appears in disposal postings' cost basis annotations and inferred
-gain amounts, shown by `print -x`.
-(`print -x` shows acquire postings with their acquisition cost basis, not the average.)
-Transferring lots into an average-cost account recalculates the pool's
-average, just like an acquisition at the transferred lots' cost;
-transferring lots out carries the pool's average cost with them.
-Note averaging loses information: a lot's original cost
-cannot be recovered by transferring it back out of the pool.
-
-All of these methods select lots from the account mentioned in the posting.
-But the **\*ALL** variants (FIFOALL, LIFOALL, HIFOALL) additionally validate
-that these lots are the ones that would be chosen if considering the global pool (all accounts holding that commodity).
-So if there is a more appropriate lot in another account (eg an older lot when using FIFOALL),
-they will raise an error showing which account holds it.
-This is useful if you need to enforce a global disposal order across all accounts (brokers, exchanges, wallets etc).
-Since these methods involve all accounts, a commodity using one must use it
-in every account that holds the commodity; hledger checks this, so it's best
-to declare a \*ALL method on the commodity rather than on accounts.
-
-**AVERAGEALL** is to AVERAGE what FIFOALL is to FIFO: the pool spans all
-accounts holding the commodity, so the running cost is a single global value
-and an acquisition in one account updates the cost basis on lots in every
-other account too.
+The **\*ALL** variants additionally check that the lots selected are the ones that would be chosen
+across all accounts holding the commodity, and raise an error naming the other account otherwise;
+use them to enforce a global disposal order across brokers, exchanges and wallets.
+Since they involve every account, declare them on the commodity, not on accounts.
+**AVERAGEALL** likewise keeps a single average across all accounts.
 
 ### Changing the cost basis method
 
@@ -6696,7 +6616,7 @@ In an inferred gain posting, the gain amount will be rounded to the entry's loca
 More decimals can be seen by increasing the display precision (eg `hledger print --round=soft -c '$1.0000'`).
 
 An explicit gain posting can also be written without an amount,
-in which case hledger fills in the calculated gain (like Style 1, but with your choice of account).
+in which case hledger fills in the calculated gain (as when the gain posting is omitted, but with your choice of account).
 At most one gain posting per entry can be left amountless.
 
 ### Gain accounts
@@ -6729,22 +6649,9 @@ It's more convenient than using separate revenue and expense accounts, and the s
 
 ## Recording gains
 
-In the journal, you can write disposal transactions in three main styles,
-with different tradeoffs between brevity, error checking, and robustness.
-From least to most explicit, they are:
-
-- **Style 1:** Don't write a gain posting (let hledger infer it)
-- **Style 2:** Write the gain posting, using a non-G account (undeclared gain posting)
-- **Style 3:** Write the gain posting, using a G account (declared gain posting, more reliable)
-
-Style 1 just calculates the gain.
-Styles 2 and 3 calculate the gain and compare it with what you wrote, potentially catching more errors.
-
-**TLDR:**
-use Style 1 for brevity and to avoid most problems,
-or Style 3 for best error checking while still being concise.
-
-### Style 1: No gain posting
+<a name="style-1-no-gain-posting"></a><a name="style-2-gain-posting-non-g-account"></a><a name="style-3-gain-posting-g-account"></a>
+In a disposal entry, you can leave the gain posting out and let hledger infer it.
+This is the simplest style, and avoids most problems:
 
 ```journal
 2026-02-01 sell
@@ -6752,36 +6659,8 @@ or Style 3 for best error checking while still being concise.
     assets:cash     $60
 ```
 
-### Style 2: gain posting, non-G account
-
-```journal
-2026-02-01 sell
-    assets:stocks     -1 AAPL {$50} @ $60
-    assets:cash      $60
-    gains           $-10
-```
-
-Another example, this time with multiple gain postings:
-
-```journal
-2026-02-01 sell from two lots
-    assets:stocks     -5 AAPL {$50} @ $60
-    assets:stocks     -3 AAPL {$55} @ $60
-    assets:cash     $480
-    gains           $-50          ; gain on first lot
-    gains           $-15          ; gain on second lot
-```
-
-hledger detects these undeclared gain postings heuristically:
-roughly, a posting to a non-asset/liability/equity account, which is not a lot posting,
-and without which the rest of the entry balances.
-Their amounts are then checked against the calculated gain.
-The heuristic fails when the entry has another such posting, eg a fee:
-then neither posting is recognised, and the entry is reported as unbalanced.
-So if you write gain postings, declaring the gain account's type (Style 3 below) is more reliable;
-`hledger print -a` shows what was detected.
-
-### Style 3: gain posting, G account
+Or you can write it, on an account declared with the G [account type](#gain-accounts).
+hledger then checks your amount against the calculated gain, catching more errors:
 
 ```journal
 account revenues:gain  ; type:G
@@ -6791,6 +6670,14 @@ account revenues:gain  ; type:G
     assets:cash      $60
     revenues:gain   $-10
 ```
+
+Multiple gain postings are allowed, eg one per lot when disposing from several lots.
+
+A gain posting on an undeclared account also works: hledger detects it heuristically
+(roughly: a posting to a non-asset/liability/equity account, not itself a lot posting,
+without which the rest of the entry balances).
+But the heuristic fails when the entry has another such posting, eg a fee, and the entry is then reported as unbalanced.
+So if you write gain postings, declare the account's type. `hledger print -a` shows what was detected.
 
 (Earlier hledger 2 previews also generated an `equity:unrealised-gain` counter posting in each disposal,
 so that disposals balanced at transacted cost. This is no longer done, and such postings,
@@ -6826,7 +6713,7 @@ the balance assertion to a new zero-amount posting to the parent account (and ma
 
 Once lot entries are in the journal, all the usual reports work as normal,
 hiding lot detail by default; `--lots` shows it.
-Using the [three notations](#three-ways-to-write-lot-entries) journal above:
+Using the [three ways](#three-ways-to-write-lot-entries) journal above (any version):
 
 `holdings` gives an overview of your investments: units held, cost, value, unrealised and realised gain, and XIRR
 (see [First lots example](#first-lots-example); add `--lots` for per-lot detail, `-e` to choose the date).
