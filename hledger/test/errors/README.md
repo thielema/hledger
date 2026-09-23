@@ -164,6 +164,9 @@ Click error names to see an example. The table headings mean:
 | [balanced](#balanced)                                 | ✓          | ✓    | -      | ✓       | ✓        |
 | [basis](#basis)                                       | ✓          | ✓    | ✓      | ✓✓      |          |
 | [commodities](#commodities)                           | ✓          | ✓    | ✓      | ✓✓      | ✓        |
+| [lots-gain](#lots-gain)                               | ✓          | ✓    | -      | ✓       |          |
+| [lots-name](#lots-name)                               | ✓          | ✓    | ✓      | ✓✓      |          |
+| [lots-tag](#lots-tag)                                 | ✓          | ✓    | -      | ✓       |          |
 | [lots](#lots)                                         | ✓          | ✓    | -      | ✓       |          |
 | [ordereddates](#ordereddates)                         | ✓          | ✓    | ✓      | ✓✓      | ✓        |
 | [parseable](#parseable)                               | ✓          | ✓    | ✓      | ✓✓      | ✓        |
@@ -286,6 +289,46 @@ Consider adding a commodity directive. Examples:
 
 commodity A1000.00
 commodity 1.000,00 A
+```
+
+
+### lots-gain
+```
+hledger: Error: /path/to/lots-gain.j:7:
+7 | 2022-02-01 sell
+  |     assets:stocks                                -10 AAPL {$50} @ $55
+  |     assets:checking                             $550
+  |     revenues:gains                             $-999
+
+Postings were read as: dispose, unclassified, gain.
+This disposal's realised gain amount is wrong.
+  written:    $-999
+  calculated: $-50
+```
+
+
+### lots-name
+```
+hledger: Error: /path/to/lots-name.j:4:
+  | 2022-01-01 buy
+4 |     assets:stocks:{not a lot}                     10 AAPL
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+  |     assets:checking                            $-500
+
+invalid lot name: not a lot
+
+A final account name part enclosed in { } must be a valid lot subaccount name.
+Please adjust the account name, or use --ignore-lots/-I.
+```
+
+
+### lots-tag
+```
+hledger: Error: /path/to/lots-tag.j:3:
+3 | commodity AAPL  ; lots: BADMETHOD
+
+unrecognised lots: tag value "BADMETHOD".
+Use FIFO, LIFO, HIFO, AVERAGE, SPECID, FIFOALL, LIFOALL, HIFOALL, AVERAGEALL, or nothing (meaning FIFO)
 ```
 
 
