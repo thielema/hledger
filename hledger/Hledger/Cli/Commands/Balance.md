@@ -14,9 +14,8 @@ Flags:
                             period-end historical balances (caused by deposits,
                             withdrawals, market price fluctuations)
      --gain                 calculation mode: show capital gain/loss
-                            (historical balance value minus the net of
-                            postings' transacted costs; equals unrealised gain
-                            if nothing has been disposed of)
+                            (historical balance value minus cost basis, or
+                            transacted cost where there is none)
      --budget[=DESCPAT]     calculation mode: show sum of posting amounts
                             together with budget goals defined by periodic
                             transactions. With a DESCPAT argument (must be

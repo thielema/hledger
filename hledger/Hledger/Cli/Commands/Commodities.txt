@@ -47,3 +47,10 @@ follows:
   --find         the first commodity matching same
                  the argument                 
   ---------------------------------------------------------------------------
+
+Example:
+
+$ hledger commodities
+$
+AAPL
+EUR

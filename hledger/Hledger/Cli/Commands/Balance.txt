@@ -13,9 +13,8 @@ Flags:
                             period-end historical balances (caused by deposits,
                             withdrawals, market price fluctuations)
      --gain                 calculation mode: show capital gain/loss
-                            (historical balance value minus the net of
-                            postings' transacted costs; equals unrealised gain
-                            if nothing has been disposed of)
+                            (historical balance value minus cost basis, or
+                            transacted cost where there is none)
      --budget[=DESCPAT]     calculation mode: show sum of posting amounts
                             together with budget goals defined by periodic
                             transactions. With a DESCPAT argument (must be
@@ -595,8 +594,7 @@ together.
 
 Combining balance report modes
 
-Most combinations of these modes should produce reasonable reports, but
-if you find any that seem wrong or misleading, let us know. The
+Most combinations of these modes produce reasonable reports. The
 following restrictions are applied:
 
 - --valuechange implies --value=end
@@ -856,6 +854,16 @@ output supports all of them:
   bare       Y     Y     Y             
   barewide   Y     Y     Y             
   tidy             Y                   
+
+Choice of layouts for budget reports is more restricted:
+
+  -          txt   csv   html   json   sql
+  ---------- ----- ----- ------ ------ -----
+  wide       Y     Y     Y             
+  tall       Y                         
+  bare       Y     Y     Y             
+  barewide         Y     Y             
+  tidy                                 
 
 Examples:
 
