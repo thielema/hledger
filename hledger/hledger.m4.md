@@ -1233,7 +1233,7 @@ See [Cost reporting](#cost-reporting) for a comparison of these styles, and how 
 ## Cost basis
 
 This section briefly describes the `{}` cost basis syntax,
-used to record the nominal cost of an investment being acquired, or to select lots being transfered or disposed.
+used to record the nominal cost of an investment being acquired, or to select lots being transferred or disposed.
 This is described in more detail later in [Lot reporting](#lot-reporting).
 If you're not tracking investment lots and capital gains, you can skip this.
 
@@ -6226,6 +6226,11 @@ In the journal, we can write *cost basis annotations*, enclosed in {} after an a
 (the syntax is described in [Cost basis](#cost-basis)), above.
 These often mention only part of the cost basis, typically just the cost (`{$50}`),
 or nothing at all (`{}`); hledger infers the rest.
+
+On an acquisition, the annotation records the new lot's cost basis.
+On a disposal or transfer, it is instead a *lot selector*, choosing which existing lot(s) to take from:
+a full or partial cost basis, like `{2026-01-15, $50}` or `{2026-01-15}`, identifies one specific lot,
+while `{}` (or no annotation) lets hledger choose, using the [cost basis method](#cost-basis-methods).
 
 ### Lotful commodities
 
