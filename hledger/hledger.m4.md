@@ -6783,7 +6783,7 @@ When it reports a lot-related error, or a report looks wrong:
 - `hledger print -a` shows how each entry was read:
   the inferred cost basis, lot subaccounts and gain posting, and each posting's classification
   (`ptype: acquire`, `dispose`, `transfer-from`, `transfer-to` or `gain`).
-  If an entry was misread, rewrite it more explicitly, eg by adding a lot selector, a price, or a `{}` annotation.
+  If an entry was misread, rewrite it more explicitly, eg by adding a cost basis annotation, or a transacted cost.
 - "no lots matching ..." means a lot selector matched nothing in that account; the error lists the account's actual lots.
   Common causes: the lot is in another account, or a cost-only selector no longer matches the displayed cost
   (see [Cost basis precision](#cost-basis-precision); date selectors avoid this).
@@ -6792,7 +6792,7 @@ When it reports a lot-related error, or a report looks wrong:
 - "realised gain amount is wrong" means a written gain posting doesn't match the calculated gain;
   the error shows both amounts. Check which lots were selected (`print -a`) and the amounts.
 - `hledger check basis` catches acquisitions whose `{}` cost basis and `@` cost differ, which would silently miscalculate gains.
-- To silence lot processing while fixing other problems, use `-I`/`--ignore-lots`.
+- To silence lot processing while fixing other problems, use `-I` or `--ignore-lots`.
 
 
 # Generating data
