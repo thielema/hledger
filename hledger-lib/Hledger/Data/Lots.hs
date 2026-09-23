@@ -114,7 +114,7 @@ module Hledger.Data.Lots (
 import Control.Applicative ((<|>))
 import Data.Bifunctor (first)
 import Control.Monad (foldM, guard, unless, when)
-import Data.List (intercalate, partition, sortOn)
+import Data.List (dropWhileEnd, intercalate, partition, sortOn)
 import Data.Ord (Down(..))
 #if !MIN_VERSION_base(4,20,0)
 import Data.List (foldl')
@@ -1013,7 +1013,8 @@ journalCalculateLots verbosetags j
   | otherwise = do
       validateUserLabels txns
       let needsLabels = findDatesNeedingLabels txns
-      (_, txns') <- foldM (processTransaction styles verbosetags j needsLabels) (M.empty, []) (sortOn tdate txns)
+      (_, txns') <- foldM (\acc t -> first (appendPostingsReadAs t) $ processTransaction styles verbosetags j needsLabels acc t)
+                          (M.empty, []) (sortOn tdate txns)
       Right (journalTieTransactions $ j{jtxns = reverse txns'})
   where
     txns = jtxns j
@@ -1023,7 +1024,7 @@ journalCalculateLots verbosetags j
     -- and commodity position/spacing.
     styles = journalCommodityStylesWith NoRounding j
     checkUnclassified (t, i, p)
-      | isUnclassifiedLotfulPosting j p = Left (unclassifiedLotWarning j t i p)
+      | isUnclassifiedLotfulPosting j p = Left (appendPostingsReadAs t $ unclassifiedLotWarning j t i p)
       | otherwise                       = Right ()
 
 -- Disposal gain postings
@@ -1230,7 +1231,7 @@ journalCheckAcquireBasis j = mapM_ checkTxn (jtxns j) >> Right j
 -- visible as @generated-posting:@ in @print --verbose-tags@.
 journalAddOrCheckGainPostings :: Bool -> Journal -> Either String Journal
 journalAddOrCheckGainPostings verbosetags j = do
-    txns' <- mapM addOrCheck (jtxns j)
+    txns' <- mapM (\t -> first (appendPostingsReadAs t) $ addOrCheck t) (jtxns j)
     Right j{jtxns = txns'}
   where
     atypes = jaccounttypes j
@@ -1593,7 +1594,7 @@ unclassifiedLotWarning j t idx p =
       inferrednote = if hasAmount (originalPosting p) then "" else
         " (with inferred amount " ++ showMixedAmountOneLine (pamount p) ++ ")"
       (f, line, _, ex) = makePostingErrorExcerptByIndex (transactionAsWritten t) (asWrittenPostingIndex t idx) Nothing
-  in printf "%s:%d:\n%s\n%s" f line ex (postingsReadAs t)
+  in printf "%s:%d:\n%s\n" f line ex
      ++ source ++ " but this posting" ++ inferrednote ++ " was not classified as\n"
      ++ "acquire, dispose, or transfer. Lot state will not be updated.\n"
      ++ "Possible fixes: add a cost basis ({$X}), a price (@ $X),\n"
@@ -1668,7 +1669,7 @@ isGeneratedPosting :: Posting -> Bool
 isGeneratedPosting = postingHasTag generatedPostingTagName
 
 -- | A one-line summary of how lot classification read a transaction's
--- postings, to include in error messages after the as-written excerpt:
+-- postings, to include at the end of error messages about it (see 'appendPostingsReadAs'):
 -- each non-generated posting's classification ("_ptype" tag value, or
 -- "unclassified") in posting order, plus a count of any generated postings.
 -- Returns "" when classification hasn't run yet (no posting has a ptype
@@ -1684,7 +1685,7 @@ postingsReadAs t
       ++ (case generated of
             [] -> ""
             gs -> "; and generated: " ++ intercalate ", " (map readAs gs))
-      ++ ".\n"
+      ++ "."
   where
     ps = tpostings t
     (generated, written) = partition isGeneratedPosting ps
@@ -1693,16 +1694,23 @@ postingsReadAs t
       Nothing | postingHasTag lotParentAssertionTagName p -> "balance-assertion"
               | otherwise -> "unclassified"
 
--- | Format a verbose error prefix for a transaction: "file:line:\nexcerpt\n\n",
--- plus a summary of how the postings were classified, if they were ('postingsReadAs').
+-- | Append a summary of how a transaction's postings were classified ('postingsReadAs'),
+-- if they were, as the last line of a lot error message about that transaction.
+-- (It goes last, so the explanation comes first, eg as the first line of a flycheck message.)
+appendPostingsReadAs :: Transaction -> String -> String
+appendPostingsReadAs t msg = case postingsReadAs t of
+  "" -> msg
+  r  -> dropWhileEnd (== '\n') msg ++ "\n\n" ++ r
+
+-- | Format a verbose error prefix for a transaction: "file:line:\nexcerpt\n\n".
 -- Prepend to an error message to show source position and a transaction excerpt,
 -- rendered as the user wrote it ('transactionAsWritten').
 txnErrPrefix :: Transaction -> String
-txnErrPrefix t = printf "%s:%d:\n%s\n%s" f line ex (postingsReadAs t)
+txnErrPrefix t = printf "%s:%d:\n%s\n" f line ex
   where (f, line, _, ex) = makeTransactionErrorExcerpt (transactionAsWritten t) (const Nothing)
 
 -- | Format a verbose error prefix for a posting: "file:line:\nexcerpt\n\n",
--- plus a classification summary, like 'txnErrPrefix', but marking the
+-- like 'txnErrPrefix', but marking the
 -- specific posting's line, found by comparing cost-stripped postings
 -- (falling back to the transaction line if the posting can't be identified).
 postingErrPrefix :: Posting -> String
@@ -1714,7 +1722,7 @@ postingErrPrefix p = case ptransaction p of
 
 -- | Like 'postingErrPrefix', for the posting at this (0-based) index in the transaction.
 postingAtErrPrefix :: Transaction -> Int -> String
-postingAtErrPrefix t i = printf "%s:%d:\n%s\n%s" f line ex (postingsReadAs t)
+postingAtErrPrefix t i = printf "%s:%d:\n%s\n" f line ex
   where (f, line, _, ex) = makePostingErrorExcerptByIndex (transactionAsWritten t) (asWrittenPostingIndex t i) Nothing
 
 -- | Emit a dbg5 trace for a lot operation: "lots: FILE:LINE DATE DESC: message".

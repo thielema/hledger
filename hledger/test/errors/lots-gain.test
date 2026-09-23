@@ -5,9 +5,10 @@ $ hledger check -f lots-gain.j
 .*
   \|     revenues:gains +\$-999
 
-Postings were read as: dispose, unclassified, gain\.
 This disposal's realised gain amount is wrong\.
   written: +\$-999
   calculated: \$-50
+
+Postings were read as: dispose, unclassified, gain\.
 /
 >= 1

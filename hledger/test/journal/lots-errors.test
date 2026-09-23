@@ -107,9 +107,10 @@ hledger: Error: -:5:
 5 |     assets:broker                               2220 T  ; @ $0.01
   |     equity:conversion
 
-Postings were read as: unclassified, acquire, unclassified.
 T is lotful but this acquire posting has no cost basis or price.
 No lot will be created.
+
+Postings were read as: unclassified, acquire, unclassified.
 >=1
 
 # ** 8. A leaf account name enclosed in `{...}` that is not a valid lot name
@@ -227,11 +228,12 @@ hledger: Error: -:7:
   |     assets:broker1:{2021-03-08, "0001", $5}       -2 ABC {2021-03-08, "0001", $5}
   |     equity:opening/closing balances
 
-Postings were read as: transfer-from, unclassified.
 no lots matching {2021-03-08, "0001", $5} for commodity ABC in account assets:broker1 on 2026-08-10
 Available lots in this account:
   {2021-03-08, $5}  2
   Total: 2 ABC
+
+Postings were read as: transfer-from, unclassified.
 >=1
 
 # ** 15. A transfer-like entry whose lotful-commodity quantities don't add
@@ -293,10 +295,11 @@ hledger: Error: -:7:
   |     expenses:fees                                 -0.1 ABC
   |     assets:broker2                                 5 ABC
 
-Postings were read as: transfer-from, unclassified, transfer-to.
 Mismatched transfer quantities for lot-tracked commodity ABC: 4.9 transferred out but 5 received.
 More was received than sent, which a fee can't explain;
 check the entry for sign errors or rounding adjustments.
+
+Postings were read as: transfer-from, unclassified, transfer-to.
 >=1
 
 # ** 17. Fee postings in the lot-tracked commodity which don't add up to the
@@ -323,13 +326,14 @@ hledger: Error: -:7:
   |     expenses:fees                                  0.15 ABC
   |     revenues:rebate                               -0.05 ABC
 
-Postings were read as: transfer-from, transfer-to, unclassified, unclassified.
 Mismatched transfer quantities for lot-tracked commodity ABC: 5 transferred out but 4.9 received.
 If the difference is a fee, you can either
 - record the fee expense in the lot-tracked commodity, with posting(s)
   adding up to the missing quantity
 - or split the sending posting into a transfer part and fee part(s)
   matching the fee expense(s).
+
+Postings were read as: transfer-from, transfer-to, unclassified, unclassified.
 >=1
 
 # ** 18. A generic (unselected) outflow with insufficient lots reports just
@@ -395,8 +399,9 @@ hledger: Error: -:51:
    |     assets:wallet                                -60 ADA @ $0.50
    |     assets:cash                                  $30
 
-Postings were read as: dispose, unclassified.
 Insufficient lots for commodity ADA in account assets:wallet: need 60 but only 24 available
+
+Postings were read as: dispose, unclassified.
 >=1
 
 # ** 19. Disposing from an account with no lots shows a compact per-account
@@ -462,10 +467,11 @@ hledger: Error: -:51:
    |     assets:exchange                               -1 ADA @ $0.50
    |     assets:cash                                   $0.50
 
-Postings were read as: dispose, unclassified.
 no ADA lots available for disposal from account assets:exchange on 2026-02-01
 Lots of ADA in other accounts:
   assets:wallet: 24 ADA in 12 lots
+
+Postings were read as: dispose, unclassified.
 >=1
 
 # ** 20. With an explicit lot selector, the same error also lists the
@@ -530,7 +536,6 @@ hledger: Error: -:51:
    |     assets:wallet                                -60 ADA {2026-01-01} @ $0.50
    |     assets:cash                                  $30
 
-Postings were read as: dispose, unclassified.
 Insufficient lots for commodity ADA in account assets:wallet: need 60 but only 24 available
 Lots matching {2026-01-01}:
   {2026-01-01, "0001", $0.41}  2
@@ -545,6 +550,8 @@ Lots matching {2026-01-01}:
   {2026-01-01, "0010", $0.50}  2
   ...and 2 more lots
   Total: 24 ADA
+
+Postings were read as: dispose, unclassified.
 >=1
 
 # ** 21. When a journal has both a lot error and a failing balance

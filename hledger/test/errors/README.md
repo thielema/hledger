@@ -200,7 +200,7 @@ Click error names to see an example. The table headings mean:
 
 
 <!-- GENERATED: -->
-hledger 1.99-g9ca8efedf-20260922 error messages:
+hledger 1.99-gac93735d1-20260923 error messages:
 
 ### accounts
 ```
@@ -301,10 +301,11 @@ hledger: Error: /path/to/lots-gain.j:7:
   |     assets:checking                             $550
   |     revenues:gains                             $-999
 
-Postings were read as: dispose, unclassified, gain.
 This disposal's realised gain amount is wrong.
   written:    $-999
   calculated: $-50
+
+Postings were read as: dispose, unclassified, gain.
 ```
 
 
@@ -340,11 +341,12 @@ hledger: Error: /path/to/lots.j:8:
 8 |     assets:stocks                                -15 AAPL {$50} @ $55
   |     assets:checking                             $825
 
-Postings were read as: dispose, unclassified.
 Insufficient lots for commodity AAPL in account assets:stocks: need 15 but only 10 available
 Lots matching {$50}:
   {2022-01-01, $50}  10
   Total: 10 AAPL
+
+Postings were read as: dispose, unclassified.
 ```
 
 
