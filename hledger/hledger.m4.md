@@ -6267,13 +6267,9 @@ $ hledger print
     assets:cash
 ```
 
-Unlike cost basis annotations, lot subaccount names must be complete,
-including all cost basis parts - date, label if any, and cost.
-
-A final account name part enclosed in `{` and `}` is reserved for lot subaccounts;
-hledger reports an error if the braces don't contain a valid lot name
-(`-I`/`--ignore-lots` treats such names as ordinary subaccounts;
-see also [hledger 1 and hledger 2](#hledger-1-and-hledger-2)).
+A final account name part enclosed in `{` and `}` is reserved for lot subaccounts,
+and it must be a valid lot subaccount name (unless using `-I` or `--ignore-lots`).
+Lot subaccount names must be complete, including all cost basis parts - date, label if any, and cost.
 
 When [strictly checking account names](#account-error-checking), lot subaccounts are ignored -
 you only need to declare the base account (eg `assets:stocks`), not the lot subaccounts.
