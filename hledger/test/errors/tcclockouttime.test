@@ -1,3 +1,9 @@
 $ hledger check -f tcclockouttime.timeclock
->2 /This clockout is earlier than the clockin./
+>2 /hledger: Error: .*tcclockouttime\.timeclock:5:1:
+4 \| i 2022-01-01 00:01:00 a
+5 \| o 2022-01-01 00:00:00
+  \| \^
+
+This clockout is earlier than its clockin, on line 4\.
+/
 >= 1

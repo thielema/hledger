@@ -16,7 +16,7 @@ module Hledger.Data.Timeclock (
 )
 where
 
-import Data.List (partition, sortBy, uncons)
+import Data.List (intercalate, partition, sortBy, sortOn, uncons)
 import Data.Maybe (fromMaybe)
 import Data.Text qualified as T
 import Data.Time.Calendar (addDays)
@@ -149,15 +149,10 @@ timeclockToTransactions now entries0 = transactions
           | otherwise     = (Session {in' = inentry, out = entry} : sessions1, newactive, es)
         inentries = case filter ((== tlaccount entry) . tlaccount) actives of
           []                -> entry:actives
-          activesinthisacct -> error' $ T.unpack $ makeTimeClockErrorExcerpt entry $ T.unlines $ [
-            ""
-            ,"overlaps with session beginning at:"
-            ,""
-            ]
-            <> map (flip makeTimeClockErrorExcerpt "") activesinthisacct
-            <> [ "Overlapping sessions with the same account name are not supported." ]
-            -- XXX better to show full session(s)
-            -- <> map (T.pack . show) (filter ((`elem` activesinthisacct).in') sessions)
+          activesinthisacct -> error' $ timeclockEntryError activesinthisacct entry $
+            "This clockin overlaps the session in the same account which began on line "
+            ++ intercalate ", " (map (show . timeclockEntryLine) activesinthisacct) ++ ".\n"
+            ++ "Overlapping sessions with the same account name are not supported."
 
         -- | Find the relevant clockin in the actives list that should be paired with this clockout.
         -- If there is a session that has the same account name, then use that.
@@ -194,15 +189,25 @@ errorExpectedCodeButGot expected actual = error' $ printf
     l = show $ unPos $ sourceLine $ tlsourcepos actual
     c = unPos $ sourceColumn $ tlsourcepos actual
 
-makeTimeClockErrorExcerpt :: TimeclockEntry -> T.Text -> T.Text
-makeTimeClockErrorExcerpt e@TimeclockEntry{tlsourcepos=pos} msg = T.unlines [
-  T.pack (sourcePosPretty pos) <> ":"
-  ,l <> " | " <> T.pack (show e)
-  -- ,T.replicate (T.length l) " " <> " |" -- <> T.replicate c " " <> "^")
-  ] <> msg
+-- | Make an error message about a timeclock entry, in hledger's standard error format:
+-- its position; an excerpt showing it, marked with ^, after any related earlier entries;
+-- and the given explanation.
+timeclockEntryError :: [TimeclockEntry] -> TimeclockEntry -> String -> String
+timeclockEntryError related e msg = intercalate "\n" $
+  [sourcePosPretty (tlsourcepos e) ++ ":"]
+  ++ concat (zipWith excerptLines (Nothing : map Just es) es)
+  ++ [replicate (length $ show $ timeclockEntryLine e) ' ' ++ " |" ++ replicate col ' ' ++ "^", "", msg]
   where
-    l = T.pack $ show $ unPos $ sourceLine $ tlsourcepos e
-    -- c = unPos $ sourceColumn $ tlsourcepos e
+    es = sortOn timeclockEntryLine related ++ [e]
+    col = unPos $ sourceColumn $ tlsourcepos e
+    -- each entry's line, preceded by an empty line if it's not adjacent to the previous one
+    excerptLines prev x =
+      [ "" | Just p <- [prev], timeclockEntryLine x > timeclockEntryLine p + 1 ]
+      ++ [show (timeclockEntryLine x) ++ " | " ++ T.unpack (T.stripEnd $ T.pack $ show x)]
+
+-- | A timeclock entry's line number.
+timeclockEntryLine :: TimeclockEntry -> Int
+timeclockEntryLine = unPos . sourceLine . tlsourcepos
 
 -- | Convert a timeclock clockin and clockout entry to an equivalent journal
 -- transaction, representing the time expenditure. Note this entry is  not balanced,
@@ -258,10 +263,8 @@ entryFromTimeclockInOut requiretimeordered i o
       -- so two decimal places is precise enough (#1527).
       amt = case mixedAmount $ setAmountInternalPrecision 2 $ hrs hours of
         a | not $ a < 0 -> a
-        _ -> error' $ printf
-          "%s%s:\nThis clockout is earlier than the clockin."
-          (makeTimeClockErrorExcerpt i "")
-          (makeTimeClockErrorExcerpt o "")
+        _ -> error' $ timeclockEntryError [i] o $
+          printf "This clockout is earlier than its clockin, on line %d." (timeclockEntryLine i)
       ps = [posting{paccount=acctname, pamount=amt, preal=VirtualPosting, ptransaction=Just t}]
 
 

@@ -200,7 +200,7 @@ Click error names to see an example. The table headings mean:
 
 
 <!-- GENERATED: -->
-hledger 1.99-gac93735d1-20260923 error messages:
+hledger 1.99-g147380f22-20260923 error messages:
 
 ### accounts
 ```
@@ -467,25 +467,23 @@ Consider changing these account names so their last parts are different.
 
 ### tcclockouttime
 ```
-hledger: Error: /path/to/tcclockouttime.timeclock:4:1:
-4 | i 2022-01-01 00:01:00 a  
-/path/to/tcclockouttime.timeclock:5:1:
-5 | o 2022-01-01 00:00:00   
-:
-This clockout is earlier than the clockin.
+hledger: Error: /path/to/tcclockouttime.timeclock:5:1:
+4 | i 2022-01-01 00:01:00 a
+5 | o 2022-01-01 00:00:00
+  | ^
+
+This clockout is earlier than its clockin, on line 4.
 ```
 
 
 ### tcorderedactions
 ```
 hledger: Error: /path/to/tcorderedactions.timeclock:8:1:
-8 | i 2022-01-01 00:01:00 a  
+7 | i 2022-01-01 00:00:00 a
+8 | i 2022-01-01 00:01:00 a
+  | ^
 
-overlaps with session beginning at:
-
-/path/to/tcorderedactions.timeclock:7:1:
-7 | i 2022-01-01 00:00:00 a  
-
+This clockin overlaps the session in the same account which began on line 7.
 Overlapping sessions with the same account name are not supported.
 ```
 
