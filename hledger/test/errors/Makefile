@@ -37,7 +37,7 @@ readme:
 	sed '/<!-- GENERATED: -->/q' <README.md >README.md.tmp
 	echo "$$($(HLEDGER) --version | cut -d, -f1) error messages:" >>README.md.tmp
 	for f in $(ERRORSCRIPTS); do \
-		printf '\n### %s\n```\n%s\n```\n\n' "$$(echo "$$f" | sed -E 's/\.[^.]+$$//')" "$$(./"$$f" 2>&1)"; \
+		printf '\n### %s\n```\n%s\n```\n\n' "$$(echo "$$f" | sed -E 's/\.[^.]+$$//')" "$$(./"$$f" 2>&1 | sed -E 's%[^ (]*/\./%/path/to/%g')"; \
 	done >>README.md.tmp
 	mv README.md.tmp README.md
 

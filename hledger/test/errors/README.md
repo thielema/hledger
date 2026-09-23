@@ -16,6 +16,28 @@ Each error has
 - sometimes supplementary data files (like `csvdateparse.csv.rules`)
 - a shelltestrunner test (like `balanced.test`)
 
+## What belongs here
+
+These tests are about how errors are presented.
+Each one tests an entire error message: the first line with its file position,
+the excerpt, and the explanation.
+This is the layout that tools like flycheck-hledger rely on,
+and elsewhere it is mostly not tested.
+
+We want one example of each distinct kind of error message, not every error.
+Errors built by the same code, with the same layout, share one example.
+For example, there are dozens of lot errors,
+but they come in a few shapes (an error at a posting, an error at a whole transaction, ..),
+and one example of each is enough.
+
+Whether a given input produces a given error is a separate concern.
+That's tested along with the feature, in the regular functional tests
+(`check-*.test`, `journal/*.test`, `csv.test` etc.),
+usually by matching just a key phrase of the message.
+
+So when adding a new kind of error message, or changing an error's layout,
+also add or update an example here.
+
 ## Procedures
 
 These use the `hledger` in `$PATH`. To use your latest build, run them from inside the
@@ -178,7 +200,7 @@ hledger 1.99-gb00301bbe-20260922 error messages:
 
 ### accounts
 ```
-hledger: Error: /Users/simon/src/hledger/hledger/test/errors/./accounts.j:4:
+hledger: Error: /path/to/accounts.j:4:
   | 2022-01-01
 4 |     (ß)                                            1
   |      ^
@@ -193,7 +215,7 @@ account ß
 
 ### assertions
 ```
-hledger: Error: /Users/simon/src/hledger/hledger/test/errors/./assertions.j:4:8:
+hledger: Error: /path/to/assertions.j:4:8:
   | 2022-01-01
 4 |     a                                              0 = 1
   |                                                      ^^^
@@ -210,7 +232,7 @@ hledger reg -E --ignore-assertions '2022-01-02'a$ cur:'' -e
 
 ### autobalanced
 ```
-hledger: Error: /Users/simon/src/hledger/hledger/test/errors/./autobalanced.j:3-4:
+hledger: Error: /path/to/autobalanced.j:3-4:
 3 | 2022-01-01
   |     a                                              1
 
@@ -222,7 +244,7 @@ The real postings' sum should be 0 but is 1
 
 ### balanced
 ```
-hledger: Error: /Users/simon/src/hledger/hledger/test/errors/./balanced.j:5-7:
+hledger: Error: /path/to/balanced.j:5-7:
 5 | 2022-01-01
   |     a                                              1 A
   |     b                                             -1 B
@@ -236,7 +258,7 @@ The real postings' sum should be 0 but is 1 A, -1 B
 
 ### basis
 ```
-hledger: Error: /Users/simon/src/hledger/hledger/test/errors/./basis.j:4:
+hledger: Error: /path/to/basis.j:4:
   | 2022-01-01 buy
 4 |     assets:stocks                                 10 AAPL {$60} @ $50
   |     ^^^^^^^^^^^^^
@@ -253,7 +275,7 @@ Options:
 
 ### commodities
 ```
-hledger: Error: /Users/simon/src/hledger/hledger/test/errors/./commodities.j:6:
+hledger: Error: /path/to/commodities.j:6:
   | 2022-01-01
 6 |     (a)                                          A 1
   |                                                  ^^^
@@ -269,7 +291,7 @@ commodity 1.000,00 A
 
 ### lots
 ```
-hledger: Error: /Users/simon/src/hledger/hledger/test/errors/./lots.j:8:
+hledger: Error: /path/to/lots.j:8:
   | 2022-02-01 sell
 8 |     assets:stocks                                -15 AAPL {$50} @ $55
   |     assets:checking                             $825
@@ -284,7 +306,7 @@ Lots matching {$50}:
 
 ### ordereddates
 ```
-hledger: Error: /Users/simon/src/hledger/hledger/test/errors/./ordereddates.j:10:
+hledger: Error: /path/to/ordereddates.j:10:
 7 | 2022-01-02 p
   |     (a)                                            1
  
@@ -300,7 +322,7 @@ Consider moving this entry into date order, or adjusting its date.
 
 ### parseable-dates
 ```
-hledger: Error: /Users/simon/src/hledger/hledger/test/errors/./parseable-dates.j:3:1:
+hledger: Error: /path/to/parseable-dates.j:3:1:
   |
 3 | 2022/1/32
   | ^^^^^^^^^
@@ -311,7 +333,7 @@ This is not a valid date, please fix it.
 
 ### parseable-regexps
 ```
-hledger: Error: /Users/simon/src/hledger/hledger/test/errors/./parseable-regexps.j:3:8:
+hledger: Error: /path/to/parseable-regexps.j:3:8:
   |
 3 | alias /(/ = a
   |        ^
@@ -322,7 +344,7 @@ This regular expression is invalid or unsupported, please correct it: (
 
 ### parseable
 ```
-hledger: Error: /Users/simon/src/hledger/hledger/test/errors/./parseable.j:3:2:
+hledger: Error: /path/to/parseable.j:3:2:
   |
 3 | 1
   |  ^
@@ -333,7 +355,7 @@ expecting date separator or digit
 
 ### payees
 ```
-hledger: Error: /Users/simon/src/hledger/hledger/test/errors/./payees.j:6:
+hledger: Error: /path/to/payees.j:6:
 6 | 2022-01-01 p
   |            ^
   |     (a)                                          A 1
@@ -348,7 +370,7 @@ payee p
 
 ### recentassertions
 ```
-hledger: Error: /Users/simon/src/hledger/hledger/test/errors/./recentassertions.j:18:
+hledger: Error: /path/to/recentassertions.j:18:
    | 2022-01-09 bad1
 18 |     a                                              0
    |     ^
@@ -365,7 +387,7 @@ Consider adding a new balance assertion to the above posting. Eg:
 
 ### tags
 ```
-hledger: Error: /Users/simon/src/hledger/hledger/test/errors/./tags.j:3:
+hledger: Error: /path/to/tags.j:3:
 3 | 2022-01-01  ; atag:
   |     (a)                                            1
 
@@ -379,7 +401,7 @@ tag atag
 
 ### uniqueleafnames
 ```
-hledger: Error: /Users/simon/src/hledger/hledger/test/errors/./uniqueleafnames.j:12:
+hledger: Error: /path/to/uniqueleafnames.j:12:
   | 2022-01-01 p
 9 |     (a:c)                                          1
  ...
@@ -399,9 +421,9 @@ Consider changing these account names so their last parts are different.
 
 ### tcclockouttime
 ```
-hledger: Error: /Users/simon/src/hledger/hledger/test/errors/./tcclockouttime.timeclock:4:1:
+hledger: Error: /path/to/tcclockouttime.timeclock:4:1:
 4 | i 2022-01-01 00:01:00 a  
-/Users/simon/src/hledger/hledger/test/errors/./tcclockouttime.timeclock:5:1:
+/path/to/tcclockouttime.timeclock:5:1:
 5 | o 2022-01-01 00:00:00   
 :
 This clockout is earlier than the clockin.
@@ -410,12 +432,12 @@ This clockout is earlier than the clockin.
 
 ### tcorderedactions
 ```
-hledger: Error: /Users/simon/src/hledger/hledger/test/errors/./tcorderedactions.timeclock:8:1:
+hledger: Error: /path/to/tcorderedactions.timeclock:8:1:
 8 | i 2022-01-01 00:01:00 a  
 
 overlaps with session beginning at:
 
-/Users/simon/src/hledger/hledger/test/errors/./tcorderedactions.timeclock:7:1:
+/path/to/tcorderedactions.timeclock:7:1:
 7 | i 2022-01-01 00:00:00 a  
 
 Overlapping sessions with the same account name are not supported.
@@ -424,7 +446,7 @@ Overlapping sessions with the same account name are not supported.
 
 ### tdquantity
 ```
-hledger: Error: /Users/simon/src/hledger/hledger/test/errors/./tdquantity.timedot:4:6:
+hledger: Error: /path/to/tdquantity.timedot:4:6:
   |
 4 | a  1.x
   |      ^
@@ -441,8 +463,8 @@ record: 2022-01-03,1,2
   %2   1
   %3   2
 while calculating amount for posting 1
-rule "amount-in %2" assigned value "1"       (/Users/simon/src/hledger/hledger/test/errors/./csvamountonenonzero.csv.rules:3)
-rule "amount-out %3" assigned value "2"      (/Users/simon/src/hledger/hledger/test/errors/./csvamountonenonzero.csv.rules:4)
+rule "amount-in %2" assigned value "1"       (/path/to/csvamountonenonzero.csv.rules:3)
+rule "amount-out %3" assigned value "2"      (/path/to/csvamountonenonzero.csv.rules:4)
 
 Multiple non-zero amounts were assigned for an amount field.
 Please ensure just one non-zero amount is assigned, perhaps with an if rule.
@@ -458,8 +480,8 @@ record: 2022-01-03,badamount
   %1   2022-01-03
   %2   badamount
 hledger field assignment rules:
-  amount:      %2                            (/Users/simon/src/hledger/hledger/test/errors/./csvamountparse.csv.rules:3)
-  date:        %1                            (/Users/simon/src/hledger/hledger/test/errors/./csvamountparse.csv.rules:2)
+  amount:      %2                            (/path/to/csvamountparse.csv.rules:3)
+  date:        %1                            (/path/to/csvamountparse.csv.rules:2)
 
 the parse error is:      1:10:
   |
@@ -479,8 +501,8 @@ record: 2022-01-03,badbalance
   %1   2022-01-03
   %2   badbalance
 hledger field assignment rules:
-  balance:     %2                            (/Users/simon/src/hledger/hledger/test/errors/./csvbalanceparse.csv.rules:3)
-  date:        %1                            (/Users/simon/src/hledger/hledger/test/errors/./csvbalanceparse.csv.rules:2)
+  balance:     %2                            (/path/to/csvbalanceparse.csv.rules:3)
+  date:        %1                            (/path/to/csvbalanceparse.csv.rules:2)
 
 the parse error is:      1:11:
   |
@@ -498,8 +520,8 @@ record: 2022-01-01,1
   %1   2022-01-01
   %2   1
 hledger field assignment rules:
-  balance:     %2                            (/Users/simon/src/hledger/hledger/test/errors/./csvbalancetypeparse.csv.rules:3)
-  date:        %1                            (/Users/simon/src/hledger/hledger/test/errors/./csvbalancetypeparse.csv.rules:2)
+  balance:     %2                            (/path/to/csvbalancetypeparse.csv.rules:3)
+  date:        %1                            (/path/to/csvbalancetypeparse.csv.rules:2)
 ```
 
 
@@ -509,7 +531,7 @@ hledger: Error: could not parse "a" as a date using date format "YYYY/M/D", "YYY
 record: a,b
   %1   a
   %2   b
-the date rule is:   %1                       (/Users/simon/src/hledger/hledger/test/errors/./csvdateformat.csv.rules:2)
+the date rule is:   %1                       (/path/to/csvdateformat.csv.rules:2)
 the date-format is: unspecified
 you may need to change your date rule, add a date-format rule, or change your skip rule
 for m/d/y or d/m/y dates, use date-format %-m/%-d/%Y or date-format %-d/%-m/%Y
@@ -522,7 +544,7 @@ hledger: Error: could not parse "baddate" as a date using date format "%Y-%m-%d"
 record: baddate,b
   %1   baddate
   %2   b
-the date rule is:   %1                       (/Users/simon/src/hledger/hledger/test/errors/./csvdateparse.csv.rules:2)
+the date rule is:   %1                       (/path/to/csvdateparse.csv.rules:2)
 the date-format is: %Y-%m-%d
 you may need to change your date rule, change your date-format rule, or change your skip rule
 for m/d/y or d/m/y dates, use date-format %-m/%-d/%Y or date-format %-d/%-m/%Y
@@ -531,7 +553,7 @@ for m/d/y or d/m/y dates, use date-format %-m/%-d/%Y or date-format %-d/%-m/%Y
 
 ### csvdaterule
 ```
-hledger: Error: /Users/simon/src/hledger/hledger/test/errors/./csvdaterule.csv.rules:
+hledger: Error: /path/to/csvdaterule.csv.rules:
 Please specify (at top level) the date field. Eg: date %1
 ```
 
@@ -544,7 +566,7 @@ hledger: Error: decimal-mark's argument should be "." or "," (not "badmark")
 
 ### csvifblocknomatchers
 ```
-hledger: Error: /Users/simon/src/hledger/hledger/test/errors/./csvifblocknomatchers.csv.rules:3:1:
+hledger: Error: /path/to/csvifblocknomatchers.csv.rules:3:1:
   |
 3 | # a comment, not a matcher
   | ^
@@ -557,7 +579,7 @@ to match a leading comment character, escape it, eg \#)
 
 ### csvifblocknonempty
 ```
-hledger: Error: /Users/simon/src/hledger/hledger/test/errors/./csvifblocknonempty.csv.rules:2:1:
+hledger: Error: /path/to/csvifblocknonempty.csv.rules:2:1:
   |
 2 | if foo
   | ^
@@ -568,7 +590,7 @@ start of conditional block found, but no assignment rules afterward
 
 ### csviftablefieldnames
 ```
-hledger: Error: /Users/simon/src/hledger/hledger/test/errors/./csviftablefieldnames.csv.rules:2:9:
+hledger: Error: /path/to/csviftablefieldnames.csv.rules:2:9:
   |
 2 | if,date,nosuchfield,description
   |         ^^^^^^^^^^^^
@@ -579,7 +601,7 @@ expecting "account1", "account10", "account11", "account12", "account13", "accou
 
 ### csviftablenonempty
 ```
-hledger: Error: /Users/simon/src/hledger/hledger/test/errors/./csviftablenonempty.csv.rules:2:1:
+hledger: Error: /path/to/csviftablenonempty.csv.rules:2:1:
   |
 2 | if,date,description,comment
   | ^
@@ -589,7 +611,7 @@ start of conditional table found, but no assignment rules afterward
 
 ### csviftablevaluecount
 ```
-hledger: Error: /Users/simon/src/hledger/hledger/test/errors/./csviftablevaluecount.csv.rules:4:1:
+hledger: Error: /path/to/csviftablevaluecount.csv.rules:4:1:
   |
 4 | one,val1
   | ^
@@ -599,7 +621,7 @@ line of conditional table should have 2 values, but this one has only 1
 
 ### csvskipvalue
 ```
-hledger: Error: /Users/simon/src/hledger/hledger/test/errors/./csvskipvalue.csv.rules: could not parse skip value: badval
+hledger: Error: /path/to/csvskipvalue.csv.rules: could not parse skip value: badval
 ```
 
 

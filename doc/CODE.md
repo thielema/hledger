@@ -226,6 +226,9 @@ For ways to run it during development, see
 - Code style: post-qualified imports (`import Data.Map qualified as M`),
   and the -Wall variant shown in [DEVWORKFLOWS](DEVWORKFLOWS.md#type-check-quickly).
 - Keep imports compatible with the oldest supported GHC (see `tested-with:` in hledger-lib/package.yaml).
+- User-visible errors should follow the standard error format (see [ERRORS](ERRORS.md)),
+  using the excerpt helpers in Hledger.Data.Errors where possible.
+  A new kind of error message, or a changed layout, needs an example in hledger/test/errors/.
 
 ## Debug output
 

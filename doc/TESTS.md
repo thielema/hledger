@@ -121,6 +121,12 @@ For how to run the tests, see [Developer workflows](DEVWORKFLOWS.md).
     grouped by *component* (command or topic name).
     For more about these, see the README there.
 
+    When these test for an error, they usually match just a key phrase of the message.
+    The layout of error messages is tested separately in
+    [hledger/test/errors/](https://github.com/hledgerorg/hledger/tree/main/hledger/test/errors),
+    which has one full-message example of each kind of error message
+    (see [ERRORS](ERRORS.md)).
+
     hledger-web also has some browser tests, defined with playwright in
     [hledger-web/test/browser/](https://github.com/hledgerorg/hledger/tree/main/hledger-web/test/browser);
     see the README there.
