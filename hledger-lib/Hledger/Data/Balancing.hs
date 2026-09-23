@@ -44,6 +44,7 @@ import Data.HashTable.Class qualified as H (toList)
 import Data.HashTable.ST.Cuckoo qualified as H
 import Data.List (partition, sortOn, intercalate)
 import Data.List.Extra (nubSort)
+import Data.Either (isRight)
 import Data.Maybe (fromJust, fromMaybe, isJust, isNothing, mapMaybe)
 import Data.STRef (STRef, newSTRef, readSTRef, modifySTRef')
 import Data.Set qualified as S
@@ -709,12 +710,19 @@ journalBalanceTransactionsHelper deferassertions bopts' j' =
 
         -- 2. Step through these items in date order (and preserved same-day order),
         -- keeping running balances for all accounts.
-        runningbals <- lift $ H.newSized (length $ journalAccountNamesUsed j)
-        flip runReaderT (BalancingState styles autopostingaccts assertionsmode (account_types_ bopts) (lotful_commodities_ bopts) (verbose_balancing_tags_ bopts) runningbals balancedtxns) $ do
-          -- On encountering any not-yet-balanced transaction with a balance assignment,
-          -- enact the balance assignment then finish balancing the transaction.
-          -- And, check any balance assertions encountered along the way.
-          void $ mapM' balanceTransactionAndCheckAssertionsB $ sortOn (either postingDate tdate) psandts
+        -- This pass serves only balance assignments and assertions, so it is
+        -- skipped when there are none to process (a big saving on large journals).
+        let
+          checkingassertions = case assertionsmode of DontCheckAssertions -> False; _ -> True
+          hasassertions = any (isJust . pbalanceassertion) [p | Left p <- psandts]
+          hasassignments = any isRight psandts
+        when (hasassignments || (checkingassertions && hasassertions)) $ do
+          runningbals <- lift $ H.newSized (length $ journalAccountNamesUsed j)
+          flip runReaderT (BalancingState styles autopostingaccts assertionsmode (account_types_ bopts) (lotful_commodities_ bopts) (verbose_balancing_tags_ bopts) runningbals balancedtxns) $ do
+            -- On encountering any not-yet-balanced transaction with a balance assignment,
+            -- enact the balance assignment then finish balancing the transaction.
+            -- And, check any balance assertions encountered along the way.
+            void $ mapM' balanceTransactionAndCheckAssertionsB $ sortOn (either postingDate tdate) psandts
 
         -- Return the now fully-balanced and checked transactions,
         -- and any deferred balance assertion failure.

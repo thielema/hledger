@@ -118,6 +118,11 @@ since they would leave the journal unchanged; on large journals this saves about
 the read time. Likewise the balancer skips its per-entry gain tagging and fee splitting for
 entries with no cost basis annotations when no commodity is lotful.
 
+Similarly, the balancer's second pass (stepping through all postings in date order with
+running account balances) exists only to enact balance assignments and check balance
+assertions, so it is skipped when the journal has no balance assignments and no assertions
+to check.
+
 ## Sequencing constraints
 
 These are the known ordering requirements between steps.
