@@ -1,6 +1,6 @@
 # Lot tracking
 
-Here is the current specification for lots functionality, most of which has been implemented in the lots branch.
+Here is the current specification for the lots functionality in hledger 2.
 
 See also 
 - hledger manual: Cost basis
