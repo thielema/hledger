@@ -35,7 +35,7 @@ import Hledger.Data.Errors
 import Hledger.Data.Journal
 import Hledger.Data.JournalChecks.Ordereddates
 import Hledger.Data.JournalChecks.Uniqueleafnames
-import Hledger.Data.Posting (defaultDecimalMarkColumn, isVirtual, postingDate, transactionAllTags, conversionPostingTagName, costPostingTagName, postingAsLines, generatedPostingTagName, generatedTransactionTagName, modifiedTransactionTagName, AmountCols(..))
+import Hledger.Data.Posting (defaultDecimalMarkColumn, isVirtual, postingDate, transactionAllTags, conversionPostingTagName, costPostingTagName, postingAsLines, generatedPostingTagName, generatedTransactionTagName, modifiedTransactionTagName, feesplitPostingTagName, lotsplitPostingTagName, lotParentAssertionTagName, AmountCols(..))
 import Hledger.Data.Types
 import Hledger.Data.Amount (amountIsZero, amountsRaw, defaultFmt, missingamt)
 import Hledger.Data.Transaction (transactionPayee, showTransactionLineFirstPart, partitionAndCheckConversionPostings)
@@ -256,6 +256,10 @@ builtinTags = [
       ,generatedPostingTagName     -- marks postings which have been generated
       ,costPostingTagName          -- marks equity conversion postings which have been matched with a nearby costful posting
       ,conversionPostingTagName    -- marks costful postings which have been matched with a nearby pair of equity conversion postings
+      ,"_ptype"                    -- marks lot postings with their classification (acquire, dispose, transfer-from, transfer-to, gain)
+      ,feesplitPostingTagName      -- marks fee fragments split off lot transfers
+      ,lotsplitPostingTagName      -- marks tail fragments of postings split across lots
+      ,lotParentAssertionTagName   -- marks postings carrying a balance assertion relocated from a posting split into lots
       ]
 
 -- | In each tranaction, check that any conversion postings occur in adjacent pairs.

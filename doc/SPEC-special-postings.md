@@ -59,4 +59,7 @@ For each cost amount, two conversion postings are generated under \<equityAcct\>
 | _ptype:gain          | transactionTagGainPostings / journalAddOrCheckGainPostings            | Realised-gain posting in a disposal (user-written, or generated); set aside by the balancer |
 | _cost-posting        | journalTagCostsAndEquityAndMaybeInferCosts / journalInferEquityFromCosts | Has (or could have) cost matching conversion postings |
 | _conversion-posting  | journalTagCostsAndEquityAndMaybeInferCosts / journalInferEquityFromCosts | Equity conversion posting                             |
-| _generated-posting   | journalInferEquityFromCosts / journalAddOrCheckGainPostings           | Machine-generated posting                              |
+| _generated-posting   | journalInferEquityFromCosts / journalAddOrCheckGainPostings / transactionAutoSplitFeeOutflows / preserveParentAssertion | Machine-generated posting                              |
+| _feesplit-posting    | transactionAutoSplitFeeOutflows                                       | Fee fragment split off a lot transfer's sending posting; hidden by print unless --lots or priced |
+| _lotsplit-posting    | processDisposePosting / processTransferGroup                          | Extra fragment of a posting split across several lots; merged back unless --lots |
+| _lot-parent-assertion | preserveParentAssertion                                              | Zero-amount posting on the parent account, carrying a balance assertion moved from a posting split into lot subaccounts |

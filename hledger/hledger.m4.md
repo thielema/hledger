@@ -1622,6 +1622,11 @@ They are explained elsewhere, but here's a quick reference:
                            and which have equivalent conversion postings in the transaction
  conversion-posting     -- appears on postings which are to a V/Conversion account
                            and which have an equivalent cost posting in the transaction
+ ptype                  -- appears on lot postings, with their type (acquire, dispose, etc.)
+ feesplit-posting       -- appears on fee parts split off a lot transfer posting
+ lotsplit-posting       -- appears on extra parts of a posting split across several lots
+ lot-parent-assertion   -- appears on postings carrying a balance assertion moved
+                           from a posting that was split across several lots
 ```
 
 The second group above (generated-transaction, etc.) are normally hidden, with a `_` prefix added.
