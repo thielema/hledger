@@ -40,6 +40,9 @@ and fails if throughput is below a threshold.
 `just hledgerprof` builds a profiling-enabled `bin/hledgerprof`, then `just quickprof CMD`
 runs a hledger command on a sample journal and shows the profile (using profiterole).
 See `just h prof` for related recipes.
+With GHC 9.14, `stack --profile` fails (a compiler panic while building tls); instead build with
+[stack-prof.yaml](https://github.com/hledgerorg/hledger/blob/main/stack-prof.yaml), which works
+around that and keeps its own `.stack-prof` work dir, as described in its header.
 
 ## Package benchmark
 
