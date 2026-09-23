@@ -228,9 +228,13 @@ pprint' = pPrintOpt NoCheckColorTty prettyoptsNoColor
 error' :: String -> a
 error' = errorWithoutStackTrace . ("Error: "<>)
 
--- | Like error', but add a hint about using -h.
+-- | Like error', but add a hint about using -h
+-- (on its own line, if the message has several lines).
 usageError :: String -> a
-usageError = error' . (++ " (use -h to see usage)")
+usageError msg = error' $ msg' ++ sep ++ "(use -h to see usage)"
+  where
+    msg' = dropWhileEnd (== '\n') msg
+    sep  = if '\n' `elem` msg' then "\n" else " "
 
 -- | Apply standard ANSI SGR formatting (red, bold) suitable for console error text.
 ansiFormatError :: String -> String

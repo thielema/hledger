@@ -303,7 +303,7 @@ forecastPeriodFromRawOpts d rawopts = do
     let period = parsePeriodExpr d . textStripQuotes $ T.pack arg
     return $ if null arg then nulldatespan else either badParse (getSpan arg) period
   where
-    badParse e = usageError $ "could not parse forecast period : "++customErrorBundlePretty e
+    badParse e = usageError $ "could not parse forecast period: "++customErrorBundlePretty e
     getSpan arg (interval, requestedspan) = case interval of
         NoInterval -> requestedspan
         _          -> usageError $ "--forecast's argument should not contain a report interval ("

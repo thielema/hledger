@@ -624,7 +624,7 @@ depthFromRawOpts rawopts = lastDef mempty flats <> mconcat regexps
     (flats, regexps) = partition (\(DepthSpec f rs) -> isJust f && null rs) depthSpecs
     depthSpecs = case mapM (parseDepthSpec . T.pack) depths of
       Right d -> d
-      Left err -> usageError $ "Unable to parse depth specification: " ++ err
+      Left err -> usageError err
     depths = listofstringopt "depth" rawopts
 
 -- | Select the Transaction date accessor based on --date2.

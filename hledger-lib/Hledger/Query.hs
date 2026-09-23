@@ -518,7 +518,8 @@ parseDepthSpec s = do
     let depthString = T.unpack $ if T.null b then a else T.tail b
     depth <- case readMay depthString of
         Just d | d >= 0 -> Right d
-        _ -> Left $ "depth: should be a positive number, but received " ++ depthString
+        _ -> Left $ "could not parse depth \"" ++ T.unpack s ++ "\": "
+               ++ "it should be a whole number, 0 or more, optionally preceded by ACCTREGEX="
     regexp <- mapM toRegexCI $ if T.null b then Nothing else Just a
     return $ case regexp of
       Nothing -> DepthSpec (Just depth) []
