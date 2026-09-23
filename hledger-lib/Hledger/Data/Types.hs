@@ -660,6 +660,15 @@ showMarketPrices = intercalate "\n" . map ((' ':).showMarketPrice) . sortBy (com
 
 -- additional valuation-related types in Valuation.hs
 
+-- | A source position calculated during parsing, with the parser's offset and
+-- remaining input at that point. Kept in the parse state, so that later
+-- positions can be calculated cheaply from it (see Hledger.Read.Common.getSourcePos').
+data ParsePos = ParsePos {
+   ppSourcePos :: SourcePos
+  ,ppOffset    :: Int
+  ,ppInput     :: Text
+  } deriving (Eq,Generic,Show)
+
 -- | A journal, containing general ledger transactions; also directives and various other things.
 -- This is hledger's main data model.
 --
@@ -679,6 +688,7 @@ data Journal = Journal {
   -- ,jparsetransactioncount :: Integer                               -- ^ the current count of transactions parsed so far (only journal format txns, currently)
   ,jparsetimeclockentries   :: [TimeclockEntry]                       -- ^ timeclock sessions which have not been clocked out
   ,jparseincludefilestack   :: [(FilePath, FilePath)]                 -- ^ (absolute path, canonical path) of included files, most recent first
+  ,jparsepos                :: Maybe ParsePos                         -- ^ the most recently calculated source position, if any, from which later ones are calculated cheaply
 -- principal data
   ,jdeclaredpayees          :: [(Payee,PayeeDeclarationInfo)]         -- ^ Payees declared by payee directives, in parse order.
   ,jdeclaredtags            :: [(TagName,TagDeclarationInfo)]         -- ^ Tags declared by tag directives, in parse order.
@@ -873,6 +883,7 @@ instance NFData EFDay
 instance NFData Interval
 instance NFData Journal
 instance NFData JournalItem
+instance NFData ParsePos
 instance NFData LotId
 instance NFData MarketPrice
 instance NFData ReductionMethod

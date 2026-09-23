@@ -48,6 +48,7 @@ module Hledger.Read.Common (
   journalAddAutoPostings,
   setYear,
   getYear,
+  getSourcePos',
   setDefaultCommodityAndStyle,
   getDefaultCommodityAndStyle,
   getDefaultAmountStyle,
@@ -607,6 +608,38 @@ popParentAccount = do
 getParentAccount :: JournalParser m AccountName
 getParentAccount = fmap (concatAccountNames . reverse . jparseparentaccounts) get
 
+-- | Get the current source position, like megaparsec's getSourcePos but
+-- cheaper on large inputs. megaparsec walks every character since the last
+-- position it calculated, checking each one's width; this instead starts
+-- from the most recently calculated position kept in the parse state (see
+-- 'ParsePos'), counts the newlines since then with a fast scan, and walks
+-- only the current line, using megaparsec's column rules. The journal
+-- parsers should use this rather than getSourcePos. On the first call, or
+-- if the parser has somehow moved backwards, it falls back to getSourcePos.
+-- (Though, measured in 2026 on a 100k-transaction journal, this saved only
+-- about 4% of total run time: the per-character walk is cheap in optimised code,
+-- and this still scans the text, just faster.)
+getSourcePos' :: JournalParser m SourcePos
+getSourcePos' = do
+  o <- getOffset
+  manchor <- jparsepos <$> get
+  pos <- case manchor of
+    Just (ParsePos anchor@(SourcePos f l _) o0 s0) | o >= o0 -> do
+      let
+        consumed = T.take (o - o0) s0  -- the text between the anchor and here
+        newlines = T.count "\n" consumed
+        -- walk the current line only: from the anchor if that is on this line, else from the line's start
+        (startpos, lineprefix)
+          | newlines == 0 = (anchor, consumed)
+          | otherwise     = (SourcePos f (mkPos $ unPos l + newlines) pos1, T.takeWhileEnd (/= '\n') consumed)
+      return $ pstateSourcePos $ reachOffsetNoLine (T.length lineprefix) PosState
+        { pstateInput = lineprefix, pstateOffset = 0, pstateSourcePos = startpos
+        , pstateTabWidth = defaultTabWidth, pstateLinePrefix = "" }
+    _ -> getSourcePos
+  s <- getInput
+  modify' $ \j -> j{jparsepos = Just $ ParsePos pos o s}
+  return pos
+
 addAccountAlias :: MonadState Journal m => AccountAlias -> m ()
 addAccountAlias a = modify' (\(j@Journal{..}) -> j{jparsealiases=a:jparsealiases})
 
@@ -1126,7 +1159,7 @@ valuationexprp =
 
 balanceassertionp :: JournalParser m BalanceAssertion
 balanceassertionp = do
-  sourcepos <- getSourcePos
+  sourcepos <- getSourcePos'
   char '='
   istotal <- fmap isJust $ optional $ try $ char '='
   isinclusive <- fmap isJust $ optional $ try $ char '*'

@@ -237,6 +237,7 @@ journalp :: MonadIO m => InputOpts -> ErroringJournalParser m ParsedJournal
 journalp iopts = do
   many $ addJournalItemP iopts
   eof
+  modify' $ \j -> j{jparsepos = Nothing}  -- drop the position anchor, it is only meaningful during parsing
   get
 
 -- | A side-effecting parser; parses any kind of journal item
@@ -344,7 +345,7 @@ includedirectivep :: MonadIO m => InputOpts -> ErroringJournalParser m ()
 includedirectivep iopts = do
   -- save the position at start of include directive, for error messages
   eoff <- getOffset
-  pos <- getSourcePos
+  pos <- getSourcePos'
   let errorNoArg = customFailure $ parseErrorAt eoff "include needs a file path or glob pattern argument"
 
   -- parse the directive, and record it as a journal item (before the included files' items)
@@ -558,7 +559,7 @@ handleIOError off msg io = do
 accountdirectivep :: JournalParser m ()
 accountdirectivep = do
   off <- getOffset -- XXX figure out a more precise position later
-  pos <- getSourcePos
+  pos <- getSourcePos'
 
   string "account"
   lift skipNonNewlineSpaces1
@@ -673,7 +674,7 @@ commoditydirectiveonelinep :: JournalParser m ()
 commoditydirectiveonelinep = do
   (off, pos, Amount{acommodity,astyle}) <- try $ do
     string "commodity"
-    pos <- getSourcePos
+    pos <- getSourcePos'
     lift skipNonNewlineSpaces1
     off <- getOffset
     amt <- amountp
@@ -704,7 +705,7 @@ pleaseincludedecimalpoint = chomp $ unlines [
 commoditydirectivemultilinep :: JournalParser m ()
 commoditydirectivemultilinep = do
   string "commodity"
-  pos <- getSourcePos
+  pos <- getSourcePos'
   lift skipNonNewlineSpaces1
   sym <- lift commoditysymbolp
   (comment, tags) <- lift transactioncommentp
@@ -854,7 +855,7 @@ defaultcommoditydirectivep = do
 
 marketpricedirectivep :: JournalParser m PriceDirective
 marketpricedirectivep = do
-  pos <- getSourcePos
+  pos <- getSourcePos'
   char 'P' <?> "market price"
   lift skipNonNewlineSpaces
   date <- try (do {LocalTime d _ <- datetimep; return d}) <|> datep -- a time is ignored
@@ -920,7 +921,7 @@ transactionmodifierp = do
 -- relative to Y/1/1. If not, they are calculated related to today as usual.
 periodictransactionp :: MonadIO m => JournalParser m PeriodicTransaction
 periodictransactionp = do
-  startpos <- getSourcePos
+  startpos <- getSourcePos'
 
   -- first line
   char '~' <?> "periodic transaction"
@@ -958,7 +959,7 @@ periodictransactionp = do
   -- next lines; use same year determined above
   postings <- postingsp (Just $ first3 $ toGregorian refdate)
 
-  endpos <- getSourcePos
+  endpos <- getSourcePos'
   let sourcepos = (startpos, endpos)
 
   return $ nullperiodictransaction{
@@ -978,7 +979,7 @@ periodictransactionp = do
 transactionp :: JournalParser m Transaction
 transactionp = do
   -- dbgparse 0 "transactionp"
-  startpos <- getSourcePos
+  startpos <- getSourcePos'
   date <- datep <?> "transaction"
   edate <- optional (lift $ secondarydatep date) <?> "secondary date"
   lookAhead (lift spacenonewline <|> newline) <?> "whitespace or newline"
@@ -988,7 +989,7 @@ transactionp = do
   (comment, tags) <- lift transactioncommentp
   let year = first3 $ toGregorian date
   postings <- postingsp (Just year)
-  endpos <- getSourcePos
+  endpos <- getSourcePos'
   let sourcepos = (startpos, endpos)
   return $ txnTieKnot $ Transaction 0 "" sourcepos date edate status code description comment tags postings
 
