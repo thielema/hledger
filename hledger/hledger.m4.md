@@ -6078,8 +6078,6 @@ First, a quick glossary:
 
 # Lot reporting
 
-Automated lot tracking and capital gains reporting is one of the main new features of hledger 2.
-
 When you buy (acquire) some amount of an investment commodity (a lot),
 it can be important (depending on your local tax rules) 
 to keep track of its original cost and acquisition date (cost basis),
@@ -6094,12 +6092,11 @@ All this can be very hard to keep track of by hand,
 so usually it is done by an investment broker, cryptocurrency exchange, or specialised tax software.
 Now, you can also do it yourself with hledger.
 
-hledger's lot tracking builds on the design first shipped in Ledger, then improved in Beancount.
-hledger understands several kinds of notation describing lots.
-You can record all details explicitly; or use more convenient low-boilerplate entries, and it will infer the missing parts.
-hledger checks lot entries, 
-tracks and infers lot movements (reporting any problems, such as disposal of nonexistent lots), 
-and calculates capital gains when lots are sold.
+Automated lot tracking and capital gains reporting is the biggest new feature of hledger 2.
+Lot tracking was first shipped in Ledger, then improved in Beancount; hledger 2 evolves PTA lot tracking further,
+making it more powerful and ergonomic. Several kinds of lot notation are supported;
+you can record all details explicitly, or use more convenient low-boilerplate entries, letting hledger infer the missing parts.
+hledger checks lot entries, tracks, infers and validates lot movements, and calculates capital gains when lots are sold.
 
 Lot processing happens only for entries that use lot notation:
 [cost basis annotations](#cost-basis-annotations), [lot subaccounts](#lot-subaccounts),
@@ -6352,7 +6349,7 @@ Third, with a `lots` tag on the commodity, no annotations are needed at all, as 
 
 All three notations produce the same lots and the same $100 gain; [Lot reports](#lot-reports) below shows them.
 
-### Lot ids
+### Lot labels
 
 Internally, each lot is identified by its cost basis date plus an optional label.
 Lots of a commodity acquired on the same date (even in different accounts) must have unique labels to help identify them.
@@ -6606,7 +6603,9 @@ either of two ways:
 ## Gain postings
 
 Each disposal transaction has a **gain posting**, usually on a Gain-type account,
-recording the capital gain (or loss) as revenue: the gain, negated.
+recording the capital gain (or loss) as revenue (or negative revenue).
+(Following the [usual PTA style](faq.md#why-are-my-revenue-income-liability-and-equity-balances-negative-),
+a negative number here means profit, a positive number means loss.)
 
 A disposal balances at cost basis, not at transacted cost:
 the disposed units count as their quantity times their cost basis (what they cost you),
