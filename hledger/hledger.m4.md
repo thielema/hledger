@@ -6185,7 +6185,7 @@ Holdings on 2026-03-31
 ```
 
 You can add `--lots` to see the individual lots (this works with all reports):
-```
+```cli
 $ hledger holdings -e 2026-04-01 --lots
 Holdings on 2026-03-31
 
