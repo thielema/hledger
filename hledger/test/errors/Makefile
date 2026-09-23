@@ -6,7 +6,7 @@ ERRORSCRIPTS := \
 	$$(find -s . -name '*.j'         -perm +rwx -exec basename {} \; | grep -v csv) \
 	$$(find -s . -name '*.timeclock' -perm +rwx -exec basename {} \; ) \
 	$$(find -s . -name '*.timedot'   -perm +rwx -exec basename {} \; ) \
-	$$(find -s . -name 'csv*'        -perm +rwx -exec basename {} \; ) \
+	$$(find -s . -name 'csv*.csv'    -perm +rwx -exec basename {} \; ) \
 	$$(find -s . -name '*.sh'        -perm +rwx -exec basename {} \; ) \
 
 list:

@@ -127,16 +127,20 @@ Click error names to see an example. The table headings mean:
 | [assertions](#assertions)                             | ✓          | ✓    | ✓      | ✓✓      | ✓        |
 | [autobalanced](#autobalanced)                         | ✓          | ✓    | -      | ✓       | ✓        |
 | [balanced](#balanced)                                 | ✓          | ✓    | -      | ✓       | ✓        |
+| [basis](#basis)                                       | ✓          | ✓    | ✓      | ✓✓      |          |
 | [commodities](#commodities)                           | ✓          | ✓    | ✓      | ✓✓      | ✓        |
+| [lots](#lots)                                         | ✓          | ✓    | -      | ✓       |          |
 | [ordereddates](#ordereddates)                         | ✓          | ✓    | ✓      | ✓✓      | ✓        |
 | [parseable](#parseable)                               | ✓          | ✓    | ✓      | ✓✓      | ✓        |
 | [parseable-dates](#parseable-dates)                   | ✓          | ✓    | ✓      | ✓✓      | ✓        |
 | [parseable-regexps](#parseable-regexps)               | ✓          | ✓    | ✓      | ✓✓      | ✓        |
 | [payees](#payees)                                     | ✓          | ✓    | ✓      | ✓✓      | ✓        |
 | [recentassertions](#recentassertions)                 | ✓          | ✓    | ✓      | ✓✓      | ✓        |
+| [tags](#tags)                                         | ✓          | ✓    | -      | ✓       |          |
 | [uniqueleafnames](#uniqueleafnames)                   | ✓          | ✓    | ✓      | ✓✓      | ✓        |
 | [tcclockouttime](#tcclockouttime)                     | ✓          | ✓    | ✓      | ✓✓      |          |
 | [tcorderedactions](#tcorderedactions)                 | ✓          | ✓    | ✓      | ✓✓      |          |
+| [tdquantity](#tdquantity)                             | ✓          | ✓    | ✓      | ✓✓      |          |
 | [csvamountonenonzero](#csvamountonenonzero)           | semi-std   |      |        |         |          |
 | [csvamountparse](#csvamountparse)                     |            |      |        |         |          |
 | [csvbalanceparse](#csvbalanceparse)                   |            |      |        |         |          |
@@ -152,13 +156,12 @@ Click error names to see an example. The table headings mean:
 | [csviftablevaluecount](#csviftablevaluecount)         |            | ✓    | ✓      | ✓       |          |
 | [csvskipvalue](#csvskipvalue)                         |            |      |        |         |          |
 | [csvstatusparse](#csvstatusparse)                     |            |      |        | ✓       |          |
-| [csvstdinrules](#csvstdinrules)                       |            |      |        |         |          |
 | [csvtwofields](#csvtwofields)                         |            |      |        |         |          |
 | [csvstdinrules](#csvstdinrules)                       |            |      |        |         |          |
 
 
 <!-- GENERATED: -->
-hledger 1.99-g13c2753d8-20260915 error messages:
+hledger 1.99-gb00301bbe-20260922 error messages:
 
 ### accounts
 ```
@@ -218,6 +221,23 @@ The real postings' sum should be 0 but is 1 A, -1 B
 ```
 
 
+### basis
+```
+hledger: Error: /Users/simon/src/hledger/hledger/test/errors/./basis.j:4:
+  | 2022-01-01 buy
+4 |     assets:stocks                                 10 AAPL {$60} @ $50
+  |     ^^^^^^^^^^^^^
+  |     assets:checking
+
+This acquire posting's cost basis ($60) differs from its transacted cost ($50).
+Options:
+  - drop {} or {{}} so basis is inferred from the transacted cost
+  - drop @ or @@ so transacted cost is inferred from the basis
+  - use {{TotalCost}} or write the per-unit basis at higher precision
+  - if the difference is real (gift, NSO, RSU, etc.), fund it via a separate posting
+```
+
+
 ### commodities
 ```
 hledger: Error: /Users/simon/src/hledger/hledger/test/errors/./commodities.j:6:
@@ -231,6 +251,21 @@ Consider adding a commodity directive. Examples:
 
 commodity A1000.00
 commodity 1.000,00 A
+```
+
+
+### lots
+```
+hledger: Error: /Users/simon/src/hledger/hledger/test/errors/./lots.j:8:
+  | 2022-02-01 sell
+8 |     assets:stocks                                -15 AAPL {$50} @ $55
+  |     assets:checking                             $825
+
+Postings were read as: dispose, unclassified.
+Insufficient lots for commodity AAPL in account assets:stocks: need 15 but only 10 available
+Lots matching {$50}:
+  {2022-01-01, $50}  10
+  Total: 10 AAPL
 ```
 
 
@@ -315,6 +350,20 @@ Consider adding a new balance assertion to the above posting. Eg:
 ```
 
 
+### tags
+```
+hledger: Error: /Users/simon/src/hledger/hledger/test/errors/./tags.j:3:
+3 | 2022-01-01  ; atag:
+  |     (a)                                            1
+
+Strict tag checking is enabled, and
+tag "atag" has not been declared.
+Consider adding a tag directive. Examples:
+
+tag atag
+```
+
+
 ### uniqueleafnames
 ```
 hledger: Error: /Users/simon/src/hledger/hledger/test/errors/./uniqueleafnames.j:12:
@@ -357,6 +406,17 @@ overlaps with session beginning at:
 7 | i 2022-01-01 00:00:00 a  
 
 Overlapping sessions with the same account name are not supported.
+```
+
+
+### tdquantity
+```
+hledger: Error: /Users/simon/src/hledger/hledger/test/errors/./tdquantity.timedot:4:6:
+  |
+4 | a  1.x
+  |      ^
+unexpected 'x'
+expecting "mo", ';', 'd', 'h', 'm', 's', 'w', 'y', end of input, exponent, newline, or space
 ```
 
 
@@ -539,12 +599,6 @@ the parse error is:      1:1:
   | ^
 unexpected 'b'
 expecting '!', '*', or end of input
-```
-
-
-### csvstdinrules
-```
-hledger: Error: please use --rules when reading CSV from stdin
 ```
 
 
