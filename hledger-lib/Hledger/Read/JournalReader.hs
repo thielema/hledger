@@ -78,7 +78,7 @@ import Control.Monad.IO.Class (MonadIO, liftIO)
 import Control.Monad.Except (ExceptT(..), runExceptT)
 import Control.Monad.State.Strict (evalStateT,get,modify',put)
 import Control.Monad.Trans.Class (lift)
-import Data.Char (isSpace, toLower)
+import Data.Char (isDigit, isSpace, toLower)
 import Data.Either (isRight, lefts)
 import Data.Functor ((<&>))
 import Data.Map.Strict qualified as M
@@ -243,19 +243,29 @@ journalp iopts = do
 -- and updates the parse state accordingly.
 -- Every item is also recorded in jitems, so the file can be reproduced.
 addJournalItemP :: MonadIO m => InputOpts -> ErroringJournalParser m ()
-addJournalItemP iopts =
-  -- all journal line types can be distinguished by the first
-  -- character, can use choice without backtracking
-  choice [
-      directivep iopts
-    , transactionp >>= modify' . addTransactionItem
-    , recordItem JIDirective transactionmodifierp  >>= modify' . addTransactionModifier
-    , recordItem JIDirective periodictransactionp  >>= modify' . addPeriodicTransaction
-    , recordItem JIDirective marketpricedirectivep >>= modify' . addPriceDirective
-    , recordItem commentOrBlankItem $ lift emptyorcommentlinep
-    , recordItem JICommentBlock $ lift multilinecommentp
-    ] <?> "transaction or directive"
+addJournalItemP iopts = (<?> "transaction or directive") $ do
+  -- Journal item types can be told apart by their first character. Where that
+  -- is unambiguous, go straight to the right parser: trying every alternative
+  -- for every item (mostly transactions and blank lines) was a large parsing cost.
+  -- The fallbacks keep the error messages the same as before.
+  c <- lookAhead anySingle
+  if | isDigit c                         -> transactionitem
+     | c == 'P'                          -> priceitem <|> anyitem
+     | isSpace c || isLineCommentStart c -> blankorcommentitem <|> anyitem
+     | otherwise                         -> anyitem
   where
+    transactionitem    = transactionp >>= modify' . addTransactionItem
+    priceitem          = recordItem JIDirective marketpricedirectivep >>= modify' . addPriceDirective
+    blankorcommentitem = recordItem commentOrBlankItem $ lift emptyorcommentlinep
+    anyitem = choice [
+        directivep iopts
+      , transactionitem
+      , recordItem JIDirective transactionmodifierp  >>= modify' . addTransactionModifier
+      , recordItem JIDirective periodictransactionp  >>= modify' . addPeriodicTransaction
+      , priceitem
+      , blankorcommentitem
+      , recordItem JICommentBlock $ lift multilinecommentp
+      ]
     commentOrBlankItem txt = if T.all isSpace txt then JIBlank else JIComment txt
 
 -- | Run a parser, also recording the text it consumed as a journal item of the given kind.
