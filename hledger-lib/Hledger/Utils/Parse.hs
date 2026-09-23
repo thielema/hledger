@@ -415,7 +415,7 @@ finalizeCustomErrorBundle errBundle =
     finalizeCustomError
       :: ParseError Text HledgerParseErrorData -> NE.NonEmpty (ParseError Text HledgerParseErrorData)
     finalizeCustomError err = case findCustomError err of
-      Nothing -> pure err
+      Nothing -> pure $ limitExpected err
 
       Just errFailAt@(ErrorFailAt startOffset _ _) ->
         -- Adjust the offset
@@ -435,6 +435,14 @@ finalizeCustomErrorBundle errBundle =
 
     finds :: (Foldable t) => (a -> Maybe b) -> t a -> Maybe b
     finds f = getAlt . foldMap (Alt . f)
+
+    -- Megaparsec lists every alternative the parser expected; for some parsers
+    -- (eg period expressions, CSV rule field names) that's dozens or hundreds.
+    -- When there are that many, show just the first few.
+    limitExpected :: ParseError Text HledgerParseErrorData -> ParseError Text HledgerParseErrorData
+    limitExpected (TrivialError o u es) | S.size es > 20 =
+      TrivialError o u $ S.fromList (take 10 $ S.toAscList es) <> S.singleton (Label $ 'o' NE.:| ("ther valid values (" ++ show (S.size es - 10) ++ " more)"))
+    limitExpected e = e
 
 
 --- * "Final" parse errors
