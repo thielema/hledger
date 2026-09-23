@@ -1,5 +1,5 @@
-$$$ hledger check payees -f payees.j
->>>2 /hledger: Error: .*payees\.j:6:
+$ hledger check payees -f payees.j
+>2 /hledger: Error: .*payees\.j:6:
 6 \| 2022-01-01 p
   \|            \^
   \|     \(a\)                                          A 1
@@ -7,4 +7,4 @@ $$$ hledger check payees -f payees.j
 .*
 payee "p" has not been declared.
 /
->>>= 1
+>= 1

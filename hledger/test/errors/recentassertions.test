@@ -1,5 +1,5 @@
-$$$ hledger check recentassertions -f recentassertions.j
->>>2 /hledger: Error: .*recentassertions\.j:18:
+$ hledger check recentassertions -f recentassertions.j
+>2 /hledger: Error: .*recentassertions\.j:18:
    \| 2022-01-09 bad1
 18 \|     a                                              0
    \|     \^
@@ -9,4 +9,4 @@ $$$ hledger check recentassertions -f recentassertions.j
 In account: a
 the last assertion was on 2022-01-01, 8 days before this latest posting.
 /
->>>= 1
+>= 1

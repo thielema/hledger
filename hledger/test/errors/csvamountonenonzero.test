@@ -1,5 +1,5 @@
-$$$ hledger check -f  csvamountonenonzero.csv
->>>2 /hledger: Error: in CSV rules:
+$ hledger check -f  csvamountonenonzero.csv
+>2 /hledger: Error: in CSV rules:
 record: 2022-01-03,1,2
   %1   2022-01-03
   %2   1
@@ -7,4 +7,4 @@ record: 2022-01-03,1,2
 while calculating amount for posting 1
 rule "amount-in %2" assigned value "1" +\(.*rules:3\)
 rule "amount-out %3" assigned value "2" +\(.*rules:4\)/
->>>= 1
+>= 1
