@@ -6110,52 +6110,10 @@ see [hledger 1 and hledger 2](#hledger-1-and-hledger-2).
 
 For a more technical version of what's in this manual, see [SPEC-lots](/SPEC-lots.html).
 
-## How to enable or disable lot tracking
-
-Lot tracking can be enabled in two ways:
-
-- *Per posting:*
-  write explicit [curly-brace lot annotations](#cost-basis-annotations) like in Ledger or Beancount,
-  or write explicit [lot subaccount names](#lot-subaccounts).
-  Only these postings will be tracked lotfully.
-
-- *Per commodity:* declare the commodity lotful with a [`lots` tag](#lotful-commodities).
-  All of its postings are tracked lotfully, and the annotations are inferred for you.
-  This is convenient, and recommended.
-
-A posting with any of these is called a lot posting.
-If you want a commodity tracked lotfully in only some accounts, use annotations rather than the `lots` tag.
-Or if it should be tracked everywhere except certain accounts (eg tax-sheltered accounts
-where cost basis doesn't matter), use the `lots` tag,
-and add a `lots: NONE` tag to those accounts' declarations to disable lot tracking there:
-
-```journal
-account assets:ira      ; lots: NONE
-```
-
-Postings in such accounts are not lot-tracked and get no lot subaccounts or gain postings,
-unless they have explicit lot annotations, which always enable tracking.
-Moving a lotful commodity from a tracked account into such an account is a disposal;
-moving it out again needs a cost basis or price on the receiving posting.
-
-The disposal order (AKA cost basis method - which lots are consumed first)
-is FIFO by default; or as set by a `lots` tag *value* on the commodity or account declaration
-(account wins), eg `lots: LIFO`; or chosen explicitly per disposal with a lot selector.
-See [Cost basis methods](#cost-basis-methods).
-
-Sometimes you may want to disable lots/gains processing,
-to silence lot-related errors when you are working with incomplete journals
-(eg, when piping hledger print into another hledger command,
-or when fixing a complex journal's problems one at a time).
-For this, use the `--ignore-lots` flag, or just `-I`.
-This skips lot tracking, capital gains calculation, and all lot error
-checking, while still doing enough lot inference that lot entries
-balance as usual.
-
 ## First lots example
 
 hledger's lot tracking does not require much extra notation. Here is a small example, using @ syntax.
-([Lot reporting example](#lot-reporting-example) below shows other styles.):
+([Three ways to write lot entries](#three-ways-to-write-lot-entries) below shows the other notations.):
 
 ```journal
 commodity AAPL  ; lots:
@@ -6224,9 +6182,7 @@ $ hledger print -a
 
 ```
 
-Note, hledger is quite good at analysing lot entries but it won't understand every possible shape;
-so if anything looks wrong, check the `print -a` output,
-and if necessary rewrite the entry in a different form.
+If anything looks wrong, see [Troubleshooting lots](#troubleshooting-lots) below.
 
 Once you have lot entries, [`holdings`](#holdings) will show an overview of your investments -
 units held, per-unit and total cost and value, realised and unrealised gain, and [XIRR] (extended internal rate of return).
@@ -6250,6 +6206,48 @@ Holdings on 2026-03-31
 ```
 
 [XIRR]: https://en.wikipedia.org/wiki/Internal_rate_of_return
+
+## How to enable or disable lot tracking
+
+Lot tracking can be enabled in two ways:
+
+- *Per posting:*
+  write explicit [curly-brace lot annotations](#cost-basis-annotations) like in Ledger or Beancount,
+  or write explicit [lot subaccount names](#lot-subaccounts).
+  These postings will be tracked lotfully.
+
+- *Per commodity:* declare the commodity lotful with a [`lots` tag](#lotful-commodities).
+  All of its postings are tracked lotfully, and the annotations are inferred for you.
+  This is convenient, and recommended.
+
+A posting with any of these is called a lot posting.
+If you want a commodity tracked lotfully in only some accounts, use annotations rather than the `lots` tag.
+Or if it should be tracked everywhere except certain accounts (eg tax-sheltered accounts
+where cost basis doesn't matter), use the `lots` tag,
+and add a `lots: NONE` tag to those accounts' declarations to disable lot tracking there:
+
+```journal
+account assets:ira      ; lots: NONE
+```
+
+Postings in such accounts are not lot-tracked and get no lot subaccounts or gain postings,
+unless they have explicit lot annotations, which always enable tracking.
+Moving a lotful commodity from a tracked account into such an account is a disposal;
+moving it out again needs a cost basis or price on the receiving posting.
+
+The disposal order (AKA cost basis method - which lots are consumed first)
+is FIFO by default; or as set by a `lots` tag *value* on the commodity or account declaration
+(account wins), eg `lots: LIFO`; or chosen explicitly per disposal with a lot selector.
+See [Cost basis methods](#cost-basis-methods).
+
+Sometimes you may want to disable lots/gains processing,
+to silence lot-related errors when you are working with incomplete journals
+(eg, when piping hledger print into another hledger command,
+or when fixing a complex journal's problems one at a time).
+For this, use the `--ignore-lots` flag, or just `-I`.
+This skips lot tracking, capital gains calculation, and all lot error
+checking, while still doing enough lot inference that lot entries
+balance as usual.
 
 ## Lot concepts
 
@@ -6336,23 +6334,69 @@ allowing `:{...}` names to be treated as ordinary subaccounts.
 When [strictly checking account names](#account-error-checking), lot subaccounts are ignored -
 you only need to declare the base account (eg `assets:stocks`), not the lot subaccounts.
 
+### Three ways to write lot entries
+
+<a name="lot-reporting-example"></a>
+The same two acquisitions and a disposal, written in each notation.
+With explicit lot subaccounts (this notation can dispose only by specifically identifying the lots involved):
+
+```journal
+2026-01-15 buy low
+    assets:stocks:{2026-01-15, $50}      10 AAPL
+    assets:cash                       -$500
+
+2026-02-01 buy high
+    assets:stocks:{2026-02-01, $60}      10 AAPL
+    assets:cash                       -$600
+
+2026-03-01 sell some   ; specific identification
+    assets:stocks:{2026-01-15, $50}      -5 AAPL @ $70
+    assets:cash                        $350
+```
+
+With cost basis annotations:
+
+```journal
+2026-01-15 buy low
+    assets:stocks      10 AAPL {$50}
+    assets:cash     -$500
+
+2026-02-01 buy high
+    assets:stocks      10 AAPL {$60}
+    assets:cash     -$600
+
+2026-03-01 sell some   ; default method (FIFO)
+    assets:stocks      -5 AAPL {} @ $70
+    assets:cash      $350
+```
+
+With a `lots` tag on the commodity, the most concise form:
+
+```journal
+commodity AAPL         ; lots:
+
+2026-01-15 buy low
+    assets:stocks      10 AAPL
+    assets:cash     -$500
+
+2026-02-01 buy high
+    assets:stocks      10 AAPL
+    assets:cash     -$600
+
+2026-03-01 sell some   ; AAPL's method (FIFO)
+    assets:stocks      -5 AAPL @ $70
+    assets:cash      $350
+```
+
+All three produce the same lots and the same $100 gain; [Lot reports](#lot-reports) below shows them.
+
 ### Lot ids
 
-A lot id is a unique identifier for that lot, used internally by hledger.
-It is the cost basis date, followed by the label if any, with a space between them.
-
-Lot ids also record the order in which lots were acquired.
-So if multiple lots of a commodity are acquired on the same date (even in different accounts), they must have distinct, sortable labels.
-Eg the time of the event, in `HH:MM` format, could be used.
-Or if no labels are provided, hledger will add sequentially numbered labels starting from `0001`.
-These numbers are not reused, even after a lot has been fully disposed of.
-
-Acquisitions with these cost basis annotations would produce those lot ids:
-
-    {2026-01-01, $50}           ; → "2026-01-01"
-    {2026-01-02, "12:30", $50}  ; → "2026-01-02 12:30"
-    {2026-01-03, $50}           ; → "2026-01-03 0001"
-    {2026-01-03, $50}           ; → "2026-01-03 0002"
+Internally, each lot is identified by its cost basis date plus an optional label.
+Lots of a commodity acquired on the same date (even in different accounts) must have unique labels to help identify them.
+If you don't provide these, hledger adds sequential labels automatically (`"0001"`, `"0002"`, ..).
+Labels are used for sorting, so if you write your own, make them sortable.
+(More detail: [SPEC-lots](/SPEC-lots.html#lot-ids).)
 
 ### Cost basis vs transacted cost
 
@@ -6383,32 +6427,16 @@ The [Acquire](#acquire) section below shows an example.
 
 ### Cost basis precision
 
-An inferred cost basis can be a non-terminating decimal (eg `3 ABC @@ $10`
-gives a $10/3 unit cost). Internally hledger keeps such costs at high
-precision, and calculates gains from the unrounded value; but in lot names it
-displays at most 8 decimal digits (eg `{2021-03-08, $3.33333333}`), or more if
-the commodity's declared display style has more (eg `commodity $0.0000000000`).
-A lot's displayed name always works as a selector, even when it is a rounded
-display of a longer inferred cost.
-
-Two precision-related cautions:
-
-- When lots migrate to a new journal file as text (eg with `close --lots`),
-  only the displayed digits survive: the new file's cost basis is exactly the
-  displayed value, so subsequent gains can differ from the old file's by a tiny
-  amount (up to half of the last displayed digit, per unit, once). If you track
-  commodities needing finer cost precision (eg micro-priced tokens, or costs
-  denominated in a cryptocurrency), declare a wider display style for the cost
-  commodity up front.
-
-- Changing a commodity's declared display precision can change how inferred
-  costs render in lot names. Any lot names or selectors recorded in the journal
-  with the old rendering will then stop matching: hledger reports "no lots
-  matching ...", listing the account's actual lots. Recovery is simple but
-  manual: update the recorded names/selectors to the new rendering, which is
-  shown in the error message (or by `print --lots`). Selectors using just the
-  date (and label) don't embed a cost and are unaffected - one more reason to
-  prefer them.
+An inferred cost basis can be a non-terminating decimal (eg `3 ABC @@ $10` gives a $10/3 unit cost).
+hledger keeps such costs at high precision internally and calculates gains from the unrounded value,
+but in lot names it displays at most 8 decimal digits, or more if the cost commodity's declared display style has more.
+Two consequences:
+when lots are carried into a new file as text (eg with `close --lots`), only the displayed digits survive,
+so if you track commodities needing finer cost precision, declare a wider display style for the cost commodity up front;
+and changing a commodity's display precision can change how lot names render,
+so lot selectors written with the old rendering will need updating (see [Troubleshooting lots](#troubleshooting-lots)).
+Selectors using just the date (and label) don't embed a cost, and are unaffected.
+(More detail: [SPEC-lots](/SPEC-lots.html#cost-basis-precision).)
 
 ## Lot movements
 
@@ -6460,19 +6488,13 @@ is quietly read as one, without raising an error. If in doubt, `print -a` shows 
 
 #### Transfer fees
 
-If the destination receives less than the source sends (eg due to a fee deducted by an exchange),
-record the fee as its own posting in the same commodity (eg `expenses:fees 0.001 ETH @ $3000`, or without the price);
-several fee postings which together add up to the missing quantity also work.
-hledger then automatically splits the source posting into a transfer portion and disposal portion(s),
-so that the fee disposals are detected correctly.
+If the destination receives less than the source sends (eg because an exchange deducted a fee),
+record the fee as its own posting in the same commodity, eg `expenses:fees  0.001 ETH @ $3000` (or without the price);
+several fee postings which together make up the difference also work.
+hledger reads the fee as a small disposal (consuming lots in the usual [cost basis method](#cost-basis-methods) order, before the transfer)
+and transfers the rest. With a price, the fee disposal gets a gain calculated; without one, it doesn't.
 Otherwise, mismatched sent/received totals are an error.
-
-If a fee posting has a transacted price, its disposal portion carries it and a gain is calculated;
-otherwise the disposal is priceless and no gain is calculated.
-The fee's disposal selects lots before the transfer does, using the
-[cost basis method](#cost-basis-methods) in effect - so under the default FIFO
-method, the fee consumes the oldest lots and the transfer carries the rest.
-`print --lots` (or `print -a`) shows the split form explicitly, so the output round-trips correctly.
+`print --lots` (or `print -a`) shows how the entry was read.
 
 Conversely, if the destination receives *more* than the source sends
 (eg a reclaimed fee, or dust from a past bookkeeping error), a fee can't explain that,
@@ -6501,20 +6523,7 @@ To capitalise an acquisition fee, fold it into the acquisition cost:
 
 This lot's cost basis is $51 per share.
 (Recording the commission as a separate expense posting would instead keep it out of the basis.)
-
-Capitalising an in-kind transfer fee - keeping the remaining units' total basis unchanged -
-requires disposing of the position at its basis price (producing no gain)
-and re-acquiring the remainder with the combined basis, eg:
-
-```journal
-; earlier: bought 5 ABC for $20 ($4 each); now 0.1 ABC is deducted in transit:
-2020-04-05 transfer with 0.1 ABC fee, capitalised
-    assets:broker1     -5 ABC {} @ $4
-    assets:broker2      4.9 ABC {$4.08163265} @@ $20
-```
-
-Note this re-acquisition starts a new lot, with a new date unless you write
-the original date in its basis annotation; usually fees are simply expensed instead.
+Capitalising an in-kind transfer fee is possible too, but fiddly; see [Other lot events](#other-lot-events).
 
 ### Dispose
 
@@ -6538,79 +6547,17 @@ so the remaining units' basis is unchanged, but no gain or loss is recognised,
 and the receiving posting holds unpriced commodity units.
 To have the gain calculated, give the receiving posting a transacted price.
 
-When the gain posting is inferred (not written explicitly),
-hledger sizes it from the disposal side only:
-the sum of `quantity × (B − T)` over the entry's dispose postings.
-Acquire postings in the same entry don't contribute to the inferred gain
-(any acquire-side `B ≠ T` would be rejected at load time anyway, see [Acquire](#acquire) above).
+When the gain posting is inferred, it is calculated from the entry's dispose postings only
+(the quantity times the difference between selling price and cost basis, summed);
+acquire postings in the same entry don't contribute.
 
 ### Other lot events
 
-Some examples of recording other real-world events using these movements:
-
-#### Gift received
-
-An acquisition's cost basis can differ from the commodity's current market
-price. Eg with GOLD currently priced at $5000, you receive a gift carrying
-its original ("carryover") cost basis of $3000/oz:
-```
-P 2026-05-01 GOLD $5000
-
-2026-05-01 gift received, with carryover basis of $3000
-    income:gifts         $-6000
-    assets:stock              2 GOLD {$3000}
-```
-The transacted cost is $3000 (same as the basis), not $5000.
-And the recorded gift income is $6000 (the gift's current market value is $10000, but remember when you dispose you'll have to declare $2000/oz more capital gain, $4000 more in total).
-
-#### Bonus shares
-
-Extra shares granted for free (a bonus issue or stock dividend) can be recorded as a zero-cost acquisition. 
-Such an entry balances by itself:
-
-```journal
-2026-06-01 bonus shares
-    assets:stock    5 AAPL @@ $0
-```
-
-Or you can add an equity posting for more explicit double entry
-(note that account will then keep an offsetting negative AAPL balance):
-
-```journal
-2026-06-01 bonus shares
-    assets:stock          5 AAPL @@ $0
-    equity:bonus-shares  -5 AAPL @@ $0
-```
-
-A zero cost basis means the full sale proceeds will be counted as capital
-gain at disposal. This matches the tax treatment of bonus shares in some
-jurisdictions - eg India, where their acquisition cost is nil, or the UK,
-where they enter the pool at nil cost, diluting the average cost.
-Other treatments exist, so check your local rules. 
-Eg for US nontaxable stock dividends, 
-the original shares' cost basis is instead spread proportionally 
-across the old and new shares, which can be recorded like a stock split. 
-Or, free shares which are taxable income when received (eg a brokerage promotion)
-would typically be acquired at their market value, balanced by an income posting.
-
-#### Stock splits
-
-A stock split (eg 2:1, doubling the share count and halving the share
-price) can be recorded as a disposal and re-acquisition, preserving the
-original acquisition date and total cost basis. Eg, for 10 AAPL bought
-on 2026-01-01 with cost basis $100/share:
-
-```journal
-2026-06-01 AAPL splits 2:1
-    assets:broker   -10 AAPL {2026-01-01} @@ $1000
-    assets:broker    20 AAPL {2026-01-01} @@ $1000
-```
-
-The old lot is disposed at its cost basis, so there is no gain; the new
-lot keeps the old acquisition date, with the per-unit basis inferred
-from the unchanged total ($1000 / 20 = $50). (Since two acquisitions now
-share the same basis date, hledger will add sequence-number labels to keep their
-[lot ids](#lot-ids) distinct.)
+<a name="gift-received"></a><a name="bonus-shares"></a><a name="stock-splits"></a>
+Other real-world events - a gift received with a carryover cost basis, bonus shares,
+a stock split, capitalising an in-kind transfer fee - can be recorded as combinations of these three movements.
+[Track investments](/investments.html#other-lot-events-hledger-2) on hledger.org has worked examples.
+The right treatment varies by jurisdiction, so check your local tax rules.
 
 ## Cost basis methods
 
@@ -6618,6 +6565,7 @@ If a lot transfer or a lot disposal doesn't specifically identify the lot(s) inv
 hledger selects from the available lots automatically, using a *cost basis method*
 (AKA disposal method / reduction method / booking method).
 
+Use the method your tax jurisdiction requires or allows.
 The default method is FIFO (first in, first out).
 You can override this with a `lots` tag value on the commodity or account declaration.
 (An account tag will take precedence; on an account, the tag requires a method value.)
@@ -6736,7 +6684,7 @@ Eg selling 5 AAPL bought at $50 for $70 each: `-5 AAPL {$50} @ $70` counts as -$
 and `revenues:gain $-100` balances the entry.
 (This is the historical cost accounting convention, and is how hledger 1 users have recorded gains.
 Unrealised gains are not recorded as postings, but can be reported from market prices,
-eg with [holdings](#holdings) or [`--gain`](#valuation-type).
+eg with [holdings](#holdings) or [`--gain`](#calculation-mode).
 Consequently the accounting equation stays balanced through disposals.)
 
 The gain posting can be left implicit (and hledger will infer it);
@@ -6824,40 +6772,14 @@ Another example, this time with multiple gain postings:
     gains           $-15          ; gain on second lot
 ```
 
-hledger identifies these "undeclared" gain postings by their characteristics:
-postings whose account type is not Asset, Liability, or Equity (or a subtype);
-and which have not been classified as lot postings (acquire, transfer, dispose);
-and without which the remaining postings in the entry balance to zero
-(or, when the sale has no price, form a plain sale: the lot commodity
-net sold, one other commodity net received).
-
-So above, the `gains` postings are detected, set aside when balancing the entry
-(which then balances at cost basis, as described above),
-and their amounts are checked against the calculated gain.
-Any other imbalance - eg a typo in non-gain postings — is reported as a standard balance error, not silently absorbed as gain.
-
-This heuristic detection of gain postings can fail when the entry has other
-non-asset postings too, such as a fee. Here both `expenses:fees` and `gains`
-look like gain candidates, the remaining postings don't balance without them,
-so neither is detected, and the entry is reported as unbalanced:
-
-```journal
-2026-02-01 sell, with a fee
-    assets:stocks     -1 AAPL {$50} @ $60
-    assets:cash      $59
-    expenses:fees     $1
-    gains           $-10
-```
-
-In such cases, declare the gain account's type (Style 3 below):
-
-```journal
-account gains  ; type:G
-```
-
-You can check the detection with `hledger print -a`.
-This heuristic exists as a convenience for simple entries;
-declaring the gain account's type is the more reliable method.
+hledger detects these undeclared gain postings heuristically:
+roughly, a posting to a non-asset/liability/equity account, which is not a lot posting,
+and without which the rest of the entry balances.
+Their amounts are then checked against the calculated gain.
+The heuristic fails when the entry has another such posting, eg a fee:
+then neither posting is recognised, and the entry is reported as unbalanced.
+So if you write gain postings, declaring the gain account's type (Style 3 below) is more reliable;
+`hledger print -a` shows what was detected.
 
 ### Style 3: gain posting, G account
 
@@ -6900,95 +6822,70 @@ could potentially change the meaning of balance assertions, breaking them. To av
 the balance assertion to a new zero-amount posting to the parent account (and make sure it's subaccount-inclusive).
 (So eg `hledger -f- print --lots -x | hledger -f- check assertions` will still pass.)
 
-## Lot reporting example
+## Lot reports
 
-A simple scenario: two acquisitions and a disposal.
+Once lot entries are in the journal, all the usual reports work as normal,
+hiding lot detail by default; `--lots` shows it.
+Using the [three notations](#three-ways-to-write-lot-entries) journal above:
 
-Here is a version using explicit lot subaccounts.
-Note this notation can only dispose by specifically identifying the lots involved:
+`holdings` gives an overview of your investments: units held, cost, value, unrealised and realised gain, and XIRR
+(see [First lots example](#first-lots-example); add `--lots` for per-lot detail, `-e` to choose the date).
 
-```journal
-2026-01-15 buy low
-    assets:stocks:{2026-01-15, $50}      10 AAPL
-    assets:cash                       -$500
+`balance --lots` (or `bs --lots`) shows the current lots:
 
-2026-02-01 buy high
-    assets:stocks:{2026-02-01, $60}      10 AAPL
-    assets:cash                       -$600
-
-2026-03-01 sell some using specific identification
-    assets:stocks:{2026-01-15, $50}      -5 AAPL @ $70
-    assets:cash                        $350
-```
-
-Here is a version using cost basis annotations:
-
-```journal
-2026-01-15 buy low
-    assets:stocks      10 AAPL {$50}
-    assets:cash     -$500
-
-2026-02-01 buy high
-    assets:stocks      10 AAPL {$60}
-    assets:cash     -$600
-
-2026-03-01 sell some using default method (FIFO)
-    assets:stocks      -5 AAPL {} @ $70
-    assets:cash      $350
-```
-
-And here it is with a lots tag on the commodity:
-
-```journal
-commodity AAPL         ; lots:
-
-2026-01-15 buy low
-    assets:stocks      10 AAPL
-    assets:cash     -$500
-
-2026-02-01 buy high
-    assets:stocks      10 AAPL
-    assets:cash     -$600
-
-2026-03-01 sell some using AAPL's method (FIFO)
-    assets:stocks      -5 AAPL @ $70
-    assets:cash      $350
-```
-
-In all cases, `balance --lots` shows the current lot balances:
-```
+```cli
 $ hledger bal assets:stocks --lots -N
               5 AAPL  assets:stocks:{2026-01-15, $50}
              10 AAPL  assets:stocks:{2026-02-01, $60}
 ```
 
-[holdings](#holdings) shows a fuller overview of them, with acquisition dates
-and cost basis (and, when market prices are recorded, current value and
-unrealised gain):
-```
-$ hledger holdings -e 2026-04-01 --lots
-Holdings on 2026-03-31
+Realised gains are on the Gain-type account (see [Gain accounts](#gain-accounts)),
+so `type:G` queries select them. The total for a period:
 
-                                 ||       Date  Age    Units  Unit cost  Price  Cost  Value  Weight  UGain  UGain%  RGain  XIRR
-=================================++=============================================================================================
- assets:stocks:{2026-01-15, $50} || 2026-01-15  75d   5 AAPL        $50         $250                                 $100
- assets:stocks:{2026-02-01, $60} || 2026-02-01  58d  10 AAPL        $60         $600
----------------------------------++---------------------------------------------------------------------------------------------
-                                 ||                                             $850                                 $100
+```cli
+$ hledger bal type:G -p 2026
+               $-100  revenues:gain
+--------------------
+               $-100  
 ```
 
-and `print -x --lots` shows the inferred lot subaccounts and gain posting.
-5 shares were acquired at $50 and sold at $70 = 5 × ($70 - $50) = $100 gain
-(remember that revenue amounts appear negative).
-```
-$ hledger print desc:sell -x --lots
-2026-03-01 sell some (FIFO, selects oldest lot first)
-    assets:stocks:{2026-01-15, $50}    -5 AAPL {2026-01-15, $50} @ $70
-    assets:cash                                                   $350
-    revenues:gain                                                $-100
+Each disposal's gain, with a running total:
+
+```cli
+$ hledger reg type:G
+2026-03-01 sell some            revenues:gain                $-100         $-100
 ```
 
-And as shown in [First lots example](#first-lots-example), `print -a` also shows the lot posting classifications.
+The disposal entries, with the lots and gain amounts hledger inferred
+(`-x` shows inferred amounts, `--lots` the lot subaccounts, `-a` everything including each posting's classification):
+
+```cli
+$ hledger print tag:ptype=dispose -x --lots
+2026-03-01 sell some
+    assets:stocks:{2026-01-15, $50}               -5 AAPL {2026-01-15, $50} @ $70
+    assets:cash                                 $350
+    revenues:gain                              $-100
+
+```
+
+## Troubleshooting lots
+
+hledger analyses lot entries carefully, but it won't understand every possible shape.
+When it reports a lot-related error, or a report looks wrong:
+
+- `hledger print -a` shows how each entry was read:
+  the inferred cost basis, lot subaccounts and gain posting, and each posting's classification
+  (`ptype: acquire`, `dispose`, `transfer-from`, `transfer-to` or `gain`).
+  If an entry was misread, rewrite it more explicitly, eg by adding a lot selector, a price, or a `{}` annotation.
+- "no lots matching ..." means a lot selector matched nothing in that account; the error lists the account's actual lots.
+  Common causes: the lot is in another account, or a cost-only selector no longer matches the displayed cost
+  (see [Cost basis precision](#cost-basis-precision); date selectors avoid this).
+- A disposal written without a selling price, with the other amount left implicit, is silently read as a transfer.
+  Add the price.
+- "realised gain amount is wrong" means a written gain posting doesn't match the calculated gain;
+  the error shows both amounts. Check which lots were selected (`print -a`) and the amounts.
+- `hledger check basis` catches acquisitions whose `{}` cost basis and `@` cost differ, which would silently miscalculate gains.
+- To silence lot processing while fixing other problems, use `-I`/`--ignore-lots`.
 
 
 # Generating data
