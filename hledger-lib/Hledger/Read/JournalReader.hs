@@ -1037,7 +1037,10 @@ postingphelper isPostingRule mTransactionYear = do
             , ptags=tags
             , pbalanceassertion=massertion
             }
-    return (p, mult)
+    -- Build the posting now (its fields are strict, so this also evaluates the
+    -- amount), rather than leaving a thunk holding the parser's intermediate
+    -- values until finalisation, which inflates peak memory use on large journals.
+    p `seq` return (p, mult)
   where
     multiplierp = option False $ True <$ char '*'
 
