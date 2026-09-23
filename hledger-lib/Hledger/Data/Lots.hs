@@ -1203,8 +1203,8 @@ journalCheckAcquireBasis j = mapM_ checkTxn (jtxns j) >> Right j
       ++ "  - if the difference is real (gift, NSO, RSU, etc.), fund it via a separate posting"
       where
         col1 = 5 + if isVirtual p then 1 else 0
-        col2 = col1 + T.length (paccount p) - 1
-        (f, l, _mcols, ex) = makePostingErrorExcerptByIndex t idx (Just (col1, Just col2))
+        col2 = col1 + T.length (paccount $ originalPosting p) - 1
+        (f, l, _mcols, ex) = makePostingErrorExcerptByIndex (transactionAsWritten t) (asWrittenPostingIndex t idx) (Just (col1, Just col2))
         (basisStr, transactedStr) =
           showAmountsDistinctly oneLineNoCostFmt{displayZeroCommodity=True} basis transacted
 
