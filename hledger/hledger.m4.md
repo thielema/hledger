@@ -6107,7 +6107,7 @@ For a more technical version of what's in this manual, see [SPEC-lots](/SPEC-lot
 ## First lots example
 
 hledger's lot tracking does not require much extra work. Here is a small example, using just the familiar @ syntax, and new `lots` tag.
-([Three ways to write lot entries](#three-ways-to-write-lot-entries) below shows the other notations.):
+([Several ways to write lot entries](#several-ways-to-write-lot-entries) below shows the other notations.):
 
 ```journal
 commodity AAPL  ; lots:
@@ -6200,7 +6200,6 @@ Holdings on 2026-03-31
 
 ## Writing lot entries
 
-<a name="how-to-enable-or-disable-lot-tracking"></a><a name="lot-concepts"></a>
 Lot tracking can be enabled in two ways:
 
 - *Per posting:*
@@ -6274,11 +6273,10 @@ Lot subaccount names must be complete, including all cost basis parts - date, la
 When [strictly checking account names](#account-error-checking), lot subaccounts are ignored -
 you only need to declare the base account (eg `assets:stocks`), not the lot subaccounts.
 
-### Three ways to write lot entries
+### Several ways to write lot entries
 
-<a name="lot-reporting-example"></a>
-Here are two acquisitions and a disposal, written in three ways.
-First, with explicit lot subaccounts (this notation can dispose only by specifically identifying the lots involved):
+Here are two acquisitions and a disposal, written in several ways.
+First, with explicit lot subaccounts:
 
 ```journal
 2026-01-15 buy low
@@ -6294,7 +6292,8 @@ First, with explicit lot subaccounts (this notation can dispose only by specific
     assets:cash                        $350
 ```
 
-Second, with cost basis annotations (here the `{}` selector means: use the default method, FIFO):
+Second, with cost basis annotations (here the `{}` selector means: use the default method, FIFO;
+and the `@` costs could be omitted, since hledger can infer them from the cash postings):
 
 ```journal
 2026-01-15 buy low
@@ -6310,7 +6309,23 @@ Second, with cost basis annotations (here the `{}` selector means: use the defau
     assets:cash      $350
 ```
 
-Third, with a `lots` tag on the commodity, no annotations are needed at all, as in [First lots example](#first-lots-example) above.
+Third, with a `lots` tag on the commodity, lots are inferred from the transacted costs:
+
+```journal
+commodity AAPL  ; lots:
+
+2026-01-15 buy low
+    assets:stocks      10 AAPL @ $50
+    assets:cash     -$500
+
+2026-02-01 buy high
+    assets:stocks      10 AAPL @ $60
+    assets:cash     -$600
+
+2026-03-01 sell some
+    assets:stocks      -5 AAPL @ $70
+    assets:cash      $350
+```
 
 All three notations produce the same lots and the same $100 gain; [Lot reports](#lot-reports) below shows them.
 
@@ -6481,7 +6496,6 @@ acquire postings in the same entry don't contribute.
 
 ### Other lot events
 
-<a name="gift-received"></a><a name="bonus-shares"></a><a name="stock-splits"></a>
 Other real-world events - a gift received with a carryover cost basis, bonus shares,
 a stock split, capitalising an in-kind transfer fee - can be recorded as combinations of these three movements.
 [Track investments](/investments.html#other-lot-events-hledger-2) on hledger.org has worked examples.
@@ -6571,7 +6585,6 @@ either of two ways:
 
 ## Gains
 
-<a name="gain-postings"></a>
 Each disposal transaction has a **gain posting**, usually on a Gain-type account,
 recording the capital gain (or loss) as revenue (or negative revenue).
 (Following the [usual PTA style](faq.md#why-are-my-revenue-income-liability-and-equity-balances-negative-),
@@ -6629,7 +6642,6 @@ It's more convenient than using separate revenue and expense accounts, and the s
 
 ### Recording gains
 
-<a name="style-1-no-gain-posting"></a><a name="style-2-gain-posting-non-g-account"></a><a name="style-3-gain-posting-g-account"></a>
 In a disposal entry, you can leave the gain posting out and let hledger infer it.
 This is the simplest style, and avoids most problems:
 
@@ -6667,7 +6679,7 @@ if written explicitly, will now leave the entry unbalanced; remove them.)
 
 Once lot entries are in the journal, all the usual reports work as normal,
 hiding lot detail by default; `--lots` shows it.
-Using the [three ways](#three-ways-to-write-lot-entries) journal above (any version):
+Using the [several ways](#several-ways-to-write-lot-entries) journal above (any version):
 
 `holdings` gives an overview of your investments: units held, cost, value, unrealised and realised gain, and XIRR
 (see [First lots example](#first-lots-example); add `--lots` for per-lot detail, `-e` to choose the date).
@@ -6709,7 +6721,6 @@ $ hledger print tag:ptype=dispose -x --lots
 
 ```
 
-<a name="gain-postings-and-the-roi-command"></a>
 When using the [roi](#roi) command with a journal that records lots,
 make sure `--pnl` matches the gain account, eg:
 
@@ -7729,7 +7740,7 @@ Things that can need attention:
   Also, accounts with conventional names like `revenues:gain`
   are now given the Gain [account type](#account-types),
   and inferred gain postings will use them.
-  See [Gain postings](#gain-postings).
+  See [Gains](#gains).
 - `-I` or `--ignore-lots` skips lot tracking, gain calculation and lot checks,
   giving behaviour close to hledger 1's.
 - Other, non-lot-related changes are listed under Breaking changes in the
