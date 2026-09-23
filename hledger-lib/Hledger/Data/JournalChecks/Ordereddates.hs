@@ -32,8 +32,8 @@ journalCheckOrdereddates j = do
         where
           (_,_,_,ex1) = makeTransactionErrorExcerpt tprev (const Nothing)
           (f,l,_,ex2) = makeTransactionErrorExcerpt t finderrcols
-          -- separate the two excerpts by a space-beginning line to help flycheck-hledger parse them
-          ex = T.unlines [textChomp ex1, T.pack " ", textChomp ex2]
+          -- separate the two excerpts by an empty line, which flycheck-hledger accepts between excerpts
+          ex = T.unlines [textChomp ex1, T.pack "", textChomp ex2]
           finderrcols _t = Just (1, Just 10)
     )
 

@@ -117,6 +117,7 @@ Notes:
 - LOCATION is `LINE[-ENDLINE][:COLUMN[-ENDCOLUMN]]`
 - EXCERPT is a short visual snippet whenever possible, with the error region highlighted, line numbers, and colour when supported. 
   This section must be easy for flycheck to ignore. (All lines begin with a space or a digit.)
+  When there is more than one excerpt, they are separated by an empty line.
 - EXPLANATION briefly explains the problem, and suggests remedies if possible.
   It can be dynamic, showing context-sensitive info. (ShellCheck's summaries are static.)
 - this layout is based on megaparsec's. For comparison, rustc puts summary on line 1 and location on line 2:
@@ -147,7 +148,7 @@ Here are some current limitations of hledger's error messages:
 ## Error messages
 
 Here is the current status as of
-hledger (see version below) and flycheck-hledger g1310cb518.
+hledger (see version below) and flycheck-hledger 0.3.0 (d52a85b, 2024-10).
 Click error names to see an example. The table headings mean:
 
 - std format - the error message follows our standard error format
@@ -162,23 +163,23 @@ Click error names to see an example. The table headings mean:
 | [assertions](#assertions)                             | ✓          | ✓    | ✓      | ✓✓      | ✓        |
 | [autobalanced](#autobalanced)                         | ✓          | ✓    | -      | ✓       | ✓        |
 | [balanced](#balanced)                                 | ✓          | ✓    | -      | ✓       | ✓        |
-| [basis](#basis)                                       | ✓          | ✓    | ✓      | ✓✓      |          |
+| [basis](#basis)                                       | ✓          | ✓    | ✓      | ✓✓      | ✓        |
 | [commodities](#commodities)                           | ✓          | ✓    | ✓      | ✓✓      | ✓        |
-| [lots-gain](#lots-gain)                               | ✓          | ✓    | -      | ✓       |          |
-| [lots-name](#lots-name)                               | ✓          | ✓    | ✓      | ✓✓      |          |
-| [lots-tag](#lots-tag)                                 | ✓          | ✓    | -      | ✓       |          |
-| [lots](#lots)                                         | ✓          | ✓    | -      | ✓       |          |
+| [lots-gain](#lots-gain)                               | ✓          | ✓    | -      | ✓       | ✓        |
+| [lots-name](#lots-name)                               | ✓          | ✓    | ✓      | ✓✓      | ✓        |
+| [lots-tag](#lots-tag)                                 | ✓          | ✓    | -      | ✓       | ✓        |
+| [lots](#lots)                                         | ✓          | ✓    | -      | ✓       | ✓        |
 | [ordereddates](#ordereddates)                         | ✓          | ✓    | ✓      | ✓✓      | ✓        |
 | [parseable](#parseable)                               | ✓          | ✓    | ✓      | ✓✓      | ✓        |
 | [parseable-dates](#parseable-dates)                   | ✓          | ✓    | ✓      | ✓✓      | ✓        |
 | [parseable-regexps](#parseable-regexps)               | ✓          | ✓    | ✓      | ✓✓      | ✓        |
 | [payees](#payees)                                     | ✓          | ✓    | ✓      | ✓✓      | ✓        |
 | [recentassertions](#recentassertions)                 | ✓          | ✓    | ✓      | ✓✓      | ✓        |
-| [tags](#tags)                                         | ✓          | ✓    | -      | ✓       |          |
+| [tags](#tags)                                         | ✓          | ✓    | -      | ✓       | ✓        |
 | [uniqueleafnames](#uniqueleafnames)                   | ✓          | ✓    | ✓      | ✓✓      | ✓        |
-| [tcclockouttime](#tcclockouttime)                     | ✓          | ✓    | ✓      | ✓✓      |          |
-| [tcorderedactions](#tcorderedactions)                 | ✓          | ✓    | ✓      | ✓✓      |          |
-| [tdquantity](#tdquantity)                             | ✓          | ✓    | ✓      | ✓✓      |          |
+| [tcclockouttime](#tcclockouttime)                     | ✓          | ✓    | ✓      | ✓✓      | ✓        |
+| [tcorderedactions](#tcorderedactions)                 | ✓          | ✓    | ✓      | ✓✓      | ✓        |
+| [tdquantity](#tdquantity)                             | ✓          | ✓    | ✓      | ✓✓      | ✓        |
 | [csvamountonenonzero](#csvamountonenonzero)           | semi-std   |      |        |         |          |
 | [csvamountparse](#csvamountparse)                     |            |      |        |         |          |
 | [csvbalanceparse](#csvbalanceparse)                   |            |      |        |         |          |
@@ -187,11 +188,11 @@ Click error names to see an example. The table headings mean:
 | [csvdateparse](#csvdateparse)                         |            |      |        |         |          |
 | [csvdaterule](#csvdaterule)                           |            |      |        |         |          |
 | [csvdecimalmarkparse](#csvdecimalmarkparse)           |            |      |        |         |          |
-| [csvifblocknomatchers](#csvifblocknomatchers)         |            | ✓    | ✓      | ✓       |          |
-| [csvifblocknonempty](#csvifblocknonempty)             |            | ✓    | ✓      | ✓       |          |
-| [csviftablefieldnames](#csviftablefieldnames)         |            | ✓    | ✓      | ✓✓      |          |
-| [csviftablenonempty](#csviftablenonempty)             |            | ✓    | ✓      | ✓       |          |
-| [csviftablevaluecount](#csviftablevaluecount)         |            | ✓    | ✓      | ✓       |          |
+| [csvifblocknomatchers](#csvifblocknomatchers)         |            | ✓    | ✓      | ✓       | ✓        |
+| [csvifblocknonempty](#csvifblocknonempty)             |            | ✓    | ✓      | ✓       | ✓        |
+| [csviftablefieldnames](#csviftablefieldnames)         |            | ✓    | ✓      | ✓✓      | ✓        |
+| [csviftablenonempty](#csviftablenonempty)             |            | ✓    | ✓      | ✓       | ✓        |
+| [csviftablevaluecount](#csviftablevaluecount)         |            | ✓    | ✓      | ✓       | ✓        |
 | [csvskipvalue](#csvskipvalue)                         |            |      |        |         |          |
 | [csvstatusparse](#csvstatusparse)                     |            |      |        | ✓       |          |
 | [csvtwofields](#csvtwofields)                         |            |      |        |         |          |
@@ -199,7 +200,7 @@ Click error names to see an example. The table headings mean:
 
 
 <!-- GENERATED: -->
-hledger 1.99-gb00301bbe-20260922 error messages:
+hledger 1.99-g9ca8efedf-20260922 error messages:
 
 ### accounts
 ```
@@ -352,7 +353,7 @@ Lots matching {$50}:
 hledger: Error: /path/to/ordereddates.j:10:
 7 | 2022-01-02 p
   |     (a)                                            1
- 
+
 10 | 2022-01-01 p
    | ^^^^^^^^^^
    |     (a)                                            1
@@ -447,7 +448,7 @@ tag atag
 hledger: Error: /path/to/uniqueleafnames.j:12:
   | 2022-01-01 p
 9 |     (a:c)                                          1
- ...
+
    | 2022-01-01 p
 12 |     (b:c)                                          1
    |        ^
