@@ -318,10 +318,10 @@ parseQueryTerm _ (T.stripPrefix "acct:" -> Just s) = (,[]) . Acct <$> toRegexCI 
 parseQueryTerm d (T.stripPrefix "find:" -> Just s) = (,[]) <$> parseFindQuery d s
 parseQueryTerm d (T.stripPrefix "::" -> Just s) = (,[]) <$> parseFindQuery d s
 parseQueryTerm d (T.stripPrefix "date2:" -> Just s) =
-        case parsePeriodExpr d s of Left e                   -> Left $ "\"date2:"++T.unpack s++"\" gave a "++showDateParseError e
+        case parsePeriodExpr d s of Left e                   -> Left $ "could not parse \"date2:"++T.unpack s++"\": "++customErrorBundlePretty e
                                     Right (_         , spn)  -> Right (Date2 spn, [])
 parseQueryTerm d (T.stripPrefix "date:" -> Just s) =
-        case parsePeriodExpr d s of Left e                   -> Left $ "\"date:"++T.unpack s++"\" gave a "++showDateParseError e
+        case parsePeriodExpr d s of Left e                   -> Left $ "could not parse \"date:"++T.unpack s++"\": "++customErrorBundlePretty e
                                     Right (NoInterval, spn)  -> Right (Date spn, [])
                                     Right (interval  , spn)  -> Right (Date spn, [QueryOptInterval interval])
 parseQueryTerm _ (T.stripPrefix "status:" -> Just s) =

@@ -4705,6 +4705,9 @@ Here's a period expression with a start and end date (specifying the first quart
 
 Several keywords like "from" and "to" are supported for readability; these are optional.
 "to" can also be written as ".." or "-".
+(Except that a lone day number, directly after a "-" with no spaces, is not accepted;
+eg `2026-13` is more likely a mistyped date than "2026 to the 13th of this month", so it's an error.
+To mean the latter, write `2026..13`.)
 The spaces are also optional, as long as you don't run two dates together.
 So the following are equivalent to the above:
 

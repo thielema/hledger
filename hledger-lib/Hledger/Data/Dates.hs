@@ -99,7 +99,7 @@ module Hledger.Data.Dates (
 import Prelude hiding (Applicative(..))
 import Control.Applicative (Applicative(..))
 import Control.Applicative.Permutations
-import Control.Monad (guard, unless)
+import Control.Monad (guard, unless, when)
 import Control.Monad.Fail qualified as Fail (MonadFail, fail)
 import Data.Char (digitToInt, isDigit)
 import Data.Default (def)
@@ -1150,13 +1150,29 @@ periodexprdatespanp rdate = choice' [
 -- Right DateSpan 2017
 -- >>> parsewith (doubledatespanp (fromGregorian 2018 01 01) <* eof) "2017-01-01-2018"
 -- Right DateSpan 2017
+--
+-- A single number after an unspaced - is not accepted as the end date (a day of the current month),
+-- since eg 2008-13 is more likely a mistyped date than "2008 to the 13th":
+--
+-- >>> either (const "parse error") show $ parsewith (doubledatespanp (fromGregorian 2018 01 01) <* eof) "2008-13"
+-- "parse error"
+-- >>> parsewith (doubledatespanp (fromGregorian 2018 01 01) <* eof) "2008..13"
+-- Right DateSpan 2008-01-01..2018-01-12
 doubledatespanp :: Day -> TextParser m DateSpan
-doubledatespanp rdate = liftA2 fromToSpan
-    (optional ((string' "from" <|> string' "since") *> skipNonNewlineSpaces) *> smartdateorquarterstartp rdate)
-    (skipNonNewlineSpaces *> choice [string' "to", string "..", string "-"]
-    *> skipNonNewlineSpaces *> smartdateorquarterstartp rdate)
+doubledatespanp rdate = do
+    b <- optional ((string' "from" <|> string' "since") *> skipNonNewlineSpaces) *> smartdateorquarterstartp rdate
+    spacedbefore <- skipNonNewlineSpaces'
+    sep <- choice [string' "to", string "..", string "-"]
+    spacedafter <- skipNonNewlineSpaces'
+    e <- smartdateorquarterstartp rdate
+    when (sep == "-" && not spacedbefore && not spacedafter && isDayOfMonth e) $
+      Fail.fail $ "a single number after - is ambiguous here;"
+        ++ " to mean a day of the current month, write .. or to instead of -"
+    return $ fromToSpan b e
   where
     fromToSpan = DateSpan `on` (Just . fixSmartDate rdate)
+    isDayOfMonth (SmartFromReference Nothing _) = True
+    isDayOfMonth _ = False
 
 -- |
 -- >>> let p = parsewith (fromdatespanp (fromGregorian 2024 02 02) <* eof)
@@ -1169,7 +1185,7 @@ doubledatespanp rdate = liftA2 fromToSpan
 fromdatespanp :: Day -> TextParser m DateSpan
 fromdatespanp rdate = fromSpan <$> choice
   [ (string' "from" <|> string' "since") *> skipNonNewlineSpaces *> smartdateorquarterstartp rdate
-  , smartdateorquarterstartp rdate <* choice [string "..", string "-"]
+  , smartdateorquarterstartp rdate <* choice [string "..", string "-" <* notFollowedBy digitChar]
   ]
   where
     fromSpan b = DateSpan (Just $ fixSmartDate rdate b) Nothing

@@ -34,7 +34,6 @@ module Hledger.Utils.Parse (
   parseWithState',
   fromparse,
   parseerror,
-  showDateParseError,
   nonspace,
   isNewline,
   isNonNewlineSpace,
@@ -93,14 +92,12 @@ where
 
 import Control.Monad (when)
 import Data.Text qualified as T
-import Safe (tailErr)
 import Text.Megaparsec
 import Text.Printf
 import Control.Monad.State.Strict (StateT, evalStateT)
 import Data.Char
 import Data.Functor (void)
 import Data.Functor.Identity (Identity(..))
-import Data.List
 import Data.Text (Text)
 import Text.Megaparsec.Char
 -- import Text.Megaparsec.Debug (dbg)
@@ -202,8 +199,6 @@ parseerror e = errorWithoutStackTrace $ showParseError e  -- PARTIAL:
 showParseError :: (Show t, Show (Token t), Show e) => ParseErrorBundle t e -> String
 showParseError e = "parse error at " ++ show e
 
-showDateParseError :: (Show t, Show (Token t), Show e) => ParseErrorBundle t e -> String
-showDateParseError e = printf "date parse error (%s)" (intercalate ", " $ tailErr $ lines $ show e)  -- PARTIAL tailError won't be null because showing a parse error
 
 isNewline :: Char -> Bool 
 isNewline '\n' = True
