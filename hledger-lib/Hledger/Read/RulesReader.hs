@@ -1729,12 +1729,14 @@ transactionFromCsvRecord timesarezoned mtzin tzout sourcepospair rules record =
     ----------------------------------------------------------------------
     -- 1. Define some helpers:
 
+    -- the start of any error message about this record: its position and an excerpt
+    errpfx   = csvRecordErrPrefix sourcepospair record
     rule     = csvRule           rules        :: DirectiveName    -> Maybe FieldTemplate
     -- ruleval  = csvRuleValue      rules record :: DirectiveName    -> Maybe String
     fieldval = hledgerFieldValue rules record :: HledgerFieldName -> Maybe Text
     mdateformat = rule "date-format"
     parseDate = parseDateWithCustomOrDefaultFormats timesarezoned mtzin tzout mdateformat
-    mkdateerror datefield datevalue mdateformat' = T.unpack $ T.unlines
+    mkdateerror datefield datevalue mdateformat' = T.unpack $ errpfx <> T.unlines
       ["could not parse \""<>datevalue<>"\" as a date using date format "
         <>maybe "\"YYYY/M/D\", \"YYYY-M-D\" or \"YYYY.M.D\"" (T.pack . show) mdateformat'
       ,showRecordFields rules record
@@ -1767,7 +1769,7 @@ transactionFromCsvRecord timesarezoned mtzin tzout sourcepospair rules record =
         Nothing -> Unmarked
         Just s  -> either statuserror id $ runParser (statusp <* eof) "" s
           where
-            statuserror err = error' . T.unpack $ T.unlines
+            statuserror err = error' . T.unpack $ errpfx <> T.unlines
               ["could not parse status value \""<>s<>"\" (should be *, ! or empty)"
               ,"the parse error is:      "<>T.pack (customErrorBundlePretty err)
               ]
@@ -1808,8 +1810,8 @@ transactionFromCsvRecord timesarezoned mtzin tzout sourcepospair rules record =
                 rtp (postingcommentp Nothing) $
                 textToFollowingComment cmt
          ,let currency = fromMaybe "" (fieldval ("currency"<> T.pack (show n)) <|> fieldval "currency")
-         ,let mamount  = getAmount rules record currency p1IsVirtual n
-         ,let mbalance = getBalance rules record currency n
+         ,let mamount  = getAmount errpfx rules record currency p1IsVirtual n
+         ,let mbalance = getBalance errpfx rules record currency n
          ,Just (acct,isfinal) <- [getAccount rules record mamount mbalance n]  -- skips Nothings
          ,let acct' | not isfinal && acct==unknownExpenseAccount &&
                       fromMaybe False (mamount >>= isNegativeMixedAmount) = unknownIncomeAccount
@@ -1818,7 +1820,7 @@ transactionFromCsvRecord timesarezoned mtzin tzout sourcepospair rules record =
                              ,paccount          = accountNameWithoutPostingType acct'
                              ,pamount           = fromMaybe missingmixedamt mamount
                              ,ptransaction      = Just t
-                             ,pbalanceassertion = mkBalanceAssertion rules record (fst sourcepospair) <$> mbalance
+                             ,pbalanceassertion = mkBalanceAssertion errpfx rules record (fst sourcepospair) <$> mbalance
                              ,pcomment          = cmt
                              ,ptags             = tags
                              ,preal             = accountNamePostingType acct
@@ -1902,8 +1904,8 @@ parseDateWithCustomOrDefaultFormats timesarezoned mtzin tzout mformat s = locald
 -- For postings 1 or 2 it also looks at "amount", "amount-in", "amount-out".
 -- If more than one of these has a value, it looks for one that is non-zero.
 -- If there's multiple non-zeros, or no non-zeros but multiple zeros, it throws an error.
-getAmount :: CsvRules -> CsvRecordGroup -> Text -> Bool -> Int -> Maybe MixedAmount
-getAmount rules record currency p1IsVirtual n =
+getAmount :: Text -> CsvRules -> CsvRecordGroup -> Text -> Bool -> Int -> Maybe MixedAmount
+getAmount errpfx rules record currency p1IsVirtual n =
   -- Warning! Many tricky corner cases here.
   -- Keep synced with:
   -- hledger_csv.m4.md -> CSV FORMAT -> "amount", "Setting amounts",
@@ -1922,7 +1924,7 @@ getAmount rules record currency p1IsVirtual n =
                           , Just v <- [T.strip <$> hledgerFieldValue rules record f]
                           , not $ T.null v
                           -- XXX maybe ignore rule-generated values like "", "-", "$", "-$", "$-" ? cf CSV FORMAT -> "amount", "Setting amounts",
-                          , let a = parseAmount rules record currency v
+                          , let a = parseAmount errpfx rules record currency v
                           -- With amount/amount-in/amount-out, in posting 2,
                           -- flip the sign and convert to cost, as they did before 1.17
                           , let a' = if f `elem` unnumberedfieldnames && n==2 then mixedAmountCost (maNegate a) else a
@@ -1944,10 +1946,9 @@ getAmount rules record currency p1IsVirtual n =
   in case discardExcessZeros $ discardUnnumbered assignments of
       []      -> Nothing
       [(f,a)] -> Just $ negateIfOut f a
-      fs      -> error' . T.unpack . textChomp . T.unlines $
-        ["in CSV rules:"
+      fs      -> error' . T.unpack . (errpfx <>) . textChomp . T.unlines $
+        ["Multiple non-zero amounts were assigned for an amount field, for posting " <> T.pack (show n) <> "."
         ,showRecordFields rules record
-        ,"while calculating amount for posting " <> T.pack (show n)
         ] ++
         [withRulesPos
           ("rule \"" <> f <> " " <>
@@ -1958,20 +1959,19 @@ getAmount rules record currency p1IsVirtual n =
           , let massignment = hledgerFieldAssignment rules record f
         ] ++
         [""
-        ,"Multiple non-zero amounts were assigned for an amount field."
         ,"Please ensure just one non-zero amount is assigned, perhaps with an if rule."
         ,"See also: https://hledger.org/hledger.html#setting-amounts"
         ,"(hledger manual -> CSV format -> Tips -> Setting amounts)"
         ]
 -- | Figure out the expected balance (assertion or assignment) specified for posting N, if any.
-getBalance :: CsvRules -> CsvRecordGroup -> Text -> Int -> Maybe Amount
-getBalance rules record currency n = do
+getBalance :: Text -> CsvRules -> CsvRecordGroup -> Text -> Int -> Maybe Amount
+getBalance errpfx rules record currency n = do
   v <- (fieldval ("balance"<> T.pack (show n))
         -- for posting 1, also recognise the old field name
         <|> if n==1 then fieldval "balance" else Nothing)
   case v of
     "" -> Nothing
-    s  -> Just $ parseBalanceAmount rules record currency n s
+    s  -> Just $ parseBalanceAmount errpfx rules record currency n s
   where
     fieldval = fmap T.strip . hledgerFieldValue rules record :: HledgerFieldName -> Maybe Text
 
@@ -1979,14 +1979,14 @@ getBalance rules record currency n = do
 -- possibly non-empty currency symbol to prepend,
 -- parse as a hledger MixedAmount (as in journal format), or raise an error.
 -- The whole CSV record is provided for the error message.
-parseAmount :: CsvRules -> CsvRecordGroup -> Text -> Text -> MixedAmount
-parseAmount rules record currency s =
+parseAmount :: Text -> CsvRules -> CsvRecordGroup -> Text -> Text -> MixedAmount
+parseAmount errpfx rules record currency s =
     either mkerror mixedAmount $
     runParser (evalStateT (amountp <* eof) journalparsestate) "" $
     currency <> simplifySign s
   where
     journalparsestate = nulljournal{jparsedecimalmark=parseDecimalMark rules}
-    mkerror e = error' . T.unpack $ T.unlines
+    mkerror e = error' . T.unpack $ errpfx <> T.unlines
       ["could not parse \"" <> s <> "\" as an amount"
       ,showRecordFields rules record
       ,showRules rules record
@@ -2027,21 +2027,31 @@ withRulesPos txt =
 -- possibly non-empty currency symbol to prepend,
 -- parse as a hledger Amount (as in journal format), or raise an error.
 -- The CSV record and the field's numeric suffix are provided for the error message.
-parseBalanceAmount :: CsvRules -> CsvRecordGroup -> Text -> Int -> Text -> Amount
-parseBalanceAmount rules record currency n s =
+parseBalanceAmount :: Text -> CsvRules -> CsvRecordGroup -> Text -> Int -> Text -> Amount
+parseBalanceAmount errpfx rules record currency n s =
   either (mkerror n s) id $
     runParser (evalStateT (amountp <* eof) journalparsestate) "" $
     currency <> simplifySign s
-                  -- the csv record's line number would be good
   where
     journalparsestate = nulljournal{jparsedecimalmark=parseDecimalMark rules}
-    mkerror n' s' e = error' . T.unpack $ T.unlines
+    mkerror n' s' e = error' . T.unpack $ errpfx <> T.unlines
       ["could not parse \"" <> s' <> "\" as balance"<> T.pack (show n') <> " amount"
       ,showRecordFields rules record
       ,showRules rules record
       -- ,"the default-currency is: "++fromMaybe "unspecified" mdefaultcurrency
       ,"the parse error is:      "<> T.pack (customErrorBundlePretty e)
       ]
+
+-- | The start of an error message about a CSV record, in hledger's standard error format:
+-- the record's file position (lines), and an excerpt showing (an approximation of) the record.
+csvRecordErrPrefix :: (SourcePos, SourcePos) -> CsvRecordGroup -> Text
+csvRecordErrPrefix (SourcePos f l1 _, SourcePos _ lend _) record =
+  T.pack (f ++ ":" ++ show firstline ++ lastline ++ ":\n")
+  <> T.pack (show firstline) <> " | " <> recordAsApproximateText record <> "\n\n"
+  where
+    firstline = unPos l1
+    -- the end position is the start of the line after the record
+    lastline = let l2 = unPos lend - 1 in if l2 > firstline then "-" ++ show l2 else ""
 
 -- | Show the approximation of the original CSV record, labelled, for debug output.
 showRecord :: CsvRecordGroup -> Text
@@ -2084,8 +2094,8 @@ parseDecimalMark rules = do
 -- The CSV rules and current record are also provided, to be shown in case
 -- balance-type's argument is bad (XXX refactor).
 -- The position of the CSV record is also provided, to be shown if the assertion fails.
-mkBalanceAssertion :: CsvRules -> CsvRecordGroup -> SourcePos -> Amount -> BalanceAssertion
-mkBalanceAssertion rules record pos amt = assrt{baamount=amt, baposition=pos}
+mkBalanceAssertion :: Text -> CsvRules -> CsvRecordGroup -> SourcePos -> Amount -> BalanceAssertion
+mkBalanceAssertion errpfx rules record pos amt = assrt{baamount=amt, baposition=pos}
   where
     assrt =
       case getDirective "balance-type" rules of
@@ -2093,7 +2103,7 @@ mkBalanceAssertion rules record pos amt = assrt{baamount=amt, baposition=pos}
         Just x  ->
           case parseBalanceAssertionType $ T.unpack x of
             Just (total, inclusive) -> nullassertion{batotal=total, bainclusive=inclusive}
-            Nothing -> error' . T.unpack $ T.unlines  -- PARTIAL:
+            Nothing -> error' . T.unpack $ errpfx <> T.unlines  -- PARTIAL:
               [ "balance-type \"" <> x <>"\" is invalid. Use =, ==, =* or ==*."
               , showRecordFields rules record
               , showRules rules record

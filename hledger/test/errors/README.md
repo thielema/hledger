@@ -180,12 +180,12 @@ Click error names to see an example. The table headings mean:
 | [tcclockouttime](#tcclockouttime)                     | ✓          | ✓    | ✓      | ✓✓      | ✓        |
 | [tcorderedactions](#tcorderedactions)                 | ✓          | ✓    | ✓      | ✓✓      | ✓        |
 | [tdquantity](#tdquantity)                             | ✓          | ✓    | ✓      | ✓✓      | ✓        |
-| [csvamountonenonzero](#csvamountonenonzero)           | semi-std   |      |        |         |          |
-| [csvamountparse](#csvamountparse)                     |            |      |        |         |          |
-| [csvbalanceparse](#csvbalanceparse)                   |            |      |        |         |          |
-| [csvbalancetypeparse](#csvbalancetypeparse)           |            |      |        |         |          |
-| [csvdateformat](#csvdateformat)                       |            |      |        |         |          |
-| [csvdateparse](#csvdateparse)                         |            |      |        |         |          |
+| [csvamountonenonzero](#csvamountonenonzero)           | ✓          | ✓    | -      | ✓       | ✓        |
+| [csvamountparse](#csvamountparse)                     | ✓          | ✓    | -      | ✓       | ✓        |
+| [csvbalanceparse](#csvbalanceparse)                   | ✓          | ✓    | -      | ✓       | ✓        |
+| [csvbalancetypeparse](#csvbalancetypeparse)           | ✓          | ✓    | -      | ✓       | ✓        |
+| [csvdateformat](#csvdateformat)                       | ✓          | ✓    | -      | ✓       | ✓        |
+| [csvdateparse](#csvdateparse)                         | ✓          | ✓    | -      | ✓       | ✓        |
 | [csvdaterule](#csvdaterule)                           |            |      |        |         |          |
 | [csvdecimalmarkparse](#csvdecimalmarkparse)           |            |      |        |         |          |
 | [csvifblocknomatchers](#csvifblocknomatchers)         |            | ✓    | ✓      | ✓       | ✓        |
@@ -194,13 +194,13 @@ Click error names to see an example. The table headings mean:
 | [csviftablenonempty](#csviftablenonempty)             |            | ✓    | ✓      | ✓       | ✓        |
 | [csviftablevaluecount](#csviftablevaluecount)         |            | ✓    | ✓      | ✓       | ✓        |
 | [csvskipvalue](#csvskipvalue)                         |            |      |        |         |          |
-| [csvstatusparse](#csvstatusparse)                     |            |      |        | ✓       |          |
+| [csvstatusparse](#csvstatusparse)                     | ✓          | ✓    | -      | ✓       | ✓        |
 | [csvtwofields](#csvtwofields)                         |            |      |        |         |          |
 | [csvstdinrules](#csvstdinrules)                       |            |      |        |         |          |
 
 
 <!-- GENERATED: -->
-hledger 1.99-g147380f22-20260923 error messages:
+hledger 1.99-ga278dad74-20260923 error messages:
 
 ### accounts
 ```
@@ -501,16 +501,17 @@ expecting "mo", ';', 'd', 'h', 'm', 's', 'w', 'y', end of input, exponent, newli
 
 ### csvamountonenonzero
 ```
-hledger: Error: in CSV rules:
+hledger: Error: /path/to/csvamountonenonzero.csv:5:
+5 | 2022-01-03,1,2
+
+Multiple non-zero amounts were assigned for an amount field, for posting 1.
 record: 2022-01-03,1,2
   %1   2022-01-03
   %2   1
   %3   2
-while calculating amount for posting 1
 rule "amount-in %2" assigned value "1"       (/path/to/csvamountonenonzero.csv.rules:3)
 rule "amount-out %3" assigned value "2"      (/path/to/csvamountonenonzero.csv.rules:4)
 
-Multiple non-zero amounts were assigned for an amount field.
 Please ensure just one non-zero amount is assigned, perhaps with an if rule.
 See also: https://hledger.org/hledger.html#setting-amounts
 (hledger manual -> CSV format -> Tips -> Setting amounts)
@@ -519,7 +520,10 @@ See also: https://hledger.org/hledger.html#setting-amounts
 
 ### csvamountparse
 ```
-hledger: Error: could not parse "badamount" as an amount
+hledger: Error: /path/to/csvamountparse.csv:5:
+5 | 2022-01-03,badamount
+
+could not parse "badamount" as an amount
 record: 2022-01-03,badamount
   %1   2022-01-03
   %2   badamount
@@ -540,7 +544,10 @@ you may need to change your amount*, balance*, or currency* rules, or add or cha
 
 ### csvbalanceparse
 ```
-hledger: Error: could not parse "badbalance" as balance1 amount
+hledger: Error: /path/to/csvbalanceparse.csv:3:
+3 | 2022-01-03,badbalance
+
+could not parse "badbalance" as balance1 amount
 record: 2022-01-03,badbalance
   %1   2022-01-03
   %2   badbalance
@@ -559,7 +566,10 @@ expecting '+', '-', or number
 
 ### csvbalancetypeparse
 ```
-hledger: Error: balance-type "badtype" is invalid. Use =, ==, =* or ==*.
+hledger: Error: /path/to/csvbalancetypeparse.csv:3:
+3 | 2022-01-01,1
+
+balance-type "badtype" is invalid. Use =, ==, =* or ==*.
 record: 2022-01-01,1
   %1   2022-01-01
   %2   1
@@ -571,7 +581,10 @@ hledger field assignment rules:
 
 ### csvdateformat
 ```
-hledger: Error: could not parse "a" as a date using date format "YYYY/M/D", "YYYY-M-D" or "YYYY.M.D"
+hledger: Error: /path/to/csvdateformat.csv:4:
+4 | a,b
+
+could not parse "a" as a date using date format "YYYY/M/D", "YYYY-M-D" or "YYYY.M.D"
 record: a,b
   %1   a
   %2   b
@@ -584,7 +597,10 @@ for m/d/y or d/m/y dates, use date-format %-m/%-d/%Y or date-format %-d/%-m/%Y
 
 ### csvdateparse
 ```
-hledger: Error: could not parse "baddate" as a date using date format "%Y-%m-%d"
+hledger: Error: /path/to/csvdateparse.csv:4:
+4 | baddate,b
+
+could not parse "baddate" as a date using date format "%Y-%m-%d"
 record: baddate,b
   %1   baddate
   %2   b
@@ -671,7 +687,10 @@ hledger: Error: /path/to/csvskipvalue.csv.rules: could not parse skip value: bad
 
 ### csvstatusparse
 ```
-hledger: Error: could not parse status value "badstatus" (should be *, ! or empty)
+hledger: Error: /path/to/csvstatusparse.csv:7:
+7 | 2022-01-04,badstatus
+
+could not parse status value "badstatus" (should be *, ! or empty)
 the parse error is:      1:1:
   |
 1 | badstatus
