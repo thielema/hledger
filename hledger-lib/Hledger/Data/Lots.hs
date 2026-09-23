@@ -1710,9 +1710,12 @@ postingErrPrefix p = case ptransaction p of
   Nothing -> printf "%s:%d:\n%s\n" ("-"::String) (0::Int) (""::Text)
   Just t  -> case transactionFindPostingIndex ((== postingStripCosts p) . postingStripCosts) t of
     Nothing -> txnErrPrefix t
-    Just i1 -> printf "%s:%d:\n%s\n%s" f line ex (postingsReadAs t)
-      where (f, line, _, ex) =
-              makePostingErrorExcerptByIndex (transactionAsWritten t) (asWrittenPostingIndex t (i1-1)) Nothing
+    Just i1 -> postingAtErrPrefix t (i1-1)
+
+-- | Like 'postingErrPrefix', for the posting at this (0-based) index in the transaction.
+postingAtErrPrefix :: Transaction -> Int -> String
+postingAtErrPrefix t i = printf "%s:%d:\n%s\n%s" f line ex (postingsReadAs t)
+  where (f, line, _, ex) = makePostingErrorExcerptByIndex (transactionAsWritten t) (asWrittenPostingIndex t i) Nothing
 
 -- | Emit a dbg5 trace for a lot operation: "lots: FILE:LINE DATE DESC: message".
 lotDbg :: Transaction -> String -> a -> a
@@ -1774,7 +1777,7 @@ processTransaction styles verbosetags j needsLabels (ls, acc) t = do
         -- Build map of processed transfer-to postings, then reconstruct in original order.
         let indexedTos = [(i, p) | (i, p) <- zip [0..] (tpostings t), isTransferToPosting p]
         (ls', toMap) <- foldM (\(st, m) (i, p) -> do
-            (st', p') <- processAcquirePosting styles j needsLabels txnDate t st p
+            (st', p') <- processAcquirePosting styles j needsLabels txnDate t st i p
             return (st', M.insert i p' m)
           ) (ls, M.empty) indexedTos
         let allPs = [maybe p id (M.lookup i toMap) | (i, p) <- zip [0..] (tpostings t)]
@@ -1819,7 +1822,7 @@ processTransaction styles verbosetags j needsLabels (ls, acc) t = do
       | Just expanded <- M.lookup i tmap =
           foldMPostings st (reverse expanded ++ acc') ps tmap
       | isAcquirePosting p = do
-          (st', p') <- processAcquirePosting styles j needsLabels txnDate t st p
+          (st', p') <- processAcquirePosting styles j needsLabels txnDate t st i p
           foldMPostings st' (p':acc') ps tmap
       | isDisposePosting p = do
           (st', newPs) <- processDisposePosting styles verbosetags j t st p
@@ -1884,17 +1887,21 @@ groupIndexedTransferPostings t froms tos = do
     -- Group indexed postings by their lotful commodity.
     groupByCommodity :: String -> [(Int, Posting)] -> Either String (M.Map CommoditySymbol [(Int, Posting)])
     groupByCommodity label ips = do
-      tagged <- mapM (\ip -> (,ip) <$> postingCommodity label (snd ip)) ips
+      tagged <- mapM (\ip -> (,ip) <$> postingCommodity label ip) ips
       Right $ M.map reverse $ M.fromListWith (++) [(c, [ip]) | (c, ip) <- tagged]
 
-    postingCommodity :: String -> Posting -> Either String CommoditySymbol
-    postingCommodity label p =
+    postingCommodity :: String -> (Int, Posting) -> Either String CommoditySymbol
+    postingCommodity label (i, p) =
       case [acommodity a | a <- amountsRaw (pamount p), isJust (acostbasis a)] of
         [c] -> Right c
         -- Transfer-to postings without {} have no cost basis; use the raw commodity.
         _   -> case [acommodity a | a <- amountsRaw (pamount p)] of
                  [c] -> Right c
-                 _   -> Left $ showPos ++ label ++ " posting has no lotful commodity"
+                 _   -> Left $ postingAtErrPrefix t i
+                          ++ "This " ++ label ++ " posting has amounts in several commodities ("
+                          ++ showMixedAmountOneLine (pamount p) ++ ").\n"
+                          ++ "In a lot transfer, each posting should have just one commodity;\n"
+                          ++ "please write these amounts on separate postings."
 
     -- Sort key for aligning explicit per-lot annotations within a commodity group.
     postingSortKey :: (Int, Posting) -> (Maybe Day, Maybe T.Text, Maybe (CommoditySymbol, Quantity))
@@ -1952,10 +1959,10 @@ amountNormalizeCostToUnit a = fmap (UnitCost . amountCostToUnitCost (aquantity a
 
 -- Per-type posting processing
 
--- | Process a single acquire posting: generate a lot name and append it as a subaccount.
-processAcquirePosting :: M.Map CommoditySymbol AmountStyle -> Journal -> S.Set (CommoditySymbol, Day) -> Day -> Transaction -> LotState -> Posting
+-- | Process a single acquire posting (at this index in the transaction): generate a lot name and append it as a subaccount.
+processAcquirePosting :: M.Map CommoditySymbol AmountStyle -> Journal -> S.Set (CommoditySymbol, Day) -> Day -> Transaction -> LotState -> Int -> Posting
                       -> Either String (LotState, Posting)
-processAcquirePosting styles j needsLabels txnDate t lotState p = do
+processAcquirePosting styles j needsLabels txnDate t lotState idx p = do
     let lotAmts = [(a, cb) | a <- amountsRaw (pamount p), Just cb <- [acostbasis a]]
     (lotAmt, cb, isBare) <- case lotAmts of
       [x] -> Right (fst x, snd x, False)
@@ -1985,10 +1992,14 @@ processAcquirePosting styles j needsLabels txnDate t lotState p = do
             | otherwise                 -> Nothing
 
     case maybeLotBasis of
-      Nothing | isBare    -> Left $ showPos ++ T.unpack commodity
+      Nothing | isBare    -> Left $ postingAtErrPrefix t idx ++ T.unpack commodity
                                       ++ " is lotful but this acquire posting has no cost basis or price.\n"
                                       ++ "No lot will be created."
-              | otherwise -> Left $ showPos ++ "acquire posting has no lot cost"
+              | otherwise -> Left $ postingAtErrPrefix t idx
+                                      ++ "This posting creates a new " ++ T.unpack commodity ++ " lot, but its lot annotation "
+                                      ++ T.unpack (showLotName cb) ++ " has no cost,\n"
+                                      ++ "and there is no price (@ or @@) to infer one from.\n"
+                                      ++ "Please add a per-unit cost to the annotation, eg " ++ withExampleCost (showLotName cb) ++ "."
       Just lotBasis -> do
         let cbInferred = isNothing (cbCost cb)
             needsLabel = S.member (commodity, date) needsLabels
@@ -2069,6 +2080,10 @@ processAcquirePosting styles j needsLabels txnDate t lotState p = do
                (lotState', p')
   where
     showPos = txnErrPrefix t
+    -- A lot name with an example cost added (cost is shown last), eg {2026-01-01} -> {2026-01-01, $50}.
+    withExampleCost name
+      | name == "{}" = "{$50}"
+      | otherwise    = T.unpack (T.dropEnd 1 name) ++ ", $50}"
 
 -- | Process a dispose posting: match to existing lots using the resolved reduction method,
 -- split into multiple postings if the disposal spans multiple lots.

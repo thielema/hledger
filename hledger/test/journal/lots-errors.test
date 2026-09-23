@@ -101,10 +101,10 @@ commodity T  ; lots:
     equity:conversion
 
 $ hledger -f- bal assets --lots 2>&1
-hledger: Error: -:3:
-3 | 2026-01-17 buy
+hledger: Error: -:5:
+  | 2026-01-17 buy
   |     assets:wj                                    -52 A
-  |     assets:broker                               2220 T  ; @ $0.01
+5 |     assets:broker                               2220 T  ; @ $0.01
   |     equity:conversion
 
 Postings were read as: unclassified, acquire, unclassified.
@@ -614,7 +614,7 @@ $ hledger -f- check
 >=1
 
 # ** 26. Transferring two lotful commodities with one amountless receiving posting
-# is not supported. (The message could be clearer.)
+# is not supported; the error asks for separate postings.
 <
 commodity AAPL ; lots:
 commodity MSFT ; lots:
@@ -629,17 +629,25 @@ commodity MSFT ; lots:
     assets:a    -5 MSFT
     assets:b
 $ hledger -f- check
->2 /transfer-to posting has no lotful commodity/
+>2 /12 \|     assets:b
+(.*
+)*This transfer-to posting has amounts in several commodities \(10 AAPL, 5 MSFT\)\.
+.*
+please write these amounts on separate postings/
 >=1
 
-# ** 27. An acquisition with a lot date but no cost, and no price to infer one from,
-# is an error. (The message could be clearer.)
+# ** 27. A new lot with a lot date but no cost, and no price to infer one from,
+# is an error. Here the lot comes from equity, like an opening balance.
 <
 2026-01-01 gift
     assets:a    10 AAPL {2026-01-01}
     equity:x   -10 AAPL
 $ hledger -f- check
->2 /acquire posting has no lot cost/
+>2 /2 \|     assets:a +10 AAPL \{2026-01-01\}
+(.*
+)*This posting creates a new AAPL lot, but its lot annotation \{2026-01-01\} has no cost,
+.*
+.*eg \{2026-01-01, \$50\}/
 >=1
 
 # ** 28. Under SPECID, a disposal must select a lot.
@@ -679,4 +687,20 @@ $ hledger -f- check
     assets:checking
 $ hledger -f- check
 >2 /hledger lot syntax \{\.\.\.\} cannot be combined with ledger-style \[DATE\] or \(NOTE\)/
+>=1
+
+# ** 31. Likewise when an amountless sending posting has a lotful commodity and cash.
+<
+commodity AAPL ; lots:
+
+2026-01-01 buy
+    assets:a    10 AAPL {$50}
+    assets:checking
+
+2026-01-02 move account contents back
+    assets:b    10 AAPL
+    assets:b    $5
+    assets:a
+$ hledger -f- check
+>2 /This transfer-from posting has amounts in several commodities/
 >=1
