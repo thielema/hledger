@@ -143,17 +143,21 @@ Here are some current limitations of hledger's error messages:
 
 - For the same reason, the excerpts we show in error messages are not the original data.
   Instead we show a synthetic rendering that is similar enough to be explanatory.
+  The columns marked with ^ in such an excerpt are columns in the rendered text,
+  which can differ from the source file; so they are not included in the error's position,
+  which (except for parse errors) shows only the line number(s).
 
 
 ## Error messages
 
 Here is the current status as of
-hledger (see version below) and flycheck-hledger 0.3.0 (d52a85b, 2024-10).
+hledger (see version below) and flycheck-hledger 0.3.0 (d52a85b, 2024-10), plus [PR #27](https://github.com/DamienCassou/flycheck-hledger/pull/27).
 Click error names to see an example. The table headings mean:
 
 - std format - the error message follows our standard error format
 - line       - correct line numbers are reported
-- column     - useful column numbers are reported
+- column     - the error's column(s) are identified: in the position (FILE:LINE:COL) for parse errors,
+               otherwise just by the ^ marks in the excerpt (see Limitations)
 - excerpt    - a useful excerpt is shown, ideally with the error highlighted (✓✓)
 - flycheck   - the current flycheck release (or a PR branch) recognises the error and highlights a useful region
 
