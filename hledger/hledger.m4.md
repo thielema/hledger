@@ -6152,8 +6152,7 @@ $ hledger print
 
 ```
 
-`print`'s `-a` flag (short for `--all`) shows maximum detail, including the lots as subaccounts and tags showing how the entry was analysed.
-Or use `--lots` to just add the lot subaccounts. (`--lots` works with all reports.)
+`print`'s `-a` flag (short for `--all`) shows maximum detail, including the lots as subaccounts and tags showing how the entry was analysed:
 
 ```cli
 $ hledger print -a
