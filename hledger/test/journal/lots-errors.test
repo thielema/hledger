@@ -573,3 +573,110 @@ $ hledger -f- check
 $ hledger -f- check --ignore-lots
 >2 /Balance assertion failed in assets:cash/
 >=1
+
+# ** 23. An invalid date in a lot subaccount name is reported.
+<
+2026-01-01 buy
+    assets:stocks:{2026-02-30, $50}    10 AAPL
+    assets:checking
+$ hledger -f- check
+>2 /invalid date in lot name: 2026-02-30/
+>=1
+
+# ** 24. Two lots of a commodity with the same date and user-written label are an error.
+<
+2026-01-01 buy
+    assets:stocks    10 AAPL {2026-01-01, "a", $50}
+    assets:checking
+
+2026-01-02 buy
+    assets:stocks    10 AAPL {2026-01-01, "a", $60}
+    assets:checking
+$ hledger -f- check
+>2 /lot id is not unique: commodity AAPL, date 2026-01-01, label "a"/
+>=1
+
+# ** 25. So is a user-written label that collides with an automatically generated one.
+<
+2026-01-01 buy
+    assets:stocks    10 AAPL {$50}
+    assets:checking
+
+2026-01-01 buy
+    assets:stocks    10 AAPL {$60}
+    assets:checking
+
+2026-01-05 buy
+    assets:stocks    10 AAPL {2026-01-01, "0001", $70}
+    assets:checking
+$ hledger -f- check
+>2 /duplicate lot id: \{2026-01-01, "0001", \$70\} for commodity AAPL/
+>=1
+
+# ** 26. Transferring two lotful commodities with one amountless receiving posting
+# is not supported. (The message could be clearer.)
+<
+commodity AAPL ; lots:
+commodity MSFT ; lots:
+
+2026-01-01 buy
+    assets:a    10 AAPL {$50}
+    assets:a     5 MSFT {$60}
+    assets:checking
+
+2026-01-02 move
+    assets:a   -10 AAPL
+    assets:a    -5 MSFT
+    assets:b
+$ hledger -f- check
+>2 /transfer-to posting has no lotful commodity/
+>=1
+
+# ** 27. An acquisition with a lot date but no cost, and no price to infer one from,
+# is an error. (The message could be clearer.)
+<
+2026-01-01 gift
+    assets:a    10 AAPL {2026-01-01}
+    equity:x   -10 AAPL
+$ hledger -f- check
+>2 /acquire posting has no lot cost/
+>=1
+
+# ** 28. Under SPECID, a disposal must select a lot.
+<
+commodity AAPL ; lots: SPECID
+
+2026-01-01 buy
+    assets:a    10 AAPL {$50}
+    assets:checking
+
+2026-01-02 sell
+    assets:a    -5 AAPL @ $60
+    assets:checking   $300
+$ hledger -f- check
+>2 /SPECID requires a lot selector on dispose postings/
+>=1
+
+# ** 29. Under AVERAGE, lots with different cost commodities can't be averaged.
+<
+commodity AAPL ; lots: AVERAGE
+
+2026-01-01 buy
+    assets:a    10 AAPL {$50}
+    assets:checking
+
+2026-01-02 buy
+    assets:a    10 AAPL {€40}
+    assets:checking
+$ hledger -f- check
+>2 /cannot average lots with different cost commodities/
+>=1
+
+# ** 30. hledger's consolidated lot syntax can't be mixed with ledger-style [DATE] or (NOTE).
+<
+2026-01-01 buy
+    assets:a    10 AAPL {2026-01-01, $50} [2026-01-01]
+    assets:checking
+$ hledger -f- check
+>2 /hledger lot syntax \{\.\.\.\} cannot be combined with ledger-style \[DATE\] or \(NOTE\)/
+>=1
