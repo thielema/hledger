@@ -6198,13 +6198,14 @@ Holdings on 2026-03-31
 
 [XIRR]: https://en.wikipedia.org/wiki/Internal_rate_of_return
 
-## How to enable or disable lot tracking
+## Writing lot entries
 
+<a name="how-to-enable-or-disable-lot-tracking"></a><a name="lot-concepts"></a>
 Lot tracking can be enabled in two ways:
 
 - *Per posting:*
-  write explicit [curly-brace lot annotations](#cost-basis-annotations) like in Ledger or Beancount,
-  or write explicit [lot subaccount names](#lot-subaccounts).
+  write explicit [cost basis annotations](#cost-basis-annotations) like in Ledger or Beancount,
+  or explicit [lot subaccount names](#lot-subaccounts).
   These postings will be tracked lotfully.
 
 - *Per commodity:* declare the commodity lotful with a [`lots` tag](#lotful-commodities).
@@ -6212,35 +6213,6 @@ Lot tracking can be enabled in two ways:
   This is convenient, and recommended.
 
 A posting with any of these is called a lot posting.
-If you want a commodity tracked lotfully in only some accounts, use annotations rather than the `lots` tag.
-Or if it should be tracked everywhere except certain accounts (eg tax-sheltered accounts
-where cost basis doesn't matter), use the `lots` tag,
-and add a `lots: NONE` tag to those accounts' declarations to disable lot tracking there:
-
-```journal
-account assets:ira      ; lots: NONE
-```
-
-Postings in such accounts are not lot-tracked and get no lot subaccounts or gain postings,
-unless they have explicit lot annotations, which always enable tracking.
-Moving a lotful commodity from a tracked account into such an account is a disposal;
-moving it out again needs a cost basis or price on the receiving posting.
-
-The disposal order (AKA cost basis method - which lots are consumed first)
-is FIFO by default; or as set by a `lots` tag *value* on the commodity or account declaration
-(account wins), eg `lots: LIFO`; or chosen explicitly per disposal with a lot selector.
-See [Cost basis methods](#cost-basis-methods).
-
-Sometimes you may want to disable lots/gains processing,
-to silence lot-related errors when you are working with incomplete journals
-(eg, when piping hledger print into another hledger command,
-or when fixing a complex journal's problems one at a time).
-For this, use the `--ignore-lots` flag, or just `-I`.
-This skips lot tracking, capital gains calculation, and all lot error
-checking, while still doing enough lot inference that lot entries
-balance as usual.
-
-## Lot concepts
 
 ### Cost basis annotations
 
@@ -6270,7 +6242,7 @@ so it will infer cost basis annotations automatically, and you won't need to wri
 
 The `lots` tag can also have a value, selecting the disposal order (see [Cost basis methods](#cost-basis-methods));
 and on account declarations it disables or customises lot tracking per account,
-as described in [How to enable or disable lot tracking](#how-to-enable-or-disable-lot-tracking) above.
+as described in [Disabling lot tracking](#disabling-lot-tracking) below.
 
 ### Lot subaccounts
 
@@ -6346,15 +6318,58 @@ Third, with a `lots` tag on the commodity, no annotations are needed at all, as 
 
 All three notations produce the same lots and the same $100 gain; [Lot reports](#lot-reports) below shows them.
 
-### Lot labels
+### Disabling lot tracking
 
-Internally, each lot is identified by its cost basis date plus an optional label.
-Lots of a commodity acquired on the same date (even in different accounts) must have unique labels to help identify them.
-If you don't provide these, hledger adds sequential labels automatically (`"0001"`, `"0002"`, ..).
-Labels are used for sorting, so if you write your own, make them sortable.
-(More detail: [SPEC-lots](/SPEC-lots.html#lot-ids).)
+If you want a commodity tracked lotfully in only some accounts, use annotations rather than the `lots` tag.
+Or if it should be tracked everywhere except certain accounts (eg tax-sheltered accounts
+where cost basis doesn't matter), use the `lots` tag,
+and add a `lots: NONE` tag to those accounts' declarations to disable lot tracking there:
 
-### Cost basis vs transacted cost
+```journal
+account assets:ira      ; lots: NONE
+```
+
+Postings in such accounts are not lot-tracked and get no lot subaccounts or gain postings,
+unless they have explicit lot annotations, which always enable tracking.
+Moving a lotful commodity from a tracked account into such an account is a disposal;
+moving it out again needs a cost basis or price on the receiving posting.
+
+Sometimes you may want to disable lots/gains processing entirely,
+to silence lot-related errors when you are working with incomplete journals
+(eg, when piping hledger print into another hledger command,
+or when fixing a complex journal's problems one at a time).
+For this, use the `--ignore-lots` flag, or just `-I`.
+This skips lot tracking, capital gains calculation, and all lot error
+checking, while still doing enough lot inference that lot entries
+balance as usual.
+
+## Lot movements
+
+hledger understands three kinds of lot movement: acquire, transfer, and dispose.
+Other real-world lot events can usually be modelled using combinations of these
+(see [Other lot events](#other-lot-events) below).
+
+### Acquire
+
+A positive lot posting in an asset account creates a new lot.
+
+```journal
+2026-01-01 buy shares
+    assets:cash     -$500
+    assets:broker      10 ETSY {$50}
+```
+
+The cost basis can be specified explicitly with `{}` on the amount,
+inferred from the lot subaccount name,
+or inferred from the transacted cost.
+For lotful commodities, even a bare positive posting (no `{}` or `@`) can be detected as an acquire,
+with cost inferred from the transaction's other postings.
+
+Acquire postings may carry a per-unit (`{}`) or total (`{{{{}}}}`) cost basis annotation,
+and a per-unit (`@`) or total (`@@`) transacted cost.
+See [Cost basis vs transacted cost](#cost-basis-vs-transacted-cost) below for the recommended style.
+
+#### Cost basis vs transacted cost
 
 In acquisition transactions, hledger allows the cost basis (`{}`, call it `B`)
 and transacted cost (`@`, call it `T`) to be different, for compatibility with
@@ -6379,46 +6394,7 @@ However, in these cases the preferred style can still be used:
 record `B = T` on the asset posting, 
 and fund any difference via a separate income, equity, or asset posting -
 rather than expressing the difference as `{B} @ T` with `B ≠ T` on the asset itself.
-The [Acquire](#acquire) section below shows an example.
-
-### Cost basis precision
-
-An inferred cost basis can be a non-terminating decimal (eg `3 ABC @@ $10` gives a $10/3 unit cost).
-hledger keeps such costs at high precision internally and calculates gains from the unrounded value,
-but in lot names it displays at most 8 decimal digits, or more if the cost commodity's declared display style has more.
-Two consequences:
-when lots are carried into a new file as text (eg with `close --lots`), only the displayed digits survive,
-so if you track commodities needing finer cost precision, declare a wider display style for the cost commodity up front;
-and changing a commodity's display precision can change how lot names render,
-so lot selectors written with the old rendering will need updating (see [Troubleshooting lots](#troubleshooting-lots)).
-Selectors using just the date (and label) don't embed a cost, and are unaffected.
-(More detail: [SPEC-lots](/SPEC-lots.html#cost-basis-precision).)
-
-## Lot movements
-
-hledger understands three kinds of lot movement: acquire, transfer, and dispose.
-Other real-world lot events can usually be modelled using combinations of these
-(see the next section for examples).
-
-### Acquire
-
-A positive lot posting in an asset account creates a new lot.
-
-```journal
-2026-01-01 buy shares
-    assets:cash     -$500
-    assets:broker      10 ETSY {$50}
-```
-
-The cost basis can be specified explicitly with `{}` on the amount,
-inferred from the lot subaccount name,
-or inferred from the transacted cost.
-For lotful commodities, even a bare positive posting (no `{}` or `@`) can be detected as an acquire,
-with cost inferred from the transaction's other postings.
-
-Acquire postings may carry a per-unit (`{}`) or total (`{{{{}}}}`) cost basis annotation,
-and a per-unit (`@`) or total (`@@`) transacted cost.
-See [Cost basis vs transacted cost](#cost-basis-vs-transacted-cost) for the recommended style.
+The gift received example in [Other lot events](#other-lot-events) shows this.
 
 ### Transfer
 
@@ -6597,8 +6573,9 @@ either of two ways:
    [`close --clopen --lots`](#close) to carry the current lots into it,
    and declare the new method in the new file.
 
-## Gain postings
+## Gains
 
+<a name="gain-postings"></a>
 Each disposal transaction has a **gain posting**, usually on a Gain-type account,
 recording the capital gain (or loss) as revenue (or negative revenue).
 (Following the [usual PTA style](faq.md#why-are-my-revenue-income-liability-and-equity-balances-negative-),
@@ -6654,7 +6631,7 @@ for accounts like `equity:unrealised-gain`; hledger does not currently generate 
 Why do we post both gains and losses to a revenue account ?
 It's more convenient than using separate revenue and expense accounts, and the sign keeps things correct.
 
-## Recording gains
+### Recording gains
 
 <a name="style-1-no-gain-posting"></a><a name="style-2-gain-posting-non-g-account"></a><a name="style-3-gain-posting-g-account"></a>
 In a disposal entry, you can leave the gain posting out and let hledger infer it.
@@ -6689,32 +6666,6 @@ So if you write gain postings, declare the account's type. `hledger print -a` sh
 (Earlier hledger 2 previews also generated an `equity:unrealised-gain` counter posting in each disposal,
 so that disposals balanced at transacted cost. This is no longer done, and such postings,
 if written explicitly, will now leave the entry unbalanced; remove them.)
-
-### Gain postings and the roi command
-
-When using the [roi](#roi) command with a journal that records lots,
-make sure `--pnl` matches the gain account, eg:
-
-```cli
-$ hledger roi --inv assets:stocks --pnl revenues:gain
-```
-
-so that realised gains are counted as profit rather than as cash flows out of the investment.
-
-## Lot postings and balance assertions
-
-See also [Assertions and lot subaccounts](#assertions-and-lot-subaccounts) above.
-
-On a dispose or transfer posting without an explicit lot subaccount, a [balance assertion](#balance-assertions)
-always refers to the parent account's balance. So if lot subaccounts are added with `--lots`, the assertion is not affected.
-
-By contrast, in a journal entry where the lot subaccounts are recorded explicitly, a balance assertion
-refers to the lot subaccount's balance.
-
-This means that `hledger print --lots`, if it adds explicit lot subaccounts to a journal entry,
-could potentially change the meaning of balance assertions, breaking them. To avoid this, in such cases it will move
-the balance assertion to a new zero-amount posting to the parent account (and make sure it's subaccount-inclusive).
-(So eg `hledger -f- print --lots -x | hledger -f- check assertions` will still pass.)
 
 ## Lot reports
 
@@ -6761,6 +6712,56 @@ $ hledger print tag:ptype=dispose -x --lots
     revenues:gain                              $-100
 
 ```
+
+<a name="gain-postings-and-the-roi-command"></a>
+When using the [roi](#roi) command with a journal that records lots,
+make sure `--pnl` matches the gain account, eg:
+
+```cli
+$ hledger roi --inv assets:stocks --pnl revenues:gain
+```
+
+so that realised gains are counted as profit rather than as cash flows out of the investment.
+
+## Lot details
+
+Some finer points, for reference.
+
+### Lot labels
+
+Internally, each lot is identified by its cost basis date plus an optional label.
+Lots of a commodity acquired on the same date (even in different accounts) must have unique labels to help identify them.
+If you don't provide these, hledger adds sequential labels automatically (`"0001"`, `"0002"`, ..).
+Labels are used for sorting, so if you write your own, make them sortable.
+(More detail: [SPEC-lots](/SPEC-lots.html#lot-ids).)
+
+### Cost basis precision
+
+An inferred cost basis can be a non-terminating decimal (eg `3 ABC @@ $10` gives a $10/3 unit cost).
+hledger keeps such costs at high precision internally and calculates gains from the unrounded value,
+but in lot names it displays at most 8 decimal digits, or more if the cost commodity's declared display style has more.
+Two consequences:
+when lots are carried into a new file as text (eg with `close --lots`), only the displayed digits survive,
+so if you track commodities needing finer cost precision, declare a wider display style for the cost commodity up front;
+and changing a commodity's display precision can change how lot names render,
+so lot selectors written with the old rendering will need updating (see [Troubleshooting lots](#troubleshooting-lots)).
+Selectors using just the date (and label) don't embed a cost, and are unaffected.
+(More detail: [SPEC-lots](/SPEC-lots.html#cost-basis-precision).)
+
+### Lot postings and balance assertions
+
+See also [Assertions and lot subaccounts](#assertions-and-lot-subaccounts) above.
+
+On a dispose or transfer posting without an explicit lot subaccount, a [balance assertion](#balance-assertions)
+always refers to the parent account's balance. So if lot subaccounts are added with `--lots`, the assertion is not affected.
+
+By contrast, in a journal entry where the lot subaccounts are recorded explicitly, a balance assertion
+refers to the lot subaccount's balance.
+
+This means that `hledger print --lots`, if it adds explicit lot subaccounts to a journal entry,
+could potentially change the meaning of balance assertions, breaking them. To avoid this, in such cases it will move
+the balance assertion to a new zero-amount posting to the parent account (and make sure it's subaccount-inclusive).
+(So eg `hledger -f- print --lots -x | hledger -f- check assertions` will still pass.)
 
 ## Troubleshooting lots
 
