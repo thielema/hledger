@@ -66,6 +66,25 @@ Pending upstream: mrkkrp/megaparsec#612 (filed 2026-09-23), worth ~10% of every 
 fixed release can be required; the patch (INLINE pragmas on the Stream instances) is on the fork
 branch inline-stream-instances, PR to be opened only if the maintainer asks.
 
+# Performance across releases
+
+Here is the performance of some recent releases on this machine.
+Consistently slower since 1.25, and now faster again (except for register, which got consistently faster).
+```
+~/src/hledger$ quickbench -w hledger-1.25,hledger-1.40,hledger-1.52,hledger-1.99.4,hledger
+Running 1 cycles of 4 tests best of 1 times with 5 executables at 2026-09-23 23:19:25 HST:
+
+Best of 1 times:
++-----------------------------------------------++--------------+--------------+--------------+----------------+---------+
+|                                               || hledger-1.25 | hledger-1.40 | hledger-1.52 | hledger-1.99.4 | hledger |
++===============================================++==============+==============+==============+================+=========+
+| -f examples/100ktxns-1kaccts.journal stats    ||         2.70 |         3.95 |         4.29 |           5.96 |    2.46 |
+| -f examples/100ktxns-1kaccts.journal balance  ||         2.68 |         3.92 |         4.06 |           5.80 |    2.30 |
+| -f examples/100ktxns-1kaccts.journal print    ||         3.24 |         4.27 |         4.42 |           6.32 |    2.86 |
+| -f examples/100ktxns-1kaccts.journal register ||        71.99 |        30.22 |        20.73 |          19.02 |   15.29 |
++-----------------------------------------------++--------------+--------------+--------------+----------------+---------+
+```
+
 ## Findings worth remembering
 
 Measurement:
