@@ -292,7 +292,7 @@ amountValueAtDate priceoracle styles mto d a =
   case priceoracle (d, acommodity a, mto) of
     Nothing           -> a
     Just (comm, rate) ->
-      nullamt{acommodity=comm, aquantity=rate * aquantity a}
+      nullamt{acommodity=comm, aquantity=multiplyQuantities rate (aquantity a)}
 
       -- Manage style and precision of the new amount. Initially:
       --  rate is a Decimal with the internal precision of the original market price declaration.

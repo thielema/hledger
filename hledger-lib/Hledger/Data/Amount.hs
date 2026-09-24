@@ -71,6 +71,7 @@ module Hledger.Data.Amount (
   divideAmount,
   divideAmountAndUpdatePrecision,
   multiplyAmount,
+  multiplyQuantities,
   invertAmount,
   -- ** styles
   amountstyle,
@@ -366,6 +367,26 @@ similarAmountsOp op Amount{acommodity=_,  aquantity=q1, astyle=AmountStyle{aspre
 amountWithCommodity :: CommoditySymbol -> Amount -> Amount
 amountWithCommodity c a = a{acommodity=c, acost=Nothing}
 
+-- | Multiply two quantities. Equivalent to Decimal's (*), but much faster
+-- in the usual case: that one multiplies via Rational, rounds to 255 decimal
+-- places and normalises via Rational again, costing kilobytes of allocation
+-- per multiplication. Here the mantissas are multiplied directly, and the
+-- result normalised the same way (to the minimal exponent), whenever the
+-- exponents' sum fits in a Decimal.
+multiplyQuantities :: Quantity -> Quantity -> Quantity
+multiplyQuantities a@(Decimal e1 m1) b@(Decimal e2 m2)
+  | m1 == 0 || m2 == 0 = 0
+  | e <= fromIntegral (maxBound :: Word8) = normalise (fromIntegral e) (m1 * m2)
+  | otherwise = a * b
+  where
+    e = fromIntegral e1 + fromIntegral e2 :: Int
+    -- reduce the exponent to the minimal value, like Decimal's normalizeDecimal
+    normalise :: Word8 -> Integer -> Quantity
+    normalise 0 m = Decimal 0 m
+    normalise ex m = case m `quotRem` 10 of
+      (q, 0) -> normalise (ex-1) q
+      _      -> Decimal ex m
+
 -- | Convert a amount to its total cost in another commodity,
 -- using its attached cost amount if it has one.  Notes:
 --
@@ -379,7 +400,7 @@ amountCost :: Amount -> Amount
 amountCost a@Amount{aquantity=q, acost=mp} =
     case mp of
       Nothing                                  -> a
-      Just (UnitCost  p@Amount{aquantity=pq}) -> p{aquantity=pq * q}
+      Just (UnitCost  p@Amount{aquantity=pq}) -> p{aquantity=multiplyQuantities pq q}
       Just (TotalCost p@Amount{aquantity=pq}) -> p{aquantity=pq}
 
 -- | Convert an Amount to its cost basis when it has a cost basis annotation
@@ -389,7 +410,7 @@ amountCost a@Amount{aquantity=q, acost=mp} =
 amountCostBasis :: Amount -> Amount
 amountCostBasis a@Amount{aquantity=q, acostbasis=mcb} =
     case mcb >>= cbCost of
-      Just b@Amount{aquantity=bq} -> b{aquantity=bq * q}
+      Just b@Amount{aquantity=bq} -> b{aquantity=multiplyQuantities bq q}
       Nothing                     -> amountCost a
 
 -- | Strip all costs from an Amount
@@ -424,7 +445,7 @@ divideAmountAndUpdatePrecision n a = amountSetPrecision (Precision p) a'
 
 -- | Multiply an amount's quantity (and its total cost, if it has one) by a constant.
 multiplyAmount :: Quantity -> Amount -> Amount
-multiplyAmount n = transformAmount (*n)
+multiplyAmount n = transformAmount (multiplyQuantities n)
 
 -- | Replace an amount's quantity, resetting display precision to NaturalPrecision.
 -- This is the safe way to set a new quantity that may have different decimal places
@@ -1047,7 +1068,7 @@ divideMixedAmountAndUpdatePrecision n ma =
 
 -- | Multiply a mixed amount's quantities (and total costs, if any) by a constant.
 multiplyMixedAmount :: Quantity -> MixedAmount -> MixedAmount
-multiplyMixedAmount n = transformMixedAmount (*n)
+multiplyMixedAmount n = transformMixedAmount (multiplyQuantities n)
 
 -- | Apply a function to a mixed amount's quantities (and its total costs, if it has any).
 transformMixedAmount :: (Quantity -> Quantity) -> MixedAmount -> MixedAmount
@@ -1553,6 +1574,15 @@ tests_Amount = testGroup "Amount" [
        amountCost (eur 2){acost=Just $ UnitCost $ usd 2} @?= usd 4
        amountCost (eur 1){acost=Just $ TotalCost $ usd 2} @?= usd 2
        amountCost (eur (-1)){acost=Just $ TotalCost $ usd (-2)} @?= usd (-2)
+
+    ,testCase "multiplyQuantities" $ do
+       -- same result and representation as Decimal's (*)
+       let same a b = (multiplyQuantities a b, decimalPlaces $ multiplyQuantities a b) @?= (a * b, decimalPlaces $ a * b)
+       same 0.71 3
+       same 1.50 (-2.0)
+       same 0 100
+       same (Decimal 200 3) (Decimal 100 5)
+       multiplyQuantities 2.50 4 @?= 10
 
     ,testCase "amountLooksZero" $ do
        assertBool "" $ amountLooksZero nullamt

@@ -133,7 +133,7 @@ import Text.Printf (printf)
 
 import Hledger.Data.AccountName (accountNameType, parentAccountNames)
 import Hledger.Data.AccountType (isAssetType, isEquityType, isLiabilityType)
-import Hledger.Data.Amount (AmountFormat(..), amountRoundedQuantity, amountSetPrecisionMin, amountSetQuantity, amountsRaw, divideAmountAndUpdatePrecision, isNegativeAmount, maNegate, maSum, mapMixedAmount, mixedAmount, mixedAmountCost, mixedAmountIsZero, mixedAmountLooksZero, nullmixedamt, noCostFmt, oneLineNoCostFmt, showAmountWith, showAmountsDistinctly, showMixedAmountOneLine, showMixedAmountsDistinctly)
+import Hledger.Data.Amount (AmountFormat(..), amountRoundedQuantity, amountSetPrecisionMin, amountSetQuantity, amountsRaw, divideAmountAndUpdatePrecision, isNegativeAmount, maNegate, maSum, mapMixedAmount, mixedAmount, mixedAmountCost, mixedAmountIsZero, mixedAmountLooksZero, multiplyQuantities, nullmixedamt, noCostFmt, oneLineNoCostFmt, showAmountWith, showAmountsDistinctly, showMixedAmountOneLine, showMixedAmountsDistinctly)
 import Hledger.Data.Errors (makeAccountTagErrorExcerpt, makeCommodityTagErrorExcerpt, makePostingErrorExcerptByIndex, makeTransactionErrorExcerpt, transactionFindPostingIndex)
 import Hledger.Data.Journal (journalAccountLotsTags, journalAccountType, journalAccountUsesNoLots, journalBaseGainAccount, journalCommodityLotsMethod, journalCommodityStylesWith, journalCommodityUsesLots, journalInheritedAccountTags, journalLotfulCommodities, journalMapPostings, journalMapTransactions, journalPostings, journalTieTransactions, parseReductionMethod)
 import Hledger.Data.Posting (generatedPostingTagName, hasAmount, isReal, isVirtual, lotParentAssertionTagName, lotsplitPostingTagName, nullposting, originalPosting, postingAddHiddenAndMaybeVisibleTag, postingHasTag, postingStripCosts, feesplitPostingTagName)
@@ -1401,9 +1401,9 @@ journalAddOrCheckGainPostings verbosetags j = do
     amountBasisVsTransactedGap :: Amount -> MixedAmount
     amountBasisVsTransactedGap a = case (acostbasis a >>= cbCost, acost a) of
       (Just basisCost, Just transactedCost) ->
-        let basisVal      = mixedAmount basisCost{aquantity = aquantity a * aquantity basisCost}
+        let basisVal      = mixedAmount basisCost{aquantity = multiplyQuantities (aquantity a) (aquantity basisCost)}
             transactedVal = case transactedCost of
-              UnitCost  c -> mixedAmount c{aquantity = aquantity a * aquantity c}
+              UnitCost  c -> mixedAmount c{aquantity = multiplyQuantities (aquantity a) (aquantity c)}
               TotalCost c -> mixedAmount c
         in basisVal <> maNegate transactedVal
       _ -> nullmixedamt
@@ -2693,8 +2693,8 @@ updatePoolOnAcquire posStr globalPool scopeAcct commodity acqQty acqCost lotStat
         Left $ posStr ++ "cannot average lots with different cost commodities"
       _ -> Right ()
     let totalQty  = acqQty + sum [q | (q, _) <- existingEntries]
-        totalCost = acqQty * aquantity acqCost
-                  + sum [q * aquantity c | (q, c) <- existingEntries]
+        totalCost = multiplyQuantities acqQty (aquantity acqCost)
+                  + sum [multiplyQuantities q (aquantity c) | (q, c) <- existingEntries]
     when (totalQty == 0) $
       Left $ posStr ++ "cannot average lots with zero total quantity"
     let newAvg = acqCost{aquantity = totalCost / totalQty}
