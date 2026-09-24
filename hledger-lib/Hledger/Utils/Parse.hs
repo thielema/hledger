@@ -43,6 +43,10 @@ module Hledger.Utils.Parse (
   skipNonNewlineSpaces,
   skipNonNewlineSpaces1,
   skipNonNewlineSpaces',
+  peekChar,
+  peekChars2,
+  peekAfterSpaces,
+  manyWhile,
 
   -- ** Trace the state of hledger parsers
   dbgparse,
@@ -90,7 +94,7 @@ module Hledger.Utils.Parse (
 )
 where
 
-import Control.Monad (when)
+import Control.Monad (MonadPlus, when)
 import Data.Text qualified as T
 import Text.Megaparsec
 import Text.Printf
@@ -215,7 +219,7 @@ spacenonewline = satisfy isNonNewlineSpace
 {-# INLINABLE spacenonewline #-}
 
 restofline :: TextParser m String
-restofline = anySingle `manyTill` eolof
+restofline = T.unpack <$> takeWhileP Nothing (/= '\n') <* eolof
 
 -- Skip many non-newline spaces.
 skipNonNewlineSpaces :: (Stream s, Token s ~ Char) => ParsecT HledgerParseErrorData s m ()
@@ -227,10 +231,50 @@ skipNonNewlineSpaces1 :: (Stream s, Token s ~ Char) => ParsecT HledgerParseError
 skipNonNewlineSpaces1 = void $ takeWhile1P Nothing isNonNewlineSpace
 {-# INLINABLE skipNonNewlineSpaces1 #-}
 
--- Skip many non-newline spaces, returning True if any have been skipped.
+-- | Skip any non-newline whitespace, and return whether there was any.
 skipNonNewlineSpaces' :: (Stream s, Token s ~ Char) => ParsecT HledgerParseErrorData s m Bool
-skipNonNewlineSpaces' = True <$ skipNonNewlineSpaces1 <|> pure False
+skipNonNewlineSpaces' = do
+  o <- getOffset
+  skipNonNewlineSpaces
+  (> o) <$> getOffset
 {-# INLINABLE skipNonNewlineSpaces' #-}
+
+-- | Look at the next character of the input, if any, without consuming it.
+-- Unlike a failed parse attempt this constructs no parse error, so it is a cheap
+-- way to decide whether an optional or alternative parser could succeed before running it.
+peekChar :: TextParser m (Maybe Char)
+peekChar = fmap fst . T.uncons <$> getInput
+{-# INLINABLE peekChar #-}
+
+-- | Like peekChar, but returning the next two characters, if any.
+peekChars2 :: TextParser m (Maybe Char, Maybe Char)
+peekChars2 = do
+  s <- getInput
+  pure $ case T.uncons s of
+    Nothing       -> (Nothing, Nothing)
+    Just (c1, s') -> (Just c1, fst <$> T.uncons s')
+{-# INLINABLE peekChars2 #-}
+
+-- | Like peekChar, but looking past any non-newline whitespace (not consuming that either).
+-- Returns whether there was such whitespace, and the character following it, if any.
+peekAfterSpaces :: TextParser m (Bool, Maybe Char)
+peekAfterSpaces = do
+  s <- getInput
+  let spaced = maybe False (isNonNewlineSpace . fst) $ T.uncons s
+  pure (spaced, fst <$> T.uncons (T.dropWhile isNonNewlineSpace s))
+{-# INLINABLE peekAfterSpaces #-}
+
+-- | Run a parser repeatedly, collecting the results, like many; but continue only
+-- while a test (typically a cheap look at the next input, like peekChar) says it
+-- could succeed, so that the end of the sequence is found without a failed parse
+-- attempt. As with many, the parser failing without consuming input also ends the sequence.
+manyWhile :: MonadPlus m => m Bool -> m a -> m [a]
+manyWhile test p = go
+  where
+    go = do
+      continue <- test
+      if continue then ((:) <$> p <*> go) <|> pure [] else pure []
+{-# INLINABLE manyWhile #-}
 
 eolof :: TextParser m ()
 eolof = void newline <|> eof

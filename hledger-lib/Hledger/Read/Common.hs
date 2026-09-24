@@ -72,6 +72,7 @@ module Hledger.Read.Common (
   -- ** dates
   datep,
   datetimep,
+  timeofdayp,
   secondarydatep,
 
   -- ** account names
@@ -687,21 +688,26 @@ match' p = do
 --- *** transaction bits
 
 statusp :: TextParser m Status
-statusp =
-  choice'
-    [ skipNonNewlineSpaces >> char '*' >> return Cleared
-    , skipNonNewlineSpaces >> char '!' >> return Pending
-    , return Unmarked
-    ]
+statusp = do
+  -- a status mark may follow, after optional spaces; check cheaply, since usually there is none
+  (_, mc) <- peekAfterSpaces
+  case mc of
+    Just '*' -> Cleared <$ (skipNonNewlineSpaces *> char '*')
+    Just '!' -> Pending <$ (skipNonNewlineSpaces *> char '!')
+    _        -> pure Unmarked
 
 codep :: TextParser m Text
-codep = option "" $ do
-  try $ do
+codep = do
+  -- a code in parentheses may follow, after spaces; check cheaply, since usually there is none
+  (spaced, mc) <- peekAfterSpaces
+  if spaced && mc == Just '('
+  then do
     skipNonNewlineSpaces1
     char '('
-  code <- takeWhileP Nothing $ \c -> c /= ')' && c /= '\n'
-  char ')' <?> "closing bracket ')' for transaction code"
-  pure code
+    code <- takeWhileP Nothing $ \c -> c /= ')' && c /= '\n'
+    char ')' <?> "closing bracket ')' for transaction code"
+    pure code
+  else pure ""
 
 -- | Parse possibly empty text until a semicolon or newline.
 -- Whitespace is preserved (for now - perhaps helps preserve alignment 
@@ -778,9 +784,15 @@ datetimep' :: Maybe Year -> TextParser m LocalTime
 datetimep' mYear = do
   day <- datep' mYear
   skipNonNewlineSpaces1
+  time <- timeofdayp
+  pure $ LocalTime day time
+
+-- | Parse a time of day (HH:MM[:SS]), and skip any time zone suffix (like +0100) following it.
+timeofdayp :: TextParser m TimeOfDay
+timeofdayp = do
   time <- timeOfDay
   optional timeZone -- ignoring time zones
-  pure $ LocalTime day time
+  pure time
 
   where
     timeOfDay :: TextParser m TimeOfDay
@@ -903,10 +915,16 @@ singlespacednoncommenttext1p = singlespacedtextsatisfying1p (not . isSameLineCom
 singlespacedtextsatisfying1p :: (Char -> Bool) -> TextParser m T.Text
 singlespacedtextsatisfying1p f = do
   firstPart <- partp
-  otherParts <- many $ try $ singlespacep *> partp
+  otherParts <- manyWhile nextissinglespaceandpart $ try $ singlespacep *> partp
   pure $! T.unwords $ firstPart : otherParts
   where
     partp = takeWhile1P Nothing (\c -> f c && not (isSpace c))
+    -- is the next part separated from here by exactly one space ? (checked cheaply before parsing)
+    nextissinglespaceandpart = do
+      next2 <- peekChars2
+      pure $ case next2 of
+        (Just c1, Just c2) -> isNonNewlineSpace c1 && f c2 && not (isSpace c2)
+        _                  -> False
 
 -- | Parse one non-newline whitespace character that is not followed by another one.
 -- (A single tab is not a separator, unlike in Ledger; hledger 1 and 2 agree on this.)
@@ -982,13 +1000,20 @@ amountp' mult =
   label "amount" $ do
   let spaces = lift $ skipNonNewlineSpaces
   amt <- simpleamountp mult <* spaces
-  (mcost, _valuationexpr, mlotcb, mlotdate, mlotnote) <- runPermutation $
-    -- costp, valuationexprp, lotnotep all parse things beginning with parenthesis, try needed
-    (,,,,) <$> toPermutationWithDefault Nothing (Just <$> try (costp amt) <* spaces)
-          <*> toPermutationWithDefault Nothing (Just <$> valuationexprp <* spaces)  -- XXX no try needed here ?
-          <*> toPermutationWithDefault Nothing (Just <$> lotcostp (aquantity amt) <* spaces)
-          <*> toPermutationWithDefault Nothing (Just <$> lotdatep <* spaces)
-          <*> toPermutationWithDefault Nothing (Just <$> lotnotep <* spaces)
+  -- A cost, valuation expression or lot annotation may follow, in any order.
+  -- These all begin with one of a few characters; check for one cheaply first,
+  -- since most amounts have none of them.
+  mnext <- lift peekChar
+  (mcost, _valuationexpr, mlotcb, mlotdate, mlotnote) <-
+    if maybe False (`elem` ("@({[" :: String)) mnext
+    then runPermutation $
+      -- costp, valuationexprp, lotnotep all parse things beginning with parenthesis, try needed
+      (,,,,) <$> toPermutationWithDefault Nothing (Just <$> try (costp amt) <* spaces)
+            <*> toPermutationWithDefault Nothing (Just <$> valuationexprp <* spaces)  -- XXX no try needed here ?
+            <*> toPermutationWithDefault Nothing (Just <$> lotcostp (aquantity amt) <* spaces)
+            <*> toPermutationWithDefault Nothing (Just <$> lotdatep <* spaces)
+            <*> toPermutationWithDefault Nothing (Just <$> lotnotep <* spaces)
+    else pure (Nothing, Nothing, Nothing, Nothing, Nothing)
   -- Reject mixing consolidated {DATE,...} or {"LABEL",...} with ledger-style [DATE] or (NOTE)
   let isConsolidated = case mlotcb of
         Just cb | isJust (cbDate cb) || isJust (cbLabel cb) -> True
@@ -1024,9 +1049,15 @@ simpleamountp mult =
   -- dbg "simpleamountp" $
   do
   sign <- lift signp
-  leftsymbolamountp sign <|> rightornosymbolamountp sign
+  -- A symbol-first amount starts with a quote or a simple commodity symbol character;
+  -- anything else (a digit or decimal mark, usually) is parsed as a number-first amount.
+  -- Checking cheaply avoids a failed parse attempt for the latter, the common case.
+  mc <- lift peekChar
+  if maybe False startsCommoditySymbol mc then leftsymbolamountp sign else rightornosymbolamountp sign
 
   where
+  startsCommoditySymbol c = c == '"' || not (isNonsimpleCommodityChar c)
+
   -- An amount with commodity symbol on the left.
   leftsymbolamountp :: (Decimal -> Decimal) -> JournalParser m Amount
   leftsymbolamountp sign = label "amount" $ do
@@ -1039,7 +1070,7 @@ simpleamountp mult =
     sign2 <- lift $ signp
     offBeforeNum <- getOffset
     ambiguousRawNum <- lift rawnumberp
-    mExponent <- lift $ optional $ try exponentp
+    mExponent <- lift optionalexponentp
     offAfterNum <- getOffset
     let numRegion = (offBeforeNum, offAfterNum)
     (q,prec,mdec,mgrps) <- lift $ interpretNumber numRegion suggestedStyle ambiguousRawNum mExponent
@@ -1053,10 +1084,15 @@ simpleamountp mult =
   rightornosymbolamountp sign = label "amount" $ do
     offBeforeNum <- getOffset
     ambiguousRawNum <- lift rawnumberp
-    mExponent <- lift $ optional $ try exponentp
+    mExponent <- lift optionalexponentp
     offAfterNum <- getOffset
     let numRegion = (offBeforeNum, offAfterNum)
-    mSpaceAndCommodity <- lift $ optional $ try $ (,) <$> skipNonNewlineSpaces' <*> commoditysymbolp
+    -- A commodity symbol may follow the number, possibly after spaces; check cheaply first.
+    (_, mnext) <- lift peekAfterSpaces
+    mSpaceAndCommodity <- lift $
+      if maybe False startsCommoditySymbol mnext
+      then optional $ try $ (,) <$> skipNonNewlineSpaces' <*> commoditysymbolp
+      else pure Nothing
     case mSpaceAndCommodity of
       -- right symbol amount
       Just (commodityspaced, c) -> do
@@ -1122,11 +1158,19 @@ parsemixedamount' = mixedAmount . parseamount'
 -- | Parse a minus or plus sign followed by zero or more spaces,
 -- or nothing, returning a function that negates or does nothing.
 signp :: Num a => TextParser m (a -> a)
-signp = ((char '-' $> negate <|> char '+' $> id) <* skipNonNewlineSpaces) <|> pure id
+signp = do
+  -- check the next character first: most amounts have no sign
+  mc <- peekChar
+  case mc of
+    Just '-' -> negate <$ (char '-' *> skipNonNewlineSpaces)
+    Just '+' -> id     <$ (char '+' *> skipNonNewlineSpaces)
+    _        -> pure id
 
 commoditysymbolp :: TextParser m CommoditySymbol
-commoditysymbolp =
-  quotedcommoditysymbolp <|> simplecommoditysymbolp <?> "commodity symbol"
+commoditysymbolp = (do
+  mc <- peekChar
+  if mc == Just '"' then quotedcommoditysymbolp else simplecommoditysymbolp
+  ) <?> "commodity symbol"
 
 quotedcommoditysymbolp :: TextParser m CommoditySymbol
 quotedcommoditysymbolp =
@@ -1143,9 +1187,12 @@ costp baseAmt =
   -- dbg "costp" $
   label "transaction price" $ do
   -- https://www.ledger-cli.org/3.0/doc/ledger3.html#Virtual-posting-costs
-  parenthesised <- option False $ char '(' >> pure True
+  -- (optional parts are checked for cheaply before parsing, as usual)
+  parenthesised <- (== Just '(') <$> lift peekChar
+  when parenthesised $ void $ char '('
   char '@'
-  totalCost <- char '@' $> True <|> pure False
+  totalCost <- (== Just '@') <$> lift peekChar
+  when totalCost $ void $ char '@'
   when parenthesised $ void $ char ')'
 
   lift skipNonNewlineSpaces
@@ -1172,8 +1219,10 @@ balanceassertionp :: JournalParser m BalanceAssertion
 balanceassertionp = do
   sourcepos <- getSourcePos'
   char '='
-  istotal <- fmap isJust $ optional $ try $ char '='
-  isinclusive <- fmap isJust $ optional $ try $ char '*'
+  istotal <- (== Just '=') <$> lift peekChar
+  when istotal $ void $ char '='
+  isinclusive <- (== Just '*') <$> lift peekChar
+  when isinclusive $ void $ char '*'
   lift skipNonNewlineSpaces
   -- this amount can have a cost, but not a cost basis.
   -- balance assertions ignore it, but balance assignments will use it
@@ -1308,7 +1357,7 @@ numberp suggestedStyle = label "number" $ do
     -- dbgparse 0 "numberp"
     sign <- signp
     rawNum <- either (disambiguateNumber suggestedStyle) id <$> rawnumberp
-    mExp <- optional $ try $ exponentp
+    mExp <- optionalexponentp
     dbg7 "numberp suggestedStyle" suggestedStyle `seq` return ()
     case dbg7 "numberp quantity,precision,mdecimalpoint,mgrps"
            $ fromRawNumber rawNum mExp of
@@ -1317,6 +1366,13 @@ numberp suggestedStyle = label "number" $ do
 
 exponentp :: TextParser m Integer
 exponentp = char' 'e' *> signp <*> decimal <?> "exponent"
+
+-- | Parse an exponent if one follows, checking the next character first,
+-- since most numbers have none.
+optionalexponentp :: TextParser m (Maybe Integer)
+optionalexponentp = do
+  mc <- peekChar
+  if mc == Just 'e' || mc == Just 'E' then optional (try exponentp) else pure Nothing
 
 -- | Interpret a raw number as a decimal number.
 --
@@ -1402,19 +1458,22 @@ disambiguateNumber msuggestedStyle (AmbiguousNumber grp1 sep grp2) =
 --
 rawnumberp :: TextParser m (Either AmbiguousNumber RawNumber)
 rawnumberp = label "number" $ do
-  rawNumber <- fmap Right leadingDecimalPt <|> leadingDigits
+  -- (The next characters are inspected directly in a few places below,
+  -- avoiding failed parse attempts on this hot path.)
+  mc <- peekChar
+  rawNumber <- if maybe False isDecimalMark mc then Right <$> leadingDecimalPt else leadingDigits
 
   -- Guard against mistyped numbers
-  mExtraDecimalSep <- optional $ lookAhead $ satisfy isDecimalMark
-  when (isJust mExtraDecimalSep) $
+  mExtraDecimalSep <- peekChar
+  when (maybe False isDecimalMark mExtraDecimalSep) $
     Fail.fail "invalid number (invalid use of separator)"
 
-  mExtraFragment <- optional $ lookAhead $ try $
-    char ' ' *> getOffset <* digitChar
-  case mExtraFragment of
-    Just off -> customFailure $
-                  parseErrorAt off "invalid number (excessive trailing digits)"
-    Nothing -> pure ()
+  next2 <- peekChars2
+  case next2 of
+    (Just ' ', Just d) | isDigit d -> do
+      off <- getOffset
+      customFailure $ parseErrorAt (off + 1) "invalid number (excessive trailing digits)"
+    _ -> pure ()
 
   return $ dbg7 "rawnumberp" rawNumber
   where
@@ -1428,8 +1487,16 @@ rawnumberp = label "number" $ do
   leadingDigits :: TextParser m (Either AmbiguousNumber RawNumber)
   leadingDigits = do
     grp1 <- digitgroupp
-    withSeparators grp1 <|> fmap Right (trailingDecimalPt grp1)
-                        <|> pure (Right $ NoSeparators grp1 Nothing)
+    -- More digit groups (after a separator) or a decimal mark may follow; most often neither does.
+    next2 <- peekChars2
+    let more = case next2 of
+          (Just c1, _)       | isDecimalMark c1 -> True
+          (Just c1, Just c2) | isDigitSeparatorChar c1 && isDigit c2 -> True
+          _ -> False
+    if more
+    then withSeparators grp1 <|> fmap Right (trailingDecimalPt grp1)
+                             <|> pure (Right $ NoSeparators grp1 Nothing)
+    else pure (Right $ NoSeparators grp1 Nothing)
 
   withSeparators :: DigitGrp -> TextParser m (Either AmbiguousNumber RawNumber)
   withSeparators grp1 = do
@@ -1544,7 +1611,8 @@ emptyorcommentlinep :: TextParser m ()
 emptyorcommentlinep = do
   dp "emptyorcommentlinep"
   skipNonNewlineSpaces
-  skiplinecommentp <|> void newline
+  mc <- peekChar
+  if maybe False isLineCommentStart mc then skiplinecommentp else void newline
   where
     skiplinecommentp :: TextParser m ()
     skiplinecommentp = do
@@ -1621,12 +1689,13 @@ followingcommentp = fst <$> followingcommentpWith (void $ takeWhileP Nothing (/=
 followingcommentpWith :: (Monoid a, Show a) => TextParser m a -> TextParser m (Text, a)
 followingcommentpWith contentp = do
   skipNonNewlineSpaces
-  -- there can be 0 or 1 sameLine
-  sameLine <- try headerp *> ((:[]) <$> match' contentp) <|> pure []
+  -- there can be 0 or 1 sameLine (checking for its semicolon cheaply, as usually there is none)
+  mc <- peekChar
+  sameLine <- if mc == Just ';' then (:[]) <$> (headerp *> match' contentp) else pure []
   _ <- eolof
   -- there can be 0 or more nextLines
-  nextLines <- many $
-    try (skipNonNewlineSpaces1 *> headerp) *> match' contentp <* eolof
+  nextLines <- manyWhile nextlineiscomment $
+    skipNonNewlineSpaces1 *> headerp *> match' contentp <* eolof
   let
     -- if there's just a next-line comment, insert an empty same-line comment
     -- so the next-line comment doesn't get rendered as a same-line comment.
@@ -1639,6 +1708,10 @@ followingcommentpWith contentp = do
 
   where
     headerp = char ';' *> skipNonNewlineSpaces
+    -- does the next line begin with an indented semicolon ?
+    nextlineiscomment = do
+      (spaced, mnext) <- peekAfterSpaces
+      pure $ spaced && mnext == Just ';'
 
 {-# INLINABLE followingcommentpWith #-}
 

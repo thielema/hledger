@@ -858,8 +858,12 @@ marketpricedirectivep = do
   pos <- getSourcePos'
   char 'P' <?> "market price"
   lift skipNonNewlineSpaces
-  date <- try (do {LocalTime d _ <- datetimep; return d}) <|> datep -- a time is ignored
+  date <- datep
   lift skipNonNewlineSpaces1
+  -- a time of day may follow the date; it is ignored (checked cheaply first, since usually there is none)
+  mc <- lift peekChar
+  mtime <- if maybe False isDigit mc then lift $ optional $ try timeofdayp else pure Nothing
+  when (isJust mtime) $ lift skipNonNewlineSpaces1
   symbol <- lift commoditysymbolp
   lift skipNonNewlineSpaces1
   price <- amountp
@@ -981,7 +985,8 @@ transactionp = do
   -- dbgparse 0 "transactionp"
   startpos <- getSourcePos'
   date <- datep <?> "transaction"
-  edate <- optional (lift $ secondarydatep date) <?> "secondary date"
+  mc <- lift peekChar
+  edate <- if mc == Just '=' then optional (lift $ secondarydatep date) <?> "secondary date" else pure Nothing
   lookAhead (lift spacenonewline <|> newline) <?> "whitespace or newline"
   status <- lift statusp <?> "cleared status"
   code <- lift codep <?> "transaction code"
@@ -998,7 +1003,12 @@ transactionp = do
 -- Parse the following whitespace-beginning lines as postings, posting
 -- tags, and/or comments (inferring year, if needed, from the given date).
 postingsp :: Maybe Year -> JournalParser m [Posting]
-postingsp mTransactionYear = many (postingp mTransactionYear) <?> "postings"
+postingsp mTransactionYear = manyWhile nextlineisindented (postingp mTransactionYear) <?> "postings"
+  where
+    -- does the next line begin with whitespace followed by something ? (a cheap check before trying to parse a posting)
+    nextlineisindented = do
+      (spaced, mc) <- lift peekAfterSpaces
+      pure $ spaced && maybe False (not . isNewline) mc
 
 -- linebeginningwithspaces :: JournalParser m String
 -- linebeginningwithspaces = do
@@ -1034,7 +1044,8 @@ postingphelper isPostingRule mTransactionYear = do
     mult <- if isPostingRule then multiplierp else pure False
     amt <- optional $ amountp' mult
     lift skipNonNewlineSpaces
-    massertion <- optional balanceassertionp
+    mc <- lift peekChar
+    massertion <- if mc == Just '=' then optional balanceassertionp else pure Nothing
     lift skipNonNewlineSpaces
     (comment,tags,mdate,mdate2) <- lift $ postingcommentp mTransactionYear
     let p = posting

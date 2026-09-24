@@ -193,7 +193,7 @@ module Hledger.Data.Amount (
 ) where
 
 import Prelude hiding (Applicative(..))
-import Control.Applicative (Applicative(..), (<|>))
+import Control.Applicative ((<|>))
 import Control.Monad (foldM)
 import Data.Char (isDigit)
 import Data.Decimal (DecimalRaw(..), decimalPlaces, normalizeDecimal, roundTo)
@@ -238,10 +238,21 @@ showCommoditySymbol = textQuoteIfNeeded
 
 -- characters that may not be used in a non-quoted commodity symbol
 isNonsimpleCommodityChar :: Char -> Bool
-isNonsimpleCommodityChar = liftA2 (||) isDigit isOther
-  where
-    otherChars = "-+.@*;\t\n \"{}=" :: T.Text
-    isOther c = T.any (==c) otherChars
+isNonsimpleCommodityChar c = case c of
+  '-'  -> True
+  '+'  -> True
+  '.'  -> True
+  '@'  -> True
+  '*'  -> True
+  ';'  -> True
+  '\t' -> True
+  '\n' -> True
+  ' '  -> True
+  '"'  -> True
+  '{'  -> True
+  '}'  -> True
+  '='  -> True
+  _    -> isDigit c
 
 quoteCommoditySymbolIfNeeded :: T.Text -> T.Text
 quoteCommoditySymbolIfNeeded s
