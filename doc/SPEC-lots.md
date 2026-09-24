@@ -34,7 +34,8 @@ By default, lot inference, tracking, and error checking are performed when loadi
 journal, as part of journal finalising (see SPEC-finalising.md). Any journal with
 lot-related content (lotful commodities, cost basis annotations, or
 disposals) is validated up front. Journals with no lot activity pay near-zero cost
-via an internal fast path.
+via an internal fast path, and within a journal that has lot activity, transactions
+with no lotful amounts are skipped by the lot stages (see SPEC-finalising.md).
 
 Lot checking can be disabled with `--ignore-lots` (or its shortcut alias `-I`,
 which also sets `--ignore-assertions`). This is a troubleshooting aid, for

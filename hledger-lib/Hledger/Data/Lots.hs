@@ -93,6 +93,7 @@ journalCalculateLots:
 
 module Hledger.Data.Lots (
   journalHasLotFeatures,
+  transactionHasLotfulAmounts,
   journalClassifyLotPostings,
   journalStripBalancerCopiedBases,
   transactionAutoSplitFeeOutflows,
@@ -513,16 +514,27 @@ journalHasLotFeatures j =
 -- Before classification, try to auto-split lot transfers with fees
 -- into a transfer portion and a dispose portion, so both get classified correctly.
 journalClassifyLotPostings :: Bool -> Journal -> Journal
-journalClassifyLotPostings verbosetags j =
-  journalMapTransactions
-    ( txnTieKnot  -- retie the postings' transaction pointers (nothing else does after this)
-    . transactionClassifyLotPostings verbosetags lookupType commodityIsLotful accountUsesNoLots
-    . transactionAutoSplitFeeOutflows verbosetags lookupType commodityIsLotful accountUsesNoLots
-    ) j
+journalClassifyLotPostings verbosetags j = journalMapTransactions classify j
   where
+    classify t
+      | not $ transactionHasLotfulAmounts lotfulcomms t = t  -- nothing lot-related here: leave it, and its knot, alone
+      | otherwise =
+          txnTieKnot  -- retie the postings' transaction pointers (nothing else does after this)
+        . transactionClassifyLotPostings verbosetags lookupType commodityIsLotful accountUsesNoLots
+        . transactionAutoSplitFeeOutflows verbosetags lookupType commodityIsLotful accountUsesNoLots
+        $ t
     lookupType = journalAccountType j
-    commodityIsLotful = journalCommodityUsesLots j
+    lotfulcomms = journalLotfulCommodities j
+    commodityIsLotful = (`S.member` lotfulcomms)
     accountUsesNoLots = journalAccountUsesNoLots j
+
+-- | Could this transaction involve lots ? True if any of its amounts has a
+-- cost basis annotation or is in one of the given lotful commodities.
+-- A cheap test, broader than any of the lot stages' own triggers, so they
+-- can skip the (usually many) transactions for which it is false.
+transactionHasLotfulAmounts :: S.Set CommoditySymbol -> Transaction -> Bool
+transactionHasLotfulAmounts lotfulcomms = any (any lotful . amountsRaw . pamount) . tpostings
+  where lotful a = isJust (acostbasis a) || acommodity a `S.member` lotfulcomms
 
 -- | Detect a lot transfer with a fee - an unpriced negative lotful asset
 -- posting (bare in a lotful commodity, or carrying a cost basis annotation)
@@ -1033,11 +1045,15 @@ journalCalculateLots verbosetags j
   | otherwise = do
       validateUserLabels txns
       let needsLabels = findDatesNeedingLabels txns
-      (_, txns') <- foldM (\acc t -> first (appendPostingsReadAs t) $ processTransaction styles verbosetags j needsLabels acc t)
-                          (M.empty, []) (sortOn tdate txns)
+          -- Transactions with no lotful amounts can't affect lots; pass them through untouched.
+          process acc@(ls, done) t
+            | not $ transactionHasLotfulAmounts lotfulcomms t = Right (ls, t : done)
+            | otherwise = first (appendPostingsReadAs t) $ processTransaction styles verbosetags j needsLabels acc t
+      (_, txns') <- foldM process (M.empty, []) (sortOn tdate txns)
       Right (journalTieTransactions $ j{jtxns = reverse txns'})
   where
     txns = jtxns j
+    lotfulcomms = journalLotfulCommodities j
     -- Journal's canonical commodity styles, used for rendering the cost amount
     -- in lot subaccount names. NoRounding preserves the original decimal digits
     -- while still applying the canonical decimal mark, digit group separators,
@@ -1165,10 +1181,12 @@ transactionTagGainPostings tagamountless verbosetags lookupAccountType commodity
 -- (--ignore-lots) mode, amountless gain postings are left untagged, for the
 -- balancer to infer like any other posting.
 journalTagGainPostings :: Bool -> Bool -> Journal -> Either String Journal
-journalTagGainPostings lenient verbosetags j =
-  Right $ journalMapTransactions
-    (transactionTagGainPostings (not lenient) verbosetags (journalAccountType j) (journalCommodityUsesLots j) (journalAccountUsesNoLots j))
-    j
+journalTagGainPostings lenient verbosetags j = Right $ journalMapTransactions tag j
+  where
+    tag t
+      | not $ transactionHasLotfulAmounts lotfulcomms t = t  -- can't be a disposal
+      | otherwise = transactionTagGainPostings (not lenient) verbosetags (journalAccountType j) (`S.member` lotfulcomms) (journalAccountUsesNoLots j) t
+    lotfulcomms = journalLotfulCommodities j
 
 -- | Error for a disposal with a gain posting whose amount was inferred by
 -- the balancer because the disposal could only be recognised afterwards

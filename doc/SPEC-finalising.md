@@ -118,6 +118,12 @@ since they would leave the journal unchanged; on large journals this saves about
 the read time. Likewise the balancer skips its per-entry gain tagging and fee splitting for
 entries with no cost basis annotations when no commodity is lotful.
 
+Within a journal that does use lots, the lot stages that walk every transaction (gain
+tagging, classification with fee auto-splitting, and lot calculation) and the balancer's lot
+handling each skip a transaction that has no amount with a cost basis annotation or in a lotful
+commodity (`transactionHasLotfulAmounts`, a test broader than any of their own triggers). So lot
+processing costs in proportion to the lot activity, not the size of the journal.
+
 Similarly, the balancer's second pass (stepping through all postings in date order with
 running account balances) exists only to enact balance assignments and check balance
 assertions, so it is skipped when the journal has no balance assignments and no assertions

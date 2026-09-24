@@ -58,7 +58,7 @@ import Hledger.Data.Types
 import Hledger.Data.AccountName (accountNameType, isAccountNamePrefixOf)
 import Hledger.Data.Amount
 import Hledger.Data.Journal
-import Hledger.Data.Lots (isGainPosting, lotBaseAccount, transactionAutoSplitFeeOutflows, transactionTagGainPostings)
+import Hledger.Data.Lots (isGainPosting, lotBaseAccount, transactionAutoSplitFeeOutflows, transactionHasLotfulAmounts, transactionTagGainPostings)
 import Hledger.Data.Posting
 import Hledger.Data.Transaction
 import Hledger.Data.Errors
@@ -243,8 +243,8 @@ balanceTransactionHelperMaybeSplittingLotFees bopts t0
       Left _      -> balanceTransactionHelper bopts t
   where
     lotfulcomms = lotful_commodities_ bopts
-    -- Could this entry involve lots ? Only if some commodity is lotful or some amount has a cost basis.
-    haslots = not (S.null lotfulcomms) || any (any (isJust . acostbasis) . amountsRaw . pamount) (tpostings t0)
+    -- Could this entry involve lots ? Only if some amount has a cost basis or is in a lotful commodity.
+    haslots = transactionHasLotfulAmounts lotfulcomms t0
     -- Tag any user-written gain postings in a disposal first, so the balancer
     -- sets them aside. (journalFinalise does this too, but callers balancing a
     -- single entry, like hledger add, rely on it happening here.)
