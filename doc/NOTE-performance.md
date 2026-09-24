@@ -44,25 +44,25 @@ main now 2.4s.
 
 Oldest first, with the gain each gave on the 100k balance run:
 
-- a85e28a24 skip lot processing when the journal has no lot features: 5.65 -> 4.05s.
-- f33dcde8e build postings while parsing: peak residency 300 -> 254 MB, GC -0.15s.
-- d88955524 parse journal items by dispatching on the first character: 4.05 -> 3.30s, parse
+- skip lot processing when the journal has no lot features: 5.65 -> 4.05s.
+- build postings while parsing: peak residency 300 -> 254 MB, GC -0.15s.
+- parse journal items by dispatching on the first character: 4.05 -> 3.30s, parse
   allocation 25.6 -> 17.1 GB.
-- aea302a5b calculate source positions incrementally: -4% (a profile had claimed 8%).
-- 08f9eb529 skip the balancer's running-balance pass when nothing needs it: 3.27 -> 3.10s.
-- 602c9ad51 `--debug=1` prints each phase's time and allocation (the tool used for everything below).
-- e7e8c0781 infer commodity styles in one pass, inserting only changed styles: 3.15 -> 2.95s.
-- 48d636be0 skip cost/equity tagging without conversion postings: stage 0.075 -> 0.02s.
-- da04fc358 skip lot stages and lot balancing per transaction: lot journal 4.39 -> 3.26s.
-- 97aae88f4 balancer: no style inference for exactly-zero sums, no rebuilds when nothing to infer,
+- calculate source positions incrementally: -4% (a profile had claimed 8%).
+- skip the balancer's running-balance pass when nothing needs it: 3.27 -> 3.10s.
+- `--debug=1` prints each phase's time and allocation (the tool used for everything below).
+- infer commodity styles in one pass, inserting only changed styles: 3.15 -> 2.95s.
+- skip cost/equity tagging without conversion postings: stage 0.075 -> 0.02s.
+- skip lot stages and lot balancing per transaction: lot journal 4.39 -> 3.26s.
+- balancer: no style inference for exactly-zero sums, no rebuilds when nothing to infer,
   no-op cost conversions: balancing 0.20s/945MB -> 0.17s/690MB.
-- 89997e023 multiplyQuantities instead of Decimal's (*): balancing -> 0.12s/415MB; also speeds
+- multiplyQuantities instead of Decimal's (*): balancing -> 0.12s/415MB; also speeds
   -B, valuation and lot arithmetic.
-- 79be81dc5 parser: check the next character before optional syntax instead of trying it and
+- parser: check the next character before optional syntax instead of trying it and
   backtracking: parse 1.71 -> 1.28s and 17.1 -> 10.5 GB; print 3.35 -> 2.87s, register
   17.0 -> 15.3s, balance 3.02 -> 2.38s.
-- d6bfd8a37 stats: hash sets for the unique counts, no sort: the command's own work 0.70 -> 0.33s.
-- d3fda9a9a journal filters return the journal unchanged for a null query (ledgerFromJournal was
+- stats: hash sets for the unique counts, no sort: the command's own work 0.70 -> 0.33s.
+- journal filters return the journal unchanged for a null query (ledgerFromJournal was
   rebuilding it twice): stats' own work 0.33 -> 0.18s; stats run 2.5 -> 2.0s.
 
 Pending upstream: mrkkrp/megaparsec#612 (filed 2026-09-23), worth ~10% of every command when a
@@ -104,7 +104,7 @@ Measurement:
 - Splitting the journal by line kind measures a parser's share directly: `grep -v '^P '` gave a
   journal without price directives and `grep '^P '` one with only them, which showed the price
   directives costing 0.45s of the 1.7s parse.
-- `hledger stats` measures its elapsed time at the end of the command again (7241b2266); from
+- `hledger stats` measures its elapsed time at the end of the command again; from
   1.51 to 1.99.4 it measured before computing the stats, so its elapsed and txns/s covered only
   reading the journal and were ~0.5s short of `time` on the 100k journal. Per-version txns/s
   figures from those versions are not comparable with 1.25's or with current ones.
@@ -174,7 +174,7 @@ Reports:
   twice plus the render). No big cheap win.
 - Register's cost is output volume (running balance rendering), not a bug.
 - Journal filtering with a null query used to rebuild every transaction; ledgerFromJournal did it
-  twice. Now short-circuited (d3fda9a9a). Other report paths that filter with possibly-empty
+  twice. Now short-circuited. Other report paths that filter with possibly-empty
   queries may have similar no-op passes worth checking with `--debug=1`.
 
 ## Remaining ideas, ranked (general ones first)
