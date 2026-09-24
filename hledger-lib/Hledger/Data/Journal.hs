@@ -1010,12 +1010,16 @@ journalGainAccounts = sort . M.keys . M.filter (==Gain) . jaccounttypes
 
 -- | Keep only transactions matching the query expression.
 filterJournalTransactions :: Query -> Journal -> Journal
-filterJournalTransactions q j@Journal{jtxns} = j{jtxns=filter (matchesTransactionExtra (journalAccountType j) q) jtxns}
+filterJournalTransactions q j@Journal{jtxns}
+  | queryIsNull q = j  -- everything matches, nothing to do
+  | otherwise = j{jtxns=filter (matchesTransactionExtra (journalAccountType j) q) jtxns}
 
 -- | Keep only postings matching the query expression.
 -- This can leave unbalanced transactions.
 filterJournalPostings :: Query -> Journal -> Journal
-filterJournalPostings q j@Journal{jtxns=ts} = j{jtxns=map (filterTransactionPostingsExtra (journalAccountType j) q) ts}
+filterJournalPostings q j@Journal{jtxns=ts}
+  | queryIsNull q = j  -- everything matches, nothing to do
+  | otherwise = j{jtxns=map (filterTransactionPostingsExtra (journalAccountType j) q) ts}
 
 -- | Keep only postings which do not match the query expression, but for which a related posting does.
 -- This can leave unbalanced transactions.
@@ -1026,7 +1030,9 @@ filterJournalRelatedPostings q j@Journal{jtxns=ts} = j{jtxns=map (filterTransact
 -- remove any postings with all amounts removed.
 -- This can leave unbalanced transactions.
 filterJournalAmounts :: Query -> Journal -> Journal
-filterJournalAmounts q j@Journal{jtxns=ts} = j{jtxns=map (filterTransactionAmounts q) ts}
+filterJournalAmounts q j@Journal{jtxns=ts}
+  | queryIsNull q = j  -- everything matches, nothing to do
+  | otherwise = j{jtxns=map (filterTransactionAmounts q) ts}
 
 -- | Filter out all parts of this transaction's amounts which do not match the
 -- query, and remove any postings with all amounts removed.
