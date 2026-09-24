@@ -18,11 +18,10 @@ where
 import Control.Exception (evaluate)
 import Control.Monad (when)
 import Data.Default (def)
-import Data.List (intercalate, nub, sortOn)
+import Data.List (intercalate, sort)
 import Data.List.Extra (nubSort)
-import Data.Map qualified as Map
 import Data.Maybe (fromMaybe)
-import Data.HashSet (size, fromList)
+import Data.HashSet qualified as HS
 import Data.Text qualified as T
 import Data.Text.Lazy qualified as TL
 import Data.Time.Calendar (Day, addDays, diffDays)
@@ -148,7 +147,7 @@ showLedgerStats verbose l today spn =
       ,("Txns", printf "%d (%0.1f per day)" tnum txnrate)
       ,("Txns last 30 days", printf "%d (%0.1f per day)" tnum30 txnrate30)
       ,("Txns last 7 days", printf "%d (%0.1f per day)" tnum7 txnrate7)
-      ,("Payees/descriptions", show $ size $ fromList $ map (tdescription) ts)
+      ,("Payees/descriptions", show $ HS.size $ HS.fromList $ map tdescription ts)
       ,("Accounts", printf "%d (depth %d)" acctnum acctdepth)
       ,("Commodities",   printf "%s%s" (show $ length cs)        (if verbose then " (" <> T.intercalate ", " cs <> ")" else ""))
       ,("Base currency",  basecurrency)
@@ -169,11 +168,13 @@ showLedgerStats verbose l today spn =
            Just (sym, code) | sym == code -> T.unpack code
                             | otherwise   -> T.unpack $ sym <> " (" <> code <> ")"
          includedpaths = drop 1 $ journalFilePaths j
-         ts = sortOn tdate $ filter (spanContainsDate spn . tdate) $ jtxns j
-         as = nub $ map paccount $ concatMap tpostings ts
-         cs = either error' Map.keys $ commodityStylesFromAmounts $ concatMap (amountsRaw . pamount) $ concatMap tpostings ts  -- PARTIAL:
+         ts = filter (spanContainsDate spn . tdate) $ jtxns j
+         ps = concatMap tpostings ts
+         -- (hash sets: faster than sorting for these unique counts)
+         as = HS.toList $ HS.fromList $ map paccount ps
+         cs = sort $ HS.toList $ HS.fromList $ map acommodity $ concatMap (amountsRaw . pamount) ps
          lastdate | null ts = Nothing
-                  | otherwise = Just $ tdate $ last ts
+                  | otherwise = Just $ maximum $ map tdate ts
          lastelapsed = fmap (diffDays today) lastdate
          showelapsed Nothing = ""
          showelapsed (Just dys) = printf " (%d %s)" dys' direction
