@@ -1204,8 +1204,9 @@ mapMixedAmountUnsafe f (Mixed ma) = Mixed $ M.map f ma  -- Use M.map instead of 
 
 -- | Convert all component amounts to cost where possible (see amountCost).
 mixedAmountCost :: MixedAmount -> MixedAmount
-mixedAmountCost (Mixed ma) =
-    foldl' (\m a -> maAddAmount m (amountCost a)) (Mixed noCosts) withCosts
+mixedAmountCost ma0@(Mixed ma)
+  | all (isNothing . acost) ma = ma0  -- no costs (the usual case), nothing to convert
+  | otherwise = foldl' (\m a -> maAddAmount m (amountCost a)) (Mixed noCosts) withCosts
   where (noCosts, withCosts) = M.partition (isNothing . acost) ma
 
 -- | Convert all component amounts to cost basis (or else transacted cost)
@@ -1521,9 +1522,12 @@ mixedAmountSetPrecisionMax p = mapMixedAmountUnsafe (amountSetPrecisionMax p)
 
 -- | Remove all transacted costs and cost bases from a MixedAmount.
 mixedAmountStripCosts :: MixedAmount -> MixedAmount
-mixedAmountStripCosts (Mixed ma) =
-    foldl' (\m a -> maAddAmount m a{acost=Nothing, acostbasis=Nothing}) (Mixed noCosts) withCosts
-  where (noCosts, withCosts) = M.partition (\a -> isNothing (acost a) && isNothing (acostbasis a)) ma
+mixedAmountStripCosts ma0@(Mixed ma)
+  | all hasNoCosts ma = ma0  -- no costs (the usual case), nothing to strip
+  | otherwise = foldl' (\m a -> maAddAmount m a{acost=Nothing, acostbasis=Nothing}) (Mixed noCosts) withCosts
+  where
+    hasNoCosts a = isNothing (acost a) && isNothing (acostbasis a)
+    (noCosts, withCosts) = M.partition hasNoCosts ma
 
 
 -- | Render a price directive in journal format ("P DATE COMMODITY AMOUNT").

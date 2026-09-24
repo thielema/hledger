@@ -130,7 +130,10 @@ transactionCheckBalanced BalancingOpts{commodity_styles_=_mglobalstyles, txn_bal
       | isGainPosting p                            = nullmixedamt
       | otherwise                                   = mixedAmountCost $ pamount p
 
-    lookszero = case txn_balancing_ of
+    -- An exactly zero sum (the usual case) looks zero at any precision,
+    -- so the display styles are inferred and applied only for inexact sums.
+    lookszero a = mixedAmountIsZero a || lookszeroatdisplayprecision a
+    lookszeroatdisplayprecision = case txn_balancing_ of
       TBPOld    -> lookszeroatglobaldisplayprecision
       TBPExact  -> lookszeroatlocaltransactionprecision
 
@@ -317,6 +320,7 @@ transactionInferBalancingAmount ::
   -> Transaction
   -> Either String (Transaction, [(AccountName, MixedAmount)])
 transactionInferBalancingAmount styles _atypes t@Transaction{tpostings=ps}
+  | all hasAmount ps = Right (t, [])  -- nothing to infer (the usual case), keep the transaction as is
   | length amountlessrealps > 1
       = Left $ transactionBalanceError t
         ["There can't be more than one real posting with no amount."
@@ -407,9 +411,12 @@ transactionInferBalancingAmount styles _atypes t@Transaction{tpostings=ps}
 -- print command a bit less surprising in this case. Could do better.)
 --
 transactionInferBalancingCosts :: Bool -> S.Set CommoditySymbol -> Transaction -> Transaction
-transactionInferBalancingCosts lenientlots lotfulcomms t@Transaction{tpostings=ps} = t{tpostings=ps'}
+transactionInferBalancingCosts lenientlots lotfulcomms t@Transaction{tpostings=ps} =
+  case (inferrerFor RealPosting, inferrerFor BalancedVirtualPosting) of
+    (Nothing, Nothing) -> t  -- no costs can be inferred (the usual case), keep the transaction as is
+    (mreal, mbv)       -> t{tpostings=map (fromMaybe id mbv . fromMaybe id mreal) ps}
   where
-    ps' = map (costInferrerFor lenientlots lotfulcomms t BalancedVirtualPosting . costInferrerFor lenientlots lotfulcomms t RealPosting) ps
+    inferrerFor = costInferrerFor lenientlots lotfulcomms t
 
 -- | Does one of these postings make this commodity look lot-related ?
 -- True if the commodity appears in a posting amount with a cost basis
@@ -462,10 +469,10 @@ lotMismatchCommodities lotfulcomms postings =
 
 -- | Generate a posting update function which assigns a suitable cost to
 -- balance the posting, if and as appropriate for the given transaction and
--- posting realness (real or balanced virtual) (or if we cannot or should not infer
--- costs, leaves the posting unchanged).
-costInferrerFor :: Bool -> S.Set CommoditySymbol -> Transaction -> PostingRealness -> (Posting -> Posting)
-costInferrerFor lenientlots lotfulcomms t pt = maybe id infercost inferFromAndTo
+-- posting realness (real or balanced virtual); or Nothing if we cannot or
+-- should not infer costs.
+costInferrerFor :: Bool -> S.Set CommoditySymbol -> Transaction -> PostingRealness -> Maybe (Posting -> Posting)
+costInferrerFor lenientlots lotfulcomms t pt = infercost <$> inferFromAndTo
   where
     lbl = lbl_ "costInferrerFor"
     postings     = filter (\p -> preal p == pt && not (isGainPosting p)) $ tpostings t  -- gain postings are set aside, as in transactionCheckBalanced
