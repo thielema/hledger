@@ -58,8 +58,10 @@ Running any hledger command with `--debug=1` (or higher) reports on stderr the r
 memory allocation of each phase: reading and parsing the data, each stage of journal finalising,
 and the command itself (see `dbgTime` in Hledger.Utils.Debug). Each stage's result is fully
 evaluated to measure it (and the cost of that evaluation is excluded), so this describes a strict
-evaluation of the pipeline, but the totals closely match normal runs. Allocation figures are
-deterministic, so they are a reliable guide even on a busy machine.
+evaluation of the pipeline, but the totals closely match normal runs. One consequence: work that
+a normal run leaves unevaluated is charged too, eg inferred market prices, which only valuation
+uses, appear as a cost of every command. Allocation figures are deterministic, so they are a
+reliable guide even on a busy machine.
 
 ## Fine-grained measurements
 
