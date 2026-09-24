@@ -15,6 +15,7 @@ module Hledger.Cli.Commands.Stats (
 )
 where
 
+import Control.Exception (evaluate)
 import Control.Monad (when)
 import Data.Default (def)
 import Data.List (intercalate, nub, sortOn)
@@ -56,7 +57,6 @@ statsmode = hledgerCommandMode
 stats :: CliOpts -> Journal -> IO ()
 stats opts@CliOpts{rawopts_=rawopts, reportspec_=rspec, progstarttime_} j = do
   printTitle $ _rsReportOpts rspec
-  t <- getPOSIXTime
   -- the first lines - general journal stats for one or more periods
   let
     today = _rsDay rspec
@@ -68,6 +68,10 @@ stats opts@CliOpts{rawopts_=rawopts, reportspec_=rspec, progstarttime_} j = do
     ismultiperiod = length intervalspans > 1
     (txts, tnums) = unzip . map (showLedgerStats verbose l today) $ maybeDayPartitionToDateSpans intervalspans
     out1 = (if ismultiperiod then id else init) $ unlines txts
+  when (not oneline) $ writeOutput opts out1
+  -- Ensure the stats have been computed even when not printed (in one-line mode),
+  -- so that the run time measured below includes computing them.
+  tnum <- evaluate $ sum tnums
 
   -- the last line - overall performance stats, with memory info if available,
   -- in human-friendly or machine-friendly format
@@ -88,12 +92,15 @@ stats opts@CliOpts{rawopts_=rawopts, reportspec_=rspec, progstarttime_} j = do
     return (toMegabytes max_live_bytes, toMegabytes max_mem_in_use_bytes)
   else
     return (0,0)
+  -- Measure the run time as late as possible, so that it includes reading the journal,
+  -- computing and printing the stats above, and the memory measurement; only printing
+  -- this line and exiting are left out, so it should agree closely with `time hledger stats`.
+  t <- getPOSIXTime
   let
     (label, sep)
       | oneline   = (lstrip $ versionStringWith $$tGitInfoCwdTry False "" packageversion <> "\t", "\t")
       | otherwise = (printf "%-*s: " labelwidth ("Runtime stats" :: String), ", ")
     dt = t - progstarttime_
-    tnum = sum tnums
     ss =
       [ takeFileName $ journalFilePath j | oneline ]
       <> [
@@ -110,7 +117,6 @@ stats opts@CliOpts{rawopts_=rawopts, reportspec_=rspec, progstarttime_} j = do
       ]
     out2 = label <> intercalate sep ss <> "\n"
 
-  when (not oneline) $ writeOutput opts out1
   when (oneline && debugLevel>0) $ do
     let tabstops = intercalate (replicate 7 ' ') (replicate 21 ".") <> "\n"
     writeOutput opts tabstops
