@@ -42,7 +42,7 @@ import Hledger.Cli.Version (packageversion, versionStringWith)
 
 statsmode = hledgerCommandMode
   $(embedFileRelative "Hledger/Cli/Commands/Stats.txt")
-  [ flagNone ["oneline"] (setboolopt "oneline") "show a single line of output"
+  [ flagNone ["oneline","q"] (setboolopt "oneline") "show a single line of output"
       -- Cli.hs converts -1 to --depth=1, no point giving it another name here
   , flagNone ["verbose","v"] (setboolopt "verbose") "show more detailed output"
   ,flagReq  ["output-file","o"] (\s opts -> Right $ setopt "output-file" s opts) "FILE" "write output to FILE."
@@ -59,7 +59,7 @@ stats opts@CliOpts{rawopts_=rawopts, reportspec_=rspec, progstarttime_} j = do
   -- the first lines - general journal stats for one or more periods
   let
     today = _rsDay rspec
-    oneline = intopt "depth" rawopts == 1
+    oneline = boolopt "oneline" rawopts
     verbose = boolopt "verbose" rawopts
     q = _rsQuery rspec
     l = ledgerFromJournal q j

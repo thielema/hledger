@@ -4,7 +4,7 @@ Show journal and performance statistics.
 
 ```flags
 Flags:
-     --oneline              show a single line of output
+  -q --oneline              show a single line of output
   -v --verbose              show more detailed output
   -o --output-file=FILE     write output to FILE.
 ```
@@ -26,7 +26,7 @@ it reveals the main file name, your activity level, and the speed of your machin
 With `-v/--verbose`, more details are shown:
 the full paths of all files, and the names of the commodities you work with.
 
-With `-1`, only one line of output is shown, in a machine-friendly
+With `-q/--oneline`, only one line of output is shown, in a machine-friendly
 tab-separated format: the program version, the main journal file name,
 and the performance stats,
 
@@ -52,7 +52,7 @@ Runtime stats       : 0.12 s elapsed, 8266 txns/s, 4 MB live, 16 MB alloc
 ```
 
 ```cli
-$ hledger stats -1 -f examples/10ktxns-1kaccts.journal
+$ hledger stats -q -f examples/10ktxns-1kaccts.journal
 1.50.99-g0835a2485-20251119, mac-aarch64	10ktxns-1kaccts.journal	0.66 s elapsed	15244 txns/s	28 MB live	86 MB alloc
 ```
 

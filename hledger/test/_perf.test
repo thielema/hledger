@@ -6,7 +6,7 @@
 # but it's hard to ensure consistent machine performance.
 
 # ** 1. Log performance stats.
-$ hledger stats -1 -f ../../examples/10ktxns-1kaccts.journal >>../../perf.log
+$ hledger stats -q -f ../../examples/10ktxns-1kaccts.journal >>../../perf.log
 
 # ** 2. Test that it hits at least 14k txns/s within a few runs.
-$ hledger stats -1 -f ../../examples/10ktxns-1kaccts.journal >>../../perf.log; hledger stats -1 -f ../../examples/10ktxns-1kaccts.journal >>../../perf.log; hledger stats -1 -f ../../examples/10ktxns-1kaccts.journal >>../../perf.log; tail -3 ../../perf.log | grep -qE '[1-9][4-9]... txns/s' 
+$ hledger stats -q -f ../../examples/10ktxns-1kaccts.journal >>../../perf.log; hledger stats -q -f ../../examples/10ktxns-1kaccts.journal >>../../perf.log; hledger stats -q -f ../../examples/10ktxns-1kaccts.journal >>../../perf.log; tail -3 ../../perf.log | grep -qE '[1-9][4-9]... txns/s' 
