@@ -33,11 +33,11 @@ getBalanceR = do
   -- The period parameter is a period expression as for -p: an interval
   -- ("monthly"), a date span ("2024"), or both ("monthly in 2024").
   -- An empty one is no period at all, as from a search form with nothing in it.
-  mperiod <- (>>= \p -> if T.null p then Nothing else Just p) <$> lookupGetParam "period"
+  mperiod <- lookupGetParam "period"
   let filtered = if q /= Any then ", filtered" else "" :: Text
       rspecOrig = reportspec_ $ cliopts_ opts
       roptsOrig = _rsReportOpts rspecOrig
-      eperiod = case mperiod of
+      eperiod = case mfilter (not . T.null) mperiod of
         -- No period: keep the interval the server was started with (-M, -p ...).
         Nothing -> Right (interval_ roptsOrig, nulldatespan)
         Just p  -> either (Left . errorBundlePretty) Right $ parsePeriodExpr today p
