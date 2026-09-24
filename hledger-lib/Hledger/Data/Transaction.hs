@@ -334,7 +334,10 @@ transactionAddHiddenAndMaybeVisibleTag verbosetags ht t@Transaction{tcomment=c, 
 -- The name reflects the complexity of this and its helpers; clarification is ongoing.
 --
 transactionTagCostsAndEquityAndMaybeInferCosts :: Bool -> Bool -> [AccountName] -> Transaction -> Either String Transaction
-transactionTagCostsAndEquityAndMaybeInferCosts verbosetags1 addcosts conversionaccts t = first (annotateErrorWithTransaction t . T.unpack) $ do
+transactionTagCostsAndEquityAndMaybeInferCosts verbosetags1 addcosts conversionaccts t
+  -- Without conversion postings there is nothing to tag or infer, so skip the work (and the rebuild) below.
+  | not $ any ((`elem` conversionaccts) . paccount) $ tpostings t = Right t
+  | otherwise = first (annotateErrorWithTransaction t . T.unpack) $ do
   -- number the postings
   let npostings = zip [0..] $ tpostings t
 

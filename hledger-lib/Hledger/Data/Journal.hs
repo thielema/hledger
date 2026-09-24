@@ -1468,10 +1468,12 @@ journalToCost cost j@Journal{jtxns=ts} = j{jtxns=map (transactionToCost cost) ts
 -- With --infer-costs, it is called again after transaction balancing (when it has more information to work with) to infer costs from equity postings.
 -- See transactionTagCostsAndEquityAndMaybeInferCosts for more details, and hledger manual > Cost reporting for more background.
 journalTagCostsAndEquityAndMaybeInferCosts :: Bool -> Bool -> Journal -> Either String Journal
-journalTagCostsAndEquityAndMaybeInferCosts verbosetags addcosts j = do
-  let conversionaccts = journalConversionAccounts j
-  ts <- mapM (transactionTagCostsAndEquityAndMaybeInferCosts verbosetags addcosts conversionaccts) $ jtxns j
-  return j{jtxns=ts}
+journalTagCostsAndEquityAndMaybeInferCosts verbosetags addcosts j
+  | null conversionaccts = Right j  -- no conversion accounts, so no conversion postings: nothing to do
+  | otherwise = do
+      ts <- mapM (transactionTagCostsAndEquityAndMaybeInferCosts verbosetags addcosts conversionaccts) $ jtxns j
+      return j{jtxns=ts}
+  where conversionaccts = journalConversionAccounts j
 
 -- | Add equity postings inferred from costs, where needed and possible.
 -- See hledger manual > Cost reporting.
