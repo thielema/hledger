@@ -17,19 +17,19 @@ and are deterministic, wall time varies by a few percent.
 `hledger bal -f examples/100ktxns-1kaccts.journal --debug=1`, about 2.3s in total (2.2s in a
 normal run):
 
-| phase | time | allocation | notes |
-|---|---|---|---|
-| startup + read | 0.05s | 70 MB | |
-| parse | 1.28s | 10.5 GB | 55% of the run; ~10% of it is the megaparsec regression (below) |
-| journalReverse | 0.09s | 12 MB | a GC pause landing in this slot; the stage itself is trivial |
-| journalAddAccountTypes | 0.04s | 161 MB | |
-| journalStyleAmounts | 0.22s | 197 MB | rebuilds every posting to set display styles |
-| journalTagCostsAndEquityAndMaybeInferCosts | 0.02s | 136 MB | skipped per transaction unless conversion accounts are involved |
-| journalBalanceTransactionsAndDeferAssertions | 0.10s | 415 MB | pass 2 skipped (no assertions/assignments) |
-| journalInferCommodityStyles | 0.05s | 61 MB | |
-| journalInferMarketPricesFromTransactions | 0.06s | 348 MB | timer artifact: only valuation consumes this lazily-built list |
-| balance command | 0.37s | 1.1 GB | account tree building, rendering |
-| GC, spread across all of the above | 0.69s | | 31% of the run; 12.6 GB allocated, 262 MB max residency, ~0.8 GB RSS |
+| phase                                        | time  | allocation | notes                                                                |
+|----------------------------------------------|-------|------------|----------------------------------------------------------------------|
+| startup + read                               | 0.05s | 70 MB      |                                                                      |
+| parse                                        | 1.28s | 10.5 GB    | 55% of the run; ~10% of it is the megaparsec regression (below)      |
+| journalReverse                               | 0.09s | 12 MB      | a GC pause landing in this slot; the stage itself is trivial         |
+| journalAddAccountTypes                       | 0.04s | 161 MB     |                                                                      |
+| journalStyleAmounts                          | 0.22s | 197 MB     | rebuilds every posting to set display styles                         |
+| journalTagCostsAndEquityAndMaybeInferCosts   | 0.02s | 136 MB     | skipped per transaction unless conversion accounts are involved      |
+| journalBalanceTransactionsAndDeferAssertions | 0.10s | 415 MB     | pass 2 skipped (no assertions/assignments)                           |
+| journalInferCommodityStyles                  | 0.05s | 61 MB      |                                                                      |
+| journalInferMarketPricesFromTransactions     | 0.06s | 348 MB     | timer artifact: only valuation consumes this lazily-built list       |
+| balance command                              | 0.37s | 1.1 GB     | account tree building, rendering                                     |
+| GC, spread across all of the above           | 0.69s |            | 31% of the run; 12.6 GB allocated, 262 MB max residency, ~0.8 GB RSS |
 
 Other commands on the same journal, quickbench best of 2: print 2.87s, register 15.3s (rendering
 a 26-commodity running balance for 200k lines; real journals have few commodities), balance
@@ -44,46 +44,50 @@ main now 2.4s.
 
 Oldest first, with the gain each gave on the 100k balance run:
 
-- a950e927f skip lot processing when the journal has no lot features: 5.65 -> 4.05s.
-- 2255922e8 build postings while parsing: peak residency 300 -> 254 MB, GC -0.15s.
-- 947c6132a parse journal items by dispatching on the first character: 4.05 -> 3.30s, parse
+- a85e28a24 skip lot processing when the journal has no lot features: 5.65 -> 4.05s.
+- f33dcde8e build postings while parsing: peak residency 300 -> 254 MB, GC -0.15s.
+- d88955524 parse journal items by dispatching on the first character: 4.05 -> 3.30s, parse
   allocation 25.6 -> 17.1 GB.
-- 1fa99142b calculate source positions incrementally: -4% (a profile had claimed 8%).
-- 3a2907e02 skip the balancer's running-balance pass when nothing needs it: 3.27 -> 3.10s.
-- 9c05111a7 `--debug=1` prints each phase's time and allocation (the tool used for everything below).
-- 0f4a74d9d infer commodity styles in one pass, inserting only changed styles: 3.15 -> 2.95s.
-- 3dd390e41 skip cost/equity tagging without conversion postings: stage 0.075 -> 0.02s.
-- 19f772ebf skip lot stages and lot balancing per transaction: lot journal 4.39 -> 3.26s.
-- ed7e32d2b balancer: no style inference for exactly-zero sums, no rebuilds when nothing to infer,
+- aea302a5b calculate source positions incrementally: -4% (a profile had claimed 8%).
+- 08f9eb529 skip the balancer's running-balance pass when nothing needs it: 3.27 -> 3.10s.
+- 602c9ad51 `--debug=1` prints each phase's time and allocation (the tool used for everything below).
+- e7e8c0781 infer commodity styles in one pass, inserting only changed styles: 3.15 -> 2.95s.
+- 48d636be0 skip cost/equity tagging without conversion postings: stage 0.075 -> 0.02s.
+- da04fc358 skip lot stages and lot balancing per transaction: lot journal 4.39 -> 3.26s.
+- 97aae88f4 balancer: no style inference for exactly-zero sums, no rebuilds when nothing to infer,
   no-op cost conversions: balancing 0.20s/945MB -> 0.17s/690MB.
-- 16e5246d5 multiplyQuantities instead of Decimal's (*): balancing -> 0.12s/415MB; also speeds
+- 89997e023 multiplyQuantities instead of Decimal's (*): balancing -> 0.12s/415MB; also speeds
   -B, valuation and lot arithmetic.
-- parser: check the next character before optional syntax instead of trying it and backtracking
-  (the commit this note update belongs to): parse 1.71 -> 1.28s and 17.1 -> 10.5 GB; print
-  3.35 -> 2.87s, register 17.0 -> 15.3s, balance 3.02 -> 2.38s.
+- 79be81dc5 parser: check the next character before optional syntax instead of trying it and
+  backtracking: parse 1.71 -> 1.28s and 17.1 -> 10.5 GB; print 3.35 -> 2.87s, register
+  17.0 -> 15.3s, balance 3.02 -> 2.38s.
+- d6bfd8a37 stats: hash sets for the unique counts, no sort: the command's own work 0.70 -> 0.33s.
+- d3fda9a9a journal filters return the journal unchanged for a null query (ledgerFromJournal was
+  rebuilding it twice): stats' own work 0.33 -> 0.18s; stats run 2.5 -> 2.0s.
 
 Pending upstream: mrkkrp/megaparsec#612 (filed 2026-09-23), worth ~10% of every command when a
 fixed release can be required; the patch (INLINE pragmas on the Stream instances) is on the fork
 branch inline-stream-instances, PR to be opened only if the maintainer asks.
 
-# Performance across releases
+## Performance across releases
 
-Here is the performance of some recent releases on this machine.
-Consistently slower since 1.25, and now faster again (except for register, which got consistently faster).
-```
-~/src/hledger$ quickbench -w hledger-1.25,hledger-1.40,hledger-1.52,hledger-1.99.4,hledger
-Running 1 cycles of 4 tests best of 1 times with 5 executables at 2026-09-23 23:19:25 HST:
+Here is the performance of some notable releases on this machine
+(`quickbench -w hledger-1.25,hledger-1.40,hledger-1.52,hledger-1.99.4,hledger` on 2026-09-23,
+showing seconds, for the 100k-transaction journal):
 
-Best of 1 times:
-+-----------------------------------------------++--------------+--------------+--------------+----------------+---------+
-|                                               || hledger-1.25 | hledger-1.40 | hledger-1.52 | hledger-1.99.4 | hledger |
-+===============================================++==============+==============+==============+================+=========+
-| -f examples/100ktxns-1kaccts.journal stats    ||         2.70 |         3.95 |         4.29 |           5.96 |    2.46 |
-| -f examples/100ktxns-1kaccts.journal balance  ||         2.68 |         3.92 |         4.06 |           5.80 |    2.30 |
-| -f examples/100ktxns-1kaccts.journal print    ||         3.24 |         4.27 |         4.42 |           6.32 |    2.86 |
-| -f examples/100ktxns-1kaccts.journal register ||        71.99 |        30.22 |        20.73 |          19.02 |   15.29 |
-+-----------------------------------------------++--------------+--------------+--------------+----------------+---------+
-```
+| command    |  1.25 |  1.40 |  1.52 | 1.99.4 | latest |  since 1.25 |  since 1.52 | since 1.99.4 |
+|------------|------:|------:|------:|-------:|-------:|------------:|------------:|-------------:|
+| stats      |  2.70 |  3.95 |  4.29 |   5.96 |   2.00 |  35% (1.4x) | 114% (2.1x) |  198% (3.0x) |
+| balance    |  2.68 |  3.92 |  4.06 |   5.80 |   2.15 |  25% (1.2x) |  89% (1.9x) |  170% (2.7x) |
+| print      |  3.24 |  4.27 |  4.42 |   6.32 |   2.84 |  14% (1.1x) |  56% (1.6x) |  123% (2.2x) |
+| register   | 71.99 | 30.22 | 20.73 |  19.02 |  14.17 | 408% (5.1x) |  46% (1.5x) |   34% (1.3x) |
+| **txns/s** |   37k |   25k | 23k * |  17k * |    52k |  41% (1.4x) | 126% (2.3x) |  206% (3.1x) |
+
+(\* adjusted real values, not the too-high value shown by hledger 1.51 through 1.99.4)
+
+Summary: latest hledger is the fastest-ever hledger:
+3x faster than the last preview release, 2x faster than the
+current hledger 1 release, and 1.2x faster than hledger 1.25.
 
 ## Findings worth remembering
 
@@ -100,6 +104,10 @@ Measurement:
 - Splitting the journal by line kind measures a parser's share directly: `grep -v '^P '` gave a
   journal without price directives and `grep '^P '` one with only them, which showed the price
   directives costing 0.45s of the 1.7s parse.
+- `hledger stats` measures its elapsed time at the end of the command again (7241b2266); from
+  1.51 to 1.99.4 it measured before computing the stats, so its elapsed and txns/s covered only
+  reading the journal and were ~0.5s short of `time` on the 100k journal. Per-version txns/s
+  figures from those versions are not comparable with 1.25's or with current ones.
 - Allocation is the reliable signal: it is deterministic and tracks GC cost. Wall time on this
   machine is noisy at the 3-5% level (one quickbench run "showed" a print slowdown that vanished on
   rerun).
@@ -165,6 +173,9 @@ Reports:
   of its 0.37s; rendering calls showMixedAmountB three times per account (column width computed
   twice plus the render). No big cheap win.
 - Register's cost is output volume (running balance rendering), not a bug.
+- Journal filtering with a null query used to rebuild every transaction; ledgerFromJournal did it
+  twice. Now short-circuited (d3fda9a9a). Other report paths that filter with possibly-empty
+  queries may have similar no-op passes worth checking with `--debug=1`.
 
 ## Remaining ideas, ranked (general ones first)
 
