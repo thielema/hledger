@@ -1284,24 +1284,24 @@ journalCommodityStylesWith r = amountStylesSetRounding r . journalCommodityStyle
 -- P directive amounts, posting amounts but not cost amounts, and maybe the last D amount, in that commodity.
 -- Can return an error message eg if inconsistent number formats are found.
 journalInferCommodityStyles :: Journal -> Either String Journal
-journalInferCommodityStyles j = do
-  -- Infer styles in two passes: from all amounts (for formatting like symbol
-  -- placement, decimal mark, digit groups), and from explicitly-written amounts
-  -- only (for precision). Inferred balancing amounts must not raise the
-  -- journal-wide display precision and surprise the user.
-  allStyles  <- commodityStylesFromAmounts $ styleInfluencingAmts id
-  explStyles <- commodityStylesFromAmounts $ styleInfluencingAmts (filter isExplicitAmount)
-  let withExplicitPrecision sym s =
-        maybe s (\s' -> s{asprecision = asprecision s'}) $ M.lookup sym explStyles
-  return j{jinferredcommoditystyles =
-             dbg7 "journalInferCommodityStyles" $
-             M.mapWithKey withExplicitPrecision allStyles}
+journalInferCommodityStyles j =
+  Right j{jinferredcommoditystyles = dbg7 "journalInferCommodityStyles" $ M.mapWithKey withExplicitPrecision allstyles}
   where
-    -- Default commodity (D) amount + price directive amounts + posting amounts
-    -- selected by the given filter. Costs are not included.
-    styleInfluencingAmts pfilter =
-      catMaybes (mdefaultcommodityamt : map (Just . pdamount) (jpricedirectives j))
-      ++ concatMap (amountsRaw . pamount) (pfilter (journalPostings j))
+    -- Styles are inferred from all amounts (for formatting like symbol placement,
+    -- decimal mark, digit groups), but precision only from explicitly-written amounts:
+    -- inferred balancing amounts must not raise the journal-wide display precision
+    -- and surprise the user. Both style maps are accumulated in one traversal of the
+    -- postings, with the directive amounts added last so that they take precedence.
+    withExplicitPrecision sym s = maybe s (\s' -> s{asprecision = asprecision s'}) $ M.lookup sym explstyles
+    allstyles  = addAmountStyles directiveamts allpostingstyles
+    explstyles = addAmountStyles directiveamts explpostingstyles
+    (allpostingstyles, explpostingstyles) = foldr addPostingStyles (mempty, mempty) $ journalPostings j
+    addPostingStyles p (!allsts, !explsts) =
+      (addAmountStyles amts allsts, if isExplicitAmount p then addAmountStyles amts explsts else explsts)
+      where amts = amountsRaw $ pamount p
+    addAmountStyles amts styles = foldr addAmountStyle styles amts
+    -- The default commodity (D) amount and price directive amounts. Costs are not included.
+    directiveamts = catMaybes (mdefaultcommodityamt : map (Just . pdamount) (jpricedirectives j))
     mdefaultcommodityamt =
       (\(sym,style) -> nullamt{acommodity=sym, astyle=style}) <$> jparsedefaultcommodity j
 

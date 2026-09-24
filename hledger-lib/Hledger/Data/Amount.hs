@@ -81,6 +81,7 @@ module Hledger.Data.Amount (
   amountStylesSetRounding,
   amountUnstyled,
   commodityStylesFromAmounts,
+  addAmountStyle,
   -- canonicalStyleFrom,
   getAmounts,
 
@@ -707,8 +708,18 @@ amountUnstyled a = a{astyle=amountstyle}
 -- Currently we don't enforce that even within a single file,
 -- and this function never reports an error.
 commodityStylesFromAmounts :: [Amount] -> Either String (M.Map CommoditySymbol AmountStyle)
-commodityStylesFromAmounts =
-  Right . foldr (\a -> M.insertWith canonicalStyle (acommodity a) (astyle a)) mempty
+commodityStylesFromAmounts = Right . foldr addAmountStyle mempty
+
+-- | Add an amount's style to a map of commodity styles, merging it into its
+-- commodity's canonical style so far (see canonicalStyle). Amounts are added
+-- in reverse order of appearance, so that the first amount's general style wins.
+-- When the amount's style adds nothing new, which is the common case, the map
+-- is returned unchanged.
+addAmountStyle :: Amount -> M.Map CommoditySymbol AmountStyle -> M.Map CommoditySymbol AmountStyle
+addAmountStyle Amount{acommodity=c, astyle=s} styles =
+  case M.lookup c styles of
+    Nothing -> M.insert c s styles
+    Just s0 -> let s' = canonicalStyle s s0 in if s' == s0 then styles else M.insert c s' styles
 
 -- -- | Given a list of amount styles (assumed to be from parsed amounts
 -- -- in a single commodity), in parse order, choose a canonical style.
