@@ -81,6 +81,70 @@ It also uses a third less system memory (578 MB, vs 1.52's 868 MB).
 Other measurements:\
 on a macbook air m1, hledger 1.25 processes about 25k txns/s, and hledger 1.40 about 16k txns/s.
 
+### Other apps
+
+As of September 2026: other plain text accounting apps on the same machine and the
+same synthetic journals (`examples/1ktxns-1kaccts.journal`, 10k, 100k). Ledger reads these
+journal files directly, unchanged; for Beancount and rustledger (a Rust reimplementation of
+Beancount) they are converted with `hledger print --export -o FILE.beancount`, which keeps the
+price directives. Times are seconds (best of two runs) and peak memory (RSS), measured with
+GNU time; runs over 10 GB were killed. Note these journals are a particular shape (many commodities,
+accounts, costs, and price directives); and the apps have different features and don't do identical work
+(eg they do more or less data inference, validation, etc), so treat this as a rough sketch.
+Tackler and others are not yet measured.
+
+**Check** (`hledger check`, `ledger source`, `bean-check`, `rledger check`):
+
+| app                        |   1k txns     |   10k txns    |   100k txns     |
+|----------------------------|--------------:|--------------:|----------------:|
+| hledger 1.52               | 0.15s, 54 MB  | 0.39s, 126 MB | 3.6s, 744 MB    |
+| hledger main               | 0.04s, 52 MB  | 0.12s, 93 MB  | 1.1s, 587 MB    |
+| Ledger 3.4.1               | 0.01s, 14 MB  | 0.05s, 46 MB  | 0.54s, 364 MB   |
+| Beancount 2.3.6            | 0.06s, 32 MB  | 0.28s, 63 MB  | 4.8s, 727 MB    |
+| Beancount 3.2.3            | 0.07s, 34 MB  | 0.31s, 65 MB  | 5.0s, 730 MB (0.8s with its cache) |
+| rustledger 0.10.0          | <0.01s, 15 MB | 0.02s, 58 MB  | 0.35s, 449 MB   |
+
+**Balance report** (`hledger balance`, `ledger balance`, `bean-query FILE 'select account,
+sum(position) group by account'`, `rledger report FILE balances`):
+
+| app                        |   1k txns     |   10k txns    |   100k txns     |
+|----------------------------|--------------:|--------------:|----------------:|
+| hledger 1.52               | 0.08s, 56 MB  | 0.45s, 128 MB | 4.0s, 868 MB    |
+| hledger main               | 0.05s, 57 MB  | 0.19s, 101 MB | 1.4s, 573 MB    |
+| Ledger 3.4.1               | 0.03s, 16 MB  | 0.17s, 55 MB  | 18s, 405 MB     |
+| Beancount 2.3.6            | 0.12s, 36 MB  | 0.39s, 68 MB  | 3.3s, 520 MB    |
+| Beancount 3.2.3 (beanquery 0.2.0) | 0.12s, 42 MB | 0.46s, 74 MB | 4.0s, 525 MB |
+| rustledger 0.10.0          | <0.01s, 14 MB | 0.03s, 59 MB  | 0.24s, 296 MB   |
+
+**Print** (`hledger print`, `ledger print`):
+
+| app                        |   1k txns     |   10k txns    |   100k txns     |
+|----------------------------|--------------:|--------------:|----------------:|
+| hledger 1.52               | 0.08s, 54 MB  | 0.45s, 129 MB | 4.5s, 849 MB    |
+| hledger main               | 0.04s, 54 MB  | 0.22s, 93 MB  | 2.0s, 573 MB    |
+| Ledger 3.4.1               | 0.04s, 59 MB  | 2.0s, 4.1 GB  | not run         |
+
+**Register** (`hledger register`, `ledger register`):
+
+| app                        |   1k txns     |   10k txns    |   100k txns     |
+|----------------------------|--------------:|--------------:|----------------:|
+| hledger 1.52               | 0.19s, 89 MB  | 1.4s, 132 MB  | 14s, 852 MB     |
+| hledger main               | 0.15s, 84 MB  | 1.1s, 123 MB  | 11-14s, 666 MB  |
+| Ledger 3.4.1               | 0.20s, 59 MB  | 6.1s, 4.1 GB  | killed, over 12 GB |
+
+With a typical one-year journal (1k transactions), all of these apps answer in a fraction of a
+second, and the differences are hundredths of a second, much of it startup cost: a balance report
+takes under 0.01s with rustledger, 0.03s with Ledger, 0.05s with hledger main (0.08s with 1.52),
+and about 0.1s with Beancount.
+(hledger's and Ledger's `register` reports take 0.15-0.2s even at this size, since they render a
+line and a running balance for every posting.)
+
+With large journals (10k and 100k transactions) the apps separate: rustledger is fastest by far
+(about 5x faster than hledger main at 100k, with half the memory); Beancount 2 and 3 are 2x slower
+than hledger main at 10k and 2-4x slower at 100k (3 is no faster than 2 here, apart from its cache
+for repeated runs); and Ledger grows superlinearly on these journals, in time (balance: 18s at
+100k) and memory (print and register need 4 GB at 10k).
+
 <!-- When a release is made, update these tables (and the "main" wording above). -->
 
 ## What makes runs slower
