@@ -3,9 +3,9 @@
 How fast hledger is, what makes it slower, and (for developers) how to measure it and what we
 have learned about making it faster.
 
-- [How fast is hledger?](#how-fast-is-hledger): [A real journal](#a-real-journal), [Across releases](#across-releases), [Other apps](#other-apps)
+- [How fast is hledger?](#how-fast-is-hledger)
 - [What makes runs slower](#what-makes-runs-slower)
-- [For developers](#for-developers): [Measuring](#measuring), [Where the time goes](#where-the-time-goes), [What we have learned](#what-we-have-learned)
+- [For developers](#for-developers)
 
 ## How fast is hledger?
 
