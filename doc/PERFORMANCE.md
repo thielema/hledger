@@ -3,7 +3,7 @@
 How fast hledger is, what makes it slower, and (for developers) how to measure it and what we
 have learned about making it faster.
 
-- [How fast is hledger?](#how-fast-is-hledger)
+- [How fast is hledger?](#how-fast-is-hledger): [A real journal](#a-real-journal), [Across releases](#across-releases), [Other apps](#other-apps)
 - [What makes runs slower](#what-makes-runs-slower)
 - [For developers](#for-developers): [Measuring](#measuring), [Where the time goes](#where-the-time-goes), [What we have learned](#what-we-have-learned)
 
@@ -29,8 +29,8 @@ On a macbook pro m5 pro running hledger's main branch in September 2026
 
 ### A real journal
 
-Reports on a current-year journal are basically instant; so
-here are report times for a 20-year personal journal with 21k transactions in 87 included files,
+Reports on a current-year journal are basically instant,
+so here are times for a larger 20-year personal journal with 21k transactions in 87 included files,
 1990 accounts, 36 commodities, 5k price directives, with comments or tags on many entries,
 costs, lots, and balance assertions on 14% of transactions.
 Times are seconds, best of three runs (and using -I to work around some old data breakage):
@@ -170,6 +170,13 @@ cache; Beancount 2 and 3 are 2x slower than hledger main at 10k and 3-5x slower 
 run (3 is no faster than 2 here), though their cache makes a repeated check fast; and Ledger grows
 superlinearly on these journals, in time (balance: 18s at 100k) and memory (print and register need
 4 GB at 10k).
+
+Some published figures from elsewhere
+(different machines, data and methods, may be outdated):
+
+- [Tackler](https://tackler.e257.fi/) "processes 700,000 to 900,000 transactions per second on a modern laptop"
+- [rustledger](https://rustledger.github.io/about/comparison.html) "10-30x faster than Beancount"
+- [Beancount](https://beancount.github.io/docs/beancount_v3.html) "loads hundreds of thousands of transactions in about 2 seconds"
 
 <!-- When a release is made, update these tables (and the "main" wording above). -->
 
