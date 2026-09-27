@@ -91,21 +91,28 @@ on a macbook air m1, hledger 1.25 processes about 25k txns/s, and hledger 1.40 a
 
 ### Other apps
 
-As of September 2026: other plain text accounting apps on the same machine and the
-same synthetic journals (`examples/1ktxns-1kaccts.journal`, 10k, 100k, 1M). Ledger reads these
-files directly; for Beancount and rustledger (a Rust reimplementation of Beancount)
+As of September 2026: other plain text accounting apps are tested on the same machine with the
+same synthetic journals (`examples/1ktxns-1kaccts.journal`, 10k, 100k, 1M). 
+
+- Ledger reads these files directly.
+- For Beancount and rustledger (a Rust reimplementation of Beancount)
 they are converted with `hledger print --export -o FILE.beancount`, which keeps the
-price directives; for Tackler, `hledger print` output with the description quoted, `@@` written as `=`,
+price directives.
+- For Tackler, I use `hledger print` output with the description quoted, `@@` written as `=`,
 and the price directives dropped (Tackler keeps prices in a separate database).
-Times are seconds (best of two runs; single runs at 1M) and peak memory (RSS), measured with GNU time;
-runs over 10 GB were killed. Beancount and rustledger save a cache of the parsed journal
+
+Caching:
+- Beancount and rustledger save a cache of the parsed journal
 (Beancount only when loading was slow, ie at 100k and 1M here), so they have a "(first run)"
 row without it and a "(cached)" row with it.
-hledger's `repl` and `run` commands keep the parsed journal in memory for the session, so later
+- hledger's `repl` and `run` commands keep the parsed journal in memory for the session, so later
 reports skip reading; the "(repl)" rows show the cost of one more report in such a session.
-Ledger's interactive mode (`ledger -f FILE` with no command) works the same way.
-Results are sorted by small-file performance, fastest at the top.
-Other apps are not yet measured.
+- Ledger's interactive mode (`ledger -f FILE` with no command) works the same way.
+
+Times are seconds (best of two runs; single runs at 1M) and peak memory (RSS), measured with GNU time;
+runs taking more than 5 minutes or 10 GB were killed. 
+Results are sorted by small-file performance, fastest at the top. Other apps are not yet measured.
+
 Note, these journals are a particular shape (many commodities, accounts, costs, and price directives),
 and the apps have different features (they do more or less data inference, validation, calculation etc).
 Also, these ran successfully but I haven't checked all outputs for correctness.
