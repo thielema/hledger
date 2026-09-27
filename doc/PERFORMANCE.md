@@ -28,7 +28,7 @@ On a macbook pro m5 pro running hledger's main branch in September 2026
 
 - It uses about 2.5 KB of live memory per transaction, 
   which means 5-6 KB of system memory per transaction plus a fixed 30 MB.
-  When working with 20 years of data, it uses ~170 MB of system memory.
+  So working with 20 years of data, it uses ~170 MB of system memory.
 
 - For most reports, most of the time is spent reading the data.
   (You can amortise this across multiple commands by using the `run` or `repl` commands.)
@@ -93,19 +93,20 @@ on a macbook air m1, hledger 1.25 processes about 25k txns/s, and hledger 1.40 a
 
 As of September 2026: other plain text accounting apps on the same machine and the
 same synthetic journals (`examples/1ktxns-1kaccts.journal`, 10k, 100k). Ledger reads these
-journal files directly, unchanged; for Beancount and rustledger (a Rust reimplementation of
-Beancount) they are converted with `hledger print --export -o FILE.beancount`, which keeps the
+files directly; for Beancount and rustledger (a Rust reimplementation of Beancount)
+they are converted with `hledger print --export -o FILE.beancount`, which keeps the
 price directives; for Tackler, `hledger print` output with the description quoted, `@@` written as `=`,
 and the price directives dropped (Tackler keeps prices in a separate database).
 Times are seconds (best of two runs) and peak memory (RSS), measured with GNU time;
-runs over 10 GB were killed. Note these journals are a particular shape (many commodities,
-accounts, costs, and price directives), and the apps have different features
-(eg they do more or less data inference, validation, etc), so treat this as a rough sketch.
-Beancount and rustledger save a cache of the parsed journal
+runs over 10 GB were killed. Beancount and rustledger save a cache of the parsed journal
 (Beancount only when loading was slow, ie at 100k here), so they have a "(first run)"
 row without it and a "(cached)" row with it.
+hledger's `run` and `repl` commands keep the parsed journal in memory for the session, so later
+reports skip reading; the "in run/repl" rows show the cost of one more report in such a session.
 Other apps are not yet measured.
-Please try to reproduce, to build confidence in these results.
+Note, these journals are a particular shape (many commodities, accounts, costs, and price directives),
+and the apps have different features (they do more or less data inference, validation, display etc),
+so treat this as a rough sketch. Please try to reproduce and validate these numbers.
 
 The test machine is a macbook pro m5 pro with macos 27.0. The apps:
 
@@ -138,6 +139,7 @@ sum(position) group by account'`, `rledger report FILE balances`, `tackler --rep
 |----------------------------|--------------:|--------------:|----------------:|
 | hledger 1.52               | 0.08s, 56 MB  | 0.45s, 128 MB | 4.0s, 868 MB    |
 | hledger main               | 0.05s, 57 MB  | 0.19s, 101 MB | 1.4s, 573 MB    |
+| hledger main (run/repl)    | 0.01s         | 0.07s         | 0.3s            |
 | Ledger 3.4.1               | 0.03s, 16 MB  | 0.17s, 55 MB  | 18s, 405 MB     |
 | Beancount 2.3.6 (first run)   | 0.12s, 36 MB  | 0.40s, 68 MB  | 5.7s, 748 MB    |
 | Beancount 2.3.6 (cached)      | 0.12s, 36 MB  | 0.39s, 68 MB  | 3.2s, 533 MB    |
@@ -154,6 +156,7 @@ Tackler's `identity` export):
 |-------------------------------|--------------:|--------------:|----------------:|
 | hledger 1.52                  | 0.08s, 54 MB  | 0.45s, 129 MB | 4.5s, 849 MB    |
 | hledger main                  | 0.04s, 54 MB  | 0.22s, 93 MB  | 2.0s, 573 MB    |
+| hledger main (run/repl)       | 0.01s         | 0.08s         | 0.8s            |
 | Ledger 3.4.1                  | 0.04s, 59 MB  | 2.0s, 4.1 GB  | not run         |
 | Beancount 2.3.6 (first run)   | 0.11s, 36 MB  | 0.42s, 67 MB  | 6.3s, 749 MB    |
 | Beancount 2.3.6 (cached)      | 0.11s, 36 MB  | 0.43s, 67 MB  | 3.8s, 513 MB    |
@@ -169,6 +172,7 @@ Tackler's `identity` export):
 |----------------------------|--------------:|--------------:|----------------:|
 | hledger 1.52               | 0.19s, 89 MB  | 1.4s, 132 MB  | 14s, 852 MB     |
 | hledger main               | 0.15s, 84 MB  | 1.1s, 123 MB  | 11-14s, 666 MB  |
+| hledger main (run/repl)    | 0.13s         | 1.1s          | 10s             |
 | Ledger 3.4.1               | 0.20s, 59 MB  | 6.1s, 4.1 GB  | killed, over 12 GB |
 | Tackler 26.8.1             | <0.01s, 8 MB  | 0.02s, 24 MB  | 0.21s, 146 MB   |
 
@@ -180,6 +184,7 @@ the 1k figures are rough):
 |-------------------|--------:|---------:|----------:|
 | hledger 1.52      |     12k |      22k |       25k |
 | hledger main      |     20k |      53k |       71k |
+| hledger main (run/repl) |     77k |     150k |      310k |
 | Ledger 3.4.1      |     33k |      59k |      5.6k |
 | Beancount 2.3.6   |    8.3k |      26k |       31k |
 | Beancount 3.2.3   |    8.3k |      22k |       25k |
@@ -199,7 +204,7 @@ With large journals (10k and 100k transactions) the apps separate:
 
 - rustledger is fastest, about
 2.5x faster than hledger main at 100k on a first run (with the same memory) and 10x faster with its
-cache
+cache (or 2x faster than a repeated report in hledger's run/repl)
 - Beancount 2 and 3 are 2x slower than hledger main at 10k and 3-5x slower at 100k on a first
 run (3 is no faster than 2 here), though their cache makes a repeated check fast
 - Ledger grows
@@ -219,6 +224,8 @@ transactions per second figure dips at 10k.
 - Tackler is similar to hledger main, except slower at the 10ktxn size
 - Ledger 3.4.1 is faster still with small files, but scales badly with large files
 - rustledger is much faster than everything else, at all sizes.
+- in hledger's repl, reports approach 2x rustledger speed
+- Ledger also has a repl (not yet tested)
 
 <!-- When a release is made, update these tables (and the "main" wording above). -->
 <!--
