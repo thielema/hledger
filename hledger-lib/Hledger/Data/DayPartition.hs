@@ -61,7 +61,7 @@ boundariesToDayPartition :: NonEmpty Day -> DayPartition
 boundariesToDayPartition xs = DayPartition . periodDataFromList (addDays (-1) b) $ case bs of
     []  -> [(b, b)]  -- If only one boundary is supplied, it ends on the same day
     _:_ -> zip (b:bs) $ map (addDays (-1)) bs  -- Guaranteed non-empty
-  where b:|bs = NE.nub $ NE.sort xs
+  where b:|bs = NE.map NE.head . NE.group1 $ NE.sort xs  -- dedupe adjacent (not nub, which is quadratic)
 
 -- | Construct a 'DayPartition' from a list of period boundary dates (start dates plus a final exclusive end date),
 -- if it's a non-empty list.

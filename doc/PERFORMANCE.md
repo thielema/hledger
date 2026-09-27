@@ -637,3 +637,9 @@ The details:
 - The balance report's own cost is mostly building the account tree (a HashMap update and period
   data insertion per posting); rendering computes each amount's width more than once.
 - Register's cost is mostly output volume (rendering running balances).
+- Interval reports deduplicated their list of period boundaries with `nub`, which is quadratic
+  in the number of periods: a daily report over 100 years spent 2.5s there, and a mistyped
+  five-digit year (7 million days) hung for about a day (#1683). Deduplicating adjacent entries
+  of the sorted list instead made it linear (100 years: 0.07s for register, 0.4s for balance).
+  A multi-period balance report still costs about 3 KB of memory per column, so millions of
+  columns exhaust memory; register has no such cost.
