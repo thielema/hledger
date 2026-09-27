@@ -122,7 +122,7 @@ reports skip reading; the "(repl)" rows show the cost of one more report in such
 peak memory after several reports.
 - Ledger's interactive mode (`ledger -f FILE` with no command) works the same way.
 
-Note, the journals have a particular shape (many commodities, accounts, costs, and price directives),
+Note, the test journals have a particular shape (simple transactions, many commodities, accounts, costs, and price directives),
 and the apps have different features (they do more or less data inference, validation, calculation etc).
 Also, I haven't checked all outputs for correctness. So treat this as a rough sketch.
 Please try to reproduce and validate these numbers.
@@ -215,7 +215,7 @@ the 1k figures are rough.
 
 #### Charts
 
-*([Remember](#other-apps): the journals have a particular shape (many commodities, accounts, costs, and price directives), and the apps have different features (they do more or less data inference, validation, calculation etc). Also, I haven’t checked all outputs for correctness.)*
+*[Remember](#other-apps): the test journals have a particular shape (simple transactions, many commodities, accounts, costs, and price directives), and the apps have different features (they do more or less data inference, validation, calculation etc). Also, I haven’t checked all outputs for correctness.*
 
 <p align="center"><img src="performance-throughput-fresh.svg" alt="Throughput chart, uncached runs" style="max-width:100%;"></p>
 
@@ -270,12 +270,13 @@ no reports or exports configured) takes at 100k txns: hledger 1.52 3.6s, hledger
 - Ledger's repl gives a 1.5x speedup with small files, doesn't help with large files
 - hledger's repl gives a 3-5x speedup at all sizes
 - rustledger and Tackler are much faster than the rest.
-- Tackler uses less memory than rustledger, and shows a flat balance report almost as fast as it.
-  (When configured right. Its default tree balance report is slow with large files.)
-- Tackler does print and register reports faster than the rest. (Its register works differently.)
-- Who is the current speed king ? Tackler wins for output speed and low memory usage.
-  rustledger barely wins for balance reports (the most used real-world report),
-  and therefore wins on throughput also. But only on cached runs. Tackler doesn't use a cache.
+- Tackler uses less memory than rustledger, and is almost as fast, without using a cache, as cached rustledger.
+  (When configured right. Its default balance report is slow with large files.)
+- Tackler does print and register reports faster than the rest. Its register report is unconventional.
+- Who is the current speed king ?
+  Tackler wins for output speed and memory usage.
+  rustledger edges ahead for balance reports (the most used real-world report), when it has a warm cache.
+- Is speed and scaling the only thing that matters ? No (says the slower apps :-)
 
 <!-- When a release is made, update these tables (and the "main" wording above),
 then update the figures in tools/perfcharts.py and run it to regenerate the charts. -->
