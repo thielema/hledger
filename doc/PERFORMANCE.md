@@ -184,9 +184,8 @@ every account and commodity pair (26,000 rows on these journals).
 Some published figures from elsewhere
 (different machines, data and methods, may be outdated):
 
-- [Tackler](https://tackler.e257.fi/) "processes 700,000 to 900,000 transactions per second on a modern laptop"
-- [rustledger](https://rustledger.github.io/about/comparison.html) "10-30x faster than Beancount"
-- [Beancount](https://beancount.github.io/docs/beancount_v3.html) "loads hundreds of thousands of transactions in about 2 seconds"
+- [Tackler](https://tackler.fi/docs/tackler/latest/features/performance/) "can process from 300 000 to 900 000 transactions per second on modern laptop"
+- [rustledger](https://rustledger.github.io/roadmap/performance.html) "10-30x faster than Python Beancount on typical ledgers"
 
 <!-- When a release is made, update these tables (and the "main" wording above). -->
 
