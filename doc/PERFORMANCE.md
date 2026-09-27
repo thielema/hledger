@@ -11,7 +11,7 @@ have learned about making it faster.
 
 Typical personal finances in many countries might involve 1000-1500 transactions a year.
 On a macbook pro m5 pro running hledger's main branch in September 2026
-(all numbers use this machine and hledger version unless stated; scale them up or down for your machine/version):
+(all numbers use this machine and hledger version unless stated; scale them down or up for your machine/version):
 
 - hledger reports on the current year's data in under a tenth of a second,
   on ten years of data in a quarter second,
@@ -88,14 +88,17 @@ As of September 2026: other plain text accounting apps on the same machine and t
 same synthetic journals (`examples/1ktxns-1kaccts.journal`, 10k, 100k). Ledger reads these
 journal files directly, unchanged; for Beancount and rustledger (a Rust reimplementation of
 Beancount) they are converted with `hledger print --export -o FILE.beancount`, which keeps the
-price directives. Times are seconds (best of two runs) and peak memory (RSS), measured with
-GNU time; runs over 10 GB were killed. Note these journals are a particular shape (many commodities,
+price directives; for Tackler, `hledger print` output with the description quoted, `@@` written as `=`,
+and the price directives dropped (Tackler keeps prices in a separate database).
+Times are seconds (best of two runs) and peak memory (RSS), measured with GNU time;
+runs over 10 GB were killed. Note these journals are a particular shape (many commodities,
 accounts, costs, and price directives), and the apps have different features
 (eg they do more or less data inference, validation, etc), so treat this as a rough sketch.
 Beancount and rustledger save a cache of the parsed journal
 (Beancount only when loading was slow, ie at 100k here), so they have a "(first run)"
 row without it and a "(cached)" row with it.
-Tackler and others are not yet measured. 
+Other apps are not yet measured.
+(Please try to reproduce, to build confidence in these results!)
 
 The test machine is a macbook pro m5 pro with macos 27.0. The apps:
 
@@ -105,6 +108,7 @@ The test machine is a macbook pro m5 pro with macos 27.0. The apps:
 - Beancount 2.3.6: `uv tool install beancount`, Python 3.14.6
 - Beancount 3.2.3 with beanquery 0.2.0: `uv pip install` into a virtualenv, Python 3.14.6
 - rustledger 0.24.0: `brew install rustledger`
+- Tackler 26.8.1: `cargo install tackler --locked`, built with Homebrew's Rust 1.96
 
 **Check** (`hledger check`, `ledger source`, `bean-check`, `rledger check`):
 
@@ -121,7 +125,7 @@ The test machine is a macbook pro m5 pro with macos 27.0. The apps:
 | rustledger 0.24.0 (cached)    | <0.01s, 10 MB | 0.01s, 33 MB  | 0.11s, 207 MB   |
 
 **Balance report** (`hledger balance`, `ledger balance`, `bean-query FILE 'select account,
-sum(position) group by account'`, `rledger report FILE balances`):
+sum(position) group by account'`, `rledger report FILE balances`, `tackler --reports balance`):
 
 | app                        |   1k txns     |   10k txns    |   100k txns     |
 |----------------------------|--------------:|--------------:|----------------:|
@@ -134,8 +138,10 @@ sum(position) group by account'`, `rledger report FILE balances`):
 | Beancount 3.2.3 (cached)      | 0.12s, 42 MB  | 0.46s, 74 MB  | 4.0s, 540 MB    |
 | rustledger 0.24.0 (first run) | 0.01s, 14 MB  | 0.08s, 72 MB  | 0.61s, 574 MB   |
 | rustledger 0.24.0 (cached)    | <0.01s, 10 MB | 0.03s, 32 MB  | 0.13s, 202 MB   |
+| Tackler 26.8.1                | 0.04s, 9 MB   | 1.1s, 30 MB   | 1.5s, 146 MB    |
 
-**Print** (`hledger print`, `ledger print`, `bean-query FILE print`, `rledger report FILE journal`):
+**Print** (`hledger print`, `ledger print`, `bean-query FILE print`, `rledger report FILE journal`,
+Tackler's `identity` export):
 
 | app                        |   1k txns     |   10k txns    |   100k txns     |
 |----------------------------|--------------:|--------------:|----------------:|
@@ -148,18 +154,20 @@ sum(position) group by account'`, `rledger report FILE balances`):
 | Beancount 3.2.3 (cached)      | 0.13s, 42 MB  | 0.49s, 74 MB  | 5.2s, 543 MB    |
 | rustledger 0.24.0 (first run) | 0.01s, 14 MB  | 0.11s, 81 MB  | 1.1s, 574 MB    |
 | rustledger 0.24.0 (cached)    | <0.01s, 10 MB | 0.05s, 32 MB  | 0.55s, 202 MB   |
+| Tackler 26.8.1 (identity export) | <0.01s, 7 MB | 0.01s, 21 MB | 0.09s, 142 MB |
 
-**Register** (`hledger register`, `ledger register`):
+**Register** (`hledger register`, `ledger register`, `tackler --reports register`):
 
 | app                        |   1k txns     |   10k txns    |   100k txns     |
 |----------------------------|--------------:|--------------:|----------------:|
 | hledger 1.52               | 0.19s, 89 MB  | 1.4s, 132 MB  | 14s, 852 MB     |
 | hledger main               | 0.15s, 84 MB  | 1.1s, 123 MB  | 11-14s, 666 MB  |
 | Ledger 3.4.1               | 0.20s, 59 MB  | 6.1s, 4.1 GB  | killed, over 12 GB |
+| Tackler 26.8.1                | <0.01s, 8 MB  | 0.02s, 24 MB  | 0.21s, 146 MB   |
 
 With a typical one-year journal (1k transactions), all of these apps answer in a fraction of a
 second, and the differences are hundredths of a second, much of it startup cost: a balance report
-takes 0.01s with rustledger, 0.03s with Ledger, 0.05s with hledger main (0.08s with 1.52),
+takes 0.01s with rustledger, 0.03s with Ledger, 0.04s with Tackler, 0.05s with hledger main (0.08s with 1.52),
 and about 0.1s with Beancount.
 (hledger's and Ledger's `register` reports take 0.15-0.2s even at this size, since they render a
 line and a running balance for every posting.)
@@ -169,7 +177,9 @@ With large journals (10k and 100k transactions) the apps separate: rustledger is
 cache; Beancount 2 and 3 are 2x slower than hledger main at 10k and 3-5x slower at 100k on a first
 run (3 is no faster than 2 here), though their cache makes a repeated check fast; and Ledger grows
 superlinearly on these journals, in time (balance: 18s at 100k) and memory (print and register need
-4 GB at 10k).
+4 GB at 10k). Tackler reads fastest of all (100k transactions printed in 0.09s, or with a register in
+0.21s), but its balance report costs about a second here whatever the size, since it makes a row for
+every account and commodity pair (26,000 rows on these journals).
 
 Some published figures from elsewhere
 (different machines, data and methods, may be outdated):
