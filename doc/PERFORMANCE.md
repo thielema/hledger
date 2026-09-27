@@ -7,7 +7,7 @@ how to measure it and what we have learned about making it faster.
   - [A real journal](#a-real-journal)
   - [Across releases](#across-releases)
   - [Other apps](#other-apps)
-- [What makes it slower](#what-makes-it-slower)
+- [What makes hledger slower](#what-makes-hledger-slower)
 - [For developers](#for-developers)
   - [Measuring](#measuring)
   - [Where the time goes](#where-the-time-goes)
@@ -116,7 +116,8 @@ Caching:
 (Beancount only when loading was slow, ie at 100k and 1M here), so they have a "(first run)"
 row without it and a "(cached)" row with it.
 - hledger's `repl` and `run` commands keep the parsed journal in memory for the session, so later
-reports skip reading; the "(repl)" rows show the cost of one more report in such a session.
+reports skip reading; the "(repl)" rows show the cost of one more report in such a session, and the session's
+peak memory after several reports.
 - Ledger's interactive mode (`ledger -f FILE` with no command) works the same way.
 
 Note, the journals have a particular shape (many commodities, accounts, costs, and price directives),
@@ -136,9 +137,9 @@ sum(position) group by account'`, `rledger report FILE balances`, `tackler --rep
 |-------------------------------|--------------:|--------------:|--------------:|----------------:|
 | rustledger 0.24.0 (cached)    | <0.01s, 10 MB |  0.03s, 32 MB | 0.13s, 202 MB |    1.1s, 1.9 GB |
 | Tackler 26.8.1                |  <0.01s, 7 MB |  0.04s, 24 MB | 0.16s, 139 MB |    1.3s, 1.1 GB |
-| hledger main (repl)           |         0.01s |         0.07s |          0.3s |            2.6s |
+| hledger main (repl)           |  0.01s, 58 MB | 0.07s, 118 MB |  0.3s, 661 MB |    2.6s, 6.0 GB |
 | rustledger 0.24.0 (first run) |  0.01s, 14 MB |  0.08s, 72 MB | 0.61s, 574 MB |    6.9s, 5.0 GB |
-| Ledger 3.4.1 (repl)           |         0.02s |         0.13s |           16s | killed, over 5m |
+| Ledger 3.4.1 (repl)           |  0.02s, 17 MB |  0.13s, 54 MB |   16s, 406 MB | killed, over 5m |
 | Ledger 3.4.1                  |  0.03s, 15 MB |  0.18s, 53 MB |   15s, 405 MB | killed, over 5m |
 | hledger main                  |  0.05s, 57 MB | 0.19s, 101 MB |  1.4s, 573 MB |     14s, 5.2 GB |
 | hledger 1.52                  |  0.08s, 56 MB | 0.45s, 128 MB |  4.0s, 868 MB |     41s, 8.0 GB |
@@ -154,9 +155,9 @@ Tackler's `identity` export):
 |-------------------------------|--------------:|--------------:|-------------------:|-------------:|
 | Tackler 26.8.1                |  <0.01s, 7 MB |  0.01s, 21 MB |      0.09s, 142 MB | 1.2s, 1.1 GB |
 | rustledger 0.24.0 (cached)    | <0.01s, 10 MB |  0.05s, 32 MB |      0.55s, 202 MB | 5.8s, 1.9 GB |
-| hledger main (repl)           |         0.01s |         0.08s |               0.8s |         8.0s |
+| hledger main (repl)           |  0.01s, 54 MB | 0.08s, 100 MB |      0.8s, 667 MB | 8.0s, 6.1 GB |
 | rustledger 0.24.0 (first run) |  0.01s, 14 MB |  0.11s, 81 MB |       1.1s, 574 MB |  12s, 5.0 GB |
-| Ledger 3.4.1 (repl)           |         0.02s |          1.7s | killed, over 10 GB |      not run |
+| Ledger 3.4.1 (repl)           |  0.02s, 58 MB |  1.7s, 4.0 GB | killed, over 10 GB |      not run |
 | hledger main                  |  0.04s, 54 MB |  0.22s, 93 MB |       2.0s, 573 MB |  19s, 5.2 GB |
 | Ledger 3.4.1                  |  0.04s, 59 MB |  2.0s, 4.1 GB | killed, over 10 GB |      not run |
 | hledger 1.52                  |  0.08s, 54 MB | 0.45s, 129 MB |       4.5s, 849 MB |  44s, 7.9 GB |
@@ -173,9 +174,9 @@ while Tackler's shows a running balance per account in one commodity, which is m
 | app                         |      1k txns |     10k txns |          100k txns |            1M txns |
 |-----------------------------|-------------:|-------------:|-------------------:|-------------------:|
 | Tackler 26.8.1              | <0.01s, 8 MB | 0.02s, 24 MB |      0.21s, 146 MB |       2.2s, 1.1 GB |
-| hledger main (repl)         |        0.13s |         1.1s |                10s |               102s |
+| hledger main (repl)         | 0.13s, 85 MB | 1.1s, 138 MB |        10s, 685 MB |       102s, 6.3 GB |
 | hledger main                | 0.15s, 84 MB | 1.1s, 123 MB |     11-14s, 666 MB |       112s, 5.9 GB |
-| Ledger 3.4.1 (repl)         |        0.18s |         5.8s | killed, over 10 GB |            not run |
+| Ledger 3.4.1 (repl)         | 0.18s, 58 MB | 5.8s, 4.0 GB | killed, over 10 GB |            not run |
 | hledger 1.52                | 0.19s, 89 MB | 1.4s, 132 MB |        14s, 852 MB |       144s, 7.9 GB |
 | Ledger 3.4.1                | 0.20s, 59 MB | 6.1s, 4.1 GB | killed, over 10 GB |            not run |
 | Beancount 2.3.6 (cached)    | 0.28s, 40 MB | 1.5s, 116 MB |        15s, 964 MB |       157s, 9.5 GB |
