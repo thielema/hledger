@@ -20,7 +20,8 @@ On a macbook pro m5 pro running hledger's main branch in September 2026
 - It processes about 40k messy real-world transactions per second,
   or about 80k simple transactions per second.
 
-- It uses about 3 KB of memory (~9 KB of system memory) per transaction.
+- It uses about 2.5 KB of live memory per transaction, 
+  which means 5-6 KB of system memory per transaction plus a fixed 30 MB.
   When working with 20 years of data, it uses ~170 MB of system memory.
 
 - For most reports, most of the time is spent reading the data.
@@ -197,9 +198,9 @@ with how much output a report produces.
 **Size.** Time is roughly proportional to the number of transactions and postings: about 40k
 real-world transactions per second, 80k simple ones. A 10k-transaction journal takes about 0.2s
 for a balance report, 100k about 1.4s, 1M about 14s (simple entries). Memory is proportional too:
-about 1.5 KB of live data per simple transaction, 3 KB per real-world one, and the process uses
-about three times that, so 100k transactions need about 0.5 GB and a million about 5 GB (a third
-less with `+RTS -c -RTS`, see Memory options below).
+about 2.5 KB of peak live data per transaction, and 5-6 KB of process memory per
+transaction plus a fixed 30 MB: 100k transactions need about 0.6 GB and a million about 6 GB
+(or a third less with `+RTS -c -RTS`, see Memory options below).
 
 **Entry shape.** Parsing is about half of a run. Entries with dates, status marks, a code, a
 description, comments and tags, account names and amounts (optionally with a cost) take a fast
