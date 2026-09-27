@@ -213,6 +213,8 @@ the 1k figures are rough.
 
 #### Charts
 
+*([Remember](#other-apps): the journals have a particular shape (many commodities, accounts, costs, and price directives), and the apps have different features (they do more or less data inference, validation, calculation etc). Also, I haven’t checked all outputs for correctness.)*
+
 <p align="center"><img src="performance-throughput-fresh.svg" alt="Throughput chart, uncached runs" style="max-width:100%;"></p>
 
 <p align="center"><img src="performance-throughput.svg" alt="Throughput chart: transactions per second by journal size, log scales, including cached and repl runs" style="max-width:100%;"></p>
