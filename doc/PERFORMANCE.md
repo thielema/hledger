@@ -273,8 +273,8 @@ no reports or exports configured) takes at 100k txns: hledger 1.52 3.6s, hledger
 - Tackler uses less memory than rustledger, and is almost as fast, without using a cache, as cached rustledger.
   (When configured right. Its default balance report is slow with large files.)
 - Tackler does print and register reports faster than the rest. Its register report is unconventional.
-- Who is the current speed king ?
-  Tackler wins for output speed and memory usage.
+- Who is the current speed king ?\
+  Tackler wins for output speed and memory usage.\
   rustledger edges ahead for balance reports (the most used real-world report), when it has a warm cache.
 - Is speed and scaling the only thing that matters ? No (says the slower apps :-)
 
