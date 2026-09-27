@@ -4,8 +4,14 @@ How fast hledger is, what makes it slower, and (for developers) how to measure i
 have learned about making it faster.
 
 - [How fast is hledger?](#how-fast-is-hledger)
-- [What makes runs slower](#what-makes-runs-slower)
+  - [A real journal](#a-real-journal)
+  - [Across releases](#across-releases)
+  - [Other apps](#other-apps)
+- [What makes it slower](#what-makes-it-slower)
 - [For developers](#for-developers)
+  - [Measuring](#measuring)
+  - [Where the time goes](#where-the-time-goes)
+  - [What we have learned](#what-we-have-learned)
 
 ## How fast is hledger?
 
@@ -190,7 +196,7 @@ Some published figures from elsewhere
 
 <!-- When a release is made, update these tables (and the "main" wording above). -->
 
-## What makes runs slower
+## What makes it slower
 
 Run time grows with the number of postings, with how much each entry uses beyond the basics, and
 with how much output a report produces.
