@@ -92,6 +92,8 @@ on a macbook air m1, hledger 1.25 processes about 25k txns/s, and hledger 1.40 a
 ### Other apps
 
 As of September 2026: other plain text accounting apps are tested on the same machine.
+(If you're in a hurry, jump to the [charts](#charts) below.)
+
 The test machine is a macbook pro m5 pro with macos 27. The apps are:
 
 - hledger 1.52: `stack install`, built with GHC 9.12.2
@@ -260,7 +262,7 @@ Checking a journal (`hledger check`, `ledger source`, `bean-check`, `rledger che
 no reports or exports configured) takes at 100k txns: hledger 1.52 3.6s, hledger main 1.1s, Ledger
 0.54s, Beancount 2 and 3 4.6-5.2s (0.8s cached), rustledger 0.6s (0.1s cached), Tackler 0.08s.
 
-#### TLDR
+#### Summary
 
 - hledger 1, Beancount 2, Beancount 3 are similar in speed
 - hledger main is faster
@@ -273,7 +275,7 @@ no reports or exports configured) takes at 100k txns: hledger 1.52 3.6s, hledger
 - Tackler does print and register reports faster than the rest. (Its register works differently.)
 - Who is the current speed king ? Tackler wins for output speed and low memory usage.
   rustledger barely wins for balance reports (the most used real-world report),
-  and therefore wins on throughput also. But only on cached runs; Tackler is cacheless.
+  and therefore wins on throughput also. But only on cached runs. Tackler doesn't use a cache.
 
 <!-- When a release is made, update these tables (and the "main" wording above),
 then update the figures in tools/perfcharts.py and run it to regenerate the charts. -->
