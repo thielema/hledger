@@ -173,7 +173,7 @@ Tackler's `identity` export):
 | Tackler 26.8.1             | <0.01s, 8 MB  | 0.02s, 24 MB  | 0.21s, 146 MB   |
 
 **Throughput** (effective transactions per second, calculated from the balance report table above,
-which represents real-world usage best; using the cached figures for apps that cache; 
+which represents real-world usage best; using the cached figures for apps that cache;
 the 1k figures are rough):
 
 | app               | 1k txns | 10k txns | 100k txns |
@@ -214,10 +214,10 @@ transactions per second figure dips at 10k.
 
 **TLDR**
 
-- hledger 1, beancount 2, beancount 3 are similar in speed
+- hledger 1, Beancount 2, Beancount 3 are similar in speed
 - hledger main is faster
-- tackler is similar to hledger main, except slower at the 10ktxn size
-- ledger 3.4.1 is faster still with small files, but scales badly with large files
+- Tackler is similar to hledger main, except slower at the 10ktxn size
+- Ledger 3.4.1 is faster still with small files, but scales badly with large files
 - rustledger is much faster than everything else, at all sizes.
 
 <!-- When a release is made, update these tables (and the "main" wording above). -->
