@@ -1,7 +1,7 @@
 # Performance
 
-How fast hledger is, what makes it slower, and (for developers) how to measure it and what we
-have learned about making it faster.
+How fast hledger is, how that compares with other apps, what makes it slower, and (for developers)
+how to measure it and what we have learned about making it faster.
 
 - [How fast is hledger?](#how-fast-is-hledger)
   - [A real journal](#a-real-journal)
@@ -105,7 +105,7 @@ Beancount and rustledger save a cache of the parsed journal
 (Beancount only when loading was slow, ie at 100k here), so they have a "(first run)"
 row without it and a "(cached)" row with it.
 Other apps are not yet measured.
-(Please try to reproduce, to build confidence in these results!)
+Please try to reproduce, to build confidence in these results.
 
 The test machine is a macbook pro m5 pro with macos 27.0. The apps:
 
