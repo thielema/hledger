@@ -91,8 +91,18 @@ on a macbook air m1, hledger 1.25 processes about 25k txns/s, and hledger 1.40 a
 
 ### Other apps
 
-As of September 2026: other plain text accounting apps are tested on the same machine with the
-same synthetic journals (`examples/1ktxns-1kaccts.journal`, 10k, 100k, 1M). 
+As of September 2026: other plain text accounting apps are tested on the same machine.
+The test machine is a macbook pro m5 pro with macos 27. The apps are:
+
+- hledger 1.52: `stack install`, built with GHC 9.12.2
+- hledger main: `stack install`, built with GHC 9.14.1
+- Ledger 3.4.1: `brew install ledger`, an optimised release build
+- Beancount 2.3.6: `uv tool install beancount`, Python 3.14.6
+- Beancount 3.2.3 with beanquery 0.2.0: `uv pip install` into a virtualenv, Python 3.14.6
+- rustledger 0.24.0: `brew install rustledger`
+- Tackler 26.8.1: `cargo install tackler --locked`, built with Homebrew's Rust 1.96
+
+The same synthetic journals are used, at different sizes: `examples/1ktxns-1kaccts.journal`, 10k, 100k, 1M.
 
 - Ledger reads these files directly.
 - For Beancount and rustledger (a Rust reimplementation of Beancount)
@@ -109,24 +119,14 @@ row without it and a "(cached)" row with it.
 reports skip reading; the "(repl)" rows show the cost of one more report in such a session.
 - Ledger's interactive mode (`ledger -f FILE` with no command) works the same way.
 
+Note, the journals have a particular shape (many commodities, accounts, costs, and price directives),
+and the apps have different features (they do more or less data inference, validation, calculation etc).
+Also, I haven't checked all outputs for correctness. So treat this as a rough sketch.
+Please try to reproduce and validate these numbers.
+
 Times are seconds (best of two runs; single runs at 1M) and peak memory (RSS), measured with GNU time;
 runs taking more than 5 minutes or 10 GB were killed. 
-Results are sorted by small-file performance, fastest at the top. Other apps are not yet measured.
-
-Note, these journals are a particular shape (many commodities, accounts, costs, and price directives),
-and the apps have different features (they do more or less data inference, validation, calculation etc).
-Also, these ran successfully but I haven't checked all outputs for correctness.
-So treat this as a rough sketch. Please try to reproduce and validate these numbers.
-
-The test machine is a macbook pro m5 pro with macos 27.0. The apps:
-
-- hledger 1.52: `stack install`, built with GHC 9.12.2
-- hledger main: `stack install`, built with GHC 9.14.1
-- Ledger 3.4.1: `brew install ledger`, an optimised release build
-- Beancount 2.3.6: `uv tool install beancount`, Python 3.14.6
-- Beancount 3.2.3 with beanquery 0.2.0: `uv pip install` into a virtualenv, Python 3.14.6
-- rustledger 0.24.0: `brew install rustledger`
-- Tackler 26.8.1: `cargo install tackler --locked`, built with Homebrew's Rust 1.96
+Results are sorted by small-file performance, fastest at the top.
 
 **Flat balance report** (`hledger balance`, `ledger balance --flat`, `bean-query FILE 'select account,
 sum(position) group by account'`, `rledger report FILE balances`, `tackler --reports balance` with
