@@ -641,5 +641,10 @@ The details:
   in the number of periods: a daily report over 100 years spent 2.5s there, and a mistyped
   five-digit year (7 million days) hung for about a day (#1683). Deduplicating adjacent entries
   of the sorted list instead made it linear (100 years: 0.07s for register, 0.4s for balance).
-  A multi-period balance report still costs about 3 KB of memory per column, so millions of
-  columns exhaust memory; register has no such cost.
+  The register then still built the whole partition of periods in memory (200 bytes each, plus
+  growing GC cost), so a six-digit year still exhausted memory; it now consumes the periods as a
+  lazy list, generated twice (once to find the report's end date), and runs in constant memory:
+  7 million days in 0.7s and 34 MB. Periodic transaction rules use the same lazy list to generate
+  forecast transactions (a daily rule over 300 years: 20s to 0.65s). A multi-period balance report
+  needs a column per period by design, and costs about 3 KB of memory per column, so millions of
+  columns still exhaust memory.

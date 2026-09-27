@@ -64,6 +64,7 @@ module Hledger.Reports.ReportOptions (
   postingDateFn,
   reportSpan,
   reportSpanBothDates,
+  reportSpanBothDatesLazy,
   reportStartDate,
   reportEndDate,
   reportPeriodStart,
@@ -853,8 +854,45 @@ reportSpanBothDates :: Journal -> ReportSpec -> (DateSpan, Maybe DayPartition)
 reportSpanBothDates = reportSpanHelper True
 
 reportSpanHelper :: Bool -> Journal -> ReportSpec -> (DateSpan, Maybe DayPartition)
-reportSpanHelper bothdates j ReportSpec{_rsQuery=query, _rsReportOpts=ropts, _rsDay=today} =
+reportSpanHelper bothdates j rspec@ReportSpec{_rsReportOpts=ropts} =
     (enlargedreportspan, intervalspans)
+  where
+    (reportspan, adjust) = reportSpanAndAdjust bothdates j rspec
+
+    -- The list of interval spans enclosing the requested span.
+    -- This list can be empty if the journal was empty,
+    -- or if hledger-ui has added its special date:-tomorrow to the query
+    -- and all txns are in the future.
+    intervalspans = dbg3 "intervalspans" $ splitSpan adjust (interval_ ropts) reportspan
+
+    -- The requested span enlarged to enclose a whole number of intervals.
+    -- This can be the null span if there were no intervals.
+    enlargedreportspan = dbg3 "enlargedreportspan" $
+        maybe (DateSpan Nothing Nothing) (mkSpan . dayPartitionStartEnd) intervalspans
+      where mkSpan (s, e) = DateSpan (Just $ Exact s) (Just . Exact $ addDays 1 e)
+
+-- | Like 'reportSpanBothDates', but returns the report periods as a lazily generated list
+-- of 'DateSpan's rather than a 'DayPartition', so that a report which traverses them once
+-- (like the postings report) uses constant memory however many periods there are (#1683).
+-- The list is a single unbounded span if there are no periods, like 'maybeDayPartitionToDateSpans'.
+reportSpanBothDatesLazy :: Journal -> ReportSpec -> (DateSpan, [DateSpan])
+reportSpanBothDatesLazy j rspec@ReportSpec{_rsReportOpts=ropts} =
+    (enlargedreportspan, intervalspans)
+  where
+    (reportspan, adjust) = reportSpanAndAdjust True j rspec
+    intervalspans = case splitSpanToDateSpans adjust (interval_ ropts) reportspan of
+      [] -> [DateSpan Nothing Nothing]
+      ss -> ss
+    -- Found with a separate traversal of the periods, so the list above need not be kept in memory.
+    enlargedreportspan = dbg3 "enlargedreportspan" $
+        maybe (DateSpan Nothing Nothing) mkSpan $ splitSpanStartEnd adjust (interval_ ropts) reportspan
+      where mkSpan (s, e) = DateSpan (Just $ Exact s) (Just $ Exact e)
+
+-- | The report span before enlarging it to whole intervals, filled in with defaults from the journal,
+-- and whether the report periods should be adjusted back to natural interval boundaries.
+reportSpanAndAdjust :: Bool -> Journal -> ReportSpec -> (DateSpan, Bool)
+reportSpanAndAdjust bothdates j ReportSpec{_rsQuery=query, _rsReportOpts=ropts, _rsDay=today} =
+    (reportspan, adjust)
   where
     -- The date span specified by -b/-e/-p options and query args if any.
     requestedspan = dbg3 "requestedspan" $
@@ -875,21 +913,9 @@ reportSpanHelper bothdates j ReportSpec{_rsQuery=query, _rsReportOpts=ropts, _rs
                 mlatestnonfutureprice = dbg3 "latestnonfutureprice" $ -- #2445
                   fmap (Exact . addDays 1) . maximumMay . filter (not . (> today)) . map pddate $ jpricedirectives j
 
-    -- The list of interval spans enclosing the requested span.
-    -- This list can be empty if the journal was empty,
-    -- or if hledger-ui has added its special date:-tomorrow to the query
-    -- and all txns are in the future.
-    intervalspans = dbg3 "intervalspans" $ splitSpan adjust (interval_ ropts) reportspan
-      where
-        -- When calculating report periods, we will adjust the start date back to the nearest interval boundary
-        -- unless a start date was specified explicitly.
-        adjust = isNothing $ spanStart requestedspan
-
-    -- The requested span enlarged to enclose a whole number of intervals.
-    -- This can be the null span if there were no intervals.
-    enlargedreportspan = dbg3 "enlargedreportspan" $
-        maybe (DateSpan Nothing Nothing) (mkSpan . dayPartitionStartEnd) intervalspans
-      where mkSpan (s, e) = DateSpan (Just $ Exact s) (Just . Exact $ addDays 1 e)
+    -- When calculating report periods, we will adjust the start date back to the nearest interval boundary
+    -- unless a start date was specified explicitly.
+    adjust = isNothing $ spanStart requestedspan
 
 reportStartDate :: Journal -> ReportSpec -> Maybe Day
 reportStartDate j = spanStart . fst . reportSpan j

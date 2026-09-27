@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-|
 A partition of time into contiguous spans, for defining reporting periods.
 -}
@@ -17,11 +18,17 @@ module Hledger.Data.DayPartition
 , dayPartitionStartEnd
 , dayPartitionFind
 , splitSpan
+, splitSpanToDateSpans
+, splitSpanStartEnd
 , intervalBoundaryBefore
 -- * tests
 , tests_DayPartition
 ) where
 
+#if !MIN_VERSION_base(4,20,0)
+import Data.List (foldl')
+#endif
+import Data.List (sort)
 import Data.List.NonEmpty (NonEmpty(..))
 import qualified Data.List.NonEmpty as NE
 import Data.Map qualified as M
@@ -181,30 +188,67 @@ dayPartitionFind d (DayPartition xs) = lookupPeriodDataOrHistorical d xs
 -- >>> t (MonthAndDay 11 29) 2012 10 01 2013 10 15
 -- Just ((2012-11-29,2013-11-28) :| [])
 splitSpan :: Bool -> Interval -> DateSpan -> Maybe DayPartition
-splitSpan _      _                        (DateSpan Nothing Nothing) = Nothing
-splitSpan _      _                        ds | isEmptySpan ds = Nothing
-splitSpan _      NoInterval               (DateSpan (Just s) (Just e)) = Just $ boundariesToDayPartition (fromEFDay s :| [fromEFDay e])
-splitSpan _      NoInterval               _  = Nothing
-splitSpan _      (Days n)                 ds = splitspan id addDays n ds
-splitSpan adjust (Weeks n)                ds = splitspan (if adjust then startofweek    else id) addDays                 (7*n) ds
-splitSpan adjust (Months n)               ds = splitspan (if adjust then startofmonth   else id) addGregorianMonthsClip  n     ds
-splitSpan adjust (Quarters n)             ds = splitspan (if adjust then startofquarter else id) addGregorianMonthsClip  (3*n) ds
-splitSpan adjust (Years n)                ds = splitspan (if adjust then startofyear    else id) addGregorianYearsClip   n     ds
-splitSpan adjust (NthWeekdayOfMonth n wd) ds = splitspan (startWeekdayOfMonth n wd)              advancemonths           1     ds
+splitSpan adjust i ds = uncurry spansFromBoundaries =<< splitSpanBoundaries adjust i ds
+
+-- | Like 'splitSpan', but returns the periods as a lazily generated list of 'DateSpan's
+-- (each ending where the next begins), without building a 'DayPartition'.
+-- Consuming this list once uses constant memory however many periods there are,
+-- which matters for reports over very long spans with short intervals (#1683).
+-- The list is empty when 'splitSpan' would return Nothing.
+--
+-- >>> let t i y1 m1 d1 y2 m2 d2 = splitSpanToDateSpans True i $ DateSpan (Just $ Flex $ fromGregorian y1 m1 d1) (Just $ Flex $ fromGregorian y2 m2 d2)
+-- >>> t (Months 1) 2008 01 01 2008 04 01
+-- [DateSpan 2008-01,DateSpan 2008-02,DateSpan 2008-03]
+-- >>> t (Days 1) 2008 01 01 2008 01 01
+-- []
+splitSpanToDateSpans :: Bool -> Interval -> DateSpan -> [DateSpan]
+splitSpanToDateSpans adjust i ds = case splitSpanBoundaries adjust i ds of
+    Just (e, b:bs) | b < e -> zipWith mkspan bdrys (drop 1 bdrys)
+      where bdrys = dedupeAdjacent $ takeUntilFails (<e) (b:bs)
+    _ -> []
+  where
+    mkspan s e = DateSpan (Just $ Exact s) (Just $ Exact e)
+
+-- | The start date and exclusive end date of the periods 'splitSpan' would produce
+-- (ie the first boundary, and the first boundary not before the span's end),
+-- found in constant memory. Nothing if 'splitSpan' would return Nothing.
+splitSpanStartEnd :: Bool -> Interval -> DateSpan -> Maybe (Day, Day)
+splitSpanStartEnd adjust i ds = case splitSpanBoundaries adjust i ds of
+    Just (e, b:bs) | b < e -> Just (b, foldl' (\_ x -> x) b $ takeUntilFails (<e) bs)
+    _ -> Nothing
+
+-- | Remove adjacent duplicates from a list. Lazy, so it works on infinite lists.
+dedupeAdjacent :: Eq a => [a] -> [a]
+dedupeAdjacent = map NE.head . NE.group
+
+-- | The ingredients of 'splitSpan': the exclusive end date of the range to be covered,
+-- and the increasing, lazily generated (usually infinite) list of period boundary dates,
+-- starting at or before the span's start date. Nothing if the span can't be split.
+splitSpanBoundaries :: Bool -> Interval -> DateSpan -> Maybe (Day, [Day])
+splitSpanBoundaries _      _                        (DateSpan Nothing Nothing) = Nothing
+splitSpanBoundaries _      _                        ds | isEmptySpan ds = Nothing
+splitSpanBoundaries _      NoInterval               (DateSpan (Just s) (Just e)) = Just (fromEFDay e, [fromEFDay s, fromEFDay e])
+splitSpanBoundaries _      NoInterval               _  = Nothing
+splitSpanBoundaries _      (Days n)                 ds = boundaries id addDays n ds
+splitSpanBoundaries adjust (Weeks n)                ds = boundaries (if adjust then startofweek    else id) addDays                 (7*n) ds
+splitSpanBoundaries adjust (Months n)               ds = boundaries (if adjust then startofmonth   else id) addGregorianMonthsClip  n     ds
+splitSpanBoundaries adjust (Quarters n)             ds = boundaries (if adjust then startofquarter else id) addGregorianMonthsClip  (3*n) ds
+splitSpanBoundaries adjust (Years n)                ds = boundaries (if adjust then startofyear    else id) addGregorianYearsClip   n     ds
+splitSpanBoundaries adjust (NthWeekdayOfMonth n wd) ds = boundaries (startWeekdayOfMonth n wd)              advancemonths           1     ds
   where
     startWeekdayOfMonth = if adjust then prevNthWeekdayOfMonth else nextNthWeekdayOfMonth
     advancemonths 0 = id
     advancemonths m = advanceToNthWeekday n wd . startofmonth . addGregorianMonthsClip m
-splitSpan _      (MonthDay dom)           ds = splitspan (nextnthdayofmonth dom) (addGregorianMonthsToMonthday dom) 1 ds
-splitSpan _      (MonthAndDay m d)        ds = splitspan (nextmonthandday m d)   addGregorianYearsClip              1 ds
-splitSpan _      (DaysOfWeek [])          _  = Nothing
-splitSpan _      (DaysOfWeek days@(n:_))  ds = do
+splitSpanBoundaries _      (MonthDay dom)           ds = boundaries (nextnthdayofmonth dom) (addGregorianMonthsToMonthday dom) 1 ds
+splitSpanBoundaries _      (MonthAndDay m d)        ds = boundaries (nextmonthandday m d)   addGregorianYearsClip              1 ds
+splitSpanBoundaries _      (DaysOfWeek [])          _  = Nothing
+splitSpanBoundaries _      (DaysOfWeek days@(n:_))  ds = do
     (s, e) <- dateSpanSplitLimits (nthdayofweekcontaining n) nextday ds
-    let -- can't show this when debugging, it'll hang:
+    let -- The first representative of each weekday, sorted so that the boundaries increase.
+        starts = dedupeAdjacent . sort $ map (\d -> addDays (toInteger $ d - n) $ nthdayofweekcontaining n s) days
+        -- can't show this when debugging, it'll hang:
         bdrys = concatMap (\d -> map (addDays d) starts) [0,7..]
-        -- The first representative of each weekday
-        starts = map (\d -> addDays (toInteger $ d - n) $ nthdayofweekcontaining n s) days
-    spansFromBoundaries e bdrys
+    Just (e, bdrys)
 
 -- | Fill in missing start/end dates for calculating 'splitSpan'.
 dateSpanSplitLimits :: (Day -> Day) -> (Day -> Day) -> DateSpan -> Maybe (Day, Day)
@@ -214,18 +258,19 @@ dateSpanSplitLimits start _    (DateSpan (Just s) (Just e)) = Just (start $ from
 dateSpanSplitLimits start next (DateSpan (Just s) Nothing)  = Just (start $ fromEFDay s, next $ start $ fromEFDay s)
 dateSpanSplitLimits start next (DateSpan Nothing  (Just e)) = Just (start $ fromEFDay e, next $ start $ fromEFDay e)
 
--- Split the given span into exact spans using the provided helper functions:
+-- Generate the period boundaries for splitting the given span, using the provided helper functions:
 --
--- 1. The start function is used to adjust the provided span's start date to get the first sub-span's start date.
+-- 1. The start function is used to adjust the provided span's start date to get the first boundary.
 --
--- 2. The next function is used to calculate subsequent sub-spans' start dates, possibly with stride increased by a multiplier.
+-- 2. The next function is used to calculate subsequent boundaries, possibly with stride increased by a multiplier.
 --    It should handle spans of varying length, eg when splitting on "every 31st of month",
 --    it adjusts to 28/29/30 in short months but returns to 31 in the long months.
-splitspan :: (Day -> Day) -> (Integer -> Day -> Day) -> Int -> DateSpan -> Maybe DayPartition
-splitspan start next mult ds = do
+--
+-- Returns the exclusive end date of the range to cover, and the infinite list of boundaries.
+boundaries :: (Day -> Day) -> (Integer -> Day -> Day) -> Int -> DateSpan -> Maybe (Day, [Day])
+boundaries start next mult ds = do
     (s, e) <- dateSpanSplitLimits start (next (toInteger mult)) ds
-    let bdrys = mapM (next . toInteger) [0,mult..] $ start s
-    spansFromBoundaries e bdrys
+    Just (e, map (\k -> next (toInteger k) (start s)) [0,mult..])
 
 -- | Construct a list of exact 'DateSpan's from a list of boundaries, which fit within a given range.
 spansFromBoundaries :: Day -> [Day] -> Maybe DayPartition
@@ -267,7 +312,7 @@ tests_DayPartition =
                    ])
 
     , testCase "match dayOfWeek" $ do
-        let dayofweek n = splitspan (nthdayofweekcontaining n) (\w -> (if w == 0 then id else applyN (n-1) nextday . applyN (fromInteger w) nextweek)) 1
+        let dayofweek n ds = uncurry spansFromBoundaries =<< boundaries (nthdayofweekcontaining n) (\w -> (if w == 0 then id else applyN (n-1) nextday . applyN (fromInteger w) nextweek)) 1 ds
             matchdow ds day = splitSpan False (DaysOfWeek [day]) ds @?= dayofweek day ds
             ys2021 = fromGregorian 2021 01 01
             ye2021 = fromGregorian 2021 12 31
@@ -281,5 +326,18 @@ tests_DayPartition =
 
         mapM_ (matchdow (DateSpan Nothing (Just $ Exact ye2021))) [1..7]
         mapM_ (matchdow (DateSpan Nothing (Just $ Exact ys2022))) [1..7]
+
+    , testCase "splitSpanToDateSpans and splitSpanStartEnd agree with splitSpan" $ do
+        let intervals = [NoInterval, Days 1, Days 3, Weeks 1, Weeks 2, Months 1, Months 5, Quarters 1, Years 1,
+                         NthWeekdayOfMonth 2 4, NthWeekdayOfMonth 5 7, MonthDay 2, MonthDay 31, MonthAndDay 11 29,
+                         DaysOfWeek [1..5], DaysOfWeek [5,1], DaysOfWeek [3,3,7]]
+            d1 = fromGregorian 2021 01 01; d2 = fromGregorian 2024 03 15
+            spans = [DateSpan (Just $ Exact d1) (Just $ Exact d2), DateSpan (Just $ Flex d1) (Just $ Flex d2),
+                     DateSpan (Just $ Exact d2) (Just $ Exact $ addDays 1 d2), DateSpan (Just $ Exact d1) Nothing,
+                     DateSpan Nothing (Just $ Exact d2), DateSpan (Just $ Exact d2) (Just $ Exact d1), nulldatespan]
+        sequence_
+          [ do splitSpanToDateSpans adjust i ds @?= maybe [] dayPartitionToDateSpans partition
+               splitSpanStartEnd adjust i ds @?= fmap ((\(s, e) -> (s, addDays 1 e)) . dayPartitionStartEnd) partition
+          | adjust <- [False, True], i <- intervals, ds <- spans, let partition = splitSpan adjust i ds ]
 
     ]

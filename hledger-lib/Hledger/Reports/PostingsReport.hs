@@ -70,7 +70,7 @@ type SummaryPosting = (Posting, Period)
 postingsReport :: ReportSpec -> Journal -> PostingsReport
 postingsReport rspec@ReportSpec{_rsReportOpts=ropts@ReportOpts{..}} j = items
     where
-      (reportspan, colspans) = reportSpanBothDates j rspec
+      (reportspan, colspans) = reportSpanBothDatesLazy j rspec
       whichdate   = whichDate ropts
       depthSpec   = queryDepth $ _rsQuery rspec
       multiperiod = interval_ /= NoInterval
@@ -215,12 +215,13 @@ mkpostingsReportItem showdate showdesc wd mperiod p b =
 -- | Convert a list of postings into summary postings, one per interval,
 -- aggregated to the specified depth if any.
 -- Each summary posting will have a non-Nothing interval end date.
-summarisePostingsByInterval :: WhichDate -> DepthSpec -> Bool -> Maybe DayPartition -> [Posting] -> [SummaryPosting]
+summarisePostingsByInterval :: WhichDate -> DepthSpec -> Bool -> [DateSpan] -> [Posting] -> [SummaryPosting]
 summarisePostingsByInterval wd depthspec showempty colspans =
     concatMap (\(s,ps) -> summarisePostingsInDateSpan s wd depthspec showempty ps)
     -- Group postings into their columns. We try to be efficient, since
-    -- there can possibly be a very large number of intervals (cf #1683)
-    . groupByDateSpan showempty (postingDateOrDate2 wd) (maybeDayPartitionToDateSpans colspans)
+    -- there can possibly be a very large number of intervals (cf #1683):
+    -- the spans are a lazy list, consumed once, so they need not all be in memory.
+    . groupByDateSpan showempty (postingDateOrDate2 wd) colspans
 
 -- | Given a date span (representing a report interval) and a list of
 -- postings within it, aggregate the postings into one summary posting per
@@ -414,7 +415,7 @@ tests_PostingsReport = testGroup "PostingsReport" [
     -}
 
   ,testCase "summarisePostingsByInterval" $
-    summarisePostingsByInterval PrimaryDate mempty False Nothing [] @?= []
+    summarisePostingsByInterval PrimaryDate mempty False [] [] @?= []
 
   -- ,tests_summarisePostingsInDateSpan = [
     --  "summarisePostingsInDateSpan" ~: do

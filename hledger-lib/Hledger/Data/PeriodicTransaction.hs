@@ -199,7 +199,7 @@ instance Show PeriodicTransaction where
 
 runPeriodicTransaction :: Bool -> PeriodicTransaction -> DateSpan -> [Transaction]
 runPeriodicTransaction verbosetags PeriodicTransaction{..} requestedspan =
-    [ t{tdate=d} | (d, _) <- maybe [] dayPartitionToList alltxnspans, spanContainsDate requestedspan d ]
+    [ t{tdate=d} | Just d <- map spanStart alltxnspans, spanContainsDate requestedspan d ]
   where
     t = nulltransaction{
            tsourcepos   = ptsourcepos
@@ -212,8 +212,9 @@ runPeriodicTransaction verbosetags PeriodicTransaction{..} requestedspan =
           }
         & transactionAddHiddenAndMaybeVisibleTag verbosetags (generatedTransactionTagName, period)
     period = "~ " <> ptperiodexpr
-    -- All the date spans described by this periodic transaction rule.
-    alltxnspans = splitSpan adjust ptinterval span'
+    -- All the date spans described by this periodic transaction rule, as a lazy list,
+    -- so that a rule spanning a huge number of periods doesn't build them all in memory (#1683).
+    alltxnspans = splitSpanToDateSpans adjust ptinterval span'
       where
         -- If the PT does not specify  start or end dates, we take them from the requestedspan.
         span' = ptspan `spanValidDefaultsFrom` requestedspan
