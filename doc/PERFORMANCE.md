@@ -244,8 +244,8 @@ no reports or exports configured) takes at 100k txns: hledger 1.52 3.6s, hledger
 - hledger 1, Beancount 2, Beancount 3 are similar in speed
 - hledger main is faster
 - Ledger 3.4.1 is faster still with small files, but scales badly with large files
-- Ledger's repl is 1.5x faster with small files, doesn't help with large files
-- hledger's repl is 3-5x faster at all sizes, approaching half of rustledger speed
+- Ledger's repl gives a 1.5x speedup with small files, doesn't help with large files
+- hledger's repl gives a 3-5x speedup at all sizes
 - rustledger and Tackler are much faster than the rest.
 - Tackler uses less memory than rustledger, and shows a flat balance report almost as fast as it.
   (When configured right. Its default tree balance report is slow with large files.)
