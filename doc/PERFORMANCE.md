@@ -119,20 +119,6 @@ The test machine is a macbook pro m5 pro with macos 27.0. The apps:
 - rustledger 0.24.0: `brew install rustledger`
 - Tackler 26.8.1: `cargo install tackler --locked`, built with Homebrew's Rust 1.96
 
-**Check** (`hledger check`, `ledger source`, `bean-check`, `rledger check`):
-
-| app                        |   1k txns     |   10k txns    |   100k txns     |
-|----------------------------|--------------:|--------------:|----------------:|
-| hledger 1.52               | 0.15s, 54 MB  | 0.39s, 126 MB | 3.6s, 744 MB    |
-| hledger main               | 0.04s, 52 MB  | 0.12s, 93 MB  | 1.1s, 587 MB    |
-| Ledger 3.4.1               | 0.01s, 14 MB  | 0.05s, 46 MB  | 0.54s, 364 MB   |
-| Beancount 2.3.6 (first run)   | 0.06s, 32 MB  | 0.30s, 63 MB  | 4.6s, 744 MB    |
-| Beancount 2.3.6 (cached)      | 0.06s, 32 MB  | 0.28s, 63 MB  | 0.79s, 509 MB   |
-| Beancount 3.2.3 (first run)   | 0.07s, 34 MB  | 0.32s, 65 MB  | 5.2s, 747 MB    |
-| Beancount 3.2.3 (cached)      | 0.07s, 34 MB  | 0.31s, 65 MB  | 0.79s, 513 MB   |
-| rustledger 0.24.0 (first run) | 0.01s, 14 MB  | 0.06s, 73 MB  | 0.60s, 574 MB   |
-| rustledger 0.24.0 (cached)    | <0.01s, 10 MB | 0.01s, 33 MB  | 0.11s, 207 MB   |
-
 **Balance report** (`hledger balance`, `ledger balance`, `bean-query FILE 'select account,
 sum(position) group by account'`, `rledger report FILE balances`, `tackler --reports balance`):
 
@@ -211,7 +197,7 @@ With large journals (10k and 100k transactions) the apps separate:
 2.5x faster than hledger main at 100k on a first run (with the same memory) and 10x faster with its
 cache (or 2x faster than a repeated report in hledger's repl)
 - Beancount 2 and 3 are 2x slower than hledger main at 10k and 3-5x slower at 100k on a first
-run (3 is no faster than 2 here), though their cache makes a repeated check fast
+run (3 is no faster than 2 here), though their cache makes repeated runs faster
 - Ledger grows
 superlinearly on these journals, in time (balance: 18s at 100k) and memory (print and register need
 4 GB at 10k). The cost is in its reports rather than its reading: with the journal already loaded
@@ -222,6 +208,10 @@ superlinearly with the number of rows: 0.05s for 7k rows (1k transactions), 1.1s
 transactions). On these journals all 26k possible rows have appeared by 20k transactions, and from
 there the report takes a near-constant 1.4-1.5s however many transactions are read. That is why its
 transactions per second figure dips at 10k.
+
+Checking a journal (`hledger check`, `ledger source`, `bean-check`, `rledger check`),
+takes at 100k txns: hledger 1.52 3.6s, hledger main 1.1s, Ledger 0.54s, Beancount 2 and 3 4.6-5.2s
+(0.8s cached), rustledger 0.6s (0.1s cached).
 
 **TLDR**
 
