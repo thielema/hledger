@@ -186,15 +186,7 @@ the 1k figures are rough):
 | rustledger 0.24.0 |   >100k |     333k |      769k |
 | Tackler 26.8.1    |     25k |     9.1k |       67k |
 
-Summarising based on throughput:
-
-- hledger 1, beancount 2, beancount 3 are similar in speed
-- hledger main is faster
-- tackler is similar to hledger main, except slower at the 10ktxn size
-- ledger 3.4.1 is faster still with small files, but scales badly with large files
-- rustledger is much faster than everything else, at all sizes.
-
-More details:
+**Commentary**
 
 With a typical one-year journal (1k transactions), all of these apps answer in a fraction of a
 second, and the differences are hundredths of a second, much of it startup cost: a balance report
@@ -220,13 +212,19 @@ transactions). On these journals all 26k possible rows have appeared by 20k tran
 there the report takes a near-constant 1.4-1.5s however many transactions are read. That is why its
 transactions per second figure dips at 10k.
 
-Some published figures from elsewhere
-(different machines, data and methods, may be outdated):
+**TLDR**
 
-- [Tackler](https://tackler.fi/docs/tackler/latest/features/performance/) "can process from 300 000 to 900 000 transactions per second on modern laptop"
-- [rustledger](https://rustledger.github.io/roadmap/performance.html) "10-30x faster than Python Beancount on typical ledgers"
+- hledger 1, beancount 2, beancount 3 are similar in speed
+- hledger main is faster
+- tackler is similar to hledger main, except slower at the 10ktxn size
+- ledger 3.4.1 is faster still with small files, but scales badly with large files
+- rustledger is much faster than everything else, at all sizes.
 
 <!-- When a release is made, update these tables (and the "main" wording above). -->
+<!--
+- [Tackler](https://tackler.fi/docs/tackler/latest/features/performance/) "can process from 300 000 to 900 000 transactions per second on modern laptop"
+- [rustledger](https://rustledger.github.io/roadmap/performance.html) "10-30x faster than Python Beancount on typical ledgers"
+-->
 
 ## What makes it slower
 
