@@ -122,6 +122,8 @@ row without it and a "(cached)" row with it.
 reports skip reading; the "(repl)" rows show the cost of one more report in such a session, and the session's
 peak memory after several reports.
 - Ledger's interactive mode (`ledger -f FILE` with no command) works the same way.
+- Note that a cache or repl only helps when running more reports on unchanged journal files.
+  Every time you make a change, your next run will have uncached performance.
 
 Note, the test journals have a particular shape (simple transactions, many commodities, accounts, costs, and price directives),
 and the apps have different features (they do more or less data inference, validation, calculation etc).
