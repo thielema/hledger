@@ -216,7 +216,11 @@ the 1k figures are rough.
 
 #### Charts
 
-*[Remember](#other-apps): the test journals have a particular shape (simple transactions, many commodities, accounts, costs, and price directives), and the apps have different features (they do more or less data inference, validation, calculation etc). Also, I haven’t checked all outputs for correctness.*
+*[Remember](#other-apps): the test journals have a particular shape 
+(simple transactions, many commodities, accounts, costs, and price directives),
+and the apps have different features (they do more or less data inference, validation, calculation etc).
+Also, I haven’t checked all outputs for correctness.
+And: all numbers use (a fast machine) ... scale them down or up for your machine.*
 
 <p align="center"><img src="performance-throughput-fresh.svg" alt="Throughput chart, uncached runs" style="max-width:100%;"></p>
 
