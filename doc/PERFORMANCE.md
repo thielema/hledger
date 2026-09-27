@@ -129,9 +129,11 @@ Times are seconds (best of two runs; single runs at 1M) and peak memory (RSS), m
 runs taking more than 5 minutes or 10 GB were killed. 
 Results are sorted by small-file performance, fastest at the top.
 
-**Flat balance report** (`hledger balance`, `ledger balance --flat`, `bean-query FILE 'select account,
+#### Flat balance report
+
+Commands: `hledger balance`, `ledger balance --flat`, `bean-query FILE 'select account,
 sum(position) group by account'`, `rledger report FILE balances`, `tackler --reports balance` with
-`type = "flat"` configured; all of these list each account's own exclusive balance):
+`type = "flat"` configured. All of these list each account's own exclusive balance.
 
 | app                           |       1k txns |      10k txns |     100k txns |         1M txns |
 |-------------------------------|--------------:|--------------:|--------------:|----------------:|
@@ -148,8 +150,10 @@ sum(position) group by account'`, `rledger report FILE balances`, `tackler --rep
 | Beancount 2.3.6 (first run)   |  0.12s, 36 MB |  0.40s, 68 MB |  5.7s, 748 MB |     63s, 8.5 GB |
 | Beancount 3.2.3 (first run)   |  0.12s, 42 MB |  0.46s, 74 MB |  6.6s, 756 MB |     72s, 8.5 GB |
 
-**Print** (`hledger print`, `ledger print`, `bean-query FILE print`, `rledger report FILE journal`,
-Tackler's `identity` export):
+#### Print
+
+Commands: `hledger print`, `ledger print`, `bean-query FILE print`, `rledger report FILE journal`,
+Tackler's `identity` export.
 
 | app                           |       1k txns |      10k txns |          100k txns |      1M txns |
 |-------------------------------|--------------:|--------------:|-------------------:|-------------:|
@@ -166,10 +170,12 @@ Tackler's `identity` export):
 | Beancount 3.2.3 (first run)   |  0.11s, 42 MB |  0.49s, 73 MB |       7.4s, 756 MB |  83s, 8.5 GB |
 | Beancount 3.2.3 (cached)      |  0.13s, 42 MB |  0.49s, 74 MB |       5.2s, 543 MB |  53s, 4.9 GB |
 
-**Register** (`hledger register`, `ledger register`, `bean-query FILE journal`,
+#### Register
+
+Commands: `hledger register`, `ledger register`, `bean-query FILE journal`,
 `tackler --reports register`; rustledger has no report with running balances. Note hledger's,
 Ledger's and Beancount's show a running total of all postings shown, in all 26 commodities here,
-while Tackler's shows a running balance per account in one commodity, which is much less to render):
+while Tackler's shows a running balance per account in one commodity, which is much less to render.
 
 | app                         |      1k txns |     10k txns |          100k txns |            1M txns |
 |-----------------------------|-------------:|-------------:|-------------------:|-------------------:|
@@ -184,14 +190,17 @@ while Tackler's shows a running balance per account in one commodity, which is m
 | Beancount 3.2.3 (cached)    | 0.28s, 46 MB | 1.9s, 108 MB |        19s, 882 MB |       199s, 8.4 GB |
 | Beancount 3.2.3 (first run) | 0.28s, 46 MB | 1.9s, 108 MB |        21s, 1.0 GB | killed, over 10 GB |
 
-**Throughput** (effective transactions per second, calculated from the balance report table above,
-which represents real-world usage best; using the cached figures for apps that cache;
-the 1k figures are rough):
+#### Throughput
+
+Effective transactions per second, calculated from the balance report table above,
+which represents real-world usage best; with first-run and cached figures for the apps that cache;
+the 1k figures are rough.
 
 | app                        | 1k txns | 10k txns | 100k txns | 1M txns |
 |----------------------------|--------:|---------:|----------:|--------:|
 | rustledger 0.24.0 (cached) |   >100k |     333k |      769k |    920k |
 | Tackler 26.8.1             |   >100k |     250k |      625k |    750k |
+| rustledger 0.24.0 (first run) |    100k |     125k |      164k |    145k |
 | hledger main (repl)        |     77k |     150k |      310k |    380k |
 | Ledger 3.4.1 (repl)        |     50k |      77k |      6.3k |       - |
 | Ledger 3.4.1               |     33k |      56k |      6.7k |       - |
@@ -199,8 +208,18 @@ the 1k figures are rough):
 | hledger 1.52               |     12k |      22k |       25k |     25k |
 | Beancount 2.3.6 (cached)   |    8.3k |      26k |       31k |     31k |
 | Beancount 3.2.3 (cached)   |    8.3k |      22k |       25k |     25k |
+| Beancount 2.3.6 (first run) |    8.3k |      25k |       18k |     16k |
+| Beancount 3.2.3 (first run) |    8.3k |      22k |       15k |     14k |
 
-**Commentary**
+#### Charts
+
+<p align="center"><img src="performance-throughput-fresh.svg" alt="Throughput chart, uncached runs" style="max-width:100%;"></p>
+
+<p align="center"><img src="performance-throughput.svg" alt="Throughput chart: transactions per second by journal size, log scales, including cached and repl runs" style="max-width:100%;"></p>
+
+<p align="center"><img src="performance-memory.svg" alt="Memory chart: peak memory of a flat balance report by journal size, log scales, one line per app" style="max-width:100%;"></p>
+
+#### Commentary
 
 With a typical one-year journal (1k transactions), all of these apps answer in a fraction of a
 second, and the differences are hundredths of a second, much of it startup cost: a balance report
@@ -239,7 +258,7 @@ Checking a journal (`hledger check`, `ledger source`, `bean-check`, `rledger che
 no reports or exports configured) takes at 100k txns: hledger 1.52 3.6s, hledger main 1.1s, Ledger
 0.54s, Beancount 2 and 3 4.6-5.2s (0.8s cached), rustledger 0.6s (0.1s cached), Tackler 0.08s.
 
-**TLDR**
+#### TLDR
 
 - hledger 1, Beancount 2, Beancount 3 are similar in speed
 - hledger main is faster
@@ -254,7 +273,8 @@ no reports or exports configured) takes at 100k txns: hledger 1.52 3.6s, hledger
   rustledger barely wins for balance reports (the most used real-world report),
   and therefore wins on throughput also. But only on cached runs; Tackler is cacheless.
 
-<!-- When a release is made, update these tables (and the "main" wording above). -->
+<!-- When a release is made, update these tables (and the "main" wording above),
+then update the figures in tools/perfcharts.py and run it to regenerate the charts. -->
 <!--
 - [Tackler](https://tackler.fi/docs/tackler/latest/features/performance/) "can process from 300 000 to 900 000 transactions per second on modern laptop"
 - [rustledger](https://rustledger.github.io/roadmap/performance.html) "10-30x faster than Python Beancount on typical ledgers"
@@ -262,7 +282,7 @@ no reports or exports configured) takes at 100k txns: hledger 1.52 3.6s, hledger
 
 ## What makes hledger slower
 
-Run time grows with the number of postings, with how much each entry uses beyond the basics, and
+Back to hledger: Run time grows with the number of postings, with how much each entry uses beyond the basics, and
 with how much output a report produces.
 
 **Size.** Time is roughly proportional to the number of transactions and postings: about 40k
@@ -340,7 +360,7 @@ The other `bench*.sh` files in the bench/ directory are alternative command sets
 eg for many accounts, many transactions, or comparing with Ledger.
 quickbench needs the executables to be in PATH.
 
-#### Throughput
+#### Throughput with stats
 
 `hledger stats` reports transactions per second. These recipes use it to show throughput at various data sizes:
 
