@@ -65,6 +65,7 @@ module Hledger.Data.Amount (
   amountWithCommodity,
   amountCost,
   amountCostBasis,
+  amountSetCostToBasis,
   amountIsZero,
   amountLooksZero,
   amountSetQuantity,
@@ -423,6 +424,15 @@ amountCostBasis a@Amount{aquantity=q, acostbasis=mcb} =
     case mcb >>= cbCost of
       Just b@Amount{aquantity=bq} -> b{aquantity=multiplyQuantities bq q}
       Nothing                     -> amountCost a
+
+-- | If this amount has a cost basis with a known per-unit cost, replace its
+-- transacted cost with that basis cost, so that 'amountCost', and sums at
+-- cost (which merge amounts by commodity and transacted cost, dropping
+-- differing bases), reflect the cost basis. Other amounts are unchanged.
+amountSetCostToBasis :: Amount -> Amount
+amountSetCostToBasis a = case acostbasis a >>= cbCost of
+  Just b  -> a{acost = Just (UnitCost b)}
+  Nothing -> a
 
 -- | Strip all costs from an Amount
 amountStripCost :: Amount -> Amount

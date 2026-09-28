@@ -565,11 +565,13 @@ It is one of:
 - `--valuechange` : show the change in period-end historical balance values
   (caused by deposits, withdrawals, and/or market price fluctuations)
 - `--gain` : show capital gain/loss for each account: the current valued balance
-  minus the net of postings' transacted costs (acquisition costs minus disposal
-  proceeds). For accounts where nothing has been sold this equals the unrealised
-  gain; once disposals exist the figure also includes realised gain on the
-  disposed units, so it is best read as "total gain since inception".
-  To track realised gain separately, use lot notation (see [Lot reporting](#lot-reporting)).
+  minus its cost. For [lot-tracked](#lot-reporting) commodities the cost is
+  the cost basis of the units still held, so this is the unrealised gain.
+  For other commodities it is the net of postings' transacted costs
+  (acquisition costs minus disposal proceeds): where nothing has been sold
+  this too is the unrealised gain, but once disposals exist the figure also
+  includes the realised gain on the disposed units, so it is best read as
+  "total gain since inception".
 - `--count` : show the count of postings
 
 #### Accumulation mode

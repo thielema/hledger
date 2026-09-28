@@ -1422,3 +1422,77 @@ $ hledger -f- print -x
     assets:dollars                             $-135
 
 >=
+
+# ** 70. --gain shows value minus cost basis for lot accounts, however the
+# costs were written (#2751): here with @@ ...
+<
+commodity AAPL  ; lots:
+
+2026-01-02 buy
+    assets:stock    10 AAPL @@ $1000
+    assets:cash
+
+2026-01-03 sell
+    assets:stock    -4 AAPL @@ $600
+    assets:cash      $600
+
+P 2026-01-04 AAPL $200
+$ hledger -f- bal assets:stock --gain -N
+                $600  assets:stock
+
+# ** 71. ... and the same with @.
+<
+commodity AAPL  ; lots:
+
+2026-01-02 buy
+    assets:stock    10 AAPL @ $100
+    assets:cash
+
+2026-01-03 sell
+    assets:stock    -4 AAPL @ $150
+    assets:cash      $600
+
+P 2026-01-04 AAPL $200
+$ hledger -f- bal assets:stock --gain -N
+                $600  assets:stock
+
+# ** 72. Also after a disposal from several lots, with and without --lots:
+# the remaining 5 AAPL from the second lot cost $60 each and are worth $80.
+<
+commodity AAPL  ; lots:
+
+2026-01-01 buy
+    assets:cash     $-500
+    assets:stock       10 AAPL @ $50
+
+2026-01-02 buy
+    assets:cash     $-600
+    assets:stock       10 AAPL @ $60
+
+2026-02-01 sell
+    assets:stock     -15 AAPL @ $70
+    assets:cash
+
+P 2026-03-01 AAPL $80
+$ hledger -f- bal assets:stock --gain -N
+                $100  assets:stock
+
+# ** 73.
+<
+commodity AAPL  ; lots:
+
+2026-01-01 buy
+    assets:cash     $-500
+    assets:stock       10 AAPL @ $50
+
+2026-01-02 buy
+    assets:cash     $-600
+    assets:stock       10 AAPL @ $60
+
+2026-02-01 sell
+    assets:stock     -15 AAPL @ $70
+    assets:cash
+
+P 2026-03-01 AAPL $80
+$ hledger -f- bal assets:stock --gain -N --lots
+                $100  assets:stock:{2026-01-02, $60}

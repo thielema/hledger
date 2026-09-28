@@ -170,6 +170,7 @@ journalTransform opts =
   <&> maybeWarnAboutAnon opts
   <&> maybeObfuscate opts
   <&> maybeConvertToCostBasis opts
+  <&> maybeSetCostsToBasisForGain opts
   <&> maybeCollapseLotDetail opts
 
 -- | With -B/--value=cost, convert amounts to cost basis now, before lot
@@ -180,6 +181,18 @@ journalTransform opts =
 maybeConvertToCostBasis :: CliOpts -> Journal -> Journal
 maybeConvertToCostBasis opts
   | conversionop_ (_rsReportOpts $ reportspec_ opts) == Just ToCost = journalToCost ToCost
+  | otherwise = id
+
+-- | With --gain, replace lot postings' transacted costs with their cost basis
+-- now, before lot detail is collapsed, for the same reason: the gain
+-- calculation subtracts cost from summed account balances, and summing
+-- merges amounts by commodity and transacted cost (dropping differing
+-- bases), so the basis is carried in the transacted cost, which sums
+-- correctly. Then gain is value minus cost basis for lot postings however
+-- their costs were written (@ or @@), as it already was for -B (#2751).
+maybeSetCostsToBasisForGain :: CliOpts -> Journal -> Journal
+maybeSetCostsToBasisForGain opts
+  | balancecalc_ (_rsReportOpts $ reportspec_ opts) == CalcGain = journalMapPostingAmounts (mapMixedAmount amountSetCostToBasis)
   | otherwise = id
 
 -- | Collapse lot-tracking detail (strip lot subaccounts, drop synthetic lot-processing
