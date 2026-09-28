@@ -78,7 +78,7 @@ unsupportedOutputFormatError fmt = "Sorry, output format \""++fmt++"\" is unreco
 -- The periods are counted without building the report, in constant memory.
 --
 -- This is called explicitly by each command that runs such a report (balance, the compound
--- balance commands, stats, roi), rather than living in the report code: the report functions
+-- balance commands, stats, roi, activity), rather than living in the report code: the report functions
 -- are pure, so warning from them would need unsafePerformIO or trace, with no guarantee the
 -- message appears before the work starts. Doing it in the command's IO, before the report is
 -- forced, keeps the ordering reliable. New multi-period report commands should call this too.
