@@ -15,6 +15,7 @@ module Hledger.Cli.Utils
      withPossibleJournal,
      writeOutput,
      writeOutputLazyText,
+     warnIfLargeMultiPeriodReport,
      withTitle,
      printTitle,
      journalTransform,
@@ -69,6 +70,28 @@ import Data.Functor ((<&>))
 -- | Standard error message for a bad output format specified with -O/-o.
 unsupportedOutputFormatError :: String -> String
 unsupportedOutputFormatError fmt = "Sorry, output format \""++fmt++"\" is unrecognised or not yet supported for this kind of report."
+
+-- | If a multi-period report has an implausible number of periods (more than 10,000;
+-- in practice this means a mistyped date in the journal, making the report span thousands of years),
+-- print a warning on stderr before starting it, so the user can cancel (#1683).
+-- Such a report can need a lot of memory (a balance report needs a column per period).
+-- The periods are counted without building the report, in constant memory.
+--
+-- This is called explicitly by each command that runs such a report (balance, the compound
+-- balance commands, stats, roi), rather than living in the report code: the report functions
+-- are pure, so warning from them would need unsafePerformIO or trace, with no guarantee the
+-- message appears before the work starts. Doing it in the command's IO, before the report is
+-- forced, keeps the ordering reliable. New multi-period report commands should call this too.
+warnIfLargeMultiPeriodReport :: ReportSpec -> Journal -> IO ()
+warnIfLargeMultiPeriodReport rspec@ReportSpec{_rsReportOpts=ropts} j =
+  when (interval_ ropts /= NoInterval && nperiods > maxExpectedPeriods) $ warnIO $ printf
+    ("this report has %d periods (%s), and may use a lot of memory.\n"
+    <> "If not intended, press control-C now, and check for a mistyped date, or narrow the report.")
+    nperiods (showDateSpan rspan)
+  where
+    (rspan, spans) = reportSpanLazy j rspec
+    nperiods = length spans  -- constant memory: the lazy spans are counted, not kept
+    maxExpectedPeriods = 10000 :: Int
 
 -- | Parse the user's specified journal file(s) as a Journal, maybe apply some
 -- transformations according to options, and run a hledger command with it.

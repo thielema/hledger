@@ -39,7 +39,7 @@ import Text.Tabular.AsciiWide as Tabular hiding (render)
 import Hledger
 import Hledger.Cli.Commands.Balance
 import Hledger.Cli.CliOptions
-import Hledger.Cli.Utils (unsupportedOutputFormatError, writeOutputLazyText)
+import Hledger.Cli.Utils (unsupportedOutputFormatError, writeOutputLazyText, warnIfLargeMultiPeriodReport)
 import Hledger.Cli.Commands.Balance.Internal
 import Hledger.Write.Csv (CSV, printCSV, printTSV)
 import Hledger.Write.Html (formatRow, formatTitle, htmlAsLazyText, nl, Html, toHtml)
@@ -138,6 +138,7 @@ compoundBalanceCommandMode CompoundBalanceCommandSpec{..} =
 -- | Generate a runnable command from a compound balance command specification.
 compoundBalanceCommand :: CompoundBalanceCommandSpec -> (CliOpts -> Journal -> IO ())
 compoundBalanceCommand CompoundBalanceCommandSpec{..} opts@CliOpts{reportspec_=rspec, rawopts_=rawopts} j = do
+    warnIfLargeMultiPeriodReport rspec j
     writeOutputLazyText opts $ render $ styleAmounts styles cbr
   where
     styles = journalCommodityStylesWith HardRounding j

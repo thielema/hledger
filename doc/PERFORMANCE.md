@@ -646,5 +646,8 @@ The details:
   lazy list, generated twice (once to find the report's end date), and runs in constant memory:
   7 million days in 0.7s and 34 MB. Periodic transaction rules use the same lazy list to generate
   forecast transactions (a daily rule over 300 years: 20s to 0.65s). A multi-period balance report
-  needs a column per period by design, and costs about 3 KB of memory per column, so millions of
-  columns still exhaust memory.
+  needs a column per period by design (about 3 KB each on a small journal), so millions of
+  columns still exhaust memory. Rather than impose a limit, the multi-period commands (balance,
+  bs/is/cf, stats, roi) count the periods first, in constant memory, and warn when there are
+  more than 10,000, which in practice means a mistyped date; likewise reading a journal warns
+  when --forecast would generate more than 100,000 transactions. The user can then cancel.

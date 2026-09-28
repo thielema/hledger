@@ -393,6 +393,7 @@ balancemode = hledgerCommandMode
 balance :: CliOpts -> Journal -> IO ()
 balance opts@CliOpts{reportspec_=rspec} j = case balancecalc_ ropts of
     CalcBudget -> do  -- single or multi period budget report
+      warnIfLargeMultiPeriodReport rspec j
       let rspan = fst $ reportSpan j rspec
           budgetreport = styleAmounts styles $ budgetReport rspec (balancingopts_ $ inputopts_ opts) rspan j
           render = case fmt of
@@ -407,6 +408,7 @@ balance opts@CliOpts{reportspec_=rspec} j = case balancecalc_ ropts of
       writeOutputLazyText opts $ render budgetreport
 
     _ | multiperiod -> do  -- multi period balance report
+        warnIfLargeMultiPeriodReport rspec j
         let report = styleAmounts styles $ multiBalanceReport rspec j
             render = case fmt of
               "txt"  -> multiBalanceReportAsText ropts

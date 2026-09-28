@@ -7,6 +7,7 @@ A 'PeriodicTransaction' is a rule describing recurring transactions.
 -}
 module Hledger.Data.PeriodicTransaction (
     runPeriodicTransaction
+  , periodicTransactionDates
   , checkPeriodicTransactionStartDate
 )
 where
@@ -15,6 +16,7 @@ import Data.Function ((&))
 import Data.Maybe (isNothing)
 import Data.Text qualified as T
 import Data.Text.IO qualified as T
+import Data.Time (Day)
 import Text.Printf
 
 import Hledger.Data.Types
@@ -198,8 +200,8 @@ instance Show PeriodicTransaction where
 -- <BLANKLINE>
 
 runPeriodicTransaction :: Bool -> PeriodicTransaction -> DateSpan -> [Transaction]
-runPeriodicTransaction verbosetags PeriodicTransaction{..} requestedspan =
-    [ t{tdate=d} | Just d <- map spanStart alltxnspans, spanContainsDate requestedspan d ]
+runPeriodicTransaction verbosetags pt@PeriodicTransaction{..} requestedspan =
+    [ t{tdate=d} | d <- periodicTransactionDates pt requestedspan ]
   where
     t = nulltransaction{
            tsourcepos   = ptsourcepos
@@ -212,8 +214,15 @@ runPeriodicTransaction verbosetags PeriodicTransaction{..} requestedspan =
           }
         & transactionAddHiddenAndMaybeVisibleTag verbosetags (generatedTransactionTagName, period)
     period = "~ " <> ptperiodexpr
-    -- All the date spans described by this periodic transaction rule, as a lazy list,
-    -- so that a rule spanning a huge number of periods doesn't build them all in memory (#1683).
+
+-- | The dates on which this periodic transaction rule generates a transaction within the
+-- given span, as a lazily generated list (so counting or consuming them once uses constant
+-- memory however many there are, cf #1683).
+periodicTransactionDates :: PeriodicTransaction -> DateSpan -> [Day]
+periodicTransactionDates PeriodicTransaction{ptspan, ptinterval} requestedspan =
+    [ d | Just d <- map spanStart alltxnspans, spanContainsDate requestedspan d ]
+  where
+    -- All the date spans described by this periodic transaction rule.
     alltxnspans = splitSpanToDateSpans adjust ptinterval span'
       where
         -- If the PT does not specify  start or end dates, we take them from the requestedspan.

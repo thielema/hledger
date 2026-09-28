@@ -141,7 +141,7 @@ module Hledger.Read.Common (
 where
 
 --- ** imports
-import Control.Monad (foldM, liftM2, when, unless, (>=>), (<=<))
+import Control.Monad (foldM, forM_, liftM2, when, unless, (>=>), (<=<))
 import Control.Monad.Fail qualified as Fail (fail)
 import Control.Exception (evaluate)
 import Control.Exception.Safe (tryIO)
@@ -396,6 +396,9 @@ dbgFastPathStats FastPathStats{..}
 -- | Post-process a parsed Journal: infer missing information, check validity,
 -- and enrich postings with computed metadata.
 -- See doc\/SPEC-finalising.md for the full pipeline specification.
+maxExpectedForecastTxns :: Int
+maxExpectedForecastTxns = 100000
+
 journalFinalise :: InputOpts -> FilePath -> Text -> ParsedJournal -> ExceptT String IO Journal
 journalFinalise iopts@InputOpts{auto_,balancingopts_,ignore_lots_,infer_costs_,infer_equity_,strict_,verbose_tags_,_ioDay} f txt pj = do
   let
@@ -414,6 +417,15 @@ journalFinalise iopts@InputOpts{auto_,balancingopts_,ignore_lots_,infer_costs_,i
     timedE name stage = fmap (dbgTime 1 name) . stage   -- a stage returning an Either error Journal
 
   t <- liftIO getPOSIXTime
+  -- Warn before generating an implausible number of forecast transactions
+  -- (in practice, a mistyped date in a periodic rule or --forecast period), so the user can cancel (#1683).
+  -- They are counted without being generated, in constant memory.
+  forM_ (forecastPeriod iopts pj) $ \forecastspan -> do
+    let n = sum [ length $ periodicTransactionDates pt forecastspan | pt <- jperiodictxns pj ]
+    when (n > maxExpectedForecastTxns) $ warnIO $ printf
+      ("--forecast would generate %d transactions (forecast period %s),\n"
+      <> "using a lot of memory. If not intended, press control-C now, and check for a mistyped date.")
+      n (showDateSpan forecastspan)
   j <- liftEither $
     pj{jglobalcommoditystyles=fromMaybe mempty commodity_styles_}
 

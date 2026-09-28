@@ -7838,6 +7838,10 @@ and see memory and garbage collection statistics with `+RTS -s -RTS`.
 To use less memory at some cost in speed, add `+RTS -c -RTS` to use the compacting garbage collector;
 on large journals this can reduce memory use by 20-40%, while running 40-60% slower.
 (A RTS `-M` limit also enables this automatically, as memory use approaches the limit.)
+A multi-period report with more than 10,000 periods, or a `--forecast` that would generate
+more than 100,000 transactions (which in practice means a mistyped date somewhere,
+making the report or the forecast span thousands of years), prints a warning before starting,
+since it may need a lot of memory, so that you can cancel it.
 
 ## Troubleshooting
 

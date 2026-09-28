@@ -64,6 +64,7 @@ module Hledger.Reports.ReportOptions (
   postingDateFn,
   reportSpan,
   reportSpanBothDates,
+  reportSpanLazy,
   reportSpanBothDatesLazy,
   reportStartDate,
   reportEndDate,
@@ -871,15 +872,22 @@ reportSpanHelper bothdates j rspec@ReportSpec{_rsReportOpts=ropts} =
         maybe (DateSpan Nothing Nothing) (mkSpan . dayPartitionStartEnd) intervalspans
       where mkSpan (s, e) = DateSpan (Just $ Exact s) (Just . Exact $ addDays 1 e)
 
--- | Like 'reportSpanBothDates', but returns the report periods as a lazily generated list
+-- | Like 'reportSpan', but returns the report periods as a lazily generated list
 -- of 'DateSpan's rather than a 'DayPartition', so that a report which traverses them once
--- (like the postings report) uses constant memory however many periods there are (#1683).
+-- uses constant memory however many periods there are (#1683).
 -- The list is a single unbounded span if there are no periods, like 'maybeDayPartitionToDateSpans'.
+reportSpanLazy :: Journal -> ReportSpec -> (DateSpan, [DateSpan])
+reportSpanLazy = reportSpanHelperLazy False
+
+-- | Like 'reportSpanLazy', but considers both primary and secondary dates. Used by the postings report.
 reportSpanBothDatesLazy :: Journal -> ReportSpec -> (DateSpan, [DateSpan])
-reportSpanBothDatesLazy j rspec@ReportSpec{_rsReportOpts=ropts} =
+reportSpanBothDatesLazy = reportSpanHelperLazy True
+
+reportSpanHelperLazy :: Bool -> Journal -> ReportSpec -> (DateSpan, [DateSpan])
+reportSpanHelperLazy bothdates j rspec@ReportSpec{_rsReportOpts=ropts} =
     (enlargedreportspan, intervalspans)
   where
-    (reportspan, adjust) = reportSpanAndAdjust True j rspec
+    (reportspan, adjust) = reportSpanAndAdjust bothdates j rspec
     intervalspans = case splitSpanToDateSpans adjust (interval_ ropts) reportspan of
       [] -> [DateSpan Nothing Nothing]
       ss -> ss
