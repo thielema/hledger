@@ -73,6 +73,12 @@ balancing exception; the exception is now explained as basis balancing,
 keyed on a tag set before balancing, and amountless gain postings are
 allowed again. Plain `print` shows lot postings with their inferred basis
 annotations so its output re-reads standalone under the default method.)
+With `--infer-equity`, a disposal's conversion postings likewise record the
+units at cost basis rather than at the sale price (#2751), so the entry and
+the balance sheet sum to zero; there the disposal's cost is ignored and the
+gain posting is counted, and the balancer accepts a conversion amount
+matching the cost basis. (The alternative, transacted-cost conversion
+postings, left the accounting equation off by the gain.)
 
 ### Don't enforce basis = transacted cost in acquisitions by default
 

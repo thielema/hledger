@@ -92,6 +92,7 @@ module Hledger.Data.Posting (
   postingApplyValuation,
   postingToCost,
   postingAddInferredEquityPostings,
+  postingsAddInferredEquityPostings,
   postingPriceDirectivesFromCost,
   postingCommodities,
   tests_Posting
@@ -103,7 +104,7 @@ import Data.Foldable (asum)
 import Data.Function ((&))
 import Data.Map qualified as M
 import Data.Maybe (fromMaybe, isJust, mapMaybe)
-import Data.List (sort, union)
+import Data.List (nub, sort, union)
 #if !MIN_VERSION_base(4,20,0)
 import Data.List (foldl')
 #endif
@@ -835,40 +836,57 @@ postingToCostWith tocost p
   where
     nocosts = (not . any (isJust . acost) . amountsRaw) $ pamount p
 
--- | Generate equity conversion postings corresponding to a 'Posting''s cost(s)
--- (one pair of conversion postings per cost), wherever they don't already exist.
+-- | Given a posting with costs, tag it as a cost posting and add
+-- equity conversion postings after it, one pair per cost: one removing
+-- the quantity transacted, one adding what it cost. See
+-- 'postingsAddInferredEquityPostings'.
 postingAddInferredEquityPostings :: Bool -> Text -> Posting -> [Posting]
-postingAddInferredEquityPostings verbosetags equityAcct p
-  -- this posting has no costs
-  | null costs = [p]
-  -- this posting is already tagged as having associated conversion postings
-  | costPostingTagName `elem` map fst (ptags p) = [p]
-  -- tag the posting, and for each of its costs, add an equivalent pair of conversion postings after it
-  | otherwise =
-    postingAddHiddenAndMaybeVisibleTag False verbosetags (costPostingTagName,"") p :
-    concatMap makeConversionPostings costs
+postingAddInferredEquityPostings verbosetags equityAcct p = postingsAddInferredEquityPostings verbosetags equityAcct [p]
+
+-- | Like 'postingAddInferredEquityPostings', for a posting or for the
+-- consecutive per-lot fragments of one posting (cf 'transactionInferEquityPostings'):
+-- postings with costs are tagged as cost postings, and one pair of equity
+-- conversion postings is added after them for each (commodity, cost commodity)
+-- pair, with the fragments' quantities and costs summed, so that collapsing
+-- lot detail can still merge the fragments.
+--
+-- The cost used is the cost basis where known (a lot disposal, after lot
+-- processing), otherwise the transacted cost. So a disposal's conversion
+-- postings record the disposed units at what they cost, keeping the entry
+-- balanced at cost basis, and the difference from the proceeds stays in the
+-- realised gain posting.
+--
+-- Postings already tagged as cost postings (having conversion postings) are left alone.
+postingsAddInferredEquityPostings :: Bool -> Text -> [Posting] -> [Posting]
+postingsAddInferredEquityPostings _ _ [] = []
+postingsAddInferredEquityPostings verbosetags equityAcct ps@(p:_)
+  | null costfulamounts = ps
+  | otherwise = map tagIfCostful ps ++ concatMap makeConversionPostings (nub $ map commodityPair costfulamounts)
   where
-    costs = filter (isJust . acost) . amountsRaw $ pamount p
-    makeConversionPostings amt = case acost amt of
-      Nothing -> []
-      Just _  -> [ convp{ paccount = accountPrefix <> amtCommodity
-                        , pamount = mixedAmount . negate $ stripBasis $ amountStripCost amt
-                        }
-                 , convp{ paccount = accountPrefix <> costCommodity
-                        , pamount = mixedAmount cost
-                        }
-                 ]
+    costfulamounts = concatMap postingCostfulAmounts ps
+    postingCostfulAmounts q
+      | costPostingTagName `elem` map fst (ptags q) = []
+      | otherwise = filter (isJust . acost) . amountsRaw $ pamount q
+    tagIfCostful q
+      | null (postingCostfulAmounts q) = q
+      | otherwise = postingAddHiddenAndMaybeVisibleTag False verbosetags (costPostingTagName,"") q
+    commodityPair a = (commodity a, commodity (amountCost a))
+    makeConversionPostings pair@(amtCommodity, costCommodity) =
+      [ convp{ paccount = accountPrefix <> amtCommodity
+             , pamount = maNegate $ maSum [mixedAmount (amountStripCost a){acostbasis = Nothing} | a <- as]
+             }
+      , convp{ paccount = accountPrefix <> costCommodity
+             , pamount = maSum [mixedAmount (amountCostBasis a) | a <- as]
+             }
+      ]
       where
-        cost = amountCost amt
-        stripBasis a = a{acostbasis = Nothing}
-        amtCommodity  = commodity amt
-        costCommodity = commodity cost
-        convp = nullposting{pdate=pdate p, pdate2=pdate2 p, pstatus=pstatus p, ptransaction=ptransaction p}
-          & postingAddHiddenAndMaybeVisibleTag False verbosetags (conversionPostingTagName,"")
-          & postingAddHiddenAndMaybeVisibleTag False verbosetags (generatedPostingTagName, "")
+        as = filter ((== pair) . commodityPair) costfulamounts
         accountPrefix = mconcat [ equityAcct, ":", T.intercalate "-" $ sort [amtCommodity, costCommodity], ":"]
-        -- Take the commodity of an amount and collapse consecutive spaces to a single space
-        commodity = T.unwords . filter (not . T.null) . T.words . acommodity
+    convp = nullposting{pdate=pdate p, pdate2=pdate2 p, pstatus=pstatus p, ptransaction=ptransaction p}
+      & postingAddHiddenAndMaybeVisibleTag False verbosetags (conversionPostingTagName,"")
+      & postingAddHiddenAndMaybeVisibleTag False verbosetags (generatedPostingTagName, "")
+    -- Take the commodity of an amount and collapse consecutive spaces to a single space
+    commodity = T.unwords . filter (not . T.null) . T.words . acommodity
 
 -- | Make a market price equivalent to this posting's amount's unit
 -- price, if any.

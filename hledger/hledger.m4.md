@@ -5590,6 +5590,35 @@ The equity account names will be "equity:conversion:A-B:A" and "equity:conversio
 where A is the alphabetically first commodity symbol.
 You can customise the "equity:conversion" part by declaring an account with the `V`/`Conversion` [account type](#account-types).
 
+For a [lot](#lot-reporting) disposal, the conversion postings record the units sold at their cost basis,
+not at the sale price, so that the entry (and your balance sheet) still sums to zero;
+the difference between the two is the [gain posting](#gain-postings). Eg:
+
+```journal
+commodity AAPL  ; lots:
+
+2026-01-02 buy
+    assets:stock    10 AAPL @@ $1000
+    assets:cash
+
+2026-01-03 sell
+    assets:stock    -4 AAPL @@ $600
+    assets:cash      $600
+```
+
+```cli
+$ hledger print --infer-equity desc:sell
+2026-01-03 sell
+    assets:stock                     -4 AAPL {2026-01-02, $100} @@ $600
+    equity:conversion:$-AAPL:AAPL     4 AAPL
+    equity:conversion:$-AAPL:$      $-400
+    assets:cash                      $600
+    revenues:gain                   $-200
+```
+
+If you write such an entry yourself, write the conversion postings at cost basis like this,
+and keep the transacted cost (`@`/`@@`) on the disposal posting, since the gain is calculated from it.
+
 Note you will need to add [account declarations](#account-error-checking) for these to your journal, if you use `check accounts` or `check --strict`.
 (And unlike normal postings, generated equity postings do not inherit tags from account declarations.)
 
@@ -5646,6 +5675,8 @@ When `--infer-costs` fails, it does not infer a cost in that transaction, and do
 
 Reading variant 5 journal entries, combining cost notation and equity postings, has all the same requirements.
 When reading such an entry fails, hledger raises an "unbalanced transaction" error.
+For a [lot](#lot-reporting) disposal, the conversion postings may balance the disposal's cost basis
+instead of its transacted cost, as described [above](#inferring-equity-conversion-postings).
 
 
 <a name="valuation"></a>

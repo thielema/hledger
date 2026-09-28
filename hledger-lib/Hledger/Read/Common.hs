@@ -491,9 +491,8 @@ journalFinalise iopts@InputOpts{auto_,balancingopts_,ignore_lots_,infer_costs_,i
           >>= timedE "journalInferCommodityStyles" journalInferCommodityStyles          -- infer commodity styles once more now that all posting amounts are present
           <&> timed  "journalPostingsAddCommodityTags" journalPostingsAddCommodityTags  -- propagate amounts' commodity tags to postings (queryable but hidden)
 
-          -- Cost/equity inference
+          -- Cost inference
           >>= (if infer_costs_  then timedE "journalTagCostsAndEquityAndMaybeInferCosts" (journalTagCostsAndEquityAndMaybeInferCosts verbose_tags_ True) else pure)  -- maybe infer costs from equity postings
-          <&> (if infer_equity_ then timed  "journalInferEquityFromCosts" (journalInferEquityFromCosts verbose_tags_) else id)                                       -- maybe infer equity postings from costs
 
           -- Market prices and renumbering
           <&> timed  "journalInferMarketPricesFromTransactions" journalInferMarketPricesFromTransactions  -- infer market prices from commodity-exchanging transactions
@@ -508,6 +507,9 @@ journalFinalise iopts@InputOpts{auto_,balancingopts_,ignore_lots_,infer_costs_,i
           >>= (if checkbasis then timedE "journalCheckAcquireBasis" journalCheckAcquireBasis                         else pure)  -- if `hledger check basis`, error on any acquire with cost basis ≠ transacted cost
           >>= (if checklots  then timedE "journalAddOrCheckGainPostings" (journalAddOrCheckGainPostings verbose_tags_) else pure)  -- in disposal transactions, add the realised-gain posting, or check a user-written one
           <&> (if haslots    then timed  "journalStripBalancerCopiedBases" journalStripBalancerCopiedBases           else id)    -- remove balancer-copied basis annotations, kept until now as classification evidence
+
+          -- Equity inference
+          <&> (if infer_equity_ then timed  "journalInferEquityFromCosts" (journalInferEquityFromCosts verbose_tags_) else id)  -- maybe infer equity postings from costs; after lot processing, so lot disposals convert at cost basis
 
         -- Now report any balance assertion failure detected above.
         maybe (Right j3) Left massertionerr)

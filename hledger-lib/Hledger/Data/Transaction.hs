@@ -67,7 +67,7 @@ module Hledger.Data.Transaction
 import Control.Monad.Trans.State (StateT(..), evalStateT)
 import Data.Bifunctor (first, second)
 import Data.Foldable (foldlM)
-import Data.Maybe (fromMaybe, isJust, mapMaybe)
+import Data.Maybe (fromMaybe, isJust, isNothing, mapMaybe)
 import Data.Semigroup (Endo(..))
 import Data.Text (Text)
 import Data.Map qualified as M
@@ -285,8 +285,18 @@ transactionToCost cost t = t{tpostings = mapMaybe (postingToCost cost) $ tpostin
 -- precision to avoid arithmetic artifacts (e.g. 9.216 * 1801.215277778 = 16600.000000002 -> 16600.00).
 transactionInferEquityPostings :: Bool -> AccountName -> Transaction -> Transaction
 transactionInferEquityPostings verbosetags equityAcct t =
-  t{tpostings = map roundGenerated $ concatMap (postingAddInferredEquityPostings verbosetags equityAcct) $ tpostings t}
+  t{tpostings = map roundGenerated $ go $ tpostings t}
   where
+    -- The consecutive per-lot fragments of one posting (lotsplit-tagged and
+    -- sharing poriginal, as in Lots.mergeLotSplits) get one set of conversion
+    -- postings after the last fragment, so collapsing lot detail can still merge them.
+    go [] = []
+    go (p:ps) = postingsAddInferredEquityPostings verbosetags equityAcct (p:run) ++ go rest
+      where
+        (run, rest)
+          | isLotSplit p = span (\q -> isLotSplit q && poriginal q == poriginal p) ps
+          | otherwise    = ([], ps)
+    isLotSplit = postingHasTag lotsplitPostingTagName
     -- Round generated equity conversion posting amounts (quantities, not just display)
     -- to the transaction's local display precision, avoiding arithmetic artifacts
     -- (e.g. 9.216 * 1801.215277778 = 16600.000000002 -> 16600.00).
@@ -442,10 +452,23 @@ transactionTagCostsAndEquityAndMaybeInferCosts verbosetags1 addcosts conversiona
     costfulPostingIfMatchesBothAmounts a1 a2 costfulp = do
         a@Amount{acost=Just _} <- postingSingleAmount costfulp
         if
-           | dbgamtmatch 1 a1 a (amountsMatch (-a1) a)  &&  dbgcostmatch 2 a2 a (amountsMatch a2 (amountCost a)) -> Just costfulp
-           | dbgamtmatch 2 a2 a (amountsMatch (-a2) a)  &&  dbgcostmatch 1 a1 a (amountsMatch a1 (amountCost a)) -> Just costfulp
+           | dbgamtmatch 1 a1 a (amountsMatch (-a1) a)  &&  dbgcostmatch 2 a2 a (costMatches a2 a) -> Just costfulp
+           | dbgamtmatch 2 a2 a (amountsMatch (-a2) a)  &&  dbgcostmatch 1 a1 a (costMatches a1 a) -> Just costfulp
            | otherwise -> Nothing
            where
+            -- A conversion posting's amount matches the costful amount's cost
+            -- when it equals the transacted cost; or the cost basis (a lot
+            -- disposal, whose conversion postings record what the units cost,
+            -- the difference from the proceeds being in the gain posting); or,
+            -- when a cost basis is written but not yet known (an unspecified
+            -- {} basis, filled in by lot matching later), when it is in the
+            -- cost's commodity. The balancer and the post-lot gain check
+            -- verify the amounts afterwards.
+            costMatches c a =
+                 amountsMatch c (amountCost a)
+              || amountsMatch c (amountCostBasis a)
+              || (hasUnspecifiedBasis a && acommodity c == acommodity (amountCost a))
+            hasUnspecifiedBasis a = maybe False (isNothing . cbCost) (acostbasis a)
             dbgamtmatch  n a b = dbg7 ("conversion posting "     <>show n<>" "<>showAmount a<>" balances amount "<>showAmountWithoutCost b <>" of costful posting "<>showAmount b<>" at precision "<>dbgShowAmountPrecision a<>" ?")
             dbgcostmatch n a b = dbg7 ("and\nconversion posting "<>show n<>" "<>showAmount a<>" matches cost "   <>showAmount (amountCost b)<>" of costful posting "<>showAmount b<>" at precision "<>dbgShowAmountPrecision a<>" ?") 
 

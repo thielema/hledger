@@ -105,6 +105,7 @@ module Hledger.Data.Lots (
   transactionTagGainPostings,
   journalAddOrCheckGainPostings,
   isGainPosting,
+  isSetAsideGainPosting,
   lotBaseAccount,
   lotSubaccountName,
   mergeCostBasis,
@@ -133,10 +134,10 @@ import Text.Printf (printf)
 
 import Hledger.Data.AccountName (accountNameType, parentAccountNames)
 import Hledger.Data.AccountType (isAssetType, isEquityType, isLiabilityType)
-import Hledger.Data.Amount (AmountFormat(..), amountRoundedQuantity, amountSetPrecisionMin, amountSetQuantity, amountsRaw, divideAmountAndUpdatePrecision, isNegativeAmount, maNegate, maSum, mapMixedAmount, mixedAmount, mixedAmountCost, mixedAmountIsZero, mixedAmountLooksZero, multiplyQuantities, nullmixedamt, noCostFmt, oneLineNoCostFmt, showAmountWith, showAmountsDistinctly, showMixedAmountOneLine, showMixedAmountsDistinctly)
+import Hledger.Data.Amount (AmountFormat(..), maPlus, mixedAmountStripCosts, amountRoundedQuantity, amountSetPrecisionMin, amountSetQuantity, amountsRaw, divideAmountAndUpdatePrecision, isNegativeAmount, maNegate, maSum, mapMixedAmount, mixedAmount, mixedAmountCost, mixedAmountIsZero, mixedAmountLooksZero, multiplyQuantities, nullmixedamt, noCostFmt, oneLineNoCostFmt, showAmountWith, showAmountsDistinctly, showMixedAmountOneLine, showMixedAmountsDistinctly)
 import Hledger.Data.Errors (makeAccountTagErrorExcerpt, makeCommodityTagErrorExcerpt, makePostingErrorExcerptByIndex, makeTransactionErrorExcerpt, transactionFindPostingIndex)
 import Hledger.Data.Journal (journalAccountLotsTags, journalAccountType, journalAccountUsesNoLots, journalBaseGainAccount, journalCommodityLotsMethod, journalCommodityStylesWith, journalCommodityUsesLots, journalInheritedAccountTags, journalLotfulCommodities, journalMapPostings, journalMapTransactions, journalPostings, journalTieTransactions, parseReductionMethod)
-import Hledger.Data.Posting (generatedPostingTagName, hasAmount, isReal, isVirtual, lotParentAssertionTagName, lotsplitPostingTagName, nullposting, originalPosting, postingAddHiddenAndMaybeVisibleTag, postingHasTag, postingStripCosts, feesplitPostingTagName)
+import Hledger.Data.Posting (costPostingTagName, generatedPostingTagName, hasAmount, isReal, isVirtual, lotParentAssertionTagName, lotsplitPostingTagName, nullposting, originalPosting, postingAddHiddenAndMaybeVisibleTag, postingHasTag, postingStripCosts, feesplitPostingTagName)
 import Hledger.Data.Transaction (transactionCommodityStyles, txnTieKnot)
 import Hledger.Data.Types
 import Hledger.Utils (dbg5, dbg5With)
@@ -1161,11 +1162,19 @@ transactionTagGainPostings tagamountless verbosetags lookupAccountType commodity
     heuristicOk =
          all hasAmount realps          -- with an elided amount, leave it to the balancer
       && not (null candidates)
-      && (mixedAmountIsZero residual   -- well-formed disposal: net zero
-          || isPricelessSale nonzeroresidual)  -- unpriced sale: cost inference will resolve
+      && (if transactionHasCostPostings t
+            -- with equity conversion postings, the gain counts (see isSetAsideGainPosting):
+            -- the whole entry, candidates included, nets to zero
+            then mixedAmountIsZero (residual `maPlus` foldMap balancingAmount candidates)
+            else mixedAmountIsZero residual   -- well-formed disposal: net zero
+              || isPricelessSale nonzeroresidual)  -- unpriced sale: cost inference will resolve
       where
         (candidates, noncandidates) = partition isCandidate realps
-        residual = foldMap (mixedAmountCost . pamount) noncandidates
+        residual = foldMap balancingAmount noncandidates
+        -- as the balancer counts it: at cost, unless the cost is represented by conversion postings
+        balancingAmount p
+          | postingHasTag costPostingTagName p = mixedAmountStripCosts (pamount p)
+          | otherwise                          = mixedAmountCost (pamount p)
         nonzeroresidual = filter ((/= 0) . aquantity) (amountsRaw residual)
         -- The residual is a lot commodity net sold and one other commodity
         -- net received. (A net purchase with a cash fee has the opposite
@@ -1556,6 +1565,22 @@ isTransferToPosting p = ("_ptype", "transfer-to") `elem` ptags p
 -- journalAddOrCheckGainPostings.
 isGainPosting :: Posting -> Bool
 isGainPosting p = ("_ptype", "gain") `elem` ptags p
+
+-- | Is this a gain posting which the transaction balancer should set aside ?
+-- A disposal's gain posting is set aside so that the entry, with the disposal
+-- counted at transacted cost, balances at cost basis (see
+-- 'transactionTagGainPostings'). But when the entry has equity conversion
+-- postings (a posting tagged as a cost posting), the disposal's cost is
+-- ignored and the conversion postings carry the cost basis instead, so the
+-- gain posting counts like any other.
+isSetAsideGainPosting :: Transaction -> Posting -> Bool
+isSetAsideGainPosting t = \p -> isGainPosting p && not hascostpostings  -- partially applied, the scan is shared
+  where hascostpostings = transactionHasCostPostings t
+
+-- | Does this transaction have a posting tagged as a cost posting,
+-- ie one whose cost is represented by equity conversion postings ?
+transactionHasCostPostings :: Transaction -> Bool
+transactionHasCostPostings = any (postingHasTag costPostingTagName) . tpostings
 
 -- | Does this posting carry a cost basis annotation that was copied into it
 -- by the transaction balancer, rather than written by the user ?

@@ -85,10 +85,9 @@ journalFinalise
   15. journalInferCommodityStyles        -- infer canonical commodity styles, now with all amounts present
   16. journalPostingsAddCommodityTags    -- propagate commodity tags to postings
   17. journalTagCostsAndEquityAndMaybeInferCosts(2nd)   -- if --infer-costs, infer costs from equity conversion postings
-  18. journalInferEquityFromCosts        -- if --infer-equity, infer equity conversion postings from costs
-  19. journalInferMarketPricesFromTransactions  -- infer market prices from costs
-  20. journalInferAliasPrices            -- inject 1:1 bridges for alias: tags on commodity directives
-  21. journalRenumberAccountDeclarations  -- renumber account declarations for consistent ordering
+  18. journalInferMarketPricesFromTransactions  -- infer market prices from costs
+  19. journalInferAliasPrices            -- inject 1:1 bridges for alias: tags on commodity directives
+  20. journalRenumberAccountDeclarations  -- renumber account declarations for consistent ordering
 
   -- Lot calculation and checking (default; skipped by --ignore-lots/-I; restored by --strict or `check lots`)
   22. journalCheckLotsTagValues         -- validate lots: tag values on commodity/account declarations
@@ -104,7 +103,10 @@ journalFinalise
   27. journalStripBalancerCopiedBases  -- always: remove balancer-copied basis annotations,
                                        -- kept until now as classification evidence
 
-  28. (re-raise deferred assertion failure)  -- if step 13 recorded a balance assertion failure
+  -- Equity inference (after lot processing, so a disposal's conversion postings can use its cost basis)
+  28. journalInferEquityFromCosts        -- if --infer-equity, infer equity conversion postings from costs
+
+  29. (re-raise deferred assertion failure)  -- if step 13 recorded a balance assertion failure
                                        -- and no later stage errored, report it now
 ```
 

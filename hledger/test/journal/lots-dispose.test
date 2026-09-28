@@ -544,6 +544,9 @@ $ hledger -f- print -x --lots desc:transfer
 # ** 31. Disposal balance check works with --infer-equity.
 # Equity conversion postings (from --infer-equity) should not disrupt the
 # disposal cost-basis balance check, and should not carry cost basis annotations.
+# For a disposal, the conversion postings record the cost basis of the units
+# sold ($500), not the proceeds ($600); the difference is the gain posting,
+# so the entry (and the journal) still sums to zero.
 <
 account income:capital  ; type:G
 
@@ -567,7 +570,7 @@ $ hledger -f- print --lots --infer-equity
     assets:cash                                 $600
     assets:broker:{2026-01-15, $50}              -10 AAPL {$50} @ $60
     equity:conversion:$-AAPL:AAPL                 10 AAPL
-    equity:conversion:$-AAPL:$                 $-600
+    equity:conversion:$-AAPL:$                 $-500
     income:capital                             $-100
 
 >=
@@ -1258,5 +1261,164 @@ $ hledger -f- print -x --verbose-tags
     expenses:fees                                  0.1 A
     expenses:fees                                 $2
     assets:cash                                $-102
+
+>=
+
+# ** 63. --infer-equity on a lot disposal: the conversion postings record the
+# units at their cost basis, so the entry sums to zero including the gain (#2751).
+<
+commodity AAPL  ; lots:
+
+2026-01-02 buy
+    assets:stock    10 AAPL @@ $1000
+    assets:cash
+
+2026-01-03 sell
+    assets:stock    -4 AAPL @@ $600
+    assets:cash      $600
+$ hledger -f- print --infer-equity desc:sell
+2026-01-03 sell
+    assets:stock                                  -4 AAPL {2026-01-02, $100} @@ $600
+    equity:conversion:$-AAPL:AAPL                  4 AAPL
+    equity:conversion:$-AAPL:$                 $-400
+    assets:cash                                 $600
+    revenues:gain                              $-200
+
+>=
+
+# ** 64. And the whole journal's balance is zero with --infer-equity.
+<
+commodity AAPL  ; lots:
+
+2026-01-02 buy
+    assets:stock    10 AAPL @@ $1000
+    assets:cash
+
+2026-01-03 sell
+    assets:stock    -4 AAPL @@ $600
+    assets:cash      $600
+$ hledger -f- bal --infer-equity
+               $-400  assets:cash
+              6 AAPL  assets:stock
+                $600  equity:conversion:$-AAPL:$
+             -6 AAPL  equity:conversion:$-AAPL:AAPL
+               $-200  revenues:gain
+--------------------
+                   0  
+
+# ** 65. A disposal from several lots gets one pair of conversion postings,
+# at the summed cost basis, after all its per-lot fragments; so the collapsed
+# entry keeps its shape.
+<
+commodity AAPL  ; lots:
+
+2026-01-01 buy
+    assets:cash     $-500
+    assets:stock       10 AAPL @ $50
+
+2026-01-02 buy
+    assets:cash     $-600
+    assets:stock       10 AAPL @ $60
+
+2026-02-01 sell
+    assets:stock     -15 AAPL @ $70
+    assets:cash
+$ hledger -f- print --infer-equity desc:sell
+2026-02-01 sell
+    assets:stock                                 -15 AAPL {} @ $70
+    equity:conversion:$-AAPL:AAPL                 15 AAPL
+    equity:conversion:$-AAPL:$                 $-800
+    assets:cash
+    revenues:gain                              $-250
+
+>=
+
+# ** 66. The output of print --infer-equity can be read back: the conversion
+# pair is matched to the disposal by its cost basis, the disposal's transacted
+# cost is then ignored by the balancer, and the gain posting counts.
+<
+commodity AAPL  ; lots:
+
+2026-01-02 buy
+    assets:stock    10 AAPL @@ $1000
+    assets:cash
+
+2026-01-03 sell
+    assets:stock                                  -4 AAPL {2026-01-02, $100} @@ $600
+    equity:conversion:$-AAPL:AAPL                  4 AAPL
+    equity:conversion:$-AAPL:$                 $-400
+    assets:cash                                 $600
+    revenues:gain                              $-200
+$ hledger -f- print -x --verbose-tags desc:sell
+2026-01-03 sell
+    assets:stock                                  -4 AAPL {2026-01-02, $100} @@ $600  ; ptype: dispose, cost-posting:
+    equity:conversion:$-AAPL:AAPL                  4 AAPL  ; conversion-posting:
+    equity:conversion:$-AAPL:$                 $-400  ; conversion-posting:
+    assets:cash                                 $600
+    revenues:gain                              $-200  ; ptype: gain
+
+>=
+
+# ** 67. A wrong conversion amount is not matched, and the entry is reported as unbalanced.
+<
+commodity AAPL  ; lots:
+
+2026-01-02 buy
+    assets:stock    10 AAPL @@ $1000
+    assets:cash
+
+2026-01-03 sell
+    assets:stock                                  -4 AAPL {2026-01-02, $100} @@ $600
+    equity:conversion:$-AAPL:AAPL                  4 AAPL
+    equity:conversion:$-AAPL:$                 $-450
+    assets:cash                                 $600
+    revenues:gain                              $-200
+$ hledger -f- print desc:sell
+>2 /This multi-commodity transaction is unbalanced./
+>=1
+
+# ** 68. With an unspecified {} basis (as in collapsed multi-lot output), the pair
+# is matched by commodity, and the amounts are verified after lot matching.
+<
+commodity AAPL  ; lots:
+
+2026-01-01 buy
+    assets:cash     $-500
+    assets:stock       10 AAPL @ $50
+
+2026-01-02 buy
+    assets:cash     $-600
+    assets:stock       10 AAPL @ $60
+
+2026-02-01 sell
+    assets:stock                                 -15 AAPL {} @ $70
+    equity:conversion:$-AAPL:AAPL                 15 AAPL
+    equity:conversion:$-AAPL:$                 $-800
+    assets:cash
+    revenues:gain                              $-250
+$ hledger -f- bal --infer-equity
+                $-50  assets:cash
+              5 AAPL  assets:stock
+                $300  equity:conversion:$-AAPL:$
+             -5 AAPL  equity:conversion:$-AAPL:AAPL
+               $-250  revenues:gain
+--------------------
+                   0  
+
+# ** 69. An elided amount alongside conversion postings is inferred with the
+# cost posting's cost ignored, as when checking balance (previously it counted
+# the cost as well as the conversion postings).
+<
+2026-01-01
+    assets:euros    €100 @ $1.35
+    equity:conversion:$-€:€    €-100
+    equity:conversion:$-€:$    $135
+    assets:dollars
+$ hledger -f- print -x
+2026-01-01
+    assets:euros                                €100 @ $1.35
+    equity:conversion:$-€:€                    €-100
+    equity:conversion:$-€:$                     $135
+    assets:dollars                             $-135
 
 >=

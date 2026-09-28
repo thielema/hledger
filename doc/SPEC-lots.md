@@ -644,6 +644,19 @@ checked before lot matching has determined B. The gain amount itself is
 checked after lot matching (`journalAddOrCheckGainPostings`), which closes
 the loop. (Historical cost accounting: unrealised gains are not posted.)
 
+With equity conversion postings (#2751), the same entry balances a different
+way: the disposal is a cost posting, whose cost the balancer ignores, and its
+conversion postings record the disposed units at cost basis (`q×B`), not at
+the sale price; so the gain posting is *not* set aside there
+(`isSetAsideGainPosting`) - all postings, gain included, sum to zero as
+written. `--infer-equity` generates such pairs (after lot processing, so the
+basis is known; one pair per disposal, after all its per-lot fragments), and
+the balancer's pair matching accepts a conversion amount equal to the
+disposal's cost basis as well as its transacted cost (or, for an unspecified
+`{}` basis, any amount in the cost's commodity - the balancer and the gain
+check verify it afterwards). The transacted cost must stay written on the
+disposal, since the gain is calculated from it.
+
 Cost reports follow the same convention: `-B`/`--value=cost` converts an
 amount with a cost basis to that basis (`amountCostBasis`), else to its
 transacted cost, so a disposal converts to what the units cost and cost
