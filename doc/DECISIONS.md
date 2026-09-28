@@ -80,13 +80,20 @@ gain posting is counted, and the balancer accepts a conversion amount
 matching the cost basis. (The alternative, transacted-cost conversion
 postings, left the accounting equation off by the gain.)
 
-### Don't enforce basis = transacted cost in acquisitions by default
+### Basis = transacted cost in acquisitions, always
 
-Acquires with `{B} @ T` where `B ≠ T`, are accepted by default, for better compatibility
-with other apps (hledger 1, Ledger, Beancount, rustledger, acc, etc.). 
-Docs recommend users to always keep `B = T`, and to use the `basis` check to check this,
-with reasons provided (prevent wrong gain caused by basis typos).
-The new check might be moved into strict mode some day, but not yet.
+2026-09. An acquire posting writing both `{B}` and `@ T` with `B ≠ T` is an
+error (previously accepted by default, with an opt-in `check basis`, for
+compatibility with hledger 1 and Ledger files where `{}` was decorative).
+We could find no valid use: the entry balances at `T` while gains and cost
+reports use `B`, so the difference is unaccounted for (`bse -B` is off by
+it, and it is neither gain nor income); and every real-world case of a basis
+differing from what was paid (gifts, inheritance, RSUs...) is better written
+with `B = T` on the asset and the difference funded by a separate posting,
+which records where it came from. Making it an error also catches typos in
+either annotation, which would otherwise silently miscalculate gains. The
+comparison is exact (see SPEC-lots "Acquire basis check"). Legacy files
+still load with `--ignore-lots`.
 
 ### Amount keys are commodity plus transacted cost only
 

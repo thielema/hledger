@@ -86,9 +86,8 @@ only without its inferred counterpart posting.
 `--strict`/`-s` and `hledger check lots` both override `--ignore-lots`, restoring
 full lot processing for that invocation.
 
-The `journalCheckAcquireBasis` stage is gated separately: it runs only when the
-user explicitly invokes `hledger check basis`, regardless of `--ignore-lots`,
-`--strict`, or `hledger check lots`. See [Acquire basis check](#acquire-basis-check-opt-in) below.
+The `journalCheckAcquireBasis` stage is gated like the other lot checks.
+See [Acquire basis check](#acquire-basis-check) below.
 
 The `--lots` general flag is a display-time toggle. It controls whether reports show
 
@@ -795,11 +794,14 @@ decimal places in the entry's amounts.
 
 ## Acquire basis check
 
-`journalCheckAcquireBasis` enforces that every acquire posting has per-unit
-cost basis equal to per-unit transacted cost. If `{B}` and `@T` are both
-written on an acquire posting and `B ≠ T`, the check raises an error citing
-the offending posting. This prevents typos in cost basis causing wrong gain
-to be calculated later.
+`journalCheckAcquireBasis` enforces that every acquire-shaped posting (real,
+positive, in an asset account) has per-unit cost basis equal to per-unit
+transacted cost. If `{B}` and `@T` are both written on such a posting and
+`B ≠ T`, the check raises an error citing the offending posting. This
+prevents typos in cost basis causing wrong gain to be calculated later, and
+an unaccounted-for difference between what was paid and the basis. It runs
+before transaction balancing (after `journalInferPostingsTransactedCost`),
+so such an entry gets this error rather than an unbalanced-transaction error.
 
 Real-world cases where basis legitimately differs from price paid (gifts
 with carryover basis, NSO exercises, RSU vesting, wash-sale adjustments,
@@ -828,11 +830,10 @@ An explicit `{$7.14}` paired with `@@ $50` deliberately fails the check
 — the rounded annotation forgets a per-unit fraction that would
 compound across disposals.
 
-Other PTA apps (hledger 1, Ledger, Beancount, rustledger, acc) accept entries
-where `B ≠ T`, so this check is off by default to avoid interoperability
-pain. It runs only when the user types `hledger check basis` (not in
-default or `--strict` mode). See [DECISIONS.md](DECISIONS.md) for the
-rationale.
+This check is part of default lot processing (so skipped by `--ignore-lots`,
+like the other lot checks). Other PTA apps (hledger 1, Ledger) accept
+`{B} @ T` with `B ≠ T`, balancing at `T` and ignoring `B`; such files load
+with `--ignore-lots`. See [DECISIONS.md](DECISIONS.md) for the rationale.
 
 ## Balance assertions
 
@@ -907,6 +908,9 @@ Pre-balancing:
    elided cash amount balances at cost. Transfer destinations are recognised by
    shape and skipped: an explicit negative same-commodity same-quantity
    counterpart, or an equity posting with no cost-basis amounts (equity transfer).
+   Then **journalCheckAcquireBasis** (a lot check, skipped by `--ignore-lots`)
+   errors if an acquire-shaped asset posting wrote a cost basis and a transacted
+   cost which differ (see [Acquire basis check](#acquire-basis-check)).
 3. **journalTagGainPostings** — in disposal transactions (recognised by shape:
    a negative lotful or cost-basis amount), tag user-written realised gain
    postings `_ptype:gain`, so the balancer sets them aside; error on an
@@ -952,11 +956,7 @@ Post-balancing:
 7. **journalCalculateLots** — walk transactions in date order, evaluate lot selectors,
    apply reduction methods, add explicit lot subaccounts, infer cost basis for bare
    disposals, normalise transacted cost.
-8. **journalCheckAcquireBasis** — *gated separately on `hledger check basis`*,
-   not on `checklots`. Errors if any acquire posting has cost basis differing
-   from its transacted cost (per-unit). Default mode skips this check; see
-   [DECISIONS.md](DECISIONS.md) for the rationale.
-9. **journalAddOrCheckGainPostings** — for disposals with no gain posting yet, add
+8. **journalAddOrCheckGainPostings** — for disposals with no gain posting yet, add
    the gain posting sized at the disposal gain. Also validates that any
    user-written (tagged) gain amount matches the disposal gain — including in a
    non-disposal, eg a transfer, where the gain is zero.

@@ -6437,34 +6437,37 @@ with cost inferred from the transaction's other postings.
 
 Acquire postings may carry a per-unit (`{}`) or total (`{{{{}}}}`) cost basis annotation,
 and a per-unit (`@`) or total (`@@`) transacted cost.
-See [Cost basis vs transacted cost](#cost-basis-vs-transacted-cost) below for the recommended style.
 
-#### Cost basis vs transacted cost
+A note for people familiar with Beancount's or Ledger's lot tracking:
+although the syntax is superficially similar in all three apps, they each handle it a little differently.
+In acquisitions,
 
-In acquisition transactions, hledger allows the cost basis (`{}`, call it `B`)
-and transacted cost (`@`, call it `T`) to be different, for compatibility with
-other plain text accounting apps.
-But the preferred style is to keep these the same; 
-typically we write just one of them and let the other be inferred.
+- Ledger balances with `@` and calculates gains with `{}`. These can differ, in which case the difference is not accounted for anywhere.
+- Beancount balances transactions and calculates gains with `{}`. You can also record a transacted price with `@`, which can be different; this just declares a market price, like hledger's `P` directive.
+- hledger balances and calculates gains with `{}`.
+  The cost can be written with `{}` or `@`.
+  If both are written, they must be the same (usually we write just one, and the other is inferred).
+  (If the unit cost is non-terminating, write a total cost: `{{TOTALCOST}}` or `@@ TOTALCOST`.)
 
-You can check that `B` == `T` everywhere by running `hledger check basis`.
-This catches {}/@ mismatches which would silently miscalculate capital gains.
-Note, this check uses strict equality, not equality-within-local-precisions like transaction balancing or recorded gain checking,
-(because an inexact basis annotation would persist and be amplified at disposal time).
-So if you write an explicit cost basis annotation, use sufficient precision.
-If the amount is a non-terminating decimal, you won't be able to record it explicitly -
-instead write `{}` or `{{TOTALCOST}}` and let hledger infer it.
+In hledger (as in Beancount), the asset posting's cost is the basis. The other postings show what funded it, such as:
 
-Some real-world situations can produce a cost basis that differs from what was
-paid - gifts (carryover basis), inheritance (stepped-up basis), stock options
-(NSOs, ISOs, ESPPs, RSUs), wash sales, corporate actions, and so on.
-For more background, see <https://en.wikipedia.org/wiki/Cost_basis>.
+- cash for what you paid (including fees if you want those capitalised in the basis)
+- an expense posting for any part of what you paid that isn't basis (a fee you don't want to capitalise)
+- an income or equity posting for any part you didn't pay (as with a gift's carryover basis or shares received as compensation).
 
-However, in these cases the preferred style can still be used: 
-record `B = T` on the asset posting, 
-and fund any difference via a separate income, equity, or asset posting -
-rather than expressing the difference as `{B} @ T` with `B ≠ T` on the asset itself.
-The gift received example in [Other lot events](#other-lot-events) shows this.
+Eg shares received as a gift, with the giver's basis carried over:
+
+```journal
+2026-01-01 gift of 10 AAPL, carryover basis $50/share
+    equity:gifts received     $-500
+    assets:stocks              10 AAPL @ $50
+```
+
+Other cases with a basis differing from what was paid include inheritance (stepped-up basis),
+stock options and RSUs, and wash sales; see <https://en.wikipedia.org/wiki/Cost_basis>.
+Recording them this way keeps the accounting equation balanced and shows where the basis came from;
+a `{}` basis differing from `@` would leave the difference unaccounted for,
+and a typo in either would silently miscalculate gains.
 
 ### Transfer
 
@@ -6904,7 +6907,8 @@ When it reports a lot-related error, or a report looks wrong:
   Add the price.
 - "realised gain amount is wrong" means a written gain posting doesn't match the calculated gain;
   the error shows both amounts. Check which lots were selected (`print -a`) and the amounts.
-- `hledger check basis` catches acquisitions whose `{}` cost basis and `@` cost differ, which would silently miscalculate gains.
+- "cost basis ... differs from its transacted cost" means an acquisition wrote both a `{}` basis and an `@` cost which don't agree.
+  Write just one of them. If the basis really differs from what was paid, adjust your entry (see [Acquire](#acquire)).
 - To silence lot processing while fixing other problems, use `-I` or `--ignore-lots`.
 
 

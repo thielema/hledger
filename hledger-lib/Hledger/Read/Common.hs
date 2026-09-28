@@ -411,7 +411,6 @@ journalFinalise iopts@InputOpts{auto_,balancingopts_,ignore_lots_,infer_costs_,i
     lenientlots     = not lotschecking
     haslots         = journalHasLotFeatures pj  -- does the journal use lots at all ? if not, the lot stages are skipped, they would do nothing
     checklots       = haslots && lotschecking   -- run the lot classification, calculation and checking stages ?
-    checkbasis      = checking "basis"
     -- With --debug, report each stage's run time and memory allocation (dbgTime forces the stage's result to measure it).
     timed  name stage = dbgTime 1 name . stage          -- a stage returning a Journal
     timedE name stage = fmap (dbgTime 1 name) . stage   -- a stage returning an Either error Journal
@@ -454,6 +453,7 @@ journalFinalise iopts@InputOpts{auto_,balancingopts_,ignore_lots_,infer_costs_,i
       -- They run before auto postings, whose preliminary balancing needs them too.
       >>= (if haslots then timedE "journalInferBasisFromAccountNames" (journalInferBasisFromAccountNames lenientlots) else pure)  -- infer cost basis from lot subaccount names (validating them, unless lenient)
       <&> (if haslots then timed  "journalInferPostingsTransactedCost" journalInferPostingsTransactedCost else id)              -- in acquire-shaped postings, infer a transacted cost from cost basis
+      >>= (if checklots then timedE "journalCheckAcquireBasis" journalCheckAcquireBasis else pure)                              -- error if an acquire-shaped posting's written cost basis and transacted cost differ (before balancing, so this is reported rather than an unbalanced entry)
       >>= (if haslots then timedE "journalTagGainPostings" (journalTagGainPostings lenientlots verbose_tags_) else pure)        -- in disposals, tag user-written gain postings so the balancer sets them aside
 
       -- Auto postings
@@ -504,7 +504,6 @@ journalFinalise iopts@InputOpts{auto_,balancingopts_,ignore_lots_,infer_costs_,i
           >>= (if checklots  then timedE "journalCheckLotsTagValues" journalCheckLotsTagValues                       else pure)  -- validate lots: tag values on commodity/account declarations
           >>= (if checklots  then timedE "journalCheckLotsMethodCoherence" journalCheckLotsMethodCoherence           else pure)  -- reject a global (*ALL) method mixed with other methods for one commodity
           >>= (if checklots  then timedE "journalCalculateLots" (journalCalculateLots verbose_tags_)                 else pure)  -- evaluate lot selectors, calculate lot balances, add lot subaccounts
-          >>= (if checkbasis then timedE "journalCheckAcquireBasis" journalCheckAcquireBasis                         else pure)  -- if `hledger check basis`, error on any acquire with cost basis ≠ transacted cost
           >>= (if checklots  then timedE "journalAddOrCheckGainPostings" (journalAddOrCheckGainPostings verbose_tags_) else pure)  -- in disposal transactions, add the realised-gain posting, or check a user-written one
           <&> (if haslots    then timed  "journalStripBalancerCopiedBases" journalStripBalancerCopiedBases           else id)    -- remove balancer-copied basis annotations, kept until now as classification evidence
 

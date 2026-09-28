@@ -60,15 +60,18 @@ journalFinalise
   -- lenient with --ignore-lots: their errors are skipped, leaving the affected postings unchanged)
   9.  journalInferBasisFromAccountNames  -- if account name has a {…} lot subaccount, parse cost basis from it
   10. journalInferPostingsTransactedCost -- infer cost from cost basis of acquire postings
-  11. journalTagGainPostings             -- in disposals, tag user-written gain postings _ptype:gain,
+  11. journalCheckAcquireBasis           -- (default lot check; skipped by --ignore-lots) error if an acquire-shaped
+                                         -- asset posting writes a cost basis and a transacted cost which differ
+                                         -- (before balancing, so this is reported rather than an unbalanced entry)
+  12. journalTagGainPostings             -- in disposals, tag user-written gain postings _ptype:gain,
                                          -- so the balancer sets them aside (disposals balance at cost basis)
 
   -- Generate auto postings
-  12. journalAddAutoPostings            -- if --auto, do transaction balancing (preliminary) to infer some missing amounts/costs,
+  13. journalAddAutoPostings            -- if --auto, do transaction balancing (preliminary) to infer some missing amounts/costs,
                                         -- then apply auto posting rules. Calls journalBalanceTransactions.
 
   -- Transaction balancing (main)
-  13. journalBalanceTransactionsAndDeferAssertions
+  14. journalBalanceTransactionsAndDeferAssertions
                                         -- infer remaining balancing amounts, balancing costs, and balance assignment amounts;
                                         -- and check transactions balanced and (unless --ignore-assertions) balance assertions satisfied.
                                         -- A balance assertion failure is not raised here: the first one is recorded and
@@ -79,15 +82,15 @@ journalFinalise
                                         -- balancing cost inference is skipped, so mismatched transfers load.
 
   -- Lot classification (default; skipped by --ignore-lots/-I; restored by --strict or `check lots`)
-  14. journalClassifyLotPostings         -- tag lot postings as acquire/dispose/transfer-from/transfer-to
+  15. journalClassifyLotPostings         -- tag lot postings as acquire/dispose/transfer-from/transfer-to
 
   -- Post-balancing enrichment
-  15. journalInferCommodityStyles        -- infer canonical commodity styles, now with all amounts present
-  16. journalPostingsAddCommodityTags    -- propagate commodity tags to postings
-  17. journalTagCostsAndEquityAndMaybeInferCosts(2nd)   -- if --infer-costs, infer costs from equity conversion postings
-  18. journalInferMarketPricesFromTransactions  -- infer market prices from costs
-  19. journalInferAliasPrices            -- inject 1:1 bridges for alias: tags on commodity directives
-  20. journalRenumberAccountDeclarations  -- renumber account declarations for consistent ordering
+  16. journalInferCommodityStyles        -- infer canonical commodity styles, now with all amounts present
+  17. journalPostingsAddCommodityTags    -- propagate commodity tags to postings
+  18. journalTagCostsAndEquityAndMaybeInferCosts(2nd)   -- if --infer-costs, infer costs from equity conversion postings
+  19. journalInferMarketPricesFromTransactions  -- infer market prices from costs
+  20. journalInferAliasPrices            -- inject 1:1 bridges for alias: tags on commodity directives
+  21. journalRenumberAccountDeclarations  -- renumber account declarations for consistent ordering
 
   -- Lot calculation and checking (default; skipped by --ignore-lots/-I; restored by --strict or `check lots`)
   22. journalCheckLotsTagValues         -- validate lots: tag values on commodity/account declarations
@@ -95,18 +98,16 @@ journalFinalise
   24. journalCalculateLots              -- evaluate lot selectors, apply reduction methods,
                                         -- calculate lot balances, add explicit lot subaccounts,
                                         -- infer cost basis for bare disposals, normalize transacted cost
-  25. journalCheckAcquireBasis         -- gated separately on `hledger check basis` (not on checklots);
-                                       -- error if any acquire posting has cost basis ≠ transacted cost
-  26. journalAddOrCheckGainPostings    -- for disposals with no gain posting, add the gain posting
+  25. journalAddOrCheckGainPostings    -- for disposals with no gain posting, add the gain posting
                                        -- sized at the disposal gain; otherwise check any user-written
                                        -- gain amount against the disposal gain
-  27. journalStripBalancerCopiedBases  -- always: remove balancer-copied basis annotations,
+  26. journalStripBalancerCopiedBases  -- always: remove balancer-copied basis annotations,
                                        -- kept until now as classification evidence
 
   -- Equity inference (after lot processing, so a disposal's conversion postings can use its cost basis)
-  28. journalInferEquityFromCosts        -- if --infer-equity, infer equity conversion postings from costs
+  27. journalInferEquityFromCosts        -- if --infer-equity, infer equity conversion postings from costs
 
-  29. (re-raise deferred assertion failure)  -- if step 13 recorded a balance assertion failure
+  28. (re-raise deferred assertion failure)  -- if step 14 recorded a balance assertion failure
                                        -- and no later stage errored, report it now
 ```
 
@@ -248,7 +249,7 @@ Several steps only run with specific flags:
 | journalCheckLotsTagValues              | same                                                            |
 | journalCheckLotsMethodCoherence        | same                                                            |
 | journalCalculateLots                   | same                                                            |
-| journalCheckAcquireBasis               | only when `hledger check basis` is requested                    |
+| journalCheckAcquireBasis               | same                                                            |
 | journalAddOrCheckGainPostings          | same as the other gated lot stages above                        |
 
 The gated lot stages share a single `checklots` condition, mirroring

@@ -1,4 +1,4 @@
-$ hledger check basis -f basis.j
+$ hledger check -f basis.j
 >2 /hledger: Error: .*basis\.j:4:
   \| 2022-01-01 buy
 4 \|     assets:stocks +10 AAPL \{\$60\} @ \$50

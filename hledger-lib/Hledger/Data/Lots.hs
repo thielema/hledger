@@ -1214,14 +1214,17 @@ multipleAmountlessErr t =
   ++ "This disposal has more than one amountless gain posting.\n"
   ++ "At most one gain posting can have its amount inferred."
 
--- | Check that no acquire posting has a disagreement between its cost basis and transacted cost.
+-- | Check that no acquire-shaped posting (a real posting with a positive
+-- amount, in an asset account) writes both a per-unit cost basis and a
+-- transacted cost which differ. In an acquisition these are the same thing, what the units cost;
+-- a difference would be unaccounted for, and a typo in either would
+-- silently miscalculate gains. (Real-world cases of a basis differing from
+-- what was paid, like a gift with carryover basis, are written with the
+-- difference funded by a separate posting.)
 --
--- We require acquisitions to always have the same cost basis and transacted cost now.
--- (Real world use cases like a gift with carryover basis can be handled with simpler journal entries.)
---
--- This runs after 'journalCalculateLots' so that cost basis is populated on
--- acquire postings, and before 'journalAddOrCheckGainPostings' so the
--- error surfaces before gain calculations.
+-- This runs before transaction balancing, so that such an entry gets this
+-- error rather than an unbalanced-transaction error; it needs only the
+-- amounts as written (after 'journalInferPostingsTransactedCost').
 journalCheckAcquireBasis :: Journal -> Either String Journal
 journalCheckAcquireBasis j = mapM_ checkTxn (jtxns j) >> Right j
   where
@@ -1232,8 +1235,10 @@ journalCheckAcquireBasis j = mapM_ checkTxn (jtxns j) >> Right j
         badps =
           [ (idx, p, basis, transacted)
           | (idx, p) <- zip [0..] (tpostings t)
-          , isAcquirePosting p
+          , isReal p
+          , maybe False isAssetType (journalAccountType j (lotBaseAccount (paccount p)))
           , a <- amountsRaw (pamount p)
+          , aquantity a > 0  -- acquire-shaped (a disposal's basis and sale price are expected to differ)
           , Just basis <- [acostbasis a >>= cbCost]
           , Just tc <- [acost a]
           , let transacted = amountCostToUnitCost (abs (aquantity a)) tc

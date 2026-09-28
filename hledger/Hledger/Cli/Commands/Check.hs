@@ -62,7 +62,6 @@ data Check =
   | Commodities
   | Accounts
   -- done when specified with the check command
-  | Basis
   | Lots
   | Ordereddates
   | Payees
@@ -102,7 +101,6 @@ runCheck _opts j (chck,_) = do
       Autobalanced    -> Right ()
       Balanced        -> Right ()
       Assertions      -> Right ()
-      Basis           -> Right ()
       Accounts        -> journalCheckAccounts j
       Commodities     -> journalCheckCommodities j
       Lots            -> journalCheckLots j
