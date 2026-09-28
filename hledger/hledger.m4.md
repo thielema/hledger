@@ -1219,7 +1219,7 @@ or even:
 ```
 
 This last form works for transactions involving exactly two commodities, with neither cost notation nor equity postings.
-If one of the postings is recognised as a [lot posting](#lot-reporting), the cost will be attached to that one.
+If one of the postings is recognised as a [lot posting](#lots-and-capital-gains), the cost will be attached to that one.
 Otherwise the cost will be attached to the first (top) posting - so it can be important to put the right one first.
 Here we had to switch the order of postings, to get the same meaning as above.
 
@@ -1234,7 +1234,7 @@ See [Cost reporting](#cost-reporting) for a comparison of these styles, and how 
 
 This section briefly describes the `{}` cost basis syntax,
 used to record the nominal cost of an investment being acquired, or to select lots being transferred or disposed.
-This is described in more detail later in [Lot reporting](#lot-reporting).
+This is described in more detail later in [Lots and capital gains](#lots-and-capital-gains).
 If you're not tracking investment lots and capital gains, you can skip this.
 
 hledger's cost basis annotations look like Beancount's: comma-separated parts enclosed in curly braces, after an amount.
@@ -1395,7 +1395,7 @@ In hledger you can make "**subaccount-inclusive balance assertions**" by adding 
 ### Assertions and lot subaccounts
 
 [Lot subaccounts](#lot-subaccounts) (a special kind of subaccount for tracking lots,
-discussed in "Lot reporting" below) have only limited support for balance assertions:
+discussed in "Lots and capital gains" below) have only limited support for balance assertions:
 the assertions will be checked correctly only if all postings to that lot
 mention the subaccount name explicitly.
 
@@ -1664,7 +1664,7 @@ Eg, to have `alias` directives affect all of your files, put them at the start o
 | **[`commodity`]**         | Declares <br>1. a commodity symbol, for checking all amounts in all files <br>2. the commodity's display style <br>3. optional [commodity aliases](#commodity-aliases) and [lotfulness], and <br>4. the decimal mark for parsing this commodity, until file end (overridden by `decimal-mark`). | N <br>N <br>N <br>N |
 | **[`payee`]**             | Declares a payee name, for checking all entries in all files.                                                                                                                                                                                                                                   | N                   |
 | **[`tag`]**               | Declares a tag name, for checking all entries in all files.                                                                                                                                                                                                                                     | N                   |
-| **[`P`]**                 | Declares a commodity's market price on some date, for [value](#value-reporting) and [gain](#lot-reporting) reports.                                                                                                                                                                             |                     |
+| **[`P`]**                 | Declares a commodity's market price on some date, for [value](#value-reporting) and [gain](#lots-and-capital-gains) reports.                                                                                                                                                                             |                     |
 |                           | <br>**Generates data:**                                                                                                                                                                                                                                                                         |                     |
 | **[`=`]**                 | Declares an auto posting rule that generates extra postings with [`--auto`](#auto-postings), in current/parent/subfiles (but not sibling files, see [#1212](https://github.com/hledgerorg/hledger/issues/1212)).                                                                              | partly              |
 | **[`~`]**                 | Declares a periodic transaction rule that generates <br>1. future transactions with [`--forecast`](#--forecast), and <br>2. budget goals with [`balance --budget`](#budget-report).                                                                                                             | N                   |
@@ -5494,7 +5494,7 @@ Now when you add the `-B`/`--cost` flag to reports ("B" is from Ledger's -B/--ba
 any amounts which have been annotated with costs will be converted to their cost's commodity (in the report output).
 Ie they will be displayed "at cost" or "at sale price".
 
-For [lot](#lot-reporting) postings, which carry a cost basis, `-B` converts to the cost basis instead:
+For [lot](#lots-and-capital-gains) postings, which carry a cost basis, `-B` converts to the cost basis instead:
 a disposal shows what the disposed units cost, not what they sold for,
 consistent with how such entries balance, so eg a lot account's cost balance is the
 cost of the units still held (and zero once they are all sold), and `bse -B` balances.
@@ -5590,7 +5590,7 @@ The equity account names will be "equity:conversion:A-B:A" and "equity:conversio
 where A is the alphabetically first commodity symbol.
 You can customise the "equity:conversion" part by declaring an account with the `V`/`Conversion` [account type](#account-types).
 
-For a [lot](#lot-reporting) disposal, the conversion postings record the units sold at their cost basis,
+For a [lot](#lots-and-capital-gains) disposal, the conversion postings record the units sold at their cost basis,
 not at the sale price, so that the entry (and your balance sheet) still sums to zero;
 the difference between the two is the [gain posting](#gain-postings). Eg:
 
@@ -5660,7 +5660,7 @@ Downsides:
 It will infer costs only in transactions with:
 
 - Two non-equity postings, in different commodities.
-  If one of them is [lotful](#lot-reporting), the cost will be added to that one;
+  If one of them is [lotful](#lots-and-capital-gains), the cost will be added to that one;
   otherwise it will be added to the first (top) one.
 
 - Two postings to equity conversion accounts, next to one another, which balance the two non-equity postings.
@@ -5675,7 +5675,7 @@ When `--infer-costs` fails, it does not infer a cost in that transaction, and do
 
 Reading variant 5 journal entries, combining cost notation and equity postings, has all the same requirements.
 When reading such an entry fails, hledger raises an "unbalanced transaction" error.
-For a [lot](#lot-reporting) disposal, the conversion postings may balance the disposal's cost basis
+For a [lot](#lots-and-capital-gains) disposal, the conversion postings may balance the disposal's cost basis
 instead of its transacted cost, as described [above](#inferring-equity-conversion-postings).
 
 
@@ -6128,7 +6128,9 @@ First, a quick glossary:
 
 `--cumulative` is omitted to save space, it works like `-H` but with a zero starting balance.
 
-# Lot reporting
+<a name="lot-reporting"></a>
+
+# Lots and capital gains
 
 When you buy (acquire) some amount of an investment commodity (a lot),
 it can be important (depending on your local tax rules) 
@@ -7846,7 +7848,7 @@ Things that can need attention:
 - **Cost basis annotations** like `{$50}`, which hledger 1 accepted but ignored (as Ledger-style lot prices),
   are now processed: acquisitions create lots, and disposals must match existing lots.
   hledger may report lot errors, such as disposing of a lot that was never acquired.
-  See [Lot reporting](#lot-reporting).
+  See [Lots and capital gains](#lots-and-capital-gains).
 - **Account names ending in `{...}`** are reserved for [lot subaccounts](#lot-subaccounts),
   and are rejected unless the braces contain a valid lot name.
   Rename such accounts, or use `-I` or `--ignore-lots`.

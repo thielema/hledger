@@ -32,7 +32,7 @@ Flags:
 ```
 
 
-This command shows your lot-tracked assets (see [Lot reporting](#lot-reporting)), and their performance, as of the report end date.
+This command shows your lot-tracked assets (see [Lots and capital gains](#lots-and-capital-gains)), and their performance, as of the report end date.
 An example:
 
 ```cli

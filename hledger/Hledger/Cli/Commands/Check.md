@@ -45,7 +45,7 @@ These important checks are performed by default, by almost all hledger commands:
   If you put it in your config file, you can override that with `-s`/`--strict` or `hledger check lots`.
   When a journal has both kinds of problem, lot errors are reported before assertion failures.
 
-- **lots** - all [lot](#lot-reporting) entries are valid.
+- **lots** - all [lot](#lots-and-capital-gains) entries are valid.
   Checks lot posting classifications, lot movements, and that any user-written
   realised gain amount on a disposal matches the calculated gain.
   This check can be disabled by `-I` or `--ignore-lots`.

@@ -4,7 +4,7 @@ Here is the current specification for the lots functionality in hledger 2.
 
 See also 
 - hledger manual: Cost basis
-- hledger manual: Lot reporting
+- hledger manual: Lots and capital gains
 - <https://github.com/hledgerorg/hledger/blob/main/examples/lots/lots.journal>
 - <https://joyful.com/hledger+lot+tracking>
 - <https://github.com/hledgerorg/hledger/issues/1015>
@@ -1094,7 +1094,7 @@ Display behaviour:
 
 ## Examples
 
-For end-to-end walkthroughs, see the user manual's "First lots example" and "Lot reporting example" sections.
+For end-to-end walkthroughs, see the user manual's "First lots example" and "Lot reports" sections.
 
 A larger collection of example entries: <https://github.com/hledgerorg/hledger/blob/main/examples/lots/lots.journal>
 

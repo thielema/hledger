@@ -5,7 +5,7 @@ report of investment holdings (lotful assets).
 
 See also
 - SPEC-lots.md
-- hledger manual: Lot reporting
+- hledger manual: Lots and capital gains
 
 Status: implemented; see Phases below.
 
@@ -282,7 +282,7 @@ Holdings on 2026-03-31
    Rgain (realised gain), XIRR; also added to the csv/tsv/json outputs
    (with age still numeric there). (done)
 8. Docs integration: mention holdings in the manual's lot reporting
-   sections (First lots example, Lot subaccounts, Lot reporting example).
+   sections (First lots example, Lot subaccounts, Lot reports).
    (done)
 
 ## Open questions

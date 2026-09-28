@@ -126,7 +126,7 @@ postings in the example below would be classifed as:
 
 ### Using roi with lots
 
-If your journal records [lots](#lot-reporting), each disposal transaction has a
+If your journal records [lots](#lots-and-capital-gains), each disposal transaction has a
 realised gain posting, by default to `revenues:gain`. Make sure `--pnl`
 matches that account, eg `--pnl revenues:gain`, so realised gains are
 counted as profit rather than as cash flows out of the investment.

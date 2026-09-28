@@ -565,7 +565,7 @@ It is one of:
 - `--valuechange` : show the change in period-end historical balance values
   (caused by deposits, withdrawals, and/or market price fluctuations)
 - `--gain` : show capital gain/loss for each account: the current valued balance
-  minus its cost. For [lot-tracked](#lot-reporting) commodities the cost is
+  minus its cost. For [lot-tracked](#lots-and-capital-gains) commodities the cost is
   the cost basis of the units still held, so this is the unrealised gain.
   For other commodities it is the net of postings' transacted costs
   (acquisition costs minus disposal proceeds): where nothing has been sold
