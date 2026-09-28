@@ -574,7 +574,7 @@ It is one of:
   "total gain since inception" (to separate realised and unrealised gains, track lots).
   Compare `--valuechange`, which shows how much the value moved in a period,
   from price changes and from buying and selling.
-  See [Lot reports](#lot-reports) for examples.
+  See [Unrealised gains](#unrealised-gains) for examples.
 - `--count` : show the count of postings
 
 #### Accumulation mode

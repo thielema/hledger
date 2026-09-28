@@ -6656,7 +6656,7 @@ Eg selling 5 AAPL bought at $50 for $70 each: `-5 AAPL {$50} @ $70` counts as -$
 and `revenues:gain $-100` balances the entry.
 (This is the historical cost accounting convention, and is how hledger 1 users have recorded gains.
 Unrealised gains are not recorded as postings, but can be reported from market prices,
-eg with [holdings](#holdings) or [`--gain`](#calculation-mode).
+eg with [holdings](#holdings) or [`--gain`](#unrealised-gains).
 Consequently the accounting equation stays balanced through disposals.)
 
 The gain posting can be left implicit (and hledger will infer it);
@@ -6751,6 +6751,8 @@ $ hledger bal assets:stocks --lots -N
              10 AAPL  assets:stocks:{2026-02-01, $60}
 ```
 
+### Realised gains
+
 Realised gains are on the Gain-type account (see [Gain accounts](#gain-accounts)),
 so `type:G` queries select them. The total for a period:
 
@@ -6789,6 +6791,8 @@ $ hledger roi --inv assets:stocks --pnl revenues:gain
 
 so that realised gains are counted as profit rather than as cash flows out of the investment.
 
+### Unrealised gains
+
 Unrealised gains - on the units you still hold - are not recorded in the journal
 (see [Gains](#gains)); hledger calculates them from [market prices](#p-directive) when asked.
 Adding some month-end prices to the journal above:
@@ -6802,7 +6806,7 @@ P 2026-03-31 AAPL $80
 `holdings` shows the unrealised gain (UGain) next to the realised gain (RGain),
 per commodity or per lot (`--lots`), as of today or some other date (`-e`).
 
-`balance --gain` shows the unrealised gain per account: the current value of the units held,
+[`balance --gain`](#calculation-mode) shows the unrealised gain per account: the current value of the units held,
 minus what they cost. Like `-V`, it uses the market price at the end of the report period
 (today, unless you specify `-e` or a period):
 
