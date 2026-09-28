@@ -571,7 +571,10 @@ It is one of:
   (acquisition costs minus disposal proceeds): where nothing has been sold
   this too is the unrealised gain, but once disposals exist the figure also
   includes the realised gain on the disposed units, so it is best read as
-  "total gain since inception".
+  "total gain since inception" (to separate realised and unrealised gains, track lots).
+  Compare `--valuechange`, which shows how much the value moved in a period,
+  from price changes and from buying and selling.
+  See [Lot reports](#lot-reports) for examples.
 - `--count` : show the count of postings
 
 #### Accumulation mode
@@ -1031,6 +1034,9 @@ Also:
 
 - `bal -M --valuechange investments`\
   Show monthly change in market value of investment assets.
+
+- `bal -M -H --gain investments`\
+  Show unrealised gain on investment assets (market value minus cost) at each month end.
 
 - `bal investments --valuechange -D date:lastweek amt:'>1000' -STA [--invert]`\
   Show top gainers [or losers] last week

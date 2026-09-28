@@ -6787,6 +6787,61 @@ $ hledger roi --inv assets:stocks --pnl revenues:gain
 
 so that realised gains are counted as profit rather than as cash flows out of the investment.
 
+Unrealised gains - on the units you still hold - are not recorded in the journal
+(see [Gains](#gains)); hledger calculates them from [market prices](#p-directive) when asked.
+Adding some month-end prices to the journal above:
+
+```journal
+P 2026-01-31 AAPL $55
+P 2026-02-28 AAPL $65
+P 2026-03-31 AAPL $80
+```
+
+`holdings` shows the unrealised gain (UGain) next to the realised gain (RGain),
+per commodity or per lot (`--lots`), as of today or some other date (`-e`).
+
+`balance --gain` shows the unrealised gain per account: the current value of the units held,
+minus what they cost. Like `-V`, it uses the market price at the end of the report period
+(today, unless you specify `-e` or a period):
+
+```cli
+$ hledger bal assets:stocks --gain
+                $350  assets:stocks
+--------------------
+                $350  
+```
+
+That is: 15 AAPL are held, which cost $850 and are worth $1200 at $80.
+`--lots` breaks it down by lot:
+
+```cli
+$ hledger bal assets:stocks --gain --lots -N
+                $150  assets:stocks:{2026-01-15, $50}
+                $200  assets:stocks:{2026-02-01, $60}
+```
+
+With a report interval, `-H` shows the unrealised gain as of each period end,
+and without `-H`, how much it changed during each period:
+
+```cli
+$ hledger bal assets:stocks --gain -M -H
+Historical gain in 2026Q1, valued at period ends:
+
+               || 2026-01-31  2026-02-28  2026-03-31 
+===============++====================================
+ assets:stocks ||        $50        $200        $350 
+---------------++------------------------------------
+               ||        $50        $200        $350 
+```
+
+(This is not the same as `--valuechange`, which shows how much an account's value changed in each period,
+from price movements and from buying and selling.)
+
+`--gain` needs a market price for the units; where none is found, the units are shown unconverted,
+alongside the negated cost.
+Realised and unrealised gains don't overlap: the gain on units sold is realised, the gain on units held is unrealised,
+and together they are the total gain on the investment so far (here, $100 + $350).
+
 ## Lot details
 
 Some finer points, for reference.
