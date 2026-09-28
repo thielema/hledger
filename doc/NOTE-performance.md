@@ -20,6 +20,19 @@ builder, cheaper account type inference, and tag propagation that leaves untagge
 Also the scan of PATH for add-on commands, 11 ms of every run with a long PATH, now happens only
 when the command is not a builtin one (startup 14 -> 2.5 ms; `hledger --version` 32 -> 23 ms).
 
+## Parser allocation: tried and dropped (2026-09-28)
+
+After the fast path work, the parser still allocates about 27 KB per transaction and price pair
+(against 1.5 KB retained). A plan to trim that (cheaper source positions, interning through the
+pure scanner, lazy comment fields, offset-based scanners, a blank-line fast path) was started and
+dropped: the first step, computing end positions by arithmetic and recording the position anchor
+once per entry, gained 3% of parse time (0.63 -> 0.61s on the 100k `check`) for 36 lines, and a
+stub with no position work at all gained only 1% more. The other steps can be expected to gain a
+few percent of parse time each, less of a run. What the measurements showed instead is in
+PERFORMANCE: allocation is a poor proxy for time (Tips), garbage collection is 35-40% of a run and
+scales with the live data (Memory and garbage collection), the parser has no hot spot (Parsing),
+and a profile's story must be confirmed by stub experiments (Profiling).
+
 ## Remaining ideas, ranked
 
 Expected gains are for the 100k balance run; "general" means every command pays it.
@@ -43,8 +56,11 @@ Expected gains are for the 100k balance run; "general" means every command pays 
 4. Small finalise stages, ~1-2% each: style inference (0.04s), cost tagging; the account types
    stage is now mostly journalAccountNamesUsed (a set of 200k posting account names), which
    several stages compute separately and could share.
-5. Remaining memory: the steady state is mostly postings, amounts and their maps, transactions,
-   and descriptions (slices of the input text, which keep it alive). (The compacting collector,
+5. Remaining memory, now also the main time lever for large journals (see above: GC copies the
+   live data, twice over): the steady state is mostly postings, amounts and their maps,
+   transactions, and descriptions (slices of the input text, which keep it alive). Candidates:
+   a single-amount case for MixedAmount (a singleton Map per posting today), an unboxed Decimal;
+   both report-side and riskier. (The compacting collector,
    `+RTS -c`, was measured: 20-40% less memory for 40-60% more time; see PERFORMANCE. It's now
    suggested in the manual for users short of memory.)
 6. Order of magnitude, not incremental: an on-disk cache of the finalised journal keyed by file

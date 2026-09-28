@@ -414,7 +414,9 @@ evaluated to measure it (and the cost of that evaluation is excluded), so this d
 evaluation of the pipeline, but the totals closely match normal runs. One consequence: work that
 a normal run leaves unevaluated is charged too, eg inferred market prices, which only valuation
 uses, appear as a cost of every command. Garbage collection pauses are charged to whichever
-stage is running. This is the best tool for judging an optimisation.
+stage is running. This is the best tool for judging an optimisation, together with the plain
+run's total time: the forcing itself is costly (about fifteen timed stages, each traversing the
+whole journal twice, roughly triple the run), and the figures are wall clock, with about 3% noise.
 After parsing each file, it also reports what share of the transactions and price directives
 the journal parser's fast path handled, and why it declined the others (see Parsing, below),
 which shows what keeps a particular journal off the fast path. (Transactions from CSV,
@@ -430,8 +432,17 @@ With GHC 9.14, `stack --profile` fails (a compiler panic while building tls); in
 around that and keeps its own `.stack-prof` work dir, as described in its header.
 
 Use profiles to find candidates, and phase timings or quickbench to judge them.
-Profiling inflates small hot functions (source position calculation looked like 8% of the run, but
-removing it saved 4%) and shifts the shares of the rest.
+Profiling inflates small hot functions and shifts the shares of the rest, because cost centres block
+inlining, so a profile shows the unoptimised shape of the code: source position calculation looked
+like 8% of the run, but removing it saved 4%; later it looked like 34% of parse allocation, and
+removing it saved 4% again. A `-fprof-late` build (cost centres added after optimisation) was no
+better here, because the profiled dependencies still have theirs: deep-forcing the parsed positions
+showed as 35% of the time, and really takes 2 ms. So confirm a profile's story before acting on it:
+with a stub experiment (edit the function, rebuild, measure, `git checkout`, and rebuild again; a
+binary built from other source measures nothing), and with `+RTS -s`. For an undistorted view of
+the optimised binary, which keeps its symbols, macOS `/usr/bin/sample PID` works (homebrew's
+`sample` shadows it), with the unnamed addresses it reports mapped to the nearest preceding symbol
+from `nm -n`; in 2026-09 this showed no parser function above 3% of a 1M `check` run.
 With megaparsec's continuation-passing parsers, the cost shown beneath a parser in the profile tree
 mostly belongs to its continuation (everything parsed after it), so read the individual columns,
 or measure directly.
@@ -446,9 +457,12 @@ so `stack bench hledger` does nothing; to use it, enable it there.
 
 #### Tips
 
-- Allocation is the most reliable signal: it is deterministic, and it tracks garbage collection cost.
-  Wall clock time varies by a few percent between runs on a typical machine, and more between
-  sessions, so rerun before believing a small change, and measure versions being compared in one session.
+- Allocation is the most reliable signal of a change: it is deterministic. But it is a poor proxy
+  for time: short-lived allocation is cheap, and garbage collection cost tracks the live data, not
+  the allocation (skipping the parser's interning cut allocation 14% with no change in time, and the
+  lost sharing then made it slower). Wall clock time varies by about 3% between runs on a typical
+  machine, and more between sessions, so rerun before believing a small change, and measure versions
+  being compared in one session.
 - Check conclusions from the synthetic journals on a real journal too: real ones have more comments,
   tags and multi-line transactions, few commodities, and many files.
 - To measure one kind of journal line, split the journal by line kind; eg a copy without price
@@ -589,6 +603,11 @@ The details:
   parser); inclusive assertions (`=*`) fold over all accounts per check (20k of them on a
   10k-transaction, 1000-account journal: 0.36s, 13x the ordinary kind). Extending the fast path to
   assertions is a remaining idea (see NOTE-performance).
+- The fast path's remaining allocation, about 27 KB per transaction and price pair against 1.5 KB
+  retained, is not worth chasing: computing source positions by arithmetic instead of walking the
+  text gained 3% of parse time for 36 lines and was dropped, and the parser has no hot spot, spending
+  about 1.6µs on a price line and 3.5µs on a two-posting transaction.
+  (The plan that was dropped is in NOTE-performance.)
 
 #### Finalising
 
@@ -617,8 +636,13 @@ The details:
 
 #### Memory and garbage collection
 
-- Garbage collection time is mostly the copying of the live journal, not collection overhead:
-  nursery sizes from 4 MB (the default) to 128 MB made no difference except to memory use.
+- Garbage collection is 35-40% of a run (`+RTS -s`), the same at 100k and 1M transactions and for
+  check and balance, and it is mostly the copying of the live journal, not collection overhead. It
+  splits evenly between the minor collections, which copy each new transaction out of the nursery
+  once, and the major ones, which re-copy the whole live journal (12 times for the 1M journal, 12 GB
+  in all). Both halves scale with the live data, not with the allocation: nursery sizes from 4 MB
+  (the default) to 128 MB made no difference except to memory use, and trimming the parser's
+  allocation gains little (see Parsing). Less live data is the lever.
 - The in-memory journal now takes about 1.5 KB per transaction (152 MB for the 100k journal),
   down from 2.6 KB. Most of the saving came from sharing: journals use few distinct amount styles,
   account names and commodity symbols, so the parser keeps the ones it has seen
@@ -630,7 +654,8 @@ The details:
   short-lived peaks, not the steady state.
 - Some runtime flags trade memory for time: `-xn` (the non-moving collector) saved 10% of the run
   time but raised peak memory from 0.8 to 1.3 GB; `-xn -F3` saved 13% for 24% more; `-F4` 6% for 32%
-  more. Not adopted as defaults.
+  more. Re-measured later, `-xn` also uses a second core for its concurrent marking, does nothing
+  for print, and makes register 2.5x slower (1M: 110 -> 284s, 6 -> 11 GB). Not adopted as defaults.
 - The compacting collector (`+RTS -c`) trades the other way. It compacts live data in place instead
   of copying it, so the runtime needs about twice the live data instead of nearly three times, but
   garbage collection takes 2.5-3 times as long. On the 100k journal: 382 instead of 491 MB peak RSS
