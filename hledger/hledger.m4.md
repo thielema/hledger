@@ -6429,18 +6429,13 @@ A positive lot posting in an asset account creates a new lot.
     assets:broker      10 ETSY {$50}
 ```
 
-The cost basis can be specified explicitly with `{}` on the amount,
-inferred from the lot subaccount name,
-or inferred from the transacted cost.
-For lotful commodities, even a bare positive posting (no `{}` or `@`) can be detected as an acquire,
-with cost inferred from the transaction's other postings.
-
-Acquire postings may carry a `{}` cost basis annotation or a `@` transacted cost annotation
-(or the total cost variants: `@@` or `{{{{}}}}`, useful when the unit cost is non-terminating).
-
-In an acquisition these are the same thing: the asset posting's cost is the basis,
-and hledger balances the transaction and calculates gains with it.
-Usually we write just one of `{}` and `@`, and the other is inferred; if both are written, they must be the same.
+The asset posting's cost is the lot's cost basis; hledger balances the transaction and calculates gains with it.
+It can be written as a cost basis annotation (`{UNITCOST}` or `{{{{TOTALCOST}}}}`)
+or as a transacted cost (`@ UNITCOST` or `@@ TOTALCOST`); in an acquisition these mean the same thing.
+Usually you write just one and the other is inferred; if both are written, they must be the same.
+(The total cost forms are useful when the unit cost is non-terminating.)
+The cost can also be inferred from a lot subaccount name, or, for a lotful commodity,
+from the transaction's other postings - so even a bare positive posting (no `{}` or `@`) can be an acquire.
 
 The other postings show what funded the basis, such as:
 
