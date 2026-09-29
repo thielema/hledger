@@ -6435,21 +6435,14 @@ or inferred from the transacted cost.
 For lotful commodities, even a bare positive posting (no `{}` or `@`) can be detected as an acquire,
 with cost inferred from the transaction's other postings.
 
-Acquire postings may carry a per-unit (`{}`) or total (`{{{{}}}}`) cost basis annotation,
-and a per-unit (`@`) or total (`@@`) transacted cost.
+Acquire postings may carry a `{}` cost basis annotation or a `@` transacted cost annotation
+(or the total cost variants: `@@` or `{{{{}}}}`, useful when the unit cost is non-terminating).
 
-A note for people familiar with Beancount's or Ledger's lot tracking:
-although the syntax is superficially similar in all three apps, they each handle it a little differently.
-In acquisitions,
+In an acquisition these are the same thing: the asset posting's cost is the basis,
+and hledger balances the transaction and calculates gains with it.
+Usually we write just one of `{}` and `@`, and the other is inferred; if both are written, they must be the same.
 
-- Ledger balances with `@` and calculates gains with `{}`. These can differ, in which case the difference is not accounted for anywhere.
-- Beancount balances transactions and calculates gains with `{}`. You can also record a transacted price with `@`, which can be different; this just declares a market price, like hledger's `P` directive.
-- hledger balances and calculates gains with `{}`.
-  The cost can be written with `{}` or `@`.
-  If both are written, they must be the same (usually we write just one, and the other is inferred).
-  (If the unit cost is non-terminating, write a total cost: `{{TOTALCOST}}` or `@@ TOTALCOST`.)
-
-In hledger (as in Beancount), the asset posting's cost is the basis. The other postings show what funded it, such as:
+The other postings show what funded the basis, such as:
 
 - cash for what you paid (including fees if you want those capitalised in the basis)
 - an expense posting for any part of what you paid that isn't basis (a fee you don't want to capitalise)
@@ -6468,6 +6461,13 @@ stock options and RSUs, and wash sales; see <https://en.wikipedia.org/wiki/Cost_
 Recording them this way keeps the accounting equation balanced and shows where the basis came from;
 a `{}` basis differing from `@` would leave the difference unaccounted for,
 and a typo in either would silently miscalculate gains.
+
+A note for people familiar with Beancount's or Ledger's lot tracking:
+although the syntax is superficially similar in all three apps, they each handle it a little differently.
+In acquisitions,
+
+- Beancount balances and calculates gains with `{}`, like hledger. Also it allows a transacted price to be recorded with `@`, which can be different; this just declares a market price, like hledger's `P` directive.
+- Ledger balances with `@` and calculates gains with `{}`. These can differ, in which case the difference is not accounted for anywhere.
 
 ### Transfer
 
