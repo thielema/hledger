@@ -20,7 +20,8 @@ These mechanisms still work but the tooling described here aims to largely subsu
 
 ## Comparison with other apps
 
-Notes from design discussions (2026-09). The Ledger and Beancount rows
+Before getting into the spec, here's an overview of the current state of lot/gains tracking
+in hledger and in other apps (in 2026-09). The Ledger and Beancount rows
 below were verified against Ledger 3.4.1 and Beancount 3.2.3; the rest is
 from memory of the apps' docs, so verify before quoting.
 
@@ -38,7 +39,7 @@ The functional differences:
 | Lot movements verified | no; you can sell an unbought lot | yes: no matching lot, or too few units, is an error | yes; the ..ALL methods also validate the choice against all accounts' lots |
 | Lot-preserving transfers | by writing the same lot annotation on both sides; unverified | by writing the lot's cost and date on the receiving side (an omitted date becomes the transfer date) | automatic with no lot annotations needed; or if written, they are checked |
 | Gain posting | required, user-written; checked only by balancing | required, user-written; checked only by balancing | inferred if omitted; fully checked if written |
-| Lots in reports | `--lots` lists each lot with its basis and date; `-B`/`-V`/`-G` give total basis, value and unrealised gain, per account not per lot; no realised gains report | holdings via bean-query or Fava (per lot, with cost and value) | lots viewable in all reports (`--lots`); holdings report |
+| Lots reports | `--lots` lists each lot with its basis and date; `-B`/`-V`/`-G` give total basis, value and unrealised gain, per account not per lot; no realised gains report | holdings via bean-query or Fava (per lot, with cost and value) | lots viewable in all reports (`--lots`); holdings report |
 
 (Before 2026-09 hledger balanced acquisitions with `@` and allowed `{}` to
 differ; that left the difference unaccounted for, and matched neither Ledger
@@ -70,7 +71,7 @@ moving average. In all of these the lots live in the app's database.
 **Crypto and share tax tools** (Koinly, CoinTracker, Sharesight, etc) are
 essentially lot matchers with a gains report: the user chooses FIFO, LIFO,
 HIFO or specific identification and they produce the tax figures. HIFO
-comes from this world. They hold no other accounting.
+comes from this world. They do no other accounting.
 
 **Recorded vs recalculated gains.** Quicken (and most GUI apps) do not
 record gains; they store transactions plus, for each sale, the lots it
