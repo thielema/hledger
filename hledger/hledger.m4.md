@@ -6466,8 +6466,11 @@ A note for people familiar with Beancount's or Ledger's lot tracking:
 although the syntax is superficially similar in all three apps, they each handle it a little differently.
 In acquisitions,
 
-- Beancount balances and calculates gains with `{}`, like hledger. Also it allows a transacted price to be recorded with `@`, which can be different; this just declares a market price, like hledger's `P` directive.
-- Ledger balances with `@` and calculates gains with `{}`. These can differ, in which case the difference is not accounted for anywhere.
+- Beancount balances and calculates gains with `{}`, like hledger.
+  It also allows a transacted price to be written with `@`, and it can be different;
+  this is informational for the user, and plugins such as implicit_prices can use it to declare a market price, like hledger's `P` directive.
+- Ledger balances with `@` and calculates gains with `{}`.
+  These can be different, in which case the difference is not accounted for anywhere.
 
 ### Transfer
 
