@@ -332,6 +332,24 @@ use one, you\(aqll have to arrange to commit the changes yourself.
 .PP
 Changes which would leave the journal file(s) unparseable or invalid (eg
 with failing balance assertions) are prevented.
+.SH BALANCE REPORTS
+Besides the journal and account registers, hledger\-web can show the
+balance report at \f[CR]/balance\f[R], with each account linked to its
+register.
+No page links to it yet: it is reachable by entering the url, until
+there are more such reports and a navigation scheme to hold them.
+A \f[CR]period\f[R] parameter, like the command line\(aqs
+\f[CR]\-p/\-\-period\f[R], selects the interval and/or the period, eg
+\f[CR]/balance?period=monthly\f[R] or
+\f[CR]/balance?period=quarterly in 2025\f[R]; column headings link to
+the register for that period.
+The search box filters the report like the other pages, including
+\f[CR]depth:\f[R] terms, and the general report options given at
+startup, such as \f[CR]\-\-depth\f[R], \f[CR]\-B\f[R], or
+\f[CR]\-V\f[R], apply.
+A \f[CR]date:\f[R] term can set the interval too, as on the command line
+(\f[CR]date:monthly\f[R], or \f[CR]\(dqdate:quarterly in 2025\(dq\f[R]),
+and wins over the \f[CR]period\f[R] parameter.
 .SH RELOADING
 hledger\-web detects changes made to the files by other means (eg if you
 edit it directly, outside of hledger\-web), and it will show the new

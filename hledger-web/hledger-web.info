@@ -65,6 +65,7 @@ requests to stdout.
 * WEB UI::
 * PERMISSIONS::
 * EDITING UPLOADING DOWNLOADING::
+* BALANCE REPORTS::
 * RELOADING::
 * JSON API::
 * DEBUG OUTPUT::
@@ -317,7 +318,7 @@ otherwise.  To allow more than the default access, start it with an
 explicit '--allow=add' or '--allow=edit' option.
 
 
-File: hledger-web.info,  Node: EDITING UPLOADING DOWNLOADING,  Next: RELOADING,  Prev: PERMISSIONS,  Up: Top
+File: hledger-web.info,  Node: EDITING UPLOADING DOWNLOADING,  Next: BALANCE REPORTS,  Prev: PERMISSIONS,  Up: Top
 
 4 EDITING, UPLOADING, DOWNLOADING
 *********************************
@@ -337,9 +338,28 @@ have to arrange to commit the changes yourself.
 (eg with failing balance assertions) are prevented.
 
 
-File: hledger-web.info,  Node: RELOADING,  Next: JSON API,  Prev: EDITING UPLOADING DOWNLOADING,  Up: Top
+File: hledger-web.info,  Node: BALANCE REPORTS,  Next: RELOADING,  Prev: EDITING UPLOADING DOWNLOADING,  Up: Top
 
-5 RELOADING
+5 BALANCE REPORTS
+*****************
+
+Besides the journal and account registers, hledger-web can show the
+balance report at '/balance', with each account linked to its register.
+No page links to it yet: it is reachable by entering the url, until
+there are more such reports and a navigation scheme to hold them.  A
+'period' parameter, like the command line's '-p/--period', selects the
+interval and/or the period, eg '/balance?period=monthly' or
+'/balance?period=quarterly in 2025'; column headings link to the
+register for that period.  The search box filters the report like the
+other pages, including 'depth:' terms, and the general report options
+given at startup, such as '--depth', '-B', or '-V', apply.  A 'date:'
+term can set the interval too, as on the command line ('date:monthly',
+or '"date:quarterly in 2025"'), and wins over the 'period' parameter.
+
+
+File: hledger-web.info,  Node: RELOADING,  Next: JSON API,  Prev: BALANCE REPORTS,  Up: Top
+
+6 RELOADING
 ***********
 
 hledger-web detects changes made to the files by other means (eg if you
@@ -354,7 +374,7 @@ that both machines have roughly the same idea of what time it is.)
 
 File: hledger-web.info,  Node: JSON API,  Next: DEBUG OUTPUT,  Prev: RELOADING,  Up: Top
 
-6 JSON API
+7 JSON API
 **********
 
 In addition to the web UI, hledger-web also serves a JSON API that can
@@ -539,7 +559,7 @@ $ curl http://127.0.0.1:5000/add -X PUT -H 'Content-Type: application/json' --da
 
 File: hledger-web.info,  Node: DEBUG OUTPUT,  Next: ENVIRONMENT,  Prev: JSON API,  Up: Top
 
-7 DEBUG OUTPUT
+8 DEBUG OUTPUT
 **************
 
 You can add '--debug[=N]' to the command line to log debug output.  N
@@ -553,7 +573,7 @@ can usually redirect stderr, eg:
 
 File: hledger-web.info,  Node: ENVIRONMENT,  Next: BUGS,  Prev: DEBUG OUTPUT,  Up: Top
 
-8 ENVIRONMENT
+9 ENVIRONMENT
 *************
 
 *LEDGER_FILE* The main journal file to use when not specified with
@@ -562,8 +582,8 @@ File: hledger-web.info,  Node: ENVIRONMENT,  Next: BUGS,  Prev: DEBUG OUTPUT,  U
 
 File: hledger-web.info,  Node: BUGS,  Prev: ENVIRONMENT,  Up: Top
 
-9 BUGS
-******
+10 BUGS
+*******
 
 We welcome bug reports in the hledger issue tracker
 (https://bugs.hledger.org), or on the hledger chat or mail list
@@ -576,15 +596,16 @@ We welcome bug reports in the hledger issue tracker
 
 Tag Table:
 Node: Top223
-Node: OPTIONS2544
-Node: WEB UI12711
-Node: PERMISSIONS14292
-Node: EDITING UPLOADING DOWNLOADING15546
-Node: RELOADING16464
-Node: JSON API17045
-Node: DEBUG OUTPUT22793
-Node: ENVIRONMENT23335
-Node: BUGS23571
+Node: OPTIONS2564
+Node: WEB UI12731
+Node: PERMISSIONS14312
+Node: EDITING UPLOADING DOWNLOADING15566
+Node: BALANCE REPORTS16490
+Node: RELOADING17468
+Node: JSON API18035
+Node: DEBUG OUTPUT23783
+Node: ENVIRONMENT24325
+Node: BUGS24561
 
 End Tag Table
 
