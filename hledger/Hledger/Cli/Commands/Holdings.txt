@@ -29,8 +29,8 @@ Flags:
   -o --output-file=FILE     write output to FILE. A file extension matching
                             one of the above formats selects that format.
 
-This command shows your lot-tracked assets (see Lot reporting), and
-their performance, as of the report end date. An example:
+This command shows your lot-tracked assets (see Lots and capital gains),
+and their performance, as of the report end date. An example:
 
 $ hledger holdings -e 2023-04-02
 Holdings on 2023-04-01

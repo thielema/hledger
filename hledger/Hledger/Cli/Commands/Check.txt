@@ -46,9 +46,11 @@ commands:
   errors are reported before assertion failures.
 
 - lots - all lot entries are valid. Checks lot posting classifications,
-  lot movements, and that any user-written realised gain amount on a
-  disposal matches the calculated gain. This check can be disabled by -I
-  or --ignore-lots. If you put it in your config file, you can override
+  lot movements, that an acquisition writing both a cost basis and a
+  transacted cost has them equal (a mismatch would silently miscalculate
+  gains), and that any user-written realised gain amount on a disposal
+  matches the calculated gain. This check can be disabled by -I or
+  --ignore-lots. If you put it in your config file, you can override
   that with -s/--strict or hledger check lots.
 
 Strict checks
@@ -104,14 +106,6 @@ command:
   part (eg the checking in assets:bank:checking). This ensures each
   account can be matched by a unique short name, easier to remember and
   to type.
-
-- basis - all lot acquisitions set a per-unit basis equal to the
-  per-unit transacted cost. This guards against typos in cost basis
-  amounts causing wrong capital gain calculation at disposal time. It
-  also enforces hledger's preferred style of "basis cost = transacted
-  cost, with any real difference (as in gifts, NSO, RSU, etc) funded by
-  a separate posting", rather than expressing the difference as a {B} @
-  T mismatch.
 
 Custom checks
 

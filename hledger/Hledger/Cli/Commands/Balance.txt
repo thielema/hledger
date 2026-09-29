@@ -533,12 +533,16 @@ The basic calculation to perform for each table cell. It is one of:
   values (caused by deposits, withdrawals, and/or market price
   fluctuations)
 - --gain : show capital gain/loss for each account: the current valued
-  balance minus the net of postings' transacted costs (acquisition costs
-  minus disposal proceeds). For accounts where nothing has been sold
-  this equals the unrealised gain; once disposals exist the figure also
-  includes realised gain on the disposed units, so it is best read as
-  "total gain since inception". To track realised gain separately, use
-  lot notation (see Lot reporting).
+  balance minus its cost. For lot-tracked commodities the cost is the
+  cost basis of the units still held, so this is the unrealised gain.
+  For other commodities it is the net of postings' transacted costs
+  (acquisition costs minus disposal proceeds): where nothing has been
+  sold this too is the unrealised gain, but once disposals exist the
+  figure also includes the realised gain on the disposed units, so it is
+  best read as "total gain since inception" (to separate realised and
+  unrealised gains, track lots). Compare --valuechange, which shows how
+  much the value moved in a period, from price changes and from buying
+  and selling. See Unrealised gains for examples.
 - --count : show the count of postings
 
 Accumulation mode
@@ -1046,6 +1050,10 @@ Also:
 
 - bal -M --valuechange investments
   Show monthly change in market value of investment assets.
+
+- bal -M -H --gain investments
+  Show unrealised gain on investment assets (market value minus cost) at
+  each month end.
 
 - bal investments --valuechange -D date:lastweek amt:'>1000' -STA [--invert]
   Show top gainers [or losers] last week
