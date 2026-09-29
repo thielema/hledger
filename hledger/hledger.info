@@ -13088,27 +13088,16 @@ cost.  For lotful commodities, even a bare positive posting (no '{}' or
 '@') can be detected as an acquire, with cost inferred from the
 transaction's other postings.
 
-   Acquire postings may carry a per-unit ('{}') or total ('{{}}') cost
-basis annotation, and a per-unit ('@') or total ('@@') transacted cost.
+   Acquire postings may carry a '{}' cost basis annotation or a '@'
+transacted cost annotation (or the total cost variants: '@@' or '{{}}',
+useful when the unit cost is non-terminating).
 
-   A note for people familiar with Beancount's or Ledger's lot tracking:
-although the syntax is superficially similar in all three apps, they
-each handle it a little differently.  In acquisitions,
+   In an acquisition these are the same thing: the asset posting's cost
+is the basis, and hledger balances the transaction and calculates gains
+with it.  Usually we write just one of '{}' and '@', and the other is
+inferred; if both are written, they must be the same.
 
-   * Ledger balances with '@' and calculates gains with '{}'.  These can
-     differ, in which case the difference is not accounted for anywhere.
-   * Beancount balances transactions and calculates gains with '{}'.
-     You can also record a transacted price with '@', which can be
-     different; this just declares a market price, like hledger's 'P'
-     directive.
-   * hledger balances and calculates gains with '{}'.  The cost can be
-     written with '{}' or '@'.  If both are written, they must be the
-     same (usually we write just one, and the other is inferred).  (If
-     the unit cost is non-terminating, write a total cost: 'TOTALCOST'
-     or '@@ TOTALCOST'.)
-
-   In hledger (as in Beancount), the asset posting's cost is the basis.
-The other postings show what funded it, such as:
+   The other postings show what funded the basis, such as:
 
    * cash for what you paid (including fees if you want those
      capitalised in the basis)
@@ -13129,6 +13118,17 @@ see https://en.wikipedia.org/wiki/Cost_basis.  Recording them this way
 keeps the accounting equation balanced and shows where the basis came
 from; a '{}' basis differing from '@' would leave the difference
 unaccounted for, and a typo in either would silently miscalculate gains.
+
+   A note for people familiar with Beancount's or Ledger's lot tracking:
+although the syntax is superficially similar in all three apps, they
+each handle it a little differently.  In acquisitions,
+
+   * Beancount balances and calculates gains with '{}', like hledger.
+     Also it allows a transacted price to be recorded with '@', which
+     can be different; this just declares a market price, like hledger's
+     'P' directive.
+   * Ledger balances with '@' and calculates gains with '{}'.  These can
+     differ, in which case the difference is not accounted for anywhere.
 
 
 File: hledger.info,  Node: Transfer,  Next: Dispose,  Prev: Acquire,  Up: Lot movements
@@ -15485,73 +15485,73 @@ Node: Several ways to write lot entries498336
 Node: Disabling lot tracking499933
 Node: Lot movements501301
 Node: Acquire501729
-Node: Transfer504402
-Node: Transfer fees505608
-Node: Capitalising fees506862
-Node: Dispose507561
-Node: Other lot events508986
-Node: Cost basis methods509447
-Node: Changing the cost basis method512870
-Node: Gains514416
-Node: Gain accounts516294
-Node: Recording gains517532
-Node: Lot reports518989
-Node: Realised gains519768
-Node: Unrealised gains520998
-Node: Lot details523174
-Node: Lot labels523454
-Node: Cost basis precision523988
-Node: Lot postings and balance assertions525031
-Node: Troubleshooting lots526066
-Node: Generating data527732
-Node: Forecasting529567
-Node: --forecast530223
-Node: Inspecting forecast transactions531324
-Node: Forecast reports532657
-Node: Forecast tags533766
-Node: Forecast period in detail534386
-Node: Forecast troubleshooting535474
-Node: Budgeting536545
-Node: Posting types537100
-Node: PART 5 MORE ABOUT THE COMMAND LINE539757
-Node: Output539948
-Node: Output destination540153
-Node: Output format540713
-Node: Text output542643
-Node: Box-drawing characters543839
-Node: Colour544341
-Node: Paging545072
-Node: HTML output546615
-Node: CSV / TSV output547263
-Node: FODS output547519
-Node: Ledger output548453
-Node: Beancount output549005
-Node: SQL output553906
-Node: JSON output554647
-Node: Debug output555354
-Node: Command line tips556472
-Node: Special characters556841
-Node: Escaping shell special characters557843
-Node: Escaping regular expression special characters559204
-Node: Escaping in other situations560721
-Node: Unicode characters562021
-Node: Regular expressions563454
-Node: hledger's regular expressions566815
-Node: Argument files568488
-Node: Shell completions569402
-Node: PART 6 COMMON TASKS569911
-Node: Setting LEDGER_FILE570359
-Node: Set LEDGER_FILE on unix570875
-Node: Set LEDGER_FILE on mac571390
-Node: Set LEDGER_FILE on Windows571944
-Node: Reconciling573583
-Node: Closing a journal file575918
-Node: hledger 1 and hledger 2576385
-Node: Migrating hledger 1 data to hledger 2576937
-Node: Switching back to hledger 1579033
-Node: Keeping data usable with both580388
-Node: BUGS581112
-Node: Troubleshooting582764
+Node: Transfer504356
+Node: Transfer fees505562
+Node: Capitalising fees506816
+Node: Dispose507515
+Node: Other lot events508940
+Node: Cost basis methods509401
+Node: Changing the cost basis method512824
+Node: Gains514370
+Node: Gain accounts516248
+Node: Recording gains517486
+Node: Lot reports518943
+Node: Realised gains519722
+Node: Unrealised gains520952
+Node: Lot details523128
+Node: Lot labels523408
+Node: Cost basis precision523942
+Node: Lot postings and balance assertions524985
+Node: Troubleshooting lots526020
+Node: Generating data527686
+Node: Forecasting529521
+Node: --forecast530177
+Node: Inspecting forecast transactions531278
+Node: Forecast reports532611
+Node: Forecast tags533720
+Node: Forecast period in detail534340
+Node: Forecast troubleshooting535428
+Node: Budgeting536499
+Node: Posting types537054
+Node: PART 5 MORE ABOUT THE COMMAND LINE539711
+Node: Output539902
+Node: Output destination540107
+Node: Output format540667
+Node: Text output542597
+Node: Box-drawing characters543793
+Node: Colour544295
+Node: Paging545026
+Node: HTML output546569
+Node: CSV / TSV output547217
+Node: FODS output547473
+Node: Ledger output548407
+Node: Beancount output548959
+Node: SQL output553860
+Node: JSON output554601
+Node: Debug output555308
+Node: Command line tips556426
+Node: Special characters556795
+Node: Escaping shell special characters557797
+Node: Escaping regular expression special characters559158
+Node: Escaping in other situations560675
+Node: Unicode characters561975
+Node: Regular expressions563408
+Node: hledger's regular expressions566769
+Node: Argument files568442
+Node: Shell completions569356
+Node: PART 6 COMMON TASKS569865
+Node: Setting LEDGER_FILE570313
+Node: Set LEDGER_FILE on unix570829
+Node: Set LEDGER_FILE on mac571344
+Node: Set LEDGER_FILE on Windows571898
+Node: Reconciling573537
+Node: Closing a journal file575872
+Node: hledger 1 and hledger 2576339
+Node: Migrating hledger 1 data to hledger 2576891
+Node: Switching back to hledger 1578987
+Node: Keeping data usable with both580342
+Node: BUGS581066
+Node: Troubleshooting582718
 
 End Tag Table
 

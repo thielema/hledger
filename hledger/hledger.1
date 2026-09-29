@@ -13396,34 +13396,18 @@ For lotful commodities, even a bare positive posting (no \f[CR]{}\f[R]
 or \f[CR]\(at\f[R]) can be detected as an acquire, with cost inferred
 from the transaction\(aqs other postings.
 .PP
-Acquire postings may carry a per\-unit (\f[CR]{}\f[R]) or total
-(\f[CR]{{}}\f[R]) cost basis annotation, and a per\-unit
-(\f[CR]\(at\f[R]) or total (\f[CR]\(at\(at\f[R]) transacted cost.
+Acquire postings may carry a \f[CR]{}\f[R] cost basis annotation or a
+\f[CR]\(at\f[R] transacted cost annotation (or the total cost variants:
+\f[CR]\(at\(at\f[R] or \f[CR]{{}}\f[R], useful when the unit cost is
+non\-terminating).
 .PP
-A note for people familiar with Beancount\(aqs or Ledger\(aqs lot
-tracking: although the syntax is superficially similar in all three
-apps, they each handle it a little differently.
-In acquisitions,
-.IP \(bu 2
-Ledger balances with \f[CR]\(at\f[R] and calculates gains with
-\f[CR]{}\f[R].
-These can differ, in which case the difference is not accounted for
-anywhere.
-.IP \(bu 2
-Beancount balances transactions and calculates gains with \f[CR]{}\f[R].
-You can also record a transacted price with \f[CR]\(at\f[R], which can
-be different; this just declares a market price, like hledger\(aqs
-\f[CR]P\f[R] directive.
-.IP \(bu 2
-hledger balances and calculates gains with \f[CR]{}\f[R].
-The cost can be written with \f[CR]{}\f[R] or \f[CR]\(at\f[R].
-If both are written, they must be the same (usually we write just one,
-and the other is inferred).
-(If the unit cost is non\-terminating, write a total cost:
-\f[CR]TOTALCOST\f[R] or \f[CR]\(at\(at TOTALCOST\f[R].)
+In an acquisition these are the same thing: the asset posting\(aqs cost
+is the basis, and hledger balances the transaction and calculates gains
+with it.
+Usually we write just one of \f[CR]{}\f[R] and \f[CR]\(at\f[R], and the
+other is inferred; if both are written, they must be the same.
 .PP
-In hledger (as in Beancount), the asset posting\(aqs cost is the basis.
-The other postings show what funded it, such as:
+The other postings show what funded the basis, such as:
 .IP \(bu 2
 cash for what you paid (including fees if you want those capitalised in
 the basis)
@@ -13449,6 +13433,22 @@ Recording them this way keeps the accounting equation balanced and shows
 where the basis came from; a \f[CR]{}\f[R] basis differing from
 \f[CR]\(at\f[R] would leave the difference unaccounted for, and a typo
 in either would silently miscalculate gains.
+.PP
+A note for people familiar with Beancount\(aqs or Ledger\(aqs lot
+tracking: although the syntax is superficially similar in all three
+apps, they each handle it a little differently.
+In acquisitions,
+.IP \(bu 2
+Beancount balances and calculates gains with \f[CR]{}\f[R], like
+hledger.
+Also it allows a transacted price to be recorded with \f[CR]\(at\f[R],
+which can be different; this just declares a market price, like
+hledger\(aqs \f[CR]P\f[R] directive.
+.IP \(bu 2
+Ledger balances with \f[CR]\(at\f[R] and calculates gains with
+\f[CR]{}\f[R].
+These can differ, in which case the difference is not accounted for
+anywhere.
 .SS Transfer
 A matching pair of negative/positive lotful postings moves one or more
 existing lots between accounts, preserving their cost basis.
