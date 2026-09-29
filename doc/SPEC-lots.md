@@ -37,9 +37,9 @@ The functional differences:
 | A sale price contradicting the cash | not detected | not detected | unbalanced transaction |
 | Lot selection in a sale | by specific cost/date/label | by cost/date/label, or by account booking method (STRICT, FIFO, LIFO, NONE) with an empty `{}` | by cost/date/label or by the commodity/account method (FIFO, LIFO, HIFO, AVERAGE, SPECID, per account or over all accounts) with `{}` or no annotation at all |
 | Lot movements verified | no; you can sell an unbought lot | yes: no matching lot, or too few units, is an error | yes; the ..ALL methods also validate the choice against all accounts' lots |
-| Lot-preserving transfers | by writing the same lot annotation on both sides; unverified | by writing the lot's cost and date on the receiving side (an omitted date becomes the transfer date) | automatic with no lot annotations needed; or if written, they are checked |
+| Lot-preserving transfers | by writing the same lot annotation on both sides; no error checking | by writing the lot's cost and date on the receiving side (an omitted date becomes the transfer date) | automatic with no lot annotations needed; or if written, they are checked |
 | Gain posting | required, user-written; checked only by balancing | required, user-written; checked only by balancing | inferred if omitted; fully checked if written |
-| Lots reports | `--lots` lists each lot with its basis and date; `-B`/`-V`/`-G` give total basis, value and unrealised gain, per account not per lot; no realised gains report | holdings via bean-query or Fava (per lot, with cost and value) | lots viewable in all reports (`--lots`); holdings report |
+| Lots reports | `--lots` lists each lot with its basis and date; `-B`/`-V`/`-G` give total basis, value and unrealised gain, per account not per lot; no realised gains report | holdings report (per lot, with cost and value), via bean-query or Fava | lots viewable in all reports (`--lots`); holdings report |
 
 (Before 2026-09 hledger balanced acquisitions with `@` and allowed `{}` to
 differ; that left the difference unaccounted for, and matched neither Ledger
