@@ -34,7 +34,7 @@ The functional differences:
 |---|---|---|---|
 | `@` beside `{}` | an informational price; may differ | an informational price; may differ (a price directive, with the implicit_prices plugin) | the transacted cost; must agree with `{}` in an acquisition (see Acquire basis check) |
 | A sale price contradicting the cash | not detected | not detected | unbalanced transaction |
-| Lot selection in a sale | by the written cost/date only; no methods | by cost/date/label, or by the booking method (STRICT, FIFO, LIFO, NONE, per account) with an empty `{}` | by cost/date/label or by the commodity/account method (FIFO, LIFO, HIFO, AVERAGE, SPECID, per account or over all accounts) with `{}` or no annotation at all |
+| Lot selection in a sale | by specific cost/date/label | by cost/date/label, or by account booking method (STRICT, FIFO, LIFO, NONE) with an empty `{}` | by cost/date/label or by the commodity/account method (FIFO, LIFO, HIFO, AVERAGE, SPECID, per account or over all accounts) with `{}` or no annotation at all |
 | Lot movements verified | no; you can sell an unbought lot | yes: no matching lot, or too few units, is an error | yes; the ..ALL methods also validate the choice against all accounts' lots |
 | Lot-preserving transfers | by writing the same lot annotation on both sides; unverified | by writing the lot's cost and date on the receiving side (an omitted date becomes the transfer date) | automatic with no lot annotations needed; or if written, they are checked |
 | Gain posting | required, user-written; checked only by balancing | required, user-written; checked only by balancing | inferred if omitted; fully checked if written |

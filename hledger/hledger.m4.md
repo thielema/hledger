@@ -6453,9 +6453,9 @@ Eg shares received as a gift, with the giver's basis carried over:
 
 Other cases with a basis differing from what was paid include inheritance (stepped-up basis),
 stock options and RSUs, and wash sales; see <https://en.wikipedia.org/wiki/Cost_basis>.
-Recording them this way keeps the accounting equation balanced and shows where the basis came from;
-a `{}` basis differing from `@` would leave the difference unaccounted for,
-and a typo in either would silently miscalculate gains.
+Recording them this way keeps the accounting equation balanced and shows where the basis came from.
+(Writing `{}` and `@` with different amounts is not allowed: in hledger `@` means what you paid,
+and so does the basis in an acquisition; and a typo in either would silently miscalculate gains.)
 
 A note for people familiar with Ledger's or Beancount's lot tracking:
 the syntax is similar in all three apps, and so is the balancing: when a `{}` cost basis is written,
