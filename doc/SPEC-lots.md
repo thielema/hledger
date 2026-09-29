@@ -20,34 +20,29 @@ These mechanisms still work but the tooling described here aims to largely subsu
 
 ## Comparison with other apps
 
-Notes from design discussions (2026-09), from memory of the other apps'
-docs; verify before quoting.
+Notes from design discussions (2026-09). The Ledger and Beancount rows
+below were verified against Ledger 3.4.1 and Beancount 3.2.3; the rest is
+from memory of the apps' docs, so verify before quoting.
 
-**Ledger** shares broadly similar `{}`/`@` syntax (lot prices, dates and
-notes on amounts, `--lots` reporting). When a `{}` lot price is written,
-Ledger balances the transaction with it, in acquisitions and disposals
-alike, and an `@` price alongside is informational (a recorded price, which
-may differ; `-G`/`--gain` uses the lot price as basis). So a sale needs a
-user-written gain posting to balance, as in the Ledger manual's stock sale
-example. Without `{}`, `@` is the cost as usual. (Verified with Ledger
-3.4.1, 2026-09.) It has no automatic booking methods;
-lots must be selected by price/date.
+**Ledger, Beancount and hledger** share similar `{}`/`@` syntax, and all
+three balance a transaction, and calculate gains, with the `{}` cost basis
+when one is written. Beancount is the closest relative: its per-account
+booking method (on the `open` directive) is much like hledger's `lots:` tag.
+The functional differences:
 
-**Beancount** is the closest relative. Lots are first-class in its
-inventories; the booking method (STRICT, FIFO, LIFO, AVERAGE, NONE) is
-declared per account on the `open` directive, much like hledger's
-per-account `lots:` tag; and a sale selects lots with `{}` by cost, date or
-label. Balancing is as in Ledger: with `{}`, in acquisitions and disposals,
-an `@` price alongside being informational (plugins such as
-`implicit_prices` turn it into a price directive), and a sale needs a
-user-written gain posting. It has no equivalent of lot subaccounts in
-reports.
+| | Ledger | Beancount | hledger |
+|---|---|---|---|
+| `@` beside `{}` | an informational price; may differ | an informational price; may differ (a price directive, with the implicit_prices plugin) | the transacted cost; must agree with `{}` in an acquisition (see Acquire basis check) |
+| A sale price contradicting the cash | not detected | not detected | unbalanced transaction |
+| Lot selection in a sale | by the written cost/date only; no methods | by cost/date/label, or by the booking method (STRICT, FIFO, LIFO, NONE, per account) with an empty `{}` | by cost/date/label or by the commodity/account method (FIFO, LIFO, HIFO, AVERAGE, SPECID, per account or over all accounts) with `{}` or no annotation at all |
+| Lot movements verified | no; you can sell an unbought lot | yes: no matching lot, or too few units, is an error | yes; the ..ALL methods also validate the choice against all accounts' lots |
+| Lot-preserving transfers | by writing the same lot annotation on both sides; unverified | by writing the lot's cost and date on the receiving side (an omitted date becomes the transfer date) | automatic with no lot annotations needed; or if written, they are checked |
+| Gain posting | required, user-written; checked only by balancing | required, user-written; checked only by balancing | inferred if omitted; fully checked if written |
+| Lots in reports | `--lots` lists each lot with its basis and date; `-B`/`-V`/`-G` give total basis, value and unrealised gain, per account not per lot; no realised gains report | holdings via bean-query or Fava (per lot, with cost and value) | lots viewable in all reports (`--lots`); holdings report |
 
-**hledger** balances and calculates gains with `{}` like Ledger and Beancount,
-but in an acquisition `@`, if written, must agree with `{}` (see Acquire basis check).
-(Before 2026-09 hledger balanced acquisitions with `@` and allowed `{}` to differ;
-that left the difference unaccounted for, and did not match Ledger or Beancount.)
-In a disposal hledger infers the gain posting when omitted, and checks it when written.
+(Before 2026-09 hledger balanced acquisitions with `@` and allowed `{}` to
+differ; that left the difference unaccounted for, and matched neither Ledger
+nor Beancount, which balance such an entry with `{}`.)
 
 **Other plain text accounting tools.** Paisa (a web front end over
 Ledger-format files) computes FIFO capital gains for its reports from plain
