@@ -6463,7 +6463,7 @@ In acquisitions,
 
 - Beancount balances and calculates gains with `{}`, like hledger.
   It also allows a transacted price to be written with `@`, and it can be different;
-  this is informational for the user, and plugins such as implicit_prices can use it to declare a market price, like hledger's `P` directive.
+  this is informational for the user, and plugins can use it, eg implicit_prices treats it as a market price declaration, like hledger's `P` directive.
 - Ledger balances with `@` and calculates gains with `{}`.
   These can be different, in which case the difference is not accounted for anywhere.
 
