@@ -44,13 +44,10 @@ user-written gain posting. It has no equivalent of lot subaccounts in
 reports.
 
 **hledger** balances and calculates gains with `{}` like Ledger and Beancount,
-but gives `@` one meaning only, the transacted cost (what was paid):
-so in an acquisition `@`, if written, must agree with `{}` (see Acquire basis check).
+but in an acquisition `@`, if written, must agree with `{}` (see Acquire basis check).
+(Before 2026-09 hledger balanced acquisitions with `@` and allowed `{}` to differ;
+that left the difference unaccounted for, and did not match Ledger or Beancount.)
 In a disposal hledger infers the gain posting when omitted, and checks it when written.
-(Before 2026-09 hledger balanced acquisitions with `@` and allowed
-`{}` to differ, as hledger 1 did by ignoring `{}`; that hybrid left the
-difference unaccounted for, and did not match Ledger or Beancount either,
-which balance such an entry at `{}`.)
 
 **Other plain text accounting tools.** Paisa (a web front end over
 Ledger-format files) computes FIFO capital gains for its reports from plain
