@@ -6725,6 +6725,12 @@ account revenues:gain  ; type:G
 
 Multiple gain postings are allowed, eg one per lot when disposing from several lots.
 
+A written gain posting also protects your history, like a [balance assertion](#balance-assertions):
+hledger recalculates lots and gains from the whole journal each time it runs,
+so if a past acquisition is edited, an inferred gain could silently change,
+whereas a written one no longer matches and is reported as an error.
+`hledger print -x` shows the inferred gain postings, if you want to write them into the journal.
+
 A gain posting on an undeclared account also works: hledger detects it heuristically
 (roughly: a posting to a non-asset/liability/equity account, not itself a lot posting,
 without which the rest of the entry balances).

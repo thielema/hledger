@@ -18,6 +18,50 @@ and used the transaction balancing mechanism to calculate capital gain/loss.
 Or, they computed gains with `balance --gain`, or the `roi` command.
 These mechanisms still work but the tooling described here aims to largely subsume them.
 
+## Comparison with other apps
+
+Notes from design discussions (2026-09), from memory of the other apps'
+docs; verify before quoting.
+
+**Ledger and Beancount** share hledger's `{}`/`@` syntax but not its
+meanings. In an acquisition, Ledger balances with `@` and calculates gains
+with `{}`, allowing them to differ (the difference is then not accounted for
+anywhere); Beancount balances and calculates gains with `{}`, and an `@`
+price is informational (plugins such as `implicit_prices` turn it into a
+price directive). hledger balances and calculates gains with `{}`, and
+requires `@`, if written, to agree (see Acquire basis check). In a disposal,
+Beancount balances with `{}` too and requires the user to write the gain
+posting; hledger infers the gain posting when omitted. 
+Ledger balances with `@` and does not record gains.
+
+**GnuCash** has lot tracking: shares with a price per split, a View Lots
+dialog assigning sales to lots by FIFO/LIFO or by hand, and it can generate
+capital gains transactions; the Advanced Portfolio report gives basis and
+realised/unrealised gain with a choice of average/FIFO/LIFO, and GnuCash 5
+added an Investment Lots report. Lots are not visible in the register, and
+assigning sales to lots and generating the gains transactions is a separate
+pass ("scrubbing"), run after the fact.
+
+**Quicken** has lot tracking as a core feature of investment accounts
+(per-lot sales, FIFO/LIFO/average, capital gains and tax-lot reports).
+
+**QuickBooks** has no securities or lot concept.
+
+**Recorded vs recalculated gains.** Quicken (and most GUI apps) do not
+record gains; they store transactions plus, for each sale, the lots it
+consumed, and derive gains at report time. GnuCash's generated gains
+transactions are the exception. None of them make history immutable: editing
+a past buy silently changes historic gains (or invalidates stored lot
+assignments); the defences are opt-in locks (QuickBooks' closing date,
+GnuCash's read-only threshold) and reconciliation warnings. hledger also
+recomputes from the journal at read time, but its recorded gain posting acts
+as an assertion: if a past entry changes, the written gain no longer matches
+the recalculated one and an error is reported, rather than reports quietly
+changing. This is an argument for writing gains explicitly in entries
+considered final (`print -x` can write inferred ones).
+The tax boundary / lock idea in the Roadmap would extend this with
+GnuCash/QuickBooks-like history protection.
+
 ## Lots
 
 A lot is an amount of some commodity, acquired and held for investment purposes,
