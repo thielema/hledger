@@ -6457,15 +6457,14 @@ Recording them this way keeps the accounting equation balanced and shows where t
 a `{}` basis differing from `@` would leave the difference unaccounted for,
 and a typo in either would silently miscalculate gains.
 
-A note for people familiar with Beancount's or Ledger's lot tracking:
-although the syntax is superficially similar in all three apps, they each handle it a little differently.
-In acquisitions,
-
-- Beancount balances and calculates gains with `{}`, like hledger.
-  It also allows a transacted price to be written with `@`, and it can be different;
-  this is informational for the user, and plugins can use it, eg implicit_prices treats it as a market price declaration, like hledger's `P` directive.
-- Ledger balances with `@` and calculates gains with `{}`.
-  These can be different, in which case the difference is not accounted for anywhere.
+A note for people familiar with Ledger's or Beancount's lot tracking:
+the syntax is similar in all three apps, and so is the balancing: when a `{}` cost basis is written,
+all three balance the transaction and calculate gains with it.
+The difference is in `@`. Ledger and Beancount allow an `@` price alongside `{}` which is different;
+it does not affect balancing, it is informational for the user and records a market price
+(in Beancount, this requires the implicit_prices plugin).
+In hledger, `@` always means the transacted cost, what you actually paid, so in an acquisition it must agree with `{}`;
+to declare a different market price on that day, use a [`P` directive](#p-directive) instead.
 
 ### Transfer
 

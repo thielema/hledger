@@ -23,16 +23,39 @@ These mechanisms still work but the tooling described here aims to largely subsu
 Notes from design discussions (2026-09), from memory of the other apps'
 docs; verify before quoting.
 
-**Ledger and Beancount** share hledger's `{}`/`@` syntax but not its
-meanings. In an acquisition, Ledger balances with `@` and calculates gains
-with `{}`, allowing them to differ (the difference is then not accounted for
-anywhere); Beancount balances and calculates gains with `{}`, and an `@`
-price is informational (plugins such as `implicit_prices` turn it into a
-price directive). hledger balances and calculates gains with `{}`, and
-requires `@`, if written, to agree (see Acquire basis check). In a disposal,
-Beancount balances with `{}` too and requires the user to write the gain
-posting; hledger infers the gain posting when omitted. 
-Ledger balances with `@` and does not record gains.
+**Ledger** shares broadly similar `{}`/`@` syntax (lot prices, dates and
+notes on amounts, `--lots` reporting). When a `{}` lot price is written,
+Ledger balances the transaction with it, in acquisitions and disposals
+alike, and an `@` price alongside is informational (a recorded price, which
+may differ; `-G`/`--gain` uses the lot price as basis). So a sale needs a
+user-written gain posting to balance, as in the Ledger manual's stock sale
+example. Without `{}`, `@` is the cost as usual. (Verified with Ledger
+3.4.1, 2026-09.) It has no automatic booking methods;
+lots must be selected by price/date.
+
+**Beancount** is the closest relative. Lots are first-class in its
+inventories; the booking method (STRICT, FIFO, LIFO, AVERAGE, NONE) is
+declared per account on the `open` directive, much like hledger's
+per-account `lots:` tag; and a sale selects lots with `{}` by cost, date or
+label. Balancing is as in Ledger: with `{}`, in acquisitions and disposals,
+an `@` price alongside being informational (plugins such as
+`implicit_prices` turn it into a price directive), and a sale needs a
+user-written gain posting. It has no equivalent of lot subaccounts in
+reports.
+
+**hledger** balances and calculates gains with `{}` like Ledger and Beancount,
+but gives `@` one meaning only, the transacted cost (what was paid):
+so in an acquisition `@`, if written, must agree with `{}` (see Acquire basis check).
+In a disposal hledger infers the gain posting when omitted, and checks it when written.
+(Before 2026-09 hledger balanced acquisitions with `@` and allowed
+`{}` to differ, as hledger 1 did by ignoring `{}`; that hybrid left the
+difference unaccounted for, and did not match Ledger or Beancount either,
+which balance such an entry at `{}`.)
+
+**Other plain text accounting tools.** Paisa (a web front end over
+Ledger-format files) computes FIFO capital gains for its reports from plain
+`@` entries, with no lot notation. rustledger and acc read `{}` annotations;
+how much they do with them is unknown.
 
 **GnuCash** has lot tracking: shares with a price per split, a View Lots
 dialog assigning sales to lots by FIFO/LIFO or by hand, and it can generate
@@ -46,6 +69,16 @@ pass ("scrubbing"), run after the fact.
 (per-lot sales, FIFO/LIFO/average, capital gains and tax-lot reports).
 
 **QuickBooks** has no securities or lot concept.
+
+**Other desktop personal finance apps.** Moneydance tracks lots with
+specific-lot, FIFO or average matching; Banktivity (Mac) too; KMyMoney and
+Portfolio Performance compute gains in reports, the latter with FIFO or
+moving average. In all of these the lots live in the app's database.
+
+**Crypto and share tax tools** (Koinly, CoinTracker, Sharesight, etc) are
+essentially lot matchers with a gains report: the user chooses FIFO, LIFO,
+HIFO or specific identification and they produce the tax figures. HIFO
+comes from this world. They hold no other accounting.
 
 **Recorded vs recalculated gains.** Quicken (and most GUI apps) do not
 record gains; they store transactions plus, for each sale, the lots it
@@ -61,6 +94,12 @@ changing. This is an argument for writing gains explicitly in entries
 considered final (`print -x` can write inferred ones).
 The tax boundary / lock idea in the Roadmap would extend this with
 GnuCash/QuickBooks-like history protection.
+
+**What is distinctive in hledger** is the combination: the lot method and
+the basis written in the same plain text as the rest of the books; lots
+appearing as ordinary subaccounts in ordinary reports; and the gain recorded
+in the entry and checked on every read. Beancount has the first, GnuCash
+something like the second, and nothing else known has the third.
 
 ## Lots
 
