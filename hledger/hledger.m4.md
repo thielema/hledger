@@ -1667,7 +1667,7 @@ Eg, to have `alias` directives affect all of your files, put them at the start o
 | **[`decimal-mark`]**      | Declares the decimal mark, for parsing amounts of all commodities in following entries until next `decimal-mark` or file end. Subfiles can override.                                                                                                                                            | Y                   |
 | **[`include`]**           | Includes entries from another file, as if they were written inline.                                                                                                                                                                                                                             |                     |
 |                           | <br>**Declares data:**                                                                                                                                                                                                                                                                          |                     |
-| **[`account`]**           | Declares an account, for [checking](#check) all entries in all files, and its [display order](#account-display-order), and optionally its [type](#account-types) and [cost basis method](#cost-basis-methods).                                                                                                              | N                   |
+| **[`account`]**           | Declares an account, for [checking](#check) all entries in all files, and its [display order](#account-display-order), and optionally its [type](#account-types), [cost basis method](#cost-basis-methods) and [aliases](#account-aliases) (which, like `alias`, apply until file end).                                                    | N                   |
 | **[`commodity`]**         | Declares <br>1. a commodity symbol, for checking all amounts in all files <br>2. the commodity's display style <br>3. optional [commodity aliases](#commodity-aliases) and [lotfulness], and <br>4. the decimal mark for parsing this commodity, until file end (overridden by `decimal-mark`). | N <br>N <br>N <br>N |
 | **[`payee`]**             | Declares a payee name, for checking all entries in all files.                                                                                                                                                                                                                                   | N                   |
 | **[`tag`]**               | Declares a tag name, for checking all entries in all files.                                                                                                                                                                                                                                     | N                   |
@@ -1722,7 +1722,7 @@ They are written as the word `account` followed by a hledger-style [account name
 account assets:bank:checking
 ```
 
-Any indented subdirectives are ignored.
+Any indented subdirectives are ignored, except Ledger's `alias` subdirective (see [Account aliases](#account-aliases)).
 
 ### Account comments
 
@@ -1744,6 +1744,26 @@ These will be inherited by all postings using that account,
 except where the posting already has a value for that tag.
 (A posting tag overrides an account tag.)
 Note, these tags will be queryable but won't be shown in `print` output, even with --verbose-tags.
+
+### Account aliases
+
+An `alias:` tag on an account directive declares an [account alias](#alias-directive) for that account,
+just as if an `alias` directive had been written at that point. These two are equivalent:
+
+```journal
+account assets:bank:checking    ; alias: checking
+```
+```journal
+alias checking = assets:bank:checking
+account assets:bank:checking
+```
+
+Each `alias:` tag declares one alias; add more tags to declare more aliases.
+Like an `alias` directive, it rewrites account names in the entries which follow it,
+in the current file and any files it includes, until the end of the file
+(see [Aliases and multiple files](#aliases-and-multiple-files)).
+Ledger's `alias NAME` subdirective, indented below the account directive, is accepted and treated as an `alias:` tag.
+`hledger accounts --directives` shows account aliases in the tag form.
 
 ### Account error checking
 
@@ -1890,6 +1910,10 @@ Tips:
 
 ## `alias` directive
 
+(hledger has three kinds of alias: the account aliases described here,
+[commodity aliases](#commodity-aliases) declared on `commodity` directives,
+and [command aliases](#command-aliases) defined in a config file.)
+
 You can define account alias rules which rewrite your account names, or parts of them,
 before generating reports.
 This can be useful for:
@@ -1923,6 +1947,9 @@ alias OLD = NEW
 
 Or, you can use the `--alias 'OLD=NEW'` option on the command line.
 This affects all entries. It's useful for trying out aliases interactively.
+
+Or, for a declared account, you can write the alias as an `alias:` tag on its
+[account directive](#account-aliases).
 
 OLD and NEW are case sensitive full account names.
 hledger will replace any occurrence of the old account name with the
@@ -2224,6 +2251,9 @@ commodity 1.000 kilobucks
 
 An alias can't have aliases of its own,
 and if the same alias is declared on two different commodities, hledger reports an error.
+
+To use the same commodity aliases with several journals, put the `commodity` directives
+in a file which they [`include`](#include-directive), or which you add with an extra `-f` option.
 
 ### Commodity error checking
 
