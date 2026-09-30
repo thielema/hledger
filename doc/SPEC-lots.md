@@ -615,7 +615,10 @@ is skipped when:
 - An equity transfer is a variant of a lot transfer that happens in two parts across
   separate transactions (e.g. a closing transaction transfers lots into equity, and an
   opening transaction transfers them back out). In the closing transaction, transfer-from
-  postings reduce lots from the lot state. In the opening transaction, transfer-to
+  postings reduce lots from the lot state, and (like a paired transfer's source postings)
+  are rewritten onto the selected lots' full subaccount names, so that a partial lot
+  subaccount name (eg one missing the lot's label) doesn't leave account balances out of
+  step with the lot state. In the opening transaction, transfer-to
   postings re-add the lots to the lot state, preserving their original cost basis.
   The equity postings do not track lots.
 

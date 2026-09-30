@@ -189,3 +189,24 @@ $ hledger -f- close --open --lots --show-costs -e 2022
     equity:opening/closing balances
 
 >=
+
+# ** 9. A closing equity transfer posting written with a partial lot subaccount
+# name (here without the lot's generated label) is moved onto the selected lot's
+# full subaccount, so account balances stay in step with the lot state.
+<
+commodity AAA ; lots:
+
+2021-01-01 buy
+    assets:stocks     1 AAA {$10}
+    assets:cash
+
+2021-01-01 buy again
+    assets:stocks     1 AAA {$11}
+    assets:cash
+
+2021-12-31 closing balances  ; clopen:
+    assets:stocks:{2021-01-01, $10}   -1 AAA
+    equity:opening/closing balances
+
+$ hledger -f- bal --lots -N stocks
+               1 AAA  assets:stocks:{2021-01-01, "0002", $11}

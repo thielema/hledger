@@ -1862,11 +1862,18 @@ processTransaction styles verbosetags j needsLabels (ls, acc) t = do
         hasEquityOther = any (isEquityPosting j) otherPs
     -- Closing equity transfer: transfer-from postings with no transfer-to counterpart,
     -- where an equity posting receives the lots (e.g. close --clopen --lots).
-    -- Reduce lots from state; pass all postings through unchanged (equity does not track lots).
+    -- Reduce lots from state, and rewrite each transfer-from posting onto the
+    -- selected lots' subaccounts; pass other postings through unchanged (equity does not track lots).
     if not (null transferFroms) && null transferTos && hasEquityOther
       then do
-        ls' <- foldM (reduceLotTransferToEquity j t) ls transferFroms
-        return (ls', t : acc)
+        (ls', allPsR) <- foldM (\(st, qs) p ->
+            if isTransferFromPosting p
+            then do
+              (st', ps') <- reduceLotTransferToEquity styles verbosetags j t st p
+              return (st', reverse ps' ++ qs)
+            else return (st, p : qs)
+          ) (ls, []) (tpostings t)
+        return (ls', t{tpostings = reverse allPsR} : acc)
     -- Opening equity transfer: transfer-to postings with no transfer-from counterpart,
     -- where an equity posting is the source (e.g. opening balances from close --clopen --lots).
     -- Process transfer-to postings as acquires to add lots to the state.
@@ -1937,8 +1944,12 @@ isEquityPosting j p = maybe False isEquityType (journalAccountType j (lotBaseAcc
 -- | Reduce lots from the lot state for a transfer-from posting going to an equity account.
 -- Used when lots are transferred to equity (e.g. close --clopen --lots): reduces the lots
 -- without requiring a matching transfer-to posting, since equity does not track lots.
-reduceLotTransferToEquity :: Journal -> Transaction -> LotState -> Posting -> Either String LotState
-reduceLotTransferToEquity j t ls p =
+-- Like a paired transfer's source, the posting is rewritten onto the full name(s)
+-- of the lot(s) it selects, so that account balances agree with the lot state
+-- even when it was written with a partial lot subaccount name (eg without a label).
+reduceLotTransferToEquity :: M.Map CommoditySymbol AmountStyle -> Bool -> Journal -> Transaction -> LotState -> Posting
+                          -> Either String (LotState, [Posting])
+reduceLotTransferToEquity styles verbosetags j t ls p =
     case [(a, cb) | a <- amountsRaw (pamount p), Just cb <- [acostbasis a], isNegativeAmount a] of
       [(a, cb)] -> do
         let commodity = acommodity a
@@ -1946,12 +1957,29 @@ reduceLotTransferToEquity j t ls p =
             acct      = lotBaseAccount (paccount p)
             (method, methodSource) = resolveReductionMethodWithSource j p commodity
         selected <- selectLots (method, methodSource) (postingErrPrefix p) "transfer" (tdate t) acct commodity qty cb ls
+        ps <- mapM (mkLotPosting acct a method) selected
         let consumed = [(lotId, qty') | (lotId, _, qty') <- selected]
+            ps' = case ps of
+              [_] -> ps
+              _   -> map (postingAddHiddenAndMaybeVisibleTag False verbosetags (lotsplitPostingTagName, "")) ps
         return $ lotDbg t ("equity-transfer " ++ show qty ++ " " ++ T.unpack commodity
                            ++ " from " ++ T.unpack acct
                            ++ " (lots: " ++ showSelectedLots selected ++ ")")
-               $ reduceLotState acct commodity consumed ls
-      _ -> Right ls  -- no single lot amount (e.g. cash posting): pass through
+               (reduceLotState acct commodity consumed ls
+               ,preserveParentAssertion verbosetags (paccount p) (pbalanceassertion p) ps')
+      _ -> Right (ls, [p])  -- no single lot amount (e.g. cash posting): pass through
+  where
+    mkLotPosting acct a method (lotId, storedAmt, qty) = case acostbasis storedAmt >>= cbCost of
+      Nothing -> Left $ txnErrPrefix t ++ "lot " ++ show lotId
+                          ++ " for commodity " ++ T.unpack (acommodity a)
+                          ++ " has no cost basis (internal error)"
+      Just c  ->
+        let lotCb = CostBasis{cbDate = Just (lotDate lotId), cbLabel = lotLabel lotId, cbCost = Just c}
+            lotName = showLotNameForMethod method (styleLotCbCost styles lotCb)
+        in Right p{ paccount  = acct <> ":" <> lotName
+                  , pamount   = mixedAmount (amountSetQuantity (negate qty) a){acostbasis = Just lotCb}
+                  , poriginal = Just (originalPosting p)
+                  }
 
 -- | Partition a transaction's postings into transfer-from, transfer-to, and others.
 partitionTransferPostings :: [Posting] -> ([Posting], [Posting], [Posting])
