@@ -6956,6 +6956,11 @@ Internally, each lot is identified by its cost basis date plus an optional label
 Lots of a commodity acquired on the same date (even in different accounts) must have unique labels to help identify them.
 If you don't provide these, hledger adds sequential labels automatically (`"0001"`, `"0002"`, ..).
 Labels are used for sorting, so if you write your own, make them sortable.
+
+Automatic labels depend on which transactions hledger reads, so the same lot can get a different label when files are combined
+(eg yearly files with closing and opening balances).
+If a lot needs a stable label, eg an acquisition dated to an earlier purchase's date after a split or demerger, write your own.
+Use a descriptive label, eg `"demerger"`, not numbers like `"0001"`, which can clash with automatic labels.
 (More detail: [SPEC-lots](/SPEC-lots.html#lot-ids).)
 
 ### Cost basis precision
