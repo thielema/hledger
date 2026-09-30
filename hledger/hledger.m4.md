@@ -2187,12 +2187,18 @@ Here USD has three aliases:
 commodity USD 1.00    ; alias: $, alias: US$, alias: "us dollars"
 ```
 
-hledger infers a 1:1 market price from the commodity to each alias
-(you can see these with the `prices` command), so `-X` reports can freely convert between them.
-This is useful eg if your journal and your downloaded market price data use different symbols for a commodity.
+When hledger reads the journal, amounts written with an alias are converted to the commodity.
+So they combine with it in reports, and a transaction can balance across them.
+This is useful eg if your bank data, manual entries and downloaded market prices use different symbols for the same currency.
+Choose the symbol you want to see in reports as the commodity.
+
+`print` still shows the amounts as they were written; `print -x` shows them converted.
+In queries, [`cur:`](#cur-query) matches amounts written with an alias as the commodity, not the alias.
+Aliases are accepted by `hledger check commodities`.
 
 An alias can also have a quantity, for a unit of a different size.
-This is the number of alias units equal to one unit of the commodity, and the inferred market price uses it.
+This is the number of alias units equal to one unit of the commodity.
+Amounts written with the alias are divided by it, and their unit costs and market prices are multiplied by it.
 Eg, here a kilobuck is 1000 dollars and an hour is 60 minutes:
 
 ```journal
@@ -2200,26 +2206,24 @@ commodity USD 1.00    ; alias: 0.001 kilobucks
 commodity h 1.00      ; alias: 60 min
 ```
 
-You can choose which symbol is the commodity and which is the alias.
-The quantity is used exactly as written, so if one direction needs a repeating decimal
-(like 1/60 hours per minute), consider choosing the other direction.
+The quantity is used exactly as written.
+If converting to the commodity needs a repeating decimal (like 1/60 hours per minute),
+converted amounts may be off by a tiny amount, far beyond the displayed decimal places.
+Usually that doesn't matter, but it can make a [balance assertion](#balance-assertions) written in the alias fail;
+write those in the commodity instead.
 If your journal uses decimal commas, remember that a comma ends a tag's value; 
 you can write a fractional quantity with an exponent instead, eg `alias: 1E-3 kilobucks`.
 
-`-V` values each alias in its commodity (unless another market price for the alias says otherwise),
-and doesn't value the commodity in its aliases.
-
-Aliased symbols are also accepted by `hledger check commodities`, so you
-don't need a separate `commodity` directive for each alias.
-But an alias does not declare a commodity display style or decimal mark;
-to set those, add a `commodity` directive for the alias too:
+You can also show amounts in an alias, with `-X`, eg `-X min` or `-X kilobucks`.
+They will be shown with the commodity's display style, or the alias's own, if you add a `commodity` directive for it:
 
 ```journal
 commodity USD 1.00    ; alias: 0.001 kilobucks
 commodity 1.000 kilobucks
 ```
 
-In queries, [`cur:`](#cur-query) matches a commodity together with all of its aliases.
+An alias can't have aliases of its own,
+and if the same alias is declared on two different commodities, hledger reports an error.
 
 ### Commodity error checking
 
@@ -4980,19 +4984,8 @@ To match [special characters](#special-characters) which are regex-significant, 
 And at the command line, characters which are shell-significant need one more level of escaping -
 eg to match the dollar sign, write `cur:\\$` or `cur:'\$'`.
 
-When commodity aliases have been declared, via an `alias:` tag on a
-[commodity directive](#commodity-directive)), `cur:` will match the
-canonical commodity or any of its aliases.
-So if `commodity $1000.00  ; alias: USD, alias: U` is declared,
-the queries `cur:\\$`, `cur:USD`, `cur:U` and `cur:U.+` will all match
-amounts like `$1` or `1 USD` or `1 U`.
-\
-
-### sym: query
-**`sym:FULLREGEX`**\
-This is like `cur:`, but matches a specific commodity symbol, ignoring
-alias-group relationships. So in the example above, `sym:USD` would
-match `1 USD` but not `$1` or `1 U`.
+Amounts written with a [commodity alias](#commodity-aliases) have been converted to the commodity,
+so `cur:` matches them by the commodity's symbol, not the alias.
 \
 
 ### desc: query
@@ -5940,9 +5933,6 @@ follows, in this order of preference:
 3. If there are no P directives at all (any commodity or date) and the
    `--infer-market-prices` flag is used: the price commodity from the latest
    transaction-inferred price for A on or before valuation date.
-   (The prices inferred from [commodity aliases](#commodity-aliases) don't count as P directives here.)
-
-4. If A is a [commodity alias](#commodity-aliases): the commodity it is an alias of.
 
 This means:
 
@@ -7425,9 +7415,6 @@ Other adjustments hledger makes:
   if you have any, the conversion postings are omitted.
   Currently at most one cost + conversion postings group per transaction is supported.
 
-- **Price directives:** the prices which hledger infers from [commodity aliases](#commodity-aliases)
-  are normally dated `0000-01-01`; in Beancount output they are dated `0001-01-01`.
-
 - **Directives:** with `print --export`, hledger generates a `commodity` directive for each declared commodity,
   and an `open` directive for each declared or used account, dated on the account's earliest posting
   (or the earliest transaction date). Account and commodity tags become metadata on these directives,
@@ -7669,10 +7656,9 @@ bank                 assets:bank, assets:bank:savings, expenses:art:banksy, ...
 Some other queries:
 ```
 desc:'amazon|amzn|audible'  Amazon transactions
-cur:EUR              amounts with commodity symbol EUR (or any of its declared aliases)
-cur:\\$              amounts with commodity symbol $ (or any of its aliases)
-cur:....?            amounts with 3- or 4-character symbols (or any of their aliases)
-sym:EUR              amounts whose commodity symbol is exactly EUR (ignoring aliases)
+cur:EUR              amounts with commodity symbol EUR
+cur:\\$              amounts with commodity symbol $
+cur:....?            amounts with 3- or 4-character symbols
 tag:.=202[1-3]       things with any tag whose value contains 2021, 2022 or 2023
 ```
 
