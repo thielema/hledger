@@ -150,11 +150,12 @@ hledger-web's main views are:
   and cashflow statement, linked from the sidebar, and the balance sheet with equity and
   the general balance report, linked from those.
 
-Both views show the newest 1000 matching transactions, with links to the older
+The journal and register views show the newest 1000 matching transactions, with links to the older
 and newer pages and to pages by number, so that a page stays a reasonable size
 however large the journal is (a `page` parameter in the URL names the page).
 When the matching transactions span more than one year, a row of years above the table
 links to each year's transactions; "All" widens the view again.
+When they span more than twenty years, the years are shown one row per decade.
 
 The **sidebar** lists accounts and their balances (parent balances include subaccounts,
 and multiple commodities are shown one above the other).
@@ -178,6 +179,9 @@ which work when you are not typing in a field:
 - `s` - show or hide the sidebar
 - `e` - show or hide empty accounts in the sidebar
 - `f` - focus the search form
+
+The pages are light or dark, following your OS or browser's color scheme setting,
+and switch when it changes.
 
 Editing, uploading and downloading journal files is described [below](#editing-uploading-downloading).
 
