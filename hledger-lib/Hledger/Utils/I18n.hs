@@ -246,7 +246,8 @@ msgKey mctx s = maybe s (\c -> c <> "\x04" <> s) mctx
 -- | The built-in catalogs, embedded at build time.
 builtinCatalogSources :: [(Text, ByteString)]
 builtinCatalogSources =
-  [ ("de", $(embedFileRelativeBytes "locale/de.po"))
+  [ ("de",      $(embedFileRelativeBytes "locale/de.po"))
+  , ("zh-Hans", $(embedFileRelativeBytes "locale/zh-Hans.po"))
   ]
 
 -- | The built-in catalogs, parsed. A catalog that fails to parse is
