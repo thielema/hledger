@@ -41,13 +41,14 @@ DESCRIPTION
 
      * --serve-browse  mode  (the  default):  the app serves the web UI and JSON
        API, and opens your default web browser to show the app if possible,  and
-       exits automatically once no browser window has shown it for two minutes.
+       exits  automatically once no browser window has shown it for fifteen min-
+       utes.
 
      * --serve: the app just serves the web UI and JSON API.
 
      * --serve-api: the app just serves the JSON API.
 
-     In  all cases hledger-web runs as a foreground process, logging requests to
+     In all cases hledger-web runs as a foreground process, logging requests  to
      stdout.
 
 OPTIONS
@@ -75,30 +76,30 @@ OPTIONS
                                         runner args may follow a --, eg: hledger-web --test
                                         --help
 
-     By default hledger-web listens only on IP address 127.0.0.1, which  can  be
+     By  default  hledger-web listens only on IP address 127.0.0.1, which can be
      accessed only from the local machine.
 
-     To  allow access from elsewhere, use --host to specify an externally acces-
-     sible address configured on this  machine.   The  special  address  0.0.0.0
+     To allow access from elsewhere, use --host to specify an externally  acces-
+     sible  address  configured  on  this  machine.  The special address 0.0.0.0
      causes it to listen on all of this machine's addresses.
 
-     Similarly,  you  can  use  --port  to listen on a TCP port other than 5000.
-     This is useful if you want to run multiple hledger-web instances on  a  ma-
-     chine.   --port  0  makes the operating system choose a free port, which is
-     reported in the startup message and in the default base url, and  is  where
-     the  browser  is opened in --serve-browse mode.  This can be useful eg when
+     Similarly, you can use --port to listen on a  TCP  port  other  than  5000.
+     This  is  useful if you want to run multiple hledger-web instances on a ma-
+     chine.  --port 0 makes the operating system choose a free  port,  which  is
+     reported  in  the startup message and in the default base url, and is where
+     the browser is opened in --serve-browse mode.  This can be useful  eg  when
      scripting.
 
-     When --socket is used, hledger-web creates and communicates  via  a  socket
-     file  instead  of  a TCP port.  This can be more secure, respects unix file
-     permissions, and makes certain use cases easier, such as  running  per-user
-     instances    behind    an    nginx    reverse   proxy.    (Eg:   proxy_pass
+     When  --socket  is  used, hledger-web creates and communicates via a socket
+     file instead of a TCP port.  This can be more secure,  respects  unix  file
+     permissions,  and  makes certain use cases easier, such as running per-user
+     instances   behind   an   nginx    reverse    proxy.     (Eg:    proxy_pass
      http://unix:/tmp/hledger/${remote_user}.socket;.)
 
      You can use --base-url to change the protocol, hostname, port and path that
-     appear in hledger-web's hyperlinks.  This is  useful  eg  when  integrating
-     hledger-web  within a larger website.  The default is http://HOST:PORT/ us-
-     ing the server's configured host address and TCP port  (or  http://HOST  if
+     appear  in  hledger-web's  hyperlinks.   This is useful eg when integrating
+     hledger-web within a larger website.  The default is http://HOST:PORT/  us-
+     ing  the  server's  configured host address and TCP port (or http://HOST if
      PORT is 80).  Note this affects url generation but not route parsing.
 
      hledger-web also supports many of hledger's general options:
@@ -200,44 +201,60 @@ OPTIONS
                  --debug=[1-9]          show this much debug output (default: 1)
                  --pager=YN             use a pager when needed ? y/yes (default) or n/no
                  --color=YNA --colour   use ANSI color ? y/yes, n/no, or auto (default)
+                 --lang=LANG            language for report titles and headings: a
+                                        language tag like de, auto (from the environment),
+                                        or en (default)
 
-     hledger-web  shows accounts with zero balances by default (like hledger-ui,
-     and unlike hledger).  Using the -E/--empty flag will  reverse  this  behav-
-     iour.   If you see accounts which appear to have a zero balance, but cannot
+     hledger-web shows accounts with zero balances by default (like  hledger-ui,
+     and  unlike  hledger).   Using the -E/--empty flag will reverse this behav-
+     iour.  If you see accounts which appear to have a zero balance, but  cannot
      be hidden with -E, it's because they have a mixed-cost balance, which looks
      like zero when costs are hidden.  (hledger-web does not show costs.)
 
-     Reporting options and/or query arguments can be  used  to  set  an  initial
+     Reporting  options  and/or  query  arguments  can be used to set an initial
      query, which although not shown in the UI, will restrict the data shown (in
      addition to any search query entered in the UI).
 
-     If  you  use the bash shell, you can auto-complete flags by pressing TAB in
+     If you use the bash shell, you can auto-complete flags by pressing  TAB  in
      the command line.  If this is not working see Install > Shell completions.
 
 WEB UI
      hledger-web's main views are:
 
-     * the journal view (the home page), showing journal entries, newest  first,
-       with their postings; and
+     * the  journal view (the home page), showing journal entries, newest first,
+       with their postings;
 
-     * the  register  view,  showing the transactions affecting one account (and
-       its subaccounts), with a running balance and a balance chart.
+     * the register view, showing the transactions affecting  one  account  (and
+       its subaccounts), with a running balance and a balance chart; and
+
+     * the  report  views, described below: the balance sheet, income statement,
+       and cashflow statement, linked from the sidebar, and  the  balance  sheet
+       with equity and the general balance report, linked from those.
+
+     The  journal and register views show the newest 1000 matching transactions,
+     with links to the older and newer pages and to pages by number, so  that  a
+     page stays a reasonable size however large the journal is (a page parameter
+     in  the URL names the page).  When the matching transactions span more than
+     one year, a row of years above the table links to each year's transactions;
+     "All" widens the view again.  When they span more than  twenty  years,  the
+     years are shown one row per decade.
 
      The sidebar lists accounts and their balances (parent balances include sub-
-     accounts, and multiple commodities are shown one above the  other).   Click
-     an  account  name  to see its register, or a date to see that day's journal
-     entries.
+     accounts,  and  multiple commodities are shown one above the other).  Click
+     an account name to see its register, or an amount to see  the  transactions
+     it is made of.  In the journal and register views, click a date to see that
+     day's journal entries.
 
-     The search form filters both views with hledger's query syntax, eg expenses
-     date:thismonth; the help dialog summarises the query  types.   The  current
-     view  and  search  are reflected in the URL, so views can be bookmarked and
+     The search form filters every view with hledger's query syntax, eg expenses
+     date:thismonth;  the  help  dialog summarises the query types.  The current
+     view and search are reflected in the URL, so views can  be  bookmarked  and
      shared.
 
-     The add form (press a, or click "Add a transaction" in  the  journal  view)
+     The  add  form  (press a, or click "Add a transaction" in the journal view)
      adds a transaction to the main journal file, if the access level allows it.
      It autocompletes account names and descriptions from your existing entries.
 
-     The  help  dialog  (press ?, or click the question mark button) lists these
+     The help dialog (press ?, or click the question mark  button)  lists  these
      keyboard shortcuts, which work when you are not typing in a field:
 
      * h or ? - show or hide the help dialog
@@ -251,6 +268,9 @@ WEB UI
      * e - show or hide empty accounts in the sidebar
 
      * f - focus the search form
+
+     The  pages  are  light or dark, following your OS or browser's color scheme
+     setting, and switch when it changes.
 
      Editing, uploading and downloading journal files is described below.
 
@@ -297,32 +317,57 @@ EDITING, UPLOADING, DOWNLOADING
      Changes which would leave the journal file(s) unparseable  or  invalid  (eg
      with failing balance assertions) are prevented.
 
-BALANCE REPORTS
-     Besides the journal and account registers, hledger-web can show the balance
-     report  at  /balance,  with  each  account linked to its register.  No page
-     links to it yet: it is reachable by entering the url, until there are  more
-     such  reports  and  a  navigation scheme to hold them.  A period parameter,
-     like the command line's -p/--period, selects the interval  and/or  the  pe-
-     riod, eg /balance?period=monthly or /balance?period=quarterly in 2025; col-
-     umn  headings link to the register for that period.  The search box filters
-     the report like the other pages, including depth: terms,  and  the  general
-     report  options  given  at  startup,  such as --depth, -B, or -V, apply.  A
-     date: term can set the interval too, as on the command line  (date:monthly,
-     or "date:quarterly in 2025"), and wins over the period parameter.
+REPORTS
+     Besides the journal and account registers, hledger-web can show the reports
+     of  the  command  line's balancesheet, balancesheetequity, incomestatement,
+     and cashflow commands, at /balancesheet, /balancesheetequity, /incomestate-
+     ment, and /cashflow, and the general balance report at /balance.  The side-
+     bar links to the balance sheet, income statement, and  cashflow  statement,
+     and each report page links to all five.
+
+     A period parameter, like the command line's -p/--period, selects the inter-
+     val  and/or  the  period,  eg /balancesheet?period=monthly or /incomestate-
+     ment?period=quarterly in 2025; the links above each report offer the  usual
+     intervals,  and  column  headings  link to the report for that period.  The
+     search box filters the reports  like  the  other  pages,  including  depth:
+     terms,  and  the  general report options given at startup, such as --depth,
+     -B, or -V, apply.  A date: term can set the interval too, as on the command
+     line (date:monthly, or "date:quarterly in 2025"), and wins over the  period
+     parameter.
+
+     The  balance sheets show ending balances and the income statement and cash-
+     flow statement show changes, as their commands do; an accum parameter (his-
+     torical or change) overrides that, and the heading then  says  so,  as  the
+     commands'  does.   The balance report shows changes, or with accum=histori-
+     cal, which its "Ending balances" link sets, each account's balance  at  the
+     end of each period.  Like the commands, the statements show all balances as
+     positive  amounts, so liabilities, equity, and revenues appear with the op-
+     posite sign to the register's; the link on such a figure says so.
+
+     Every figure links to the register it is derived from: the account's trans-
+     actions in that period, whose final balance is the figure, or its  negation
+     in  the  sections shown with the opposite sign.  (The two can differ when a
+     transaction's postings have dates of their own: the report  counts  such  a
+     posting in its own period, while the register shows its whole transaction.)
+     A section's total links to the register of the section's account types.  An
+     ending  balance's  register runs in historical mode (its own accum=histori-
+     cal): its running balance starts from the balance brought forward from  be-
+     fore  the period, shown as its oldest row, and its balance column's heading
+     switches between the two modes.
 
 RELOADING
-     hledger-web  detects  changes  made  to the files by other means (eg if you
-     edit it directly, outside of hledger-web), and it will show  the  new  data
-     when  you  reload  the page or navigate to a new page.  If a change makes a
-     file unparseable, hledger-web will display an error message until the  file
+     hledger-web detects changes made to the files by other  means  (eg  if  you
+     edit  it  directly,  outside of hledger-web), and it will show the new data
+     when you reload the page or navigate to a new page.  If a  change  makes  a
+     file  unparseable, hledger-web will display an error message until the file
      has been fixed.
 
      (If you are viewing files mounted from another machine, make sure that both
      machines have roughly the same idea of what time it is.)
 
 JSON API
-     In  addition  to the web UI, hledger-web also serves a JSON API that can be
-     used to get data or add new transactions.  If you want the JSON  API  only,
+     In addition to the web UI, hledger-web also serves a JSON API that  can  be
+     used  to  get data or add new transactions.  If you want the JSON API only,
      you can use the --serve-api flag.  Eg:
 
             $ hledger-web -f examples/sample.journal --serve-api
@@ -339,8 +384,8 @@ JSON API
             /accounttransactions/ACCOUNTNAME
             /openapi.json
 
-     Eg,  all  account  names  in the journal (similar to the accounts command).
-     (hledger-web's JSON does not include newlines, here we use python to  pret-
+     Eg, all account names in the journal (similar  to  the  accounts  command).
+     (hledger-web's  JSON does not include newlines, here we use python to pret-
      tify it):
 
             $ curl -s http://127.0.0.1:5000/accountnames | python3 -m json.tool
@@ -381,27 +426,27 @@ JSON API
                                     "aprice": null,
             ...
 
-     Most  of  the JSON corresponds to hledger's data types; for details of what
-     the fields mean, see the Hledger.Data.Json haddock docs and  click  on  the
-     various  data types, eg Transaction.  And for a higher level understanding,
-     see the journal docs.  There is also a basic  OpenAPI  specification,  also
+     Most of the JSON corresponds to hledger's data types; for details  of  what
+     the  fields  mean,  see the Hledger.Data.Json haddock docs and click on the
+     various data types, eg Transaction.  And for a higher level  understanding,
+     see  the  journal  docs.  There is also a basic OpenAPI specification, also
      served at /openapi.json.
 
      Some routes return a report type wrapping the data; eg /accounttransactions
-     returns  an  AccountTransactionsReport, a report title and a list of items.
+     returns an AccountTransactionsReport, a report title and a list  of  items.
      The handlers in Hledger.Web.Handler.MiscR show what each route returns.
 
      You can add a new transaction to the journal with a PUT request to /add, if
-     hledger-web was started with --allow=add (the default when listening  on  a
-     local-only  address).  The payload must be the full, exact JSON representa-
-     tion of a hledger transaction (partial data won't do).  You can get  sample
-     JSON  from  hledger-web's  /transactions  or  /accounttransactions, or from
-     hledger's print command.  Eg, this saves the first transaction of the  sam-
+     hledger-web  was  started with --allow=add (the default when listening on a
+     local-only address).  The payload must be the full, exact JSON  representa-
+     tion  of a hledger transaction (partial data won't do).  You can get sample
+     JSON from hledger-web's  /transactions  or  /accounttransactions,  or  from
+     hledger's  print command.  Eg, this saves the first transaction of the sam-
      ple journal to txn.json:
 
             $ hledger -f examples/sample.journal print -O json | python3 -c 'import json,sys; json.dump(json.load(sys.stdin)[0], sys.stdout, indent=4)' > txn.json
 
-     Here's  how it looks (remember, this JSON corresponds to hledger's Transac-
+     Here's how it looks (remember, this JSON corresponds to hledger's  Transac-
      tion and related data types):
 
             {
@@ -500,12 +545,33 @@ JSON API
             $ curl http://127.0.0.1:5000/add -X PUT -H 'Content-Type: application/json' --data-binary @txn.json
 
 DEBUG OUTPUT
-     You can add --debug[=N] to the command line to log debug output.  N  ranges
-     from  1  (least  output, the default) to 9 (maximum output).  Typically you
-     would start with 1 and increase until you are seeing enough.  Debug  output
+     You  can add --debug[=N] to the command line to log debug output.  N ranges
+     from 1 (least output, the default) to 9 (maximum  output).   Typically  you
+     would  start with 1 and increase until you are seeing enough.  Debug output
      goes to stderr, interleaved with the requests logged on stdout.  To capture
      debug output in a log file instead, you can usually redirect stderr, eg:
      hledger-web --debug=3 2>hledger-web.log.
+
+LANGUAGE
+     hledger-web's pages can be shown in another  language  when  a  translation
+     catalog  is  available (see Languages in the hledger manual).  The language
+     is chosen per request, and the first of these naming an available  transla-
+     tion wins:
+
+     1. a  _LANG  query parameter, eg ?_LANG=de.  This choice is remembered in a
+        _LANG cookie.
+
+     2. the _LANG cookie
+
+     3. the browser's Accept-Language header, ie the browser's or system's  lan-
+        guage settings
+
+     4. the --lang option hledger-web was started with
+
+     So   viewers   usually  get  their  browser's  language  automatically,  if
+     hledger-web has it; otherwise English, or the language given  with  --lang.
+     Catalogs,   including   any  in  the  config  directory,  are  loaded  when
+     hledger-web starts.
 
 ENVIRONMENT
      LEDGER_FILE The main journal file to use when not specified with -f/--file.
@@ -513,7 +579,7 @@ ENVIRONMENT
 
 BUGS
      We    welcome    bug    reports    in    the    hledger    issue    tracker
-     (https://bugs.hledger.org),  or  on  the  hledger   chat   or   mail   list
+     (https://bugs.hledger.org),   or   on   the   hledger  chat  or  mail  list
      (https://hledger.org/support).
 
      Some known issues:

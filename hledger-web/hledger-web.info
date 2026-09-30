@@ -50,7 +50,7 @@ with a date field.  (See hledger(1) -> Input for details.)
    * '--serve-browse' mode (the default): the app serves the web UI and
      JSON API, and opens your default web browser to show the app if
      possible, and exits automatically once no browser window has shown
-     it for two minutes.
+     it for fifteen minutes.
 
    * '--serve': the app just serves the web UI and JSON API.
 
@@ -65,10 +65,11 @@ requests to stdout.
 * WEB UI::
 * PERMISSIONS::
 * EDITING UPLOADING DOWNLOADING::
-* BALANCE REPORTS::
+* REPORTS::
 * RELOADING::
 * JSON API::
 * DEBUG OUTPUT::
+* LANGUAGE::
 * ENVIRONMENT::
 * BUGS::
 
@@ -228,6 +229,9 @@ General help flags:
      --debug=[1-9]          show this much debug output (default: 1)
      --pager=YN             use a pager when needed ? y/yes (default) or n/no
      --color=YNA --colour   use ANSI color ? y/yes, n/no, or auto (default)
+     --lang=LANG            language for report titles and headings: a
+                            language tag like de, auto (from the environment),
+                            or en (default)
 
    hledger-web shows accounts with zero balances by default (like
 'hledger-ui', and unlike 'hledger').  Using the '-E/--empty' flag will
@@ -253,16 +257,31 @@ File: hledger-web.info,  Node: WEB UI,  Next: PERMISSIONS,  Prev: OPTIONS,  Up: 
 hledger-web's main views are:
 
    * the *journal view* (the home page), showing journal entries, newest
-     first, with their postings; and
+     first, with their postings;
    * the *register view*, showing the transactions affecting one account
-     (and its subaccounts), with a running balance and a balance chart.
+     (and its subaccounts), with a running balance and a balance chart;
+     and
+   * the *report views*, described below: the balance sheet, income
+     statement, and cashflow statement, linked from the sidebar, and the
+     balance sheet with equity and the general balance report, linked
+     from those.
+
+   The journal and register views show the newest 1000 matching
+transactions, with links to the older and newer pages and to pages by
+number, so that a page stays a reasonable size however large the journal
+is (a 'page' parameter in the URL names the page).  When the matching
+transactions span more than one year, a row of years above the table
+links to each year's transactions; "All" widens the view again.  When
+they span more than twenty years, the years are shown one row per
+decade.
 
    The *sidebar* lists accounts and their balances (parent balances
 include subaccounts, and multiple commodities are shown one above the
-other).  Click an account name to see its register, or a date to see
-that day's journal entries.
+other).  Click an account name to see its register, or an amount to see
+the transactions it is made of.  In the journal and register views,
+click a date to see that day's journal entries.
 
-   The *search form* filters both views with hledger's query syntax, eg
+   The *search form* filters every view with hledger's query syntax, eg
 'expenses date:thismonth'; the help dialog summarises the query types.
 The current view and search are reflected in the URL, so views can be
 bookmarked and shared.
@@ -282,6 +301,9 @@ field:
    * 's' - show or hide the sidebar
    * 'e' - show or hide empty accounts in the sidebar
    * 'f' - focus the search form
+
+   The pages are light or dark, following your OS or browser's color
+scheme setting, and switch when it changes.
 
    Editing, uploading and downloading journal files is described below.
 
@@ -318,7 +340,7 @@ otherwise.  To allow more than the default access, start it with an
 explicit '--allow=add' or '--allow=edit' option.
 
 
-File: hledger-web.info,  Node: EDITING UPLOADING DOWNLOADING,  Next: BALANCE REPORTS,  Prev: PERMISSIONS,  Up: Top
+File: hledger-web.info,  Node: EDITING UPLOADING DOWNLOADING,  Next: REPORTS,  Prev: PERMISSIONS,  Up: Top
 
 4 EDITING, UPLOADING, DOWNLOADING
 *********************************
@@ -338,26 +360,53 @@ have to arrange to commit the changes yourself.
 (eg with failing balance assertions) are prevented.
 
 
-File: hledger-web.info,  Node: BALANCE REPORTS,  Next: RELOADING,  Prev: EDITING UPLOADING DOWNLOADING,  Up: Top
+File: hledger-web.info,  Node: REPORTS,  Next: RELOADING,  Prev: EDITING UPLOADING DOWNLOADING,  Up: Top
 
-5 BALANCE REPORTS
-*****************
+5 REPORTS
+*********
 
 Besides the journal and account registers, hledger-web can show the
-balance report at '/balance', with each account linked to its register.
-No page links to it yet: it is reachable by entering the url, until
-there are more such reports and a navigation scheme to hold them.  A
-'period' parameter, like the command line's '-p/--period', selects the
-interval and/or the period, eg '/balance?period=monthly' or
-'/balance?period=quarterly in 2025'; column headings link to the
-register for that period.  The search box filters the report like the
-other pages, including 'depth:' terms, and the general report options
-given at startup, such as '--depth', '-B', or '-V', apply.  A 'date:'
-term can set the interval too, as on the command line ('date:monthly',
-or '"date:quarterly in 2025"'), and wins over the 'period' parameter.
+reports of the command line's balancesheet, balancesheetequity,
+incomestatement, and cashflow commands, at '/balancesheet',
+'/balancesheetequity', '/incomestatement', and '/cashflow', and the
+general balance report at '/balance'.  The sidebar links to the balance
+sheet, income statement, and cashflow statement, and each report page
+links to all five.
+
+   A 'period' parameter, like the command line's '-p/--period', selects
+the interval and/or the period, eg '/balancesheet?period=monthly' or
+'/incomestatement?period=quarterly in 2025'; the links above each report
+offer the usual intervals, and column headings link to the report for
+that period.  The search box filters the reports like the other pages,
+including 'depth:' terms, and the general report options given at
+startup, such as '--depth', '-B', or '-V', apply.  A 'date:' term can
+set the interval too, as on the command line ('date:monthly', or
+'"date:quarterly in 2025"'), and wins over the 'period' parameter.
+
+   The balance sheets show ending balances and the income statement and
+cashflow statement show changes, as their commands do; an 'accum'
+parameter ('historical' or 'change') overrides that, and the heading
+then says so, as the commands' does.  The balance report shows changes,
+or with 'accum=historical', which its "Ending balances" link sets, each
+account's balance at the end of each period.  Like the commands, the
+statements show all balances as positive amounts, so liabilities,
+equity, and revenues appear with the opposite sign to the register's;
+the link on such a figure says so.
+
+   Every figure links to the register it is derived from: the account's
+transactions in that period, whose final balance is the figure, or its
+negation in the sections shown with the opposite sign.  (The two can
+differ when a transaction's postings have dates of their own: the report
+counts such a posting in its own period, while the register shows its
+whole transaction.)  A section's total links to the register of the
+section's account types.  An ending balance's register runs in
+historical mode (its own 'accum=historical'): its running balance starts
+from the balance brought forward from before the period, shown as its
+oldest row, and its balance column's heading switches between the two
+modes.
 
 
-File: hledger-web.info,  Node: RELOADING,  Next: JSON API,  Prev: BALANCE REPORTS,  Up: Top
+File: hledger-web.info,  Node: RELOADING,  Next: JSON API,  Prev: REPORTS,  Up: Top
 
 6 RELOADING
 ***********
@@ -557,7 +606,7 @@ to your journal file:
 $ curl http://127.0.0.1:5000/add -X PUT -H 'Content-Type: application/json' --data-binary @txn.json
 
 
-File: hledger-web.info,  Node: DEBUG OUTPUT,  Next: ENVIRONMENT,  Prev: JSON API,  Up: Top
+File: hledger-web.info,  Node: DEBUG OUTPUT,  Next: LANGUAGE,  Prev: JSON API,  Up: Top
 
 8 DEBUG OUTPUT
 **************
@@ -571,10 +620,33 @@ can usually redirect stderr, eg:
 'hledger-web --debug=3 2>hledger-web.log'.
 
 
-File: hledger-web.info,  Node: ENVIRONMENT,  Next: BUGS,  Prev: DEBUG OUTPUT,  Up: Top
+File: hledger-web.info,  Node: LANGUAGE,  Next: ENVIRONMENT,  Prev: DEBUG OUTPUT,  Up: Top
 
-9 ENVIRONMENT
-*************
+9 LANGUAGE
+**********
+
+hledger-web's pages can be shown in another language when a translation
+catalog is available (see Languages in the hledger manual).  The
+language is chosen per request, and the first of these naming an
+available translation wins:
+
+  1. a '_LANG' query parameter, eg '?_LANG=de'.  This choice is
+     remembered in a '_LANG' cookie.
+  2. the '_LANG' cookie
+  3. the browser's 'Accept-Language' header, ie the browser's or
+     system's language settings
+  4. the '--lang' option hledger-web was started with
+
+   So viewers usually get their browser's language automatically, if
+hledger-web has it; otherwise English, or the language given with
+'--lang'.  Catalogs, including any in the config directory, are loaded
+when hledger-web starts.
+
+
+File: hledger-web.info,  Node: ENVIRONMENT,  Next: BUGS,  Prev: LANGUAGE,  Up: Top
+
+10 ENVIRONMENT
+**************
 
 *LEDGER_FILE* The main journal file to use when not specified with
 '-f/--file'.  Default: '$HOME/.hledger.journal'.
@@ -582,7 +654,7 @@ File: hledger-web.info,  Node: ENVIRONMENT,  Next: BUGS,  Prev: DEBUG OUTPUT,  U
 
 File: hledger-web.info,  Node: BUGS,  Prev: ENVIRONMENT,  Up: Top
 
-10 BUGS
+11 BUGS
 *******
 
 We welcome bug reports in the hledger issue tracker
@@ -596,16 +668,17 @@ We welcome bug reports in the hledger issue tracker
 
 Tag Table:
 Node: Top223
-Node: OPTIONS2564
-Node: WEB UI12731
-Node: PERMISSIONS14312
-Node: EDITING UPLOADING DOWNLOADING15566
-Node: BALANCE REPORTS16490
-Node: RELOADING17468
-Node: JSON API18035
-Node: DEBUG OUTPUT23783
-Node: ENVIRONMENT24325
-Node: BUGS24561
+Node: OPTIONS2573
+Node: WEB UI12934
+Node: PERMISSIONS15444
+Node: EDITING UPLOADING DOWNLOADING16698
+Node: REPORTS17614
+Node: RELOADING20088
+Node: JSON API20647
+Node: DEBUG OUTPUT26395
+Node: LANGUAGE26934
+Node: ENVIRONMENT27791
+Node: BUGS28025
 
 End Tag Table
 
