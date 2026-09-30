@@ -31,9 +31,9 @@ accounts. Note that transaction-specific query terms like date: will
 exclude declared-but-unused accounts, which don't have that field.
 
 With --directives, it shows valid account directives which could be
-pasted into a journal file. This is useful together with --undeclared
-when updating your account declarations to satisfy
-hledger check accounts.
+pasted into a journal file, including any account aliases as alias:
+tags. This is useful together with --undeclared when updating your
+account declarations to satisfy hledger check accounts.
 
 With --locations, it also shows the file and line number of each
 account's declaration, if any, and the account's overall declaration

@@ -47,7 +47,7 @@ commands:
 
 - lots - all lot entries are valid. Checks lot posting classifications,
   lot movements, that an acquisition writing both a cost basis and a
-  transacted cost has them equal (a mismatch would silently miscalculate
+  transacted cost has them agree (a mismatch would silently miscalculate
   gains), and that any user-written realised gain amount on a disposal
   matches the calculated gain. This check can be disabled by -I or
   --ignore-lots. If you put it in your config file, you can override
@@ -80,8 +80,10 @@ Other checks
 These are not wanted by everyone, but can be run using the check
 command:
 
-- tags - all tags used must be declared. This prevents mis-spelled tag
-  names. Note hledger fairly often finds unintended tags in comments.
+- tags - all tags used must be declared (tags on transactions, postings,
+  and account and commodity directives; except the special tags). This
+  prevents mis-spelled tag names. Note hledger fairly often finds
+  unintended tags in comments.
 
 - payees - all payees used in transactions must be declared. This will
   force you to declare any new payee name before using it. Most people
