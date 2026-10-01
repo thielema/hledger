@@ -128,10 +128,10 @@ holdingJson h = object
   ,"date"      .= hDate h
   ,"age"       .= hAge h
   ,"units"     .= aquantity (hUnits h)
-  ,"unitcost"  .= (showamt <$> hUnitCost h)
-  ,"price"     .= mshowamts (hPrice h)
-  ,"cost"      .= showamts (hCost h)
-  ,"value"     .= mshowamts (hValue h)
+  ,"unitcost"   .= (showamt <$> hUnitCost h)
+  ,"unitprice"  .= mshowamts (hPrice h)
+  ,"totalcost"  .= showamts (hCost h)
+  ,"totalvalue" .= mshowamts (hValue h)
   ,"weight"    .= (roundTo 1 <$> hWeight h)
   ,"ugain"     .= mshowamts (hUgain h)
   ,"ugainpct"  .= (roundTo 1 <$> hUgainPct h)
@@ -629,7 +629,7 @@ holdings opts@CliOpts{rawopts_=rawopts, reportspec_=rspec@ReportSpec{_rsQuery=q,
       where
         addtotalrow totalrow tbl' = concatTables SingleLine tbl' $
           Table (Group NoLine [Header ""]) (Header []) [totalrow]
-    colheadings = ["Date", "Age", "Units", unitcostheading, "Price", "Cost", "Value", "Weight", "UGain", "UGain%", "RGain", "XIRR"]
+    colheadings = ["Date", "Age", "Units", unitcostheading, "Price", "Total cost", "Total value", "Weight", "UGain", "UGain%", "RGain", "XIRR"]
 
     -- The cost column's heading matches what's shown: "Avg cost" on rows
     -- aggregating multiple lots (the default) or when the lots shown all
@@ -691,7 +691,7 @@ holdings opts@CliOpts{rawopts_=rawopts, reportspec_=rspec@ReportSpec{_rsQuery=q,
            mtotalrowparts
       where
         -- per-column css classes, so the html cells can be styled
-        colclasses = ["account","date","age","units","unitcost","price","cost","value","weight","ugain","ugainpct","rgain","xirr"]
+        colclasses = ["account","date","age","units","unitcost","unitprice","totalcost","totalvalue","weight","ugain","ugainpct","rgain","xirr"]
         -- which of the other columns' cell parts are amounts
         amountcols = [False, False, True, True, True, True, True, False, True, False, True, False]
         hcell cls t = plain <$> (headerCell t){Ods.cellClass = Ods.Class cls}
@@ -791,7 +791,7 @@ holdings opts@CliOpts{rawopts_=rawopts, reportspec_=rspec@ReportSpec{_rsQuery=q,
 
     csvoutput :: CSV
     csvoutput =
-      ["account","commodity","date","age","units","unitcost","price","cost","value","weight","ugain","ugainpct","rgain","xirr"]
+      ["account","commodity","date","age","units","unitcost","unitprice","totalcost","totalvalue","weight","ugain","ugainpct","rgain","xirr"]
       : map holdingCsv holdingrecords
 
     -- Grand totals row (as cell parts, like rowCellParts): the Units,
