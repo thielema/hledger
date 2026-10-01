@@ -49,19 +49,22 @@ json...).
 | Age         | how long the lot has been held, as of the report date        | age            |
 | Units       | number of units held                                         | units          |
 | Unit cost   | cost basis per unit ("Avg cost" on rows aggregating lots)    | unitcost       |
-| Price       | current market price per unit                                | unitprice      |
+| Unit price  | current market price per unit                                | unitprice      |
 | Total cost  | total cost basis                                             | totalcost      |
-| Total value | current market value (Units x Price)                         | totalvalue     |
+| Total value | current market value (Units x Unit price)                    | totalvalue     |
 | Weight      | percentage of the portfolio's total value                    | weight         |
 | UGain       | unrealised gain: Total value - Total cost                    | ugain          |
 | UGain%      | unrealised gain as a percentage of Total cost                | ugainpct       |
 | RGain       | realised gain from disposals so far                          | rgain          |
 | XIRR        | annualised internal rate of return, like roi's IRR           | xirr           |
 
-The total columns are headed "Total cost" and "Total value", and the
-machine-readable fields are prefixed unit/total, so that the per-unit and
-total amounts can't be confused (2026-10; they were "Cost"/"Value" and
-price/cost/value before).
+The cost and value columns are headed "Unit cost" (or "Avg cost"), "Unit
+price", "Total cost" and "Total value", and the machine-readable fields are
+prefixed unit/total likewise, so that the per-unit and total amounts can't
+be confused (2026-10; they were "Price", "Cost", "Value" and
+price/cost/value before). "Total value" rather than "Total price", since a
+price is per unit throughout hledger (P directives, market prices), and
+market value is the usual name for units x price.
 
 Notes:
 - On rows aggregating multiple lots, Date and Age are blank,
@@ -117,7 +120,7 @@ Notes:
   negative Units, Total cost and Total value; UGain is positive when the price has
   fallen, and UGain% is relative to the cost's magnitude so it keeps that
   sign; Weight is negative (a short is negative exposure).
-- Rows with no known market price show blank Price, Total value and gain columns,
+- Rows with no known market price show blank Unit price, Total value and gain columns,
   rather than pretending the gain is zero.
 - Amounts are displayed normalised to their commodity's display precision
   by default (unlike lot names, which can show more precision);
@@ -133,7 +136,7 @@ Notes:
   (a multi-commodity total would widen the column for everyone)
   and the overall average cost per unit (which additionally requires a
   single cost commodity; a multi-commodity average is not meaningful).
-  The totals Price cell stays blank: within one commodity it would just
+  The totals Unit price cell stays blank: within one commodity it would just
   repeat the market price shown on every row.
 - Possible future columns: a long/short-term capital gains indicator.
 
@@ -142,11 +145,11 @@ Notes:
   transaction costs with `--infer-market-prices`, looked up with the standard
   price oracle. Each lot is valued in its cost commodity when known
   (so UGain = Total value - Total cost is meaningful); otherwise in the default valuation
-  commodity. A row's Price and Total value aggregate its lots' prices and values,
+  commodity. A row's Unit price and Total value aggregate its lots' prices and values,
   showing multiple amounts when the lots' value commodities differ (like Total cost).
   Because lots are valued individually, values and value totals do not depend
   on how lots are grouped into rows (by --depth, --pivot, tree mode etc).
-- A row's Price and Total value are blank if any of its lots has no market price.
+- A row's Unit price and Total value are blank if any of its lots has no market price.
 - UGain is value minus cost per commodity, shown when the value and cost
   amounts cover the same commodities; UGain% additionally requires a
   single common commodity.
@@ -174,12 +177,12 @@ Default (list mode, lot subaccounts hidden):
 $ hledger holdings
 Holdings on 2026-03-31
 
-                      ||       Date  Age    Units  Avg cost  Price  Total cost  Total value  Weight  UGain  UGain%  RGain    XIRR
-======================++==========================================================================================================
- assets:broker:funds  || 2026-02-15  44d   5 MSFT      $400   $410       $2000        $2050   65.5%    $50    2.5%          22.7%
- assets:broker:stocks ||                  15 AAPL    $56.67    $72        $850        $1080   34.5%   $230   27.1%   $100  419.4%
-----------------------++----------------------------------------------------------------------------------------------------------
-                      ||                                                 $2850        $3130  100.0%   $280    9.8%   $100  137.8%
+                      ||       Date  Age    Units  Avg cost  Unit price  Total cost  Total value  Weight  UGain  UGain%  RGain    XIRR
+======================++===============================================================================================================
+ assets:broker:funds  || 2026-02-15  44d   5 MSFT      $400        $410       $2000        $2050   65.5%    $50    2.5%          22.7%
+ assets:broker:stocks ||                  15 AAPL    $56.67         $72        $850        $1080   34.5%   $230   27.1%   $100  419.4%
+----------------------++---------------------------------------------------------------------------------------------------------------
+                      ||                                                      $2850        $3130  100.0%   $280    9.8%   $100  137.8%
 ```
 
 (assets:broker:funds holds a single lot, so its Date/Age are shown even though
@@ -193,13 +196,13 @@ With `--lots` (lot subaccounts become rows; Avg cost becomes exact Unit cost):
 $ hledger holdings --lots
 Holdings on 2026-03-31
 
-                                        ||       Date  Age    Units  Unit cost  Price  Total cost  Total value  Weight  UGain  UGain%  RGain    XIRR
-========================================++===========================================================================================================
- assets:broker:funds:{2026-02-15, $400} || 2026-02-15  44d   5 MSFT       $400   $410       $2000        $2050   65.5%    $50    2.5%          22.7%
- assets:broker:stocks:{2026-01-15, $50} || 2026-01-15  75d   5 AAPL        $50    $72        $250         $360   11.5%   $110   44.0%   $100  759.2%
- assets:broker:stocks:{2026-02-01, $60} || 2026-02-01  58d  10 AAPL        $60    $72        $600         $720   23.0%   $120   20.0%         215.2%
-----------------------------------------++-----------------------------------------------------------------------------------------------------------
-                                        ||                                                  $2850        $3130  100.0%   $280    9.8%   $100  137.8%
+                                        ||       Date  Age    Units  Unit cost  Unit price  Total cost  Total value  Weight  UGain  UGain%  RGain    XIRR
+========================================++================================================================================================================
+ assets:broker:funds:{2026-02-15, $400} || 2026-02-15  44d   5 MSFT       $400        $410       $2000        $2050   65.5%    $50    2.5%          22.7%
+ assets:broker:stocks:{2026-01-15, $50} || 2026-01-15  75d   5 AAPL        $50         $72        $250         $360   11.5%   $110   44.0%   $100  759.2%
+ assets:broker:stocks:{2026-02-01, $60} || 2026-02-01  58d  10 AAPL        $60         $72        $600         $720   23.0%   $120   20.0%         215.2%
+----------------------------------------++----------------------------------------------------------------------------------------------------------------
+                                        ||                                                       $2850        $3130  100.0%   $280    9.8%   $100  137.8%
 ```
 
 With `--lots --tree` (parent rows aggregate the lots beneath them, one row
@@ -210,16 +213,16 @@ as usual):
 $ hledger holdings --lots --tree
 Holdings on 2026-03-31
 
-                            ||       Date  Age    Units  Unit cost  Price  Total cost  Total value  Weight  UGain  UGain%  RGain    XIRR
-============================++===========================================================================================================
- assets:broker              ||                  15 AAPL     $56.67    $72        $850        $1080   34.5%   $230   27.1%   $100  419.4%
- assets:broker              || 2026-02-15  44d   5 MSFT       $400   $410       $2000        $2050   65.5%    $50    2.5%          22.7%
-   funds:{2026-02-15, $400} || 2026-02-15  44d   5 MSFT       $400   $410       $2000        $2050   65.5%    $50    2.5%          22.7%
-   stocks                   ||                  15 AAPL     $56.67    $72        $850        $1080   34.5%   $230   27.1%   $100  419.4%
-     {2026-01-15, $50}      || 2026-01-15  75d   5 AAPL        $50    $72        $250         $360   11.5%   $110   44.0%   $100  759.2%
-     {2026-02-01, $60}      || 2026-02-01  58d  10 AAPL        $60    $72        $600         $720   23.0%   $120   20.0%         215.2%
-----------------------------++-----------------------------------------------------------------------------------------------------------
-                            ||                                                  $2850        $3130  100.0%   $280    9.8%   $100  137.8%
+                            ||       Date  Age    Units  Unit cost  Unit price  Total cost  Total value  Weight  UGain  UGain%  RGain    XIRR
+============================++================================================================================================================
+ assets:broker              ||                  15 AAPL     $56.67         $72        $850        $1080   34.5%   $230   27.1%   $100  419.4%
+ assets:broker              || 2026-02-15  44d   5 MSFT       $400        $410       $2000        $2050   65.5%    $50    2.5%          22.7%
+   funds:{2026-02-15, $400} || 2026-02-15  44d   5 MSFT       $400        $410       $2000        $2050   65.5%    $50    2.5%          22.7%
+   stocks                   ||                  15 AAPL     $56.67         $72        $850        $1080   34.5%   $230   27.1%   $100  419.4%
+     {2026-01-15, $50}      || 2026-01-15  75d   5 AAPL        $50         $72        $250         $360   11.5%   $110   44.0%   $100  759.2%
+     {2026-02-01, $60}      || 2026-02-01  58d  10 AAPL        $60         $72        $600         $720   23.0%   $120   20.0%         215.2%
+----------------------------++----------------------------------------------------------------------------------------------------------------
+                            ||                                                       $2850        $3130  100.0%   $280    9.8%   $100  137.8%
 ```
 
 With `--depth 2` (aggregation up the tree):
@@ -228,12 +231,12 @@ With `--depth 2` (aggregation up the tree):
 $ hledger holdings --depth 2
 Holdings on 2026-03-31
 
-               ||       Date  Age    Units  Avg cost  Price  Total cost  Total value  Weight  UGain  UGain%  RGain    XIRR
-===============++==========================================================================================================
- assets:broker ||                  15 AAPL    $56.67    $72        $850        $1080   34.5%   $230   27.1%   $100  419.4%
- assets:broker || 2026-02-15  44d   5 MSFT      $400   $410       $2000        $2050   65.5%    $50    2.5%          22.7%
----------------++----------------------------------------------------------------------------------------------------------
-               ||                                                 $2850        $3130  100.0%   $280    9.8%   $100  137.8%
+               ||       Date  Age    Units  Avg cost  Unit price  Total cost  Total value  Weight  UGain  UGain%  RGain    XIRR
+===============++===============================================================================================================
+ assets:broker ||                  15 AAPL    $56.67         $72        $850        $1080   34.5%   $230   27.1%   $100  419.4%
+ assets:broker || 2026-02-15  44d   5 MSFT      $400        $410       $2000        $2050   65.5%    $50    2.5%          22.7%
+---------------++---------------------------------------------------------------------------------------------------------------
+               ||                                                      $2850        $3130  100.0%   $280    9.8%   $100  137.8%
 ```
 
 ## Implementation notes
@@ -274,7 +277,7 @@ Holdings on 2026-03-31
 2. Real report in list mode: rows from the journal's lotful accounts, with
    Date, Age, Units, Unit/Avg cost and Cost columns; --lots; totals row;
    functional tests (hledger/test/holdings.test). --tree errors out. (done)
-3. Valuation columns: Price, Total value, Gain, with market prices from the
+3. Valuation columns: Unit price, Total value, Gain, with market prices from the
    standard price oracle; blank when no market price is known. (done)
 4. `--tree`/`--depth` behavior: parent rows aggregate the lots beneath
    them, showing only lot-tracked commodities; totals sum only the topmost

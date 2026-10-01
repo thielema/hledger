@@ -629,7 +629,7 @@ holdings opts@CliOpts{rawopts_=rawopts, reportspec_=rspec@ReportSpec{_rsQuery=q,
       where
         addtotalrow totalrow tbl' = concatTables SingleLine tbl' $
           Table (Group NoLine [Header ""]) (Header []) [totalrow]
-    colheadings = ["Date", "Age", "Units", unitcostheading, "Price", "Total cost", "Total value", "Weight", "UGain", "UGain%", "RGain", "XIRR"]
+    colheadings = ["Date", "Age", "Units", unitcostheading, "Unit price", "Total cost", "Total value", "Weight", "UGain", "UGain%", "RGain", "XIRR"]
 
     -- The cost column's heading matches what's shown: "Avg cost" on rows
     -- aggregating multiple lots (the default) or when the lots shown all
