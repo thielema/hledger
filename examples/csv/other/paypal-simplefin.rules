@@ -1,0 +1,212 @@
+# * paypal CSV rules
+# Rules for converting paypal json downloaded via SimpleFIN with simplefinjson.
+
+# ** GENERAL PAYPAL CONFIG ========================================
+
+# run paypaljson to download from paypal, then convert to csv with paypalcsv without saving
+# (both in hledger's bin/ directory, should be in PATH)
+#source | paypaljson | paypalcsv
+
+# or: assume paypal.json was already downloaded to data/, eg by hledger import -g and data/getdata;
+# convert to csv, and save the download in data/archive/.
+source | paypalcsv ../data/paypal.json 
+archive
+
+# declare field names
+# Paypal CSV is customisable. In 2021 the default fields and a corresponding declaration look like:
+#  "Date","Time","TimeZone","Name","Type","Status","Currency","Gross","Fee","Net","From Email Address","To Email Address","Transaction ID","Reference Txn ID","Receipt ID"
+#  fields date, time, timezone, name, type, status_, currency, grossamount, feeamount, netamount, fromemail, toemail, txnid, referencetxnid, receiptid
+# I have enabled extra fields in "Customize report fields":
+#  Transaction details
+#   Balance
+#   Note
+#   Balance Impact
+#  Cart details
+#   Item title
+#   Item ID
+# which looks like:
+# "Date","Time","TimeZone","Name","Type","Status","Currency","Gross","Fee","Net","From Email Address","To Email Address","Transaction ID","Item Title","Item ID","Reference Txn ID","Receipt ID","Balance","Note","Balance Impact"
+fields date, time, timezone, name, type, status_, currency, grossamount, feeamount, netamount, fromemail, toemail, txnid, itemtitle, itemid, referencetxnid, receiptid, balance, note, balanceimpact
+
+# skip the header line
+skip 1
+
+# type values:
+#  short T-Codes when downloaded from API, long Description when downloaded manually
+#  (https://developer.paypal.com/docs/reports/reference/tcodes)
+
+# status values:
+#  short codes when downloaded from API
+#  (https://developer.paypal.com/docs/api/transaction-search/v1/#transactions -> transaction_status):
+#   D	- PayPal or merchant rules denied the transaction.
+#   P	- The transaction is pending. The transaction was created but waits for another payment process to complete, such as an ACH transaction, before the status changes to S.
+#   S	- The transaction successfully completed without a denial and after any pending statuses.
+#   V	- A successful transaction was reversed and funds were refunded to the original sender.
+#  readable values when downloaded manually
+#  (https://developer.paypal.com/docs/reports/online-reports/activity-download/#download-data-fields -> Status):
+#   Possible values for all activity:
+#    Completed
+#    Denied
+#    Reversed
+#    Pending
+#    Active
+#    Expired
+#    Removed
+#    Unverified
+#    Voided
+#    Processing
+#    Created
+#    Canceled
+#   Possible additional values are supported for invoice activity:
+#    Error
+#    Draft
+#    Unpaid
+#    Paid
+#    Unpaid (sent)
+#    Marked as paid
+#    Marked as refunded
+#    Refunded
+#    Partially refunded
+#    Scheduled
+#    Partially paid
+#    Payment pending
+
+# date is in US format
+date-format  %-m/%-d/%Y
+
+# ensure same-date txns will be in correct order ?
+# 20180226 paypal.csv is not newest first. Maybe it varies ?
+# Or: separate txns on the same day are ordered correctly;
+# but connected txns (payment and corresponding draw from bank) have the same
+# timestamp and are "in reverse order" (payment first, making balance negative, then draw from bank) ?
+#newest-first
+
+# paypal can have a multicommodity balance, assert only one commodity at time
+balance-type =*
+
+# Ignore some records representing uninteresting paypal events ?
+# Or leave them visible for troubleshooting ?
+# They can disrupt the bank balance, but are sometimes required for paypal's balance assertions
+# if
+# In Progress
+# Temporary Hold
+# Update to 
+#  skip
+
+if
+T1501|Account Hold
+T1105|Reversal of General Account Hold
+ skip
+
+# I think these can be ignored too. They are mostly transfers from the bank,
+# duplicating the bank's record. Though, they appear faster than the bank's.
+# if
+# ,Pending,
+#  skip
+# No, let's ignore the bank's record instead, cf plaid-wf-pchecking.rules
+# and see rule below.
+
+# Discard account hold/unhold transactions - but this can break
+# intervening balance assertions, so record them just as postingless
+# events to help with manual disabling of those assertions.
+if
+%type (T1501|Account Hold for Open Authorization)
+ comment  type:T1501, Account Hold for Open Authorization Authorization, not recorded - you may need to disable balance assertion(s) below
+ account1
+ account2
+ amount1
+ amount2
+if
+%type (T1105|Reversal of General Account Hold)
+ comment  type:T1105, Reversal of General Account Hold, not recorded
+ account1
+ account2
+ amount1
+ amount2
+
+# Disable balance assertions on some specific transactions that use these account holds, like cloudflare
+if cloudflare
+ balance
+
+# convert paypal status to hledger cleared status
+# if ,Pending,
+#  status !
+# if ,Completed,
+#  status *
+
+# code %txnid
+
+# combine some (possibly empty) fields as the description
+description %name %itemtitle
+if %note .
+ description %name %itemtitle | %note
+
+# save some other fields as tags
+comment  \ntxnid:%txnid, itemid:%itemid, fromemail:%fromemail, toemail:%toemail, type:%type, status:%status_
+# time:%time, 
+
+# convert currency to short symbols
+if ,USD,
+ currency $
+if ,CAD,
+ currency C$
+if ,EUR,
+ currency €
+if ,GBP,
+ currency £
+
+
+# ** POSTINGS ========================================
+
+# the first posting will be the money leaving/entering my paypal account
+# (negative means leaving my account, in all amount fields)
+account1 assets:online:paypal
+amount1  %netamount
+
+# the second posting will be money sent to/received from other party
+# (account2 is set below)
+amount2  -%grossamount
+
+# if there's a non-zero fee, add a third posting for the money taken by paypal.
+# I'd rather put this as second posting, but common.rules set the
+# second account so it's easier to leave the other posting there.
+# Always record as a personal banking expense, can be adjusted to a
+# reimbursable if it's a business transaction.
+if %feeamount [1-9]
+ account3 expenses:banking:paypal
+ amount3  -%feeamount
+
+# choose an account for the second posting
+
+# # override the default account names:
+# # if amount is positive, it's income (a debit)
+# if %grossamount ^[^-]
+#  account2 revenues:unknown
+# # if negative, it's an expense (a credit)
+# if %grossamount ^-
+#  account2 expenses:unknown
+
+# ** COMMON RULES ========================================
+
+include _common.rules
+
+# ** CUSTOM RULES ========================================
+# rules/overrides specific to this csv
+
+if (opencollect|open source collec|open collective europe)
+& %itemtitle for
+  account2    revenues:foss:unknown
+
+# Transfers from/to bank. These are usually marked Pending, which means nothing.
+# cf Pending above.
+if
+%type (T0400|General Withdrawal - Bank Account)
+%type (T0300|Bank Deposit to PP Account)
+%type (T0200|General Currency Conversion)
+ description %type for %referencetxnid %itemtitle
+ account2 assets:bank:wf:pchecking
+ account1 assets:online:paypal
+
+if %type (T0200|General Currency Conversion)
+ account2 equity:conversion
+
