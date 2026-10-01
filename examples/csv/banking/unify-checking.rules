@@ -3,7 +3,9 @@
 #source AccountHistory*.csv
 #include _unify.rules
 
+# Assumes simplefin.json has been downloaded by, eg: hledger import -g -> getdata -> simplefinjson
 source | simplefincsv ../data/simplefin.json 'unify.*checking'
+
 include _simplefin.rules
 
 account1 assets:bank:unify:checking
