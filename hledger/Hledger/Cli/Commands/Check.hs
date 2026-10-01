@@ -24,7 +24,15 @@ checkmode = hledgerCommandMode
   []
   cligeneralflagsgroups1
   hiddenflags
-  ([], Just $ argsFlag "[CHECKS]")
+  ([], Just $ flagArg checkArg "[CHECKS]")
+  where
+    -- Validate each check argument as it is parsed, so an unknown check
+    -- name is reported at startup, before the journal is read (and before
+    -- any error in it). cmdargs reports the message as
+    -- "Unhandled argument, MSG: ARG". The check name is parsed again by 'check'.
+    checkArg s opts = case parseCheckArgument s of
+      Left _  -> Left "unknown check name"
+      Right _ -> Right $ setopt "args" s opts
 
 check :: CliOpts -> Journal -> IO ()
 check copts@CliOpts{rawopts_} j = do
@@ -34,6 +42,7 @@ check copts@CliOpts{rawopts_} j = do
     -- since we are not using arguments as a query in the usual way
     copts' = cliOptsUpdateReportSpecWith (\ropts -> ropts{querystring_=[]}) copts
 
+  -- unknown checks were rejected by checkmode already; report them anyway in case
   case partitionEithers (map parseCheckArgument args) of
     (unknowns@(_:_), _) -> error' $ "These checks are unknown: "++unwords unknowns
     ([], checks) -> forM_ (sort checks) $ runCheck copts' j
@@ -85,9 +94,9 @@ parseCheck s =
 parseCheckArgument :: String -> Either String (Check,[String])
 parseCheckArgument s =
   dbg3 "check argument" $
-  ((,checkargs)) <$> parseCheck checkname
-  where
-    (checkname:checkargs) = words' s
+  case words' s of
+    checkname:checkargs -> (,checkargs) <$> parseCheck checkname
+    []                  -> Left (show s)  -- an empty argument
 
 -- XXX do all of these print on stderr ?
 -- | Run the named error check, possibly with some arguments,

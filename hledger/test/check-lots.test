@@ -221,3 +221,14 @@ $ hledger -f - bal -N -I
                $-500  assets:checking
              -5 AAPL  assets:stocks
 
+
+# ** 16. An unknown check name is reported at startup, before the journal
+# is read, so it is not hidden by errors in the journal.
+<
+2026-02-01 sell shares not held
+    assets:stocks    -10 AAPL {$50} @ $55
+    assets:cash
+
+$ hledger -f - check lots basis
+>2 /Unhandled argument, unknown check name: basis/
+>=1
