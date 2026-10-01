@@ -6705,7 +6705,7 @@ A negative posting in an *asset* account holding no lots is still an error, sinc
 ### Other lot events
 
 Other real-world events - a gift received with a carryover cost basis, bonus shares,
-a stock split, capitalising an in-kind transfer fee - can be recorded as combinations of these three movements.
+a stock split, capitalising an in-kind transfer fee - can be recorded as combinations of acquires, transfers and disposals.
 [Track investments](/investments.html#other-lot-events-hledger-2) on hledger.org has worked examples.
 The right treatment varies by jurisdiction, so check your local tax rules.
 
