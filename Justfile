@@ -797,9 +797,13 @@ LOCALSITEURL := 'http://localhost:3000/index.html'
     $WATCHEXEC --no-vcs-ignore -e md,m4 -i hledger.md -i hledger-ui.md -i hledger-web.md -r './Shake webmanuals && make -sC site serve'
 # --no-vcs-ignore to include site/src/*.md
 
+# update the live website on hledger.org, working around automation problems
+site-update:
+    bash -i -c 'hledgerorgssh "cd /srv/hledger && git pull && git -C site pull && source ~/.profile && ./Shake site"'
+
 # restart hledger.org's caddy server, after config changes
 site-restart:
-    osh -i -c 'hledgerorgssh systemctl restart caddy'
+    bash -i -c 'hledgerorgssh systemctl restart caddy'
 
 STACKHADDOCK := 'time ' + STACK + ' --verbosity=error haddock --fast --no-keep-going \
     --only-locals --no-haddock-deps --no-haddock-hyperlink-source \
