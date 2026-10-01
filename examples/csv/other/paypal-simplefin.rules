@@ -7,9 +7,10 @@
 # (both in hledger's bin/ directory, should be in PATH)
 #source | paypaljson | paypalcsv
 
-# or: assume paypal.json was already downloaded to data/, eg by hledger import -g and data/getdata;
-# convert to csv, and save the download in data/archive/.
+# or: assume paypal.json was already downloaded, eg by hledger import -g -> data/getdata -> paypaljson;
+# now convert it to csv for processing
 source | paypalcsv ../data/paypal.json 
+# and if all went well, move that download to data/archive/.
 archive
 
 # declare field names
