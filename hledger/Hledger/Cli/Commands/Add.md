@@ -65,7 +65,7 @@ Examples:
 
 There is a detailed tutorial at <https://hledger.org/add.html>.
 
-## add and balance assertions
+### add and balance assertions
 
 You can add a [balance assertion](#balance-assertions) by writing `AMOUNT = BALANCE` when asked for an amount. Eg `100 = 500`.
 
@@ -73,7 +73,7 @@ Also, each time you enter a new amount, hledger re-checks all balance assertions
 and rejects the new amount if it would make any of them fail.
 You can run `add` with `-I` or `--ignore-assertions` to disable balance assertion checking.
 
-## add and balance assignments
+### add and balance assignments
 
 **Adding a new balance assignment**\
 When entering a posting amount, you can write a `= BALANCEAMOUNT` [balance assignment](#balance-assignments) (or `==`, `=*`, `==*`) instead.

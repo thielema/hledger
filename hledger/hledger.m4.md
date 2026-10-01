@@ -301,7 +301,7 @@ Similarly, if mutually exclusive flags are used together, the right-most wins.
 With most commands, arguments are interpreted as a hledger [query](#queries) which filters the data.
 Some queries can be expressed either with options or with arguments.
 
-# Config files
+## Config files
 
 You can configure default command line options and arguments conveniently in a hledger config file.
 Config file options will be inserted near the start of your command line,
