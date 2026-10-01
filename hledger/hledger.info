@@ -4559,26 +4559,26 @@ gains), and their performance, as of the report end date.  An example:
 $ hledger holdings -e 2023-04-02
 Holdings on 2023-04-01
 
-                           ||       Date   Age    Units  Avg cost     Price  Total cost  Total value  Weight        UGain   UGain%     RGain     XIRR 
-===========================++=========================================================================================================================
- assets:investments:stocks || 2022-04-07  359d  10 INFY    2.00 ₹  100.00 ₹     20.00 ₹   1,000.00 ₹    6.4%     980.00 ₹  4900.0%            5252.4% 
- assets:investments:stocks ||                   73 LTTS    4.79 ₹  200.00 ₹    350.00 ₹  14,600.00 ₹   93.6%  14,250.00 ₹  4071.4%  140.00 ₹  4290.2% 
----------------------------++-------------------------------------------------------------------------------------------------------------------------
-                           ||                                                  370.00 ₹  15,600.00 ₹  100.0%  15,230.00 ₹  4116.2%  140.00 ₹  4342.1% 
+                           ||       Date   Age    Units  Avg cost  Unit price  Total cost  Total value  Weight        UGain   UGain%     RGain     XIRR 
+===========================++===========================================================================================================================
+ assets:investments:stocks || 2022-04-07  359d  10 INFY    2.00 ₹    100.00 ₹     20.00 ₹   1,000.00 ₹    6.4%     980.00 ₹  4900.0%            5252.4% 
+ assets:investments:stocks ||                   73 LTTS    4.79 ₹    200.00 ₹    350.00 ₹  14,600.00 ₹   93.6%  14,250.00 ₹  4071.4%  140.00 ₹  4290.2% 
+---------------------------++---------------------------------------------------------------------------------------------------------------------------
+                           ||                                                    370.00 ₹  15,600.00 ₹  100.0%  15,230.00 ₹  4116.2%  140.00 ₹  4342.1% 
 
    With '--lots', the individual lots are shown:
 
 $ hledger holdings --lots -e 2023-04-02
 Holdings on 2023-04-01
 
-                                                         ||       Date   Age    Units  Unit cost     Price  Total cost  Total value  Weight        UGain   UGain%     RGain     XIRR 
-=========================================================++==========================================================================================================================
- assets:investments:stocks:{2022-04-06, "0002", 10.00 ₹} || 2022-04-06  360d  13 LTTS    10.00 ₹  200.00 ₹    130.00 ₹   2,600.00 ₹   16.7%   2,470.00 ₹  1900.0%  140.00 ₹  3876.1% 
- assets:investments:stocks:{2022-04-07, 2.00 ₹}          || 2022-04-07  359d  10 INFY     2.00 ₹  100.00 ₹     20.00 ₹   1,000.00 ₹    6.4%     980.00 ₹  4900.0%            5252.4% 
- assets:investments:stocks:{2022-05-06, "0002", 11.00 ₹} || 2022-05-06  330d  20 LTTS    11.00 ₹  200.00 ₹    220.00 ₹   4,000.00 ₹   25.6%   3,780.00 ₹  1718.2%            5032.7% 
- assets:investments:stocks:{2022-06-06, "0002", 0.00 ₹}  || 2022-06-06  299d  40 LTTS          0  200.00 ₹           0   8,000.00 ₹   51.3%   8,000.00 ₹                             
----------------------------------------------------------++--------------------------------------------------------------------------------------------------------------------------
-                                                         ||                                                   370.00 ₹  15,600.00 ₹  100.0%  15,230.00 ₹  4116.2%  140.00 ₹  4342.1% 
+                                                         ||       Date   Age    Units  Unit cost  Unit price  Total cost  Total value  Weight        UGain   UGain%     RGain     XIRR 
+=========================================================++============================================================================================================================
+ assets:investments:stocks:{2022-04-06, "0002", 10.00 ₹} || 2022-04-06  360d  13 LTTS    10.00 ₹    200.00 ₹    130.00 ₹   2,600.00 ₹   16.7%   2,470.00 ₹  1900.0%  140.00 ₹  3876.1% 
+ assets:investments:stocks:{2022-04-07, 2.00 ₹}          || 2022-04-07  359d  10 INFY     2.00 ₹    100.00 ₹     20.00 ₹   1,000.00 ₹    6.4%     980.00 ₹  4900.0%            5252.4% 
+ assets:investments:stocks:{2022-05-06, "0002", 11.00 ₹} || 2022-05-06  330d  20 LTTS    11.00 ₹    200.00 ₹    220.00 ₹   4,000.00 ₹   25.6%   3,780.00 ₹  1718.2%            5032.7% 
+ assets:investments:stocks:{2022-06-06, "0002", 0.00 ₹}  || 2022-06-06  299d  40 LTTS          0    200.00 ₹           0   8,000.00 ₹   51.3%   8,000.00 ₹                             
+---------------------------------------------------------++----------------------------------------------------------------------------------------------------------------------------
+                                                         ||                                                     370.00 ₹  15,600.00 ₹  100.0%  15,230.00 ₹  4116.2%  140.00 ₹  4342.1% 
 
    The columns show:
 
@@ -4587,7 +4587,7 @@ Holdings on 2023-04-01
    * the unit cost basis (Unit cost; or Avg cost, the average unit cost
      of several lots, or for accounts using the AVERAGE method, the
      pool's running average on the report date)
-   * the unit market price on the report date (Price)
+   * the unit market price on the report date (Unit price)
    * the total cost basis (Total cost)
    * the total market value (Total value)
    * the percentage of the portfolio's total value (Weight)
@@ -12967,11 +12967,11 @@ P 2026-03-31 AAPL $72
 $ hledger holdings -e 2026-04-01
 Holdings on 2026-03-31
 
-               ||       Date  Age   Units  Avg cost  Price  Total cost  Total value  Weight  UGain  UGain%  RGain     XIRR 
-===============++==========================================================================================================
- assets:stocks || 2026-01-15  75d  5 AAPL       $50    $72        $250         $360  100.0%   $110   44.0%   $100  1865.3% 
----------------++----------------------------------------------------------------------------------------------------------
-               ||                  5 AAPL       $50               $250         $360  100.0%   $110   44.0%   $100  1865.3% 
+               ||       Date  Age   Units  Avg cost  Unit price  Total cost  Total value  Weight  UGain  UGain%  RGain     XIRR 
+===============++===============================================================================================================
+ assets:stocks || 2026-01-15  75d  5 AAPL       $50         $72        $250         $360  100.0%   $110   44.0%   $100  1865.3% 
+---------------++---------------------------------------------------------------------------------------------------------------
+               ||                  5 AAPL       $50                    $250         $360  100.0%   $110   44.0%   $100  1865.3% 
 
    You can add '--lots' to see the individual lots (this works with all
 reports):
@@ -12979,11 +12979,11 @@ reports):
 $ hledger holdings -e 2026-04-01 --lots
 Holdings on 2026-03-31
 
-                                 ||       Date  Age   Units  Unit cost  Price  Total cost  Total value  Weight  UGain  UGain%  RGain     XIRR 
-=================================++===========================================================================================================
- assets:stocks:{2026-01-15, $50} || 2026-01-15  75d  5 AAPL        $50    $72        $250         $360  100.0%   $110   44.0%   $100  1865.3% 
----------------------------------++-----------------------------------------------------------------------------------------------------------
-                                 ||                  5 AAPL        $50               $250         $360  100.0%   $110   44.0%   $100  1865.3% 
+                                 ||       Date  Age   Units  Unit cost  Unit price  Total cost  Total value  Weight  UGain  UGain%  RGain     XIRR 
+=================================++================================================================================================================
+ assets:stocks:{2026-01-15, $50} || 2026-01-15  75d  5 AAPL        $50         $72        $250         $360  100.0%   $110   44.0%   $100  1865.3% 
+---------------------------------++----------------------------------------------------------------------------------------------------------------
+                                 ||                  5 AAPL        $50                    $250         $360  100.0%   $110   44.0%   $100  1865.3% 
 
 
 File: hledger.info,  Node: Writing lot entries,  Next: Lot movements,  Prev: First lots example,  Up: Lots and capital gains
@@ -15415,347 +15415,347 @@ Node: Tidy layout181824
 Node: Balance report output183372
 Node: Some useful balance reports184666
 Node: holdings186060
-Node: roi193292
-Node: Spaces and special characters in --inv and --pnl195789
-Node: Semantics of --inv and --pnl196523
-Node: Using roi with lots198609
-Node: IRR and TWR explained199064
-Node: Chart commands202683
-Node: activity202864
-Node: Data generation commands203361
-Node: close203575
-Node: close --clopen206872
-Node: close --close208768
-Node: close --open209292
-Node: close --assert209542
-Node: close --assign209869
-Node: close --retain210548
-Node: close customisation211405
-Node: close and balance assertions213324
-Node: close examples215044
-Node: Retain earnings215281
-Node: Migrate balances to a new file215784
-Node: More detailed close examples217146
-Node: get217368
-Node: Phase 1 transactions data218079
-Node: Phase 2 prices218482
-Node: Merging new prices219486
-Node: get's helper scripts220352
-Node: getdata220643
-Node: getprices221241
-Node: rewrite222194
-Node: Re-write rules in a file225186
-Node: Diff output format226487
-Node: rewrite vs print --auto229144
-Node: Maintenance commands229858
-Node: check230077
-Node: Default checks231168
-Node: Strict checks232875
-Node: Other checks233974
-Node: Custom checks235777
-Node: diff236216
-Node: setup237423
-Node: test239413
-Node: PART 3 DATA FORMATS240345
-Node: Journal240499
-Node: Journal cheatsheet242946
-Node: Comments249199
-Node: Transactions250320
-Node: Dates251459
-Node: Simple dates251613
-Node: Posting dates252206
-Node: Status253381
-Node: Code255149
-Node: Description255763
-Node: Payee and note256452
-Node: Transaction comments257466
-Node: Postings257984
-Node: Debits and credits259302
-Node: Account names259863
-Node: Two space delimiter260822
-Node: Account hierarchy262151
-Node: Other account name features263036
-Node: Amounts263456
-Node: Decimal marks264464
-Node: Digit group marks265528
-Node: Commodity266231
-Node: Costs267336
-Node: Cost basis269662
-Node: Balance assertions271038
-Node: Assertions and ordering272331
-Node: Assertions and multiple files273052
-Node: Assertions and costs273975
-Node: Assertions and commodities274624
-Node: Assertions and subaccounts276285
-Node: Assertions and lot subaccounts276956
-Node: Assertions and status278029
-Node: Assertions and virtual postings278455
-Node: Assertions and auto postings278822
-Node: Assertions and precision279699
-Node: Assertions and hledger add280187
-Node: Posting comments280545
-Node: Transaction balancing281087
-Node: Tags283297
-Node: Tag propagation284834
-Node: Displaying tags286335
-Node: When to use tags ?286730
-Node: Tag names287396
-Node: Tag values290027
-Node: Directives290345
-Node: account directive293763
-Node: Account comments295211
-Node: Account tags295800
-Node: Account aliases296271
-Node: Account error checking297202
-Node: Account display order298913
-Node: Account types300113
-Node: alias directive304299
-Node: Basic aliases305686
-Node: Regex aliases306664
-Node: Combining aliases307713
-Node: Aliases and multiple files309166
-Node: end aliases directive309932
-Node: Aliases can generate bad account names310302
-Node: Aliases and account types311137
-Node: comment directive312031
-Node: end comment directive312354
-Node: commodity directive312583
-Node: Commodity directive syntax313578
-Node: Commodity tags315035
-Node: Commodity aliases315569
-Node: Commodity error checking318207
-Node: decimal-mark directive318675
-Node: include directive320151
-Node: P directive323240
-Node: payee directive324276
-Node: tag directive324893
-Node: Periodic transactions325499
-Node: Periodic rule syntax326969
-Node: Periodic rules and relative dates327795
-Node: Two spaces between period expression and description!328574
-Node: Auto postings329537
-Node: Auto postings and multiple files332825
-Node: Auto postings and dates333232
-Node: Auto postings and transaction balancing / inferred amounts / balance assertions333675
-Node: Auto posting tags334466
-Node: Auto postings on forecast transactions only335363
-Node: Other syntax335835
-Node: Balance assignments336627
-Node: Balance assignments and costs338157
-Node: Balance assignments and multiple files338581
-Node: Bracketed posting dates339006
-Node: D directive339706
-Node: apply account directive341484
-Node: Y directive342353
-Node: Secondary dates343346
-Node: Star comments344833
-Node: Valuation expressions345237
-Node: Virtual postings345538
-Node: Other Ledger directives347164
-Node: Ledger virtual costs347924
-Node: Ledger cost basis348268
-Node: CSV348809
-Node: CSV rules cheatsheet351105
-Node: source353530
-Node: Data cleaning / data generating commands355332
-Node: archive357362
-Node: encoding358319
-Node: separator359072
-Node: skip359727
-Node: date-format360379
-Node: timezone361326
-Node: newest-first362454
-Node: intra-day-reversed363169
-Node: decimal-mark363773
-Node: CSV fields vs hledger fields364519
-Node: fields list366037
-Node: Field assignment367863
-Node: hledger field names369433
-Node: date field369934
-Node: date2 field370127
-Node: status field370332
-Node: code field370532
-Node: description field370915
-Node: comment field371381
-Node: account field371948
-Node: amount field372684
-Node: currency field375533
-Node: balance field375951
-Node: if376484
-Node: Matchers378362
-Node: Multiple matchers380337
-Node: Match groups381086
-Node: if table381960
-Node: merge383947
-Node: balance-type386789
-Node: include387615
-Node: Working with CSV388373
-Node: Rapid feedback388964
-Node: Valid CSV389549
-Node: File Extension390427
-Node: Reading CSV from standard input391164
-Node: Reading multiple CSV files391552
-Node: Reading files specified by rule392206
-Node: Valid transactions393578
-Node: Deduplicating importing394405
-Node: Regular expressions in CSV rules395648
-Node: Setting amounts397142
-Node: Amount signs399682
-Node: Setting currency/commodity400749
-Node: Amount decimal places402127
-Node: Referencing other fields403386
-Node: How CSV rules are evaluated404493
-Node: Well factored rules407500
-Node: CSV rules examples407992
-Node: Timeclock408366
-Node: Timedot412423
-Node: Timedot examples416442
-Node: PART 4 REPORTING CONCEPTS418522
-Node: Time periods418686
-Node: Report start & end date418941
-Node: Smart dates420417
-Node: Report intervals422788
-Node: Date adjustments423362
-Node: Start date adjustment423585
-Node: End date adjustment424449
-Node: Period expressions425198
-Node: Period expressions with a report interval427333
-Node: More complex report intervals427781
-Node: Multiple weekday intervals429897
-Node: Queries430908
-Node: Query types433741
-Node: acct query434131
-Node: amt query434442
-Node: code query435139
-Node: cur query435334
-Node: desc query436074
-Node: date query436257
-Node: date2 query436871
-Node: depth query437212
-Node: find query437548
-Node: note query438659
-Node: payee query438926
-Node: real query439207
-Node: status query439412
-Node: type query439652
-Node: tag query440210
-Node: Negative queries440839
-Node: not query441021
-Node: Space-separated queries441308
-Node: Boolean queries441996
-Node: expr query442937
-Node: any query443666
-Node: all query444681
-Node: Queries and command options445408
-Node: Queries and account aliases445856
-Node: Queries and valuation446181
-Node: Depth446509
-Node: Combining depth options447477
-Node: Pivoting448427
-Node: Report titles450730
-Node: Languages452095
-Node: Amount formatting454404
-Node: Commodity display style454677
-Node: Commodity style override456550
-Node: Rounding457639
-Node: Trailing decimal marks458245
-Node: Amount parseability459108
-Node: Cost reporting460717
-Node: Recording costs461509
-Node: Reporting at cost463266
-Node: Equity conversion postings464435
-Node: Inferring equity conversion postings467214
-Node: Combining costs and equity conversion postings469367
-Node: Requirements for detecting equity conversion postings470708
-Node: Value reporting472367
-Node: -X Value in specified commodity473332
-Node: -V Value in default commoditys474458
-Node: Valuation date475195
-Node: Finding market price476027
-Node: --infer-market-prices market prices from transactions477407
-Node: Valuation commodity480431
-Node: --value Flexible valuation481864
-Node: Valuation examples484259
-Node: Interaction of valuation and queries486403
-Node: Effect of valuation on reports487120
-Node: Lots and capital gains494891
-Node: First lots example496790
-Node: Writing lot entries500764
-Node: Cost basis annotations501564
-Node: Lotful commodities502779
-Node: Lot subaccounts503547
-Node: Several ways to write lot entries504815
-Node: Disabling lot tracking506412
-Node: Lot movements507780
-Node: Acquire508352
-Node: Transfer511145
-Node: Transfer fees512351
-Node: Capitalising fees513605
-Node: Dispose514304
-Node: Short positions515728
-Node: Other lot events518252
-Node: Cost basis methods518733
-Node: Changing the cost basis method522156
-Node: Gains523702
-Node: Gain accounts525580
-Node: Recording gains526818
-Node: Lot reports528677
-Node: Realised gains529456
-Node: Unrealised gains530686
-Node: Lot details532862
-Node: Lot labels533142
-Node: Cost basis precision534098
-Node: Lot postings and balance assertions535141
-Node: Troubleshooting lots536176
-Node: Generating data538035
-Node: Forecasting539870
-Node: --forecast540526
-Node: Inspecting forecast transactions541627
-Node: Forecast reports542960
-Node: Forecast tags544069
-Node: Forecast period in detail544689
-Node: Forecast troubleshooting545777
-Node: Budgeting546848
-Node: Posting types547403
-Node: PART 5 MORE ABOUT THE COMMAND LINE550196
-Node: Output550387
-Node: Output destination550592
-Node: Output format551152
-Node: Text output553082
-Node: Box-drawing characters554278
-Node: Colour554780
-Node: Paging555511
-Node: HTML output557054
-Node: CSV / TSV output557702
-Node: FODS output557958
-Node: Ledger output558892
-Node: Beancount output559444
-Node: SQL output564168
-Node: JSON output564909
-Node: Debug output565616
-Node: Command line tips566734
-Node: Special characters567103
-Node: Escaping shell special characters568105
-Node: Escaping regular expression special characters569466
-Node: Escaping in other situations570983
-Node: Unicode characters572283
-Node: Regular expressions573716
-Node: hledger's regular expressions576908
-Node: Argument files578581
-Node: Shell completions579495
-Node: PART 6 COMMON TASKS580004
-Node: Setting LEDGER_FILE580452
-Node: Set LEDGER_FILE on unix580968
-Node: Set LEDGER_FILE on mac581483
-Node: Set LEDGER_FILE on Windows582037
-Node: Reconciling583676
-Node: Closing a journal file586011
-Node: hledger 1 and hledger 2586478
-Node: Migrating hledger 1 data to hledger 2587030
-Node: Switching back to hledger 1589126
-Node: Keeping data usable with both590481
-Node: BUGS591205
-Node: Troubleshooting592857
+Node: roi193325
+Node: Spaces and special characters in --inv and --pnl195822
+Node: Semantics of --inv and --pnl196556
+Node: Using roi with lots198642
+Node: IRR and TWR explained199097
+Node: Chart commands202716
+Node: activity202897
+Node: Data generation commands203394
+Node: close203608
+Node: close --clopen206905
+Node: close --close208801
+Node: close --open209325
+Node: close --assert209575
+Node: close --assign209902
+Node: close --retain210581
+Node: close customisation211438
+Node: close and balance assertions213357
+Node: close examples215077
+Node: Retain earnings215314
+Node: Migrate balances to a new file215817
+Node: More detailed close examples217179
+Node: get217401
+Node: Phase 1 transactions data218112
+Node: Phase 2 prices218515
+Node: Merging new prices219519
+Node: get's helper scripts220385
+Node: getdata220676
+Node: getprices221274
+Node: rewrite222227
+Node: Re-write rules in a file225219
+Node: Diff output format226520
+Node: rewrite vs print --auto229177
+Node: Maintenance commands229891
+Node: check230110
+Node: Default checks231201
+Node: Strict checks232908
+Node: Other checks234007
+Node: Custom checks235810
+Node: diff236249
+Node: setup237456
+Node: test239446
+Node: PART 3 DATA FORMATS240378
+Node: Journal240532
+Node: Journal cheatsheet242979
+Node: Comments249232
+Node: Transactions250353
+Node: Dates251492
+Node: Simple dates251646
+Node: Posting dates252239
+Node: Status253414
+Node: Code255182
+Node: Description255796
+Node: Payee and note256485
+Node: Transaction comments257499
+Node: Postings258017
+Node: Debits and credits259335
+Node: Account names259896
+Node: Two space delimiter260855
+Node: Account hierarchy262184
+Node: Other account name features263069
+Node: Amounts263489
+Node: Decimal marks264497
+Node: Digit group marks265561
+Node: Commodity266264
+Node: Costs267369
+Node: Cost basis269695
+Node: Balance assertions271071
+Node: Assertions and ordering272364
+Node: Assertions and multiple files273085
+Node: Assertions and costs274008
+Node: Assertions and commodities274657
+Node: Assertions and subaccounts276318
+Node: Assertions and lot subaccounts276989
+Node: Assertions and status278062
+Node: Assertions and virtual postings278488
+Node: Assertions and auto postings278855
+Node: Assertions and precision279732
+Node: Assertions and hledger add280220
+Node: Posting comments280578
+Node: Transaction balancing281120
+Node: Tags283330
+Node: Tag propagation284867
+Node: Displaying tags286368
+Node: When to use tags ?286763
+Node: Tag names287429
+Node: Tag values290060
+Node: Directives290378
+Node: account directive293796
+Node: Account comments295244
+Node: Account tags295833
+Node: Account aliases296304
+Node: Account error checking297235
+Node: Account display order298946
+Node: Account types300146
+Node: alias directive304332
+Node: Basic aliases305719
+Node: Regex aliases306697
+Node: Combining aliases307746
+Node: Aliases and multiple files309199
+Node: end aliases directive309965
+Node: Aliases can generate bad account names310335
+Node: Aliases and account types311170
+Node: comment directive312064
+Node: end comment directive312387
+Node: commodity directive312616
+Node: Commodity directive syntax313611
+Node: Commodity tags315068
+Node: Commodity aliases315602
+Node: Commodity error checking318240
+Node: decimal-mark directive318708
+Node: include directive320184
+Node: P directive323273
+Node: payee directive324309
+Node: tag directive324926
+Node: Periodic transactions325532
+Node: Periodic rule syntax327002
+Node: Periodic rules and relative dates327828
+Node: Two spaces between period expression and description!328607
+Node: Auto postings329570
+Node: Auto postings and multiple files332858
+Node: Auto postings and dates333265
+Node: Auto postings and transaction balancing / inferred amounts / balance assertions333708
+Node: Auto posting tags334499
+Node: Auto postings on forecast transactions only335396
+Node: Other syntax335868
+Node: Balance assignments336660
+Node: Balance assignments and costs338190
+Node: Balance assignments and multiple files338614
+Node: Bracketed posting dates339039
+Node: D directive339739
+Node: apply account directive341517
+Node: Y directive342386
+Node: Secondary dates343379
+Node: Star comments344866
+Node: Valuation expressions345270
+Node: Virtual postings345571
+Node: Other Ledger directives347197
+Node: Ledger virtual costs347957
+Node: Ledger cost basis348301
+Node: CSV348842
+Node: CSV rules cheatsheet351138
+Node: source353563
+Node: Data cleaning / data generating commands355365
+Node: archive357395
+Node: encoding358352
+Node: separator359105
+Node: skip359760
+Node: date-format360412
+Node: timezone361359
+Node: newest-first362487
+Node: intra-day-reversed363202
+Node: decimal-mark363806
+Node: CSV fields vs hledger fields364552
+Node: fields list366070
+Node: Field assignment367896
+Node: hledger field names369466
+Node: date field369967
+Node: date2 field370160
+Node: status field370365
+Node: code field370565
+Node: description field370948
+Node: comment field371414
+Node: account field371981
+Node: amount field372717
+Node: currency field375566
+Node: balance field375984
+Node: if376517
+Node: Matchers378395
+Node: Multiple matchers380370
+Node: Match groups381119
+Node: if table381993
+Node: merge383980
+Node: balance-type386822
+Node: include387648
+Node: Working with CSV388406
+Node: Rapid feedback388997
+Node: Valid CSV389582
+Node: File Extension390460
+Node: Reading CSV from standard input391197
+Node: Reading multiple CSV files391585
+Node: Reading files specified by rule392239
+Node: Valid transactions393611
+Node: Deduplicating importing394438
+Node: Regular expressions in CSV rules395681
+Node: Setting amounts397175
+Node: Amount signs399715
+Node: Setting currency/commodity400782
+Node: Amount decimal places402160
+Node: Referencing other fields403419
+Node: How CSV rules are evaluated404526
+Node: Well factored rules407533
+Node: CSV rules examples408025
+Node: Timeclock408399
+Node: Timedot412456
+Node: Timedot examples416475
+Node: PART 4 REPORTING CONCEPTS418555
+Node: Time periods418719
+Node: Report start & end date418974
+Node: Smart dates420450
+Node: Report intervals422821
+Node: Date adjustments423395
+Node: Start date adjustment423618
+Node: End date adjustment424482
+Node: Period expressions425231
+Node: Period expressions with a report interval427366
+Node: More complex report intervals427814
+Node: Multiple weekday intervals429930
+Node: Queries430941
+Node: Query types433774
+Node: acct query434164
+Node: amt query434475
+Node: code query435172
+Node: cur query435367
+Node: desc query436107
+Node: date query436290
+Node: date2 query436904
+Node: depth query437245
+Node: find query437581
+Node: note query438692
+Node: payee query438959
+Node: real query439240
+Node: status query439445
+Node: type query439685
+Node: tag query440243
+Node: Negative queries440872
+Node: not query441054
+Node: Space-separated queries441341
+Node: Boolean queries442029
+Node: expr query442970
+Node: any query443699
+Node: all query444714
+Node: Queries and command options445441
+Node: Queries and account aliases445889
+Node: Queries and valuation446214
+Node: Depth446542
+Node: Combining depth options447510
+Node: Pivoting448460
+Node: Report titles450763
+Node: Languages452128
+Node: Amount formatting454437
+Node: Commodity display style454710
+Node: Commodity style override456583
+Node: Rounding457672
+Node: Trailing decimal marks458278
+Node: Amount parseability459141
+Node: Cost reporting460750
+Node: Recording costs461542
+Node: Reporting at cost463299
+Node: Equity conversion postings464468
+Node: Inferring equity conversion postings467247
+Node: Combining costs and equity conversion postings469400
+Node: Requirements for detecting equity conversion postings470741
+Node: Value reporting472400
+Node: -X Value in specified commodity473365
+Node: -V Value in default commoditys474491
+Node: Valuation date475228
+Node: Finding market price476060
+Node: --infer-market-prices market prices from transactions477440
+Node: Valuation commodity480464
+Node: --value Flexible valuation481897
+Node: Valuation examples484292
+Node: Interaction of valuation and queries486436
+Node: Effect of valuation on reports487153
+Node: Lots and capital gains494924
+Node: First lots example496823
+Node: Writing lot entries500847
+Node: Cost basis annotations501647
+Node: Lotful commodities502862
+Node: Lot subaccounts503630
+Node: Several ways to write lot entries504898
+Node: Disabling lot tracking506495
+Node: Lot movements507863
+Node: Acquire508435
+Node: Transfer511228
+Node: Transfer fees512434
+Node: Capitalising fees513688
+Node: Dispose514387
+Node: Short positions515811
+Node: Other lot events518335
+Node: Cost basis methods518816
+Node: Changing the cost basis method522239
+Node: Gains523785
+Node: Gain accounts525663
+Node: Recording gains526901
+Node: Lot reports528760
+Node: Realised gains529539
+Node: Unrealised gains530769
+Node: Lot details532945
+Node: Lot labels533225
+Node: Cost basis precision534181
+Node: Lot postings and balance assertions535224
+Node: Troubleshooting lots536259
+Node: Generating data538118
+Node: Forecasting539953
+Node: --forecast540609
+Node: Inspecting forecast transactions541710
+Node: Forecast reports543043
+Node: Forecast tags544152
+Node: Forecast period in detail544772
+Node: Forecast troubleshooting545860
+Node: Budgeting546931
+Node: Posting types547486
+Node: PART 5 MORE ABOUT THE COMMAND LINE550279
+Node: Output550470
+Node: Output destination550675
+Node: Output format551235
+Node: Text output553165
+Node: Box-drawing characters554361
+Node: Colour554863
+Node: Paging555594
+Node: HTML output557137
+Node: CSV / TSV output557785
+Node: FODS output558041
+Node: Ledger output558975
+Node: Beancount output559527
+Node: SQL output564251
+Node: JSON output564992
+Node: Debug output565699
+Node: Command line tips566817
+Node: Special characters567186
+Node: Escaping shell special characters568188
+Node: Escaping regular expression special characters569549
+Node: Escaping in other situations571066
+Node: Unicode characters572366
+Node: Regular expressions573799
+Node: hledger's regular expressions576991
+Node: Argument files578664
+Node: Shell completions579578
+Node: PART 6 COMMON TASKS580087
+Node: Setting LEDGER_FILE580535
+Node: Set LEDGER_FILE on unix581051
+Node: Set LEDGER_FILE on mac581566
+Node: Set LEDGER_FILE on Windows582120
+Node: Reconciling583759
+Node: Closing a journal file586094
+Node: hledger 1 and hledger 2586561
+Node: Migrating hledger 1 data to hledger 2587113
+Node: Switching back to hledger 1589209
+Node: Keeping data usable with both590564
+Node: BUGS591288
+Node: Troubleshooting592940
 
 End Tag Table
 
