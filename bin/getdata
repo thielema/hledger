@@ -23,6 +23,6 @@ from your bank, brokerage, or other financial providers, into the working direct
 for later processing by your rules files.
 EOF
 
-# Examples, using other scripts from the hledger repo's bin directory (customise and uncomment):
+# Here some ways to automate data fetching, using other scripts from the hledger repo's bin directory:
 # simplefinjson >simplefin.json   # recent transactions from SimpleFIN (see also simplefinsetup)
 # paypaljson    >paypal.json      # recent transactions from PayPal
