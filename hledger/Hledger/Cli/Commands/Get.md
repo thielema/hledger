@@ -60,7 +60,7 @@ and install it in the `data` directory next to your main journal file.
 It should download zero or more transaction data files into its current directory.
 These are typically bank/brokerage CSV/TSV/SSV files, but could be anything that your hledger rules files can read.
 The hledger repo's [bin/getdata](https://github.com/hledgerorg/hledger/blob/main/bin/getdata)
-is a commented stub you can start from.
+is a stub you can start from, with commented examples.
 
 #### getprices
 

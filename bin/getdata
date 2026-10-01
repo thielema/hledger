@@ -18,6 +18,11 @@ set -euo pipefail
 
 cat >&2 <<'EOF'
 getdata: this is the sample stub script.
-It does not fetch anything yet. Customise this script to download CSV/TSV/SSV files
-from your bank, brokerage, or other financial providers, into the working directory.
+It does not fetch anything yet. Customise this script to download CSV or other data files
+from your bank, brokerage, or other financial providers, into the working directory,
+for later processing by your rules files.
 EOF
+
+# Examples, using other scripts from the hledger repo's bin directory (customise and uncomment):
+# simplefinjson >simplefin.json   # recent transactions from SimpleFIN (see also simplefinsetup)
+# paypaljson    >paypal.json      # recent transactions from PayPal
