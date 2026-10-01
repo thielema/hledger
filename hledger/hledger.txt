@@ -404,7 +404,7 @@ Options
      ters the data.  Some queries can be expressed either with options  or  with
      arguments.
 
-Config files
+   Config files
      You  can  configure default command line options and arguments conveniently
      in a hledger config file.  Config file options will be  inserted  near  the
      start  of your command line, so you can override them with command line op-
@@ -10877,9 +10877,9 @@ Lots and capital gains
    Other lot events
      Other real-world events - a gift received  with  a  carryover  cost  basis,
      bonus  shares, a stock split, capitalising an in-kind transfer fee - can be
-     recorded as combinations of these three movements.   Track  investments  on
-     hledger.org  has  worked examples.  The right treatment varies by jurisdic-
-     tion, so check your local tax rules.
+     recorded as combinations of acquires, transfers and disposals.   Track  in-
+     vestments  on  hledger.org has worked examples.  The right treatment varies
+     by jurisdiction, so check your local tax rules.
 
    Cost basis methods
      If a lot transfer or a  lot  disposal  doesn't  specifically  identify  the
