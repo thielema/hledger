@@ -23,6 +23,12 @@ from your bank, brokerage, or other financial providers, into the working direct
 for later processing by your rules files.
 EOF
 
-# Here some ways to automate data fetching, using other scripts from the hledger repo's bin directory:
-# simplefinjson >simplefin.json   # recent transactions from SimpleFIN (see also simplefinsetup)
-# paypaljson    >paypal.json      # recent transactions from PayPal
+# Whether you can automate data fetching depends on your institutions and appetite for scripting.
+# Here are two easy ways to automate data fetching, using other scripts from the hledger repo's bin directory:
+#
+# simplefinjson >simplefin.json   # fetch recent transactions from SimpleFIN (see also simplefinsetup)
+# paypaljson    >paypal.json      # fetch recent transactions from PayPal
+#
+# For an example of rules files converting these, see
+# https://github.com/hledgerorg/hledger/blob/main/examples/csv/banking/unify-checking.rules
+# https://github.com/hledgerorg/hledger/blob/main/examples/csv/other/paypal-simplefin.rules
