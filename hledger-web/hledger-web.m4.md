@@ -84,6 +84,10 @@ Flags:
      --socket=SOCKET        listen on the given unix socket instead of an IP
                             address and port (unix only; implies --serve)
      --base-url=BASEURL     set the base url (default: http://IPADDR:PORT)
+     --lang=LANG            show the web UI in this language (en, de, zh); or
+                            with auto, use each viewer's browser language if
+                            available, otherwise the server's. (Default: the
+                            browser's language if available, otherwise en.)
      --test                 run hledger-web's tests and exit. hspec test
                             runner args may follow a --, eg: hledger-web --test
                             --help
