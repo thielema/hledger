@@ -10,6 +10,7 @@ The @incomestatement@ command prints a simple income statement (profit & loss re
 module Hledger.Cli.Commands.Incomestatement (
   incomestatementmode
  ,incomestatement
+ ,incomestatementSpec
 ) where
 
 import System.Console.CmdArgs.Explicit

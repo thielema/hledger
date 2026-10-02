@@ -95,6 +95,7 @@ selectButtonGen name available current =
 
 data Report =
     Balance
+  | IncomeStatement
   | Budget
   deriving (Eq, Ord, Enum, Bounded, Show)
 
@@ -106,6 +107,7 @@ that we have to case test on.
 reportTypes :: [Option Report]
 reportTypes =
   [ Option "Balance" Balance "balance"
+  , Option "Income Statement" IncomeStatement "income-statement"
   , Option "Budget" Budget "budget"
   ]
 

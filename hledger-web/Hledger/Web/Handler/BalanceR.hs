@@ -14,6 +14,8 @@ import Yesod qualified
 
 import Hledger
 import Hledger.Cli.CliOptions
+import Hledger.Cli.CompoundBalanceCommand
+import Hledger.Cli.Commands.Incomestatement
 import Hledger.Cli.Commands.Balance qualified as Balance
 import Hledger.Query qualified as Query
 import Data.Text qualified as T
@@ -121,6 +123,12 @@ getBalanceR = do
                 in ( maybe (trimColon $ Balance.multiBalanceReportTitle ropts mbr) id (title_ ropts)
                    , Balance.multiBalanceReportAsSpreadsheetParts oneLineNoCostFmt ropts mbr
                    )
+
+            compoundHtml =
+              compoundBalanceReportAsHtml ropts $
+              compoundBalanceReport rspec j $
+              cbcqueries incomestatementSpec
+
             budgetHtml =
               Balance.budgetReportAsHtml ropts $
               styleAmounts (journalCommodityStylesWith HardRounding j) $
@@ -133,6 +141,7 @@ getBalanceR = do
         Yesod.toWidget $
           case parseExternal reportTypes =<< mreport of
             Just Budget -> budgetHtml
+            Just IncomeStatement -> compoundHtml
             _ -> reportTable parts
 
 -- | The heading for a report: --title if one was given, otherwise the

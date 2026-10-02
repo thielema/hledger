@@ -12,6 +12,7 @@ module Hledger.Cli.CompoundBalanceCommand (
   CompoundBalanceCommandSpec(..)
  ,compoundBalanceCommandMode
  ,compoundBalanceCommand
+ ,compoundBalanceReportAsHtml
 ) where
 
 import Control.Monad (guard, unless, void)
