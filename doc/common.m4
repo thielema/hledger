@@ -126,7 +126,8 @@ General output flags (affecting some commands):
      --depth=DEPTHEXP       if a number (or -NUM): show only top NUM levels
                             of accounts. If REGEXP=NUM, only apply limiting to
                             accounts matching the regular expression.
-  -B --cost                 convert amounts to their cost/sale amount (@/@@)
+  -B --cost                 convert amounts to their cost basis ({}), or else
+                            their cost/sale amount (@/@@)
   -V --market               valuation mode: show amounts converted to market
                             value at period end(s) in their default valuation
                             commodity. Short for --value=end.
@@ -141,6 +142,10 @@ General output flags (affecting some commands):
                             'end':      value at period end(s)
                             'now':      value today
                             YYYY-MM-DD: value on given date
+                            'cost':     cost basis, or else transacted cost
+                            (same as -B)
+                            'transacted': transacted cost/sale amount (@/@@)
+                            only
      --lots                 show lot subaccounts and other lot details
   -c --commodity-style=S    Override a commodity's display style.
                             Eg: -c '$1000.' or -c '1.000,00 EUR'
