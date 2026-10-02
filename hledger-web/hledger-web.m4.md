@@ -128,7 +128,7 @@ you can customise their urls with this.
 
 hledger-web also supports many of hledger's [general options](hledger.md#options):
 
-_generaloptions_
+_webgeneraloptions_
 
 hledger-web shows accounts with zero balances by default (like `hledger-ui`, and unlike `hledger`).
 Using the `-E/--empty` flag will reverse this behaviour.
