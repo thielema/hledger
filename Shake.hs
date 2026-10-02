@@ -729,6 +729,8 @@ main = do
               ,"doc: update changelog"
               ,"doc: finalise changelog"  -- release-day changelog heading updates
               ,"doc: relnotes"            -- release notes, derived from changelogs
+              ,"doc: announce"            -- release announcements
+              ,"pkg: set version"         -- release/dev version bumps
               ,"doc: update command docs"
               ,"doc: update embedded manuals"
               ,"doc: update manuals"
