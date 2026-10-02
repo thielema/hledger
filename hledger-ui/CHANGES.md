@@ -16,6 +16,10 @@ User-visible changes in hledger-ui.
 See also the hledger changelog.
 
 
+# 7acb6aed
+
+
+
 # 1.99.5 2026-10-01
 
 Breaking changes

@@ -20,6 +20,10 @@ General changes in the hledger project.
 For package-specific changes, see the hledger package changelogs.
 
 
+# 7acb6aed
+
+
+
 # 1.99.5 2026-10-01
 
 ## Docs
