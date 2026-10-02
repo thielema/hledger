@@ -114,6 +114,7 @@ library
       Hledger.Web.WebOptions
       Hledger.Web.Widget.AddForm
       Hledger.Web.Widget.Common
+      Hledger.Web.Widget.ReportConfig
   other-modules:
       Paths_hledger_web
   autogen-modules:

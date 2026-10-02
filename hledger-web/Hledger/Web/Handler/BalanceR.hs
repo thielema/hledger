@@ -2,6 +2,7 @@
 
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 
 module Hledger.Web.Handler.BalanceR where
 
@@ -20,6 +21,7 @@ import Data.Text qualified as T
 import Hledger.Web.Import
 import Hledger.Web.WebOptions
 import Hledger.Web.Widget.Common (balanceReportLinks)
+import Hledger.Web.Widget.ReportConfig
 import Hledger.Write.Html (formatRow)
 import Hledger.Write.Spreadsheet (Cell, NumLines)
 
@@ -30,6 +32,7 @@ getBalanceR = do
   checkServerSideUiEnabled
   VD{j, q, qopts, qparam, opts, today} <- getViewData
   require ViewPermission
+  params <- reqGetParams <$> getRequest
   -- The period parameter is a period expression as for -p: an interval
   -- ("monthly"), a date span ("2024"), or both ("monthly in 2024").
   -- An empty one is no period at all, as from a search form with nothing in it.
@@ -41,6 +44,12 @@ getBalanceR = do
         -- No period: keep the interval the server was started with (-M, -p ...).
         Nothing -> Right (interval_ roptsOrig, nulldatespan)
         Just p  -> either (Left . errorBundlePretty) Right $ parsePeriodExpr today p
+
+  mreport <- lookupGetParam "report"
+  mlayout <- lookupGetParam "layout"
+  mstruct <- lookupGetParam "structure"
+  mdepth  <- lookupGetParam "depth"
+  mbempty  <- lookupGetParam "empty"
 
   defaultLayout $ do
     setTitle "balance - hledger-web"
@@ -61,13 +70,24 @@ getBalanceR = do
             -- date span as a date: term, so that a row's register link is
             -- restricted the same way the report is.
             spanterm = ["date:" <> showDateSpan spn | spn /= nulldatespan]
+            parseStructure = parseExternal structureOptions
+            parseLayout = parseExternal layoutOptions
+            (listMode, fullNames, noElide) =
+                fromMaybe (accountlistmode_ roptsOrig, full_names_ roptsOrig, no_elide_ roptsOrig) $
+                parseStructure =<< mstruct
             ropts =
               roptsOrig {
                 -- -E means the opposite in hledger-ui and hledger-web: hide
                 -- zero items, which are shown by default. The sidebar beside
                 -- this report already reads the flag that way (see App.hs).
-                empty_ = not $ empty_ roptsOrig,
+                empty_ =
+                  not $ fromMaybe (empty_ roptsOrig) $
+                  join $ parseExternal emptinessOptions =<< mbempty,
+                no_elide_ = noElide,
                 balance_base_url_ = Just "",
+                layout_ = fromMaybe (layout_ roptsOrig) $ parseLayout =<< mlayout,
+                accountlistmode_ = listMode,
+                full_names_ = fullNames,
                 querystring_ = Query.words'' queryprefixes qparam ++ spanterm,
                 interval_ = reportinterval
               }
@@ -82,7 +102,7 @@ getBalanceR = do
             -- report gets summarized (--depth at startup, or depth: in the search).
             rspec =
               rspecOrig {
-                _rsQuery = simplifyQuery $ And [q, dateq],
+                _rsQuery = simplifyQuery $ And $ [q, dateq] ++ maybeToList (fmap Depth $ parseDepth =<< mdepth),
                 _rsReportOpts = ropts
               }
             -- The heading, and the report's rows in three parts, for the
@@ -101,9 +121,19 @@ getBalanceR = do
                 in ( maybe (trimColon $ Balance.multiBalanceReportTitle ropts mbr) id (title_ ropts)
                    , Balance.multiBalanceReportAsSpreadsheetParts oneLineNoCostFmt ropts mbr
                    )
+            budgetHtml =
+              Balance.budgetReportAsHtml ropts $
+              styleAmounts (journalCommodityStylesWith HardRounding j) $
+              budgetReport rspec defbalancingopts spn j
+
         Yesod.toWidget $ H.h2 $ H.toHtml $ title <> filtered
         Yesod.toWidget $ balanceReportLinks BalanceR qparam spn reportinterval
-        Yesod.toWidget $ reportTable parts
+        Yesod.toWidget $ balanceReportForm BalanceR params qparam spn reportinterval
+
+        Yesod.toWidget $
+          case parseExternal reportTypes =<< mreport of
+            Just Budget -> budgetHtml
+            _ -> reportTable parts
 
 -- | The heading for a report: --title if one was given, otherwise the
 -- given default.
