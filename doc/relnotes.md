@@ -71,19 +71,17 @@ Here is our current [AI policy](https://hledger.org/AI.html).
 If you disagree with it, please be patient while we navigate this period..
 In summary:
 
-- The official hledger tools do not have any built in AI features or use any AI while running.
-  (Some third-party addons do.)
+- hledger 1 (up to 1.52.1) was developed without AI assistance. ([Level 0][levels])
 
-- hledger 1.52.1 and below had no AI use during development. [Level 0](https://www.visidata.org/blog/2026/ai/#self-assessed-ai-level-for-contributions).
+- hledger 1.52.2+ has used a couple of small, fully reviewed, AI-generated security fixes copied from 2.x. ([Level 2-4][levels])
 
-- hledger 1.52.2+ have a few small uses of AI-generated code
-  (fully-understood security fixes copied from 2.x). Level 2-4.
+- hledger 2 (1.99.1+) is exploring careful AI-assisted development. ([Level 5][levels])
 
-- hledger 2 (1.99.1+) uses careful AI-assisted development. Level 5.
-  In 2026 Q2 and Q3 we used a 6-month OSS credit from Anthropic.
-  As a result, hledger is better tested, better documented,
-  more robust, more secure, and faster than ever.
+In 2026 Q2 & Q3 we used a 6-month OSS credit from Anthropic,
+to implement lot tracking and other features, and to improve quality generally.
+The latest hledger is better tested, better documented, more robust, more secure, and faster than any previous version.
 
+[levels]: https://www.visidata.org/blog/2026/ai/#self-assessed-ai-level-for-contributions
 
 ## 2026-10-01 hledger-1.99.5
 (2.0 preview 5)
