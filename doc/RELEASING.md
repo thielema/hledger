@@ -42,13 +42,10 @@ Preview/nightly releases may happen any time.
 | Github release      | ✓                                                        | ✓                            | ✓                                        |
 | Binaries            | ✓                                                        | ✓                            | ✓                                        |
 | Hackage release     | ✓                                                        | ✓                            |                                          |
-| Install page        | ✓                                                        | ✓                            |                                          |
-| Regression&nbsp;bounties | ✓                                                   | ✓                            |                                          |
+| Install page        | ✓                                                        | ✓                            | ✓ (preview lines only)                   |
 | Release notes       | ✓                                                        | ✓                            | ✓                                        |
 | Manuals snapshot    | ✓                                                        |                              | ✓                                        |
 | Announcements       | ✓                                                        |                              | ✓                                        |
-
-[Regression bounty]: https://hledger.org/regressionbounty
 
 ## hledger release artifacts / value chain
 
@@ -107,6 +104,8 @@ to avoid interfering with branch switching; RELEASING.md should be updated from 
    `site/src/install.md` by hand ("Update the Install page" below) - do this on the release branch, not on main
    (main's copy of ghrelnotes describes the *next preview* line and is unrelated to the
    release branch's version).
+1. **(preview release) site: update the Install page's preview lines:** `site/src/install.md`'s "current preview
+   release" line, preview binaries badge and link, by hand (`just installpage` handles only non-preview releases).
 1. **(preview release) site: snapshot the manuals:** `make -C site snapshot-VER` (renders them from VER-branch,
    and commits them in the site repo as `site/src/VER/`); then add VER to `site/js/site.js`'s version links,
    `site/Makefile`'s `all` list and `site/hledger.org.caddy`'s paths, and commit. (Major releases do this
@@ -496,7 +495,7 @@ Fixup releases fix packaging errors, with no changes to the hledger software. Ex
 These should rare; we basically never do these.
 
 **Preview release**\
-A preview of the upcoming major release for testers/early adopters, and a test of the release process, published on Github. Not a formal hledger release, eg not published on Hackage, usually not packaged, no bugfix releases, no regression bounties, not shown in release notes. These typically appear in the quarter's first and second month if needed. Example version number: `1.25.99.1` (**"preview 1 of 1.26"**)
+A preview of the upcoming major release for testers/early adopters, and a test of the release process, published on Github. Not a formal hledger release, eg not published on Hackage, usually not packaged, no bugfix releases. These typically appear in the quarter's first and second month if needed. Example version number: `1.25.99.1` (**"preview 1 of 1.26"**)
 
 **CI binaries**\
 Temporary downloadable binaries produced by a run of the `linux`/`mac`/`windows` workflows in the hledger repo. This may happen periodically, eg weekly. Downloading requires a Github login.
