@@ -12390,4 +12390,4 @@ LICENSE
 SEE ALSO
      hledger(1), hledger-ui(1), hledger-web(1), ledger(1)
 
-hledger-1.99                     September 2026                       HLEDGER(1)
+hledger-1.99                      October 2026                        HLEDGER(1)
