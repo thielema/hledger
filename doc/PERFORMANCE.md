@@ -130,6 +130,11 @@ and the apps have different features (they do more or less data inference, valid
 Also, I haven't checked all outputs for correctness. So treat this as a rough sketch.
 Please try to reproduce and validate these numbers.
 
+The balance report used is the flat kind (listing each account's own exclusive balance),
+because that is the kind all of these apps can produce; Beancount and rustledger don't provide
+a subaccount-inclusive balance report AFAIK (though Fava does).
+(Tree-mode balance reports cost about the same as flat mode in hledger and Tackler, and about 20% more in Ledger.)
+
 Times are seconds (best of two runs; single runs at 1M) and peak memory (RSS), measured with GNU time;
 runs taking more than 5 minutes or 10 GB were killed. 
 Results are sorted by small-file performance, fastest at the top.
@@ -255,11 +260,6 @@ With large journals (10k to 1M transactions) the apps separate:
 repeated report in hledger's repl). Tackler, with no cache, is 4-8x faster than rustledger's first
 runs, slightly ahead of its cached runs on the balance report (0.11s vs 0.13s at 100k, 0.87s vs 1.1s
 at 1M), well ahead of them on print, and uses the least memory of all the apps.
-- Tackler's default balance report is a tree which also shows each account's subtree total. Until
-26.10.1 that calculation grew superlinearly with the number of account and commodity pairs (26.8.1
-took 1.1s at 10k and 2.7s at 1M); now it costs about the same as the flat report (0.04s at 10k,
-0.12s at 100k, 0.89s at 1M). For comparability we configure all apps to give a flat report
-(hledger, Beancount and rustledger do this by default).
 - Beancount 2 and 3 are 2x slower than hledger 1.99.5 at 10k and 3-5x slower at 100k and 1M on a first
 run (3 is no faster than 2 here), though their cache makes repeated runs faster. Their register
 (`bean-query journal`) renders the same kind of running total as hledger's and costs 1.3-1.8x more
