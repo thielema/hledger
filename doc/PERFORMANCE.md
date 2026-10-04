@@ -297,11 +297,9 @@ hledger and Ledger.
 - Ledger's repl gives a 1.5x speedup with small files, doesn't help with large files.
 - hledger's repl gives a 3-5x speedup at all sizes.
 - rustledger and Tackler are much faster than the rest.
-- Tackler uses less memory than rustledger, and without using a cache is as fast as cached rustledger, or faster.
-- Tackler does print and register reports faster than the rest. Its register report is unconventional.
-- Who is the current speed king ?\
-  Tackler wins for speed of all reports, and memory usage, even against rustledger with a warm cache.
-- Is speed and scaling the only thing that matters ? No. (says the slower apps :-)
+- Tackler's register report is unconventional.
+- Tackler uses less memory than rustledger, and without using a cache is faster than cached rustledger.
+- Tackler is the speed king, partly by doing less than the other apps.
 
 <!-- When a release is made, update these tables (and the version wording above),
 then update the figures in tools/perfcharts.py and run it to regenerate the charts. -->
