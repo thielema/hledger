@@ -1503,6 +1503,36 @@ If you hit this problem, it's easy to fix:
   2. or make non-cost amounts less precise (remove unnecessary decimal digits that are raising the precision)
   3. or add a posting to absorb the imbalance (eg "expenses:rounding". Remember that one posting may [omit the amount](#postings); that's convenient here.)
 
+## Arithmetic precision
+
+hledger uses decimal ([Decimal](https://hackage.haskell.org/package/Decimal/docs/Data-Decimal.html)) numbers for accounting arithmetic: amounts, balances, costs, prices, valuation and gains.
+Floating point ([Double](https://hackage.haskell.org/package/base/docs/Prelude.html#t:Double)) numbers are used
+for inherently approximate statistics like `stats` txns/s, `prices --summary` coverage, `roi` and `holdings` rates of return,
+and debug timings, where they are a better fit.
+
+Like floating point numbers, each decimal number records where its decimal point is,
+but unlike the usual binary, fixed-size floating point numbers, these are base ten,
+so amounts like 0.1 are stored exactly; also, the integer part can have any number of digits,
+and the decimal part can have up to 255 digits.
+Addition, subtraction and multiplication are exact (as long as the result needs no more than 255 decimal places).
+Division can produce a non-terminating decimal (like 1/3 = 0.333...); hledger rounds these to 255 decimal places.
+The error is less than 10^-250, too small to affect transaction balancing or reports at normal display precisions.
+
+Journal amounts are always written as finite decimals, so non-terminating decimals can arise only where hledger divides.
+Here's when that happens:
+
+| When | What is divided | Visible effect |
+|------------------------------|--------------|------------------------------------|
+| Converting a lot's total [cost](#costs) (`@@`) or total [cost basis](#cost-basis) (`{{ }}`) to a unit cost | total cost / quantity | None in calculations: gains use the unrounded unit cost. Lot names and `print` show it with up to 8 decimal places (more if the cost commodity's display style has more), so text copied from them is slightly rounded; see [Cost basis precision](#cost-basis-precision). |
+| Inferring market prices from costs, with [`--infer-market-prices`](#--infer-market-prices-market-prices-from-transactions) | total cost / quantity | None |
+| Using a [reverse market price](#finding-market-price) | 1 / price | None |
+| Averaging lot costs, with the AVERAGE [cost basis methods](#cost-basis-methods) or in [holdings](#holdings) | total cost / total quantity | None |
+| Inferring costs from [equity conversion postings](#equity-conversion-postings) | one amount / the other | None |
+| Converting amounts written with a [commodity alias](#commodity-aliases) that has a quantity | amount / alias quantity | Can make balance assertions fail, for now, since they compare exactly (eg three `10 min` amounts don't sum to exactly `0.5 h`). |
+| Calculating averages (eg `-A`) and percentages (eg `-%`) in reports | total / count, part / total | None: these are displayed rounded |
+| Converting times to hours in [timeclock](#timeclock) entries, and [timedot](#timedot) durations written with a unit (`10m`) | time / hour length | Each is rounded to 2 decimal places (0.01 hours = 36 seconds), so totals can drift: eg three `10m` timedot entries total 0.51 hours. |
+| Calculating rates of return: [roi](#roi)'s IRR and TWR, and [holdings](#holdings)' XIRR column | various | Rates are approximate (calculated with floating point numbers; IRR and XIRR by iteration) |
+
 ## Tags
 
 <!-- Note: same section name as Commands > tags; that one will have anchor #tags-1. If reordering these, update all #tags[-1] links. -->
@@ -5449,7 +5479,7 @@ Some things to note:
 
 ## Rounding
 
-Amounts are stored internally as decimal numbers with up to 255 decimal places.
+Amounts are stored internally as decimal numbers with up to 255 decimal places (see [Arithmetic precision](#arithmetic-precision)).
 They are displayed 
 with their original journal precisions by print and print-like reports,
 and rounded to their display precision (the number of decimal digits specified by the commodity display style)
