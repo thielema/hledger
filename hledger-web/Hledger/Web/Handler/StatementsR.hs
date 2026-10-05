@@ -31,7 +31,7 @@ import Hledger.Write.Spreadsheet qualified as Spr
 import Hledger.Web.Import
 import Hledger.Web.ReportPage
 import Hledger.Web.WebOptions
-import Hledger.Web.Widget.Common (helplink, intervalLinks, removeDates, removeInacct, reportLinks)
+import Hledger.Web.Widget.Common (helplink, intervalLinks, removeInacct, reportLinks)
 
 getBalancesheetR, getBalancesheetequityR, getIncomestatementR, getCashflowR :: Handler Html
 -- TRANSLATORS: the browser tab titles of the statement pages.
@@ -83,13 +83,7 @@ statementPage here tabtitle spec = do
             -- Links to the other reports keep the search, minus any account
             -- term, which the reports ignore, and the period as given.
             menuParams = periodParams ++ [("q", qt) | let qt = T.unwords $ removeInacct qparam, not (T.null qt)]
-            -- A column heading opens this report for that column's period,
-            -- in place of any date terms in the search, which the column
-            -- narrows anyway.
-            headinglink spn = urlrender here $
-              ("period", showDateSpanForQuery spn) :
-              [("q", qt) | let qt = T.unwords $ removeDates qparam, not (T.null qt)] ++
-              accumParams
+            headinglink = urlrender BalanceR . headingParams qparam params
             CompoundBalanceReportParts{cbrpLeadingHeaders, cbrpDataHeaders, cbrpSections, cbrpNetRows} =
               compoundBalanceReportAsSpreadsheetParts oneLineNoCostFmt "account" ropts (cbcqueries spec) cbr
             -- The heading row with the classes the stylesheet aligns the
