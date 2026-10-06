@@ -5465,10 +5465,9 @@ Floating point ([Double](https://hackage.haskell.org/package/base/docs/Prelude.h
 for inherently approximate statistics like `stats` txns/s, `prices --summary` coverage, `roi` and `holdings` rates of return,
 and debug timings, where they are a better fit.
 
-Like floating point numbers, each decimal number records where its decimal point is,
-but unlike the usual binary, fixed-size floating point numbers, these are base ten,
-so amounts like 0.1 are stored exactly; also, the integer part can have any number of digits,
-and the decimal part can have up to 255 digits.
+Unlike the usual floating point numbers, which are binary and fixed-size, and so frequently rounded,
+decimal numbers are base ten, so amounts like 0.1 are stored exactly,
+and they can have up to 255 decimal places (and any number of digits in the integer part).
 Addition, subtraction and multiplication are exact (as long as the result needs no more than 255 decimal places).
 Division can produce a non-terminating decimal (like 1/3 = 0.333...); hledger rounds these to 255 decimal places.
 The error is less than 10^-250, too small to affect transaction balancing or reports at normal display precisions.
