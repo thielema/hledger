@@ -276,3 +276,12 @@ $ hledger -f - check --txn-tolerance=foo
 >2 /could not parse --txn-tolerance: 'foo', should be one of: entry, display/
 >= 1
 
+# ** 22. --txn-tolerance=display also applies to entries containing balance assignments.
+<
+commodity $1.00
+
+2025-01-01
+   a    1 C @ $1.1206
+   b   = $-1.120
+
+$ hledger -f - check --txn-tolerance=display

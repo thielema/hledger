@@ -606,12 +606,9 @@ data AssertionsMode s
 -- | The state used while balancing a sequence of transactions.
 data BalancingState s = BalancingState {
    -- read only
-   bsStyles       :: Maybe (M.Map CommoditySymbol AmountStyle)  -- ^ commodity display styles
+   bsBalancingOpts :: BalancingOpts                              -- ^ the balancing options (with the journal's commodity display styles), for balancing the transactions with balance assignments
   ,bsUnassignable :: S.Set AccountName                          -- ^ accounts where balance assignments may not be used (because of auto posting rules)
   ,bsAssrt        :: AssertionsMode s                           -- ^ whether/how to check balance assertions
-  ,bsAccountTypes :: M.Map AccountName AccountType              -- ^ account type map (used when splitting lot fee outflows)
-  ,bsLotfulCommodities :: S.Set CommoditySymbol                 -- ^ commodities declared lotful (for guiding balancing cost inference)
-  ,bsVerboseTags  :: Bool                                       -- ^ make tags added by balancing helpers (eg lot fee splits) visible in comments ?
    -- mutable
   ,bsBalances     :: H.HashTable s AccountName MixedAmount      -- ^ running account balances, initially empty
   ,bsTransactions :: STArray s Integer Transaction              -- ^ a mutable array of the transactions being balanced
@@ -741,7 +738,7 @@ journalBalanceTransactionsHelper deferassertions bopts' j' =
           hasassignments = any isRight psandts
         when (hasassignments || (checkingassertions && hasassertions)) $ do
           runningbals <- lift $ H.newSized (length $ journalAccountNamesUsed j)
-          flip runReaderT (BalancingState styles autopostingaccts assertionsmode (account_types_ bopts) (lotful_commodities_ bopts) (verbose_balancing_tags_ bopts) runningbals balancedtxns) $ do
+          flip runReaderT (BalancingState bopts autopostingaccts assertionsmode runningbals balancedtxns) $ do
             -- On encountering any not-yet-balanced transaction with a balance assignment,
             -- enact the balance assignment then finish balancing the transaction.
             -- And, check any balance assertions encountered along the way.
@@ -783,12 +780,9 @@ balanceTransactionAndCheckAssertionsB (Right t@Transaction{tpostings=ps}) = do
     <&> map snd                 -- discard positions
 
   -- infer any remaining missing amounts, and make sure the transaction is now fully balanced
-  styles <- R.reader bsStyles
-  atypes <- R.reader bsAccountTypes
-  lotfulcomms <- R.reader bsLotfulCommodities
-  verbosetags <- R.reader bsVerboseTags
-  let bopts1 = defbalancingopts{commodity_styles_=styles, account_types_=atypes, lotful_commodities_=lotfulcomms, verbose_balancing_tags_=verbosetags}
-      t1 = t{tpostings=ps'}
+  -- (using all the balancing options, as for the other transactions)
+  bopts1 <- R.asks bsBalancingOpts
+  let t1 = t{tpostings=ps'}
       -- The transaction may be a lot transfer with a fee (whose outflow amount
       -- possibly was only just inferred from a balance assignment): a priced
       -- fee's entry only balances in split form, and any elided posting must
@@ -881,7 +875,7 @@ checkBalanceAssertionOneCommodityB :: Posting -> Amount -> MixedAmount -> Balanc
 checkBalanceAssertionOneCommodityB p@Posting{paccount=assertedacct} assertedcommbal actualbal = do
   let isinclusive = maybe False bainclusive $ pbalanceassertion p
   let istotal     = maybe False batotal     $ pbalanceassertion p
-  -- mstyles <- R.reader bsStyles
+  -- mstyles <- R.asks (commodity_styles_ . bsBalancingOpts)
   -- let styled = maybe id styleAmounts mstyles
   actualbal' <-
     if isinclusive
