@@ -1275,7 +1275,14 @@ Possible future work, from design discussions (2026-08):
   re-readable: the costless lot subaccount names it emits (`{2026-01-15}`)
   are rejected on re-read ("lot subaccount name must contain a date and
   cost"). Either accept date-only lot subaccount names when the account's
-  method is AVERAGE, or omit lot subaccounts from AVERAGE print output.
+  method is AVERAGE, or omit lot subaccounts from AVERAGE print output,
+  or show each posting's lot with the pool cost it had then.
+  `close --lots` was fixed 2026-10: it adds the pool's average cost as of
+  the closing date to each lot name (`{2026-01-15, $55}`), using
+  `journalAveragePoolCosts` (shared with holdings), so a clopen entry can
+  start a new file. A non-terminating average is written with up to 8
+  decimal places, so the re-opened lots' total basis can drift by a tiny
+  amount.
   (The AVERAGE-vs-transfers item previously here was implemented 2026-08:
   transfers in re-average the pool, transfers out carry the pooled cost;
   see "Reduction methods".)

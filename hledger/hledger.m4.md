@@ -6874,6 +6874,9 @@ Lot names omit the cost (`{2026-01-15}`), the average appears in the [holdings](
 and in disposal postings shown by `print -x`,
 and transferring lots into or out of the pool carries the average with them
 (a lot's original cost can't be recovered from a pool).
+[close --lots](#close) writes each lot with the pool's average cost as of the closing date
+(`{2026-01-15, $55}`), so that its output can be read back, eg to start a new file.
+(`print --lots` output for AVERAGE lots can't be read back yet.)
 
 The **\*ALL** variants additionally check that the lots selected are the ones that would be chosen
 across all accounts holding the commodity, and raise an error naming the other account otherwise;
