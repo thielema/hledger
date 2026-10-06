@@ -190,10 +190,10 @@ inputflags = [
   ,flagNone ["ignore-lots"]       (setboolopt "ignore-lots")       "don't do lot tracking or checking by default"
   ,flagNone ["I"]                 (setboolopt "ignore-assertions" . setboolopt "ignore-lots")
                                   "shortcut for --ignore-assertions --ignore-lots"
-  ,flagReq  ["txn-balancing"] (\s opts -> Right $ setopt "txn-balancing" s opts) "..." (unlines [
-     "how to check that transactions are balanced:"
-    ,"'old':   - use global display precision"
-    ,"'exact': - use transaction precision (default)"
+  ,flagReq  ["txn-tolerance"] (\s opts -> Right $ setopt "txn-tolerance" s opts) "..." (unlines [
+     "how much imbalance to allow in transactions:"
+    ,"'entry':   - the entry's precision (default)"
+    ,"'display': - display precision (legacy)"
     ])
   ,flagNone ["infer-costs"] (setboolopt "infer-costs") "infer costs from conversion equity postings"
   ,flagNone ["infer-equity"] (setboolopt "infer-equity") "infer conversion equity postings from costs"
@@ -345,7 +345,13 @@ hiddenflagsformainmode = [
   ,flagNone ["old-timeclock", "timeclock-old"] (setboolopt "oldtimeclock") "don't pair timeclock entries by account name"
   ,flagNone ["old-glob"]             (setboolopt "oldglob") "deprecated, no longer used as of 1.50.4"  -- #2498
   ,flagReq  ["rules-file"]           (\s opts -> Right $ setopt "rules" s opts) "RULESFILE" "was renamed to --rules"
+  ,flagReq  ["txn-balancing"]        (\s opts -> Right $ setopt "txn-tolerance" (txnBalancingToTolerance s) opts) "..." "was renamed to --txn-tolerance"
   ]
+  where
+    -- --txn-balancing's values, translated to --txn-tolerance's (others are passed through, to be rejected there)
+    txnBalancingToTolerance "old"   = "display"
+    txnBalancingToTolerance "exact" = "entry"
+    txnBalancingToTolerance s       = s
 
 -- Hidden flags accepted but not shown, when running subcommand or addon command modes.
 -- Here we add the confflags, so their presence won't cause an error,

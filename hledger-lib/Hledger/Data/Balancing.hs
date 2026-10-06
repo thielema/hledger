@@ -83,7 +83,7 @@ defbalancingopts = BalancingOpts
   { ignore_assertions_     = False
   , infer_balancing_costs_ = True
   , commodity_styles_      = Nothing
-  , txn_balancing_         = TBPExact
+  , txn_balancing_         = TBPEntry
   , account_types_         = M.empty
   , lotful_commodities_    = S.empty
   , account_lots_tags_     = M.empty
@@ -135,8 +135,8 @@ transactionCheckBalanced BalancingOpts{commodity_styles_=_mglobalstyles, txn_bal
     -- so the display styles are inferred and applied only for inexact sums.
     lookszero a = mixedAmountIsZero a || lookszeroatdisplayprecision a
     lookszeroatdisplayprecision = case txn_balancing_ of
-      TBPOld    -> lookszeroatglobaldisplayprecision
-      TBPExact  -> lookszeroatlocaltransactionprecision
+      TBPDisplay -> lookszeroatglobaldisplayprecision
+      TBPEntry   -> lookszeroatlocaltransactionprecision
 
     lookszeroatlocaltransactionprecision = mixedAmountLooksZero . styleAmounts (transactionCommodityStylesWith HardRounding t)
     lookszeroatglobaldisplayprecision    = mixedAmountLooksZero . maybe id styleAmounts _mglobalstyles
@@ -201,7 +201,7 @@ transactionCheckBalanced BalancingOpts{commodity_styles_=_mglobalstyles, txn_bal
           -- -------------------------------------------------------------------------------
            "\nNote, hledger <1.50 accepted this entry because of the global display precision,"
           ,"but hledger 1.50+ checks more strictly, using the entry's local precision."
-          ,"You can use --txn-balancing=old to keep it working, or fix it (recommended);"
+          ,"You can use --txn-tolerance=display to keep it working, or fix it (recommended);"
           ,"see 'Transaction balancing' in the hledger manual."
           ]
 

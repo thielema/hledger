@@ -1373,7 +1373,7 @@ This masked larger imbalances, and made balancing depend on display settings (se
 So some journal entries (or CSV rules) that worked with hledger <1.50 are now rejected with an "unbalanced transaction" error.
 If you hit this, you can:
 
-- restore the old behaviour, by adding `--txn-balancing=old` to the command or to your `~/.hledger.conf` file.
+- restore the old behaviour, by adding `--txn-tolerance=display` (formerly `--txn-balancing=old`) to the command or to your `~/.hledger.conf` file.
   This lets you keep using old journals unchanged.
 
 - or fix the problem entries (recommended), in one of these ways:

@@ -273,7 +273,7 @@ rawOptsToInputOpts day usecoloronstdout rawopts =
         datequery = simplifyQuery . filterQuery queryIsDate . And $ queryFromFlags ropts : argsquery
 
         txnbalancingprecision = either err id $ transactionBalancingPrecisionFromOpts rawopts
-          where err e = error' $ "could not parse --txn-balancing: '" ++ e ++ "'"  -- PARTIAL:
+          where err e = error' $ "could not parse --txn-tolerance: " ++ e  -- PARTIAL:
 
         styles = either err id $ commodityStyleFromRawOpts rawopts
           where err e = error' $ "could not parse --commodity-style: '" ++ e ++ "'"  -- PARTIAL:
@@ -336,13 +336,15 @@ commodityStyleFromRawOpts rawOpts =
       Left _ -> Left optStr
       Right (Amount acommodity _ astyle _ _) -> Right (acommodity, astyle)
 
+-- | Get the --txn-tolerance option's value.
+-- (The deprecated --txn-balancing flag sets this too; see hiddenflagsformainmode.)
 transactionBalancingPrecisionFromOpts :: RawOpts -> Either String TransactionBalancingPrecision
 transactionBalancingPrecisionFromOpts rawopts =
-  case maybestringopt "txn-balancing" rawopts of
-    Nothing      -> Right TBPExact
-    Just "old"   -> Right TBPOld
-    Just "exact" -> Right TBPExact
-    Just s       -> Left $ s<>", should be one of: old, exact"
+  case maybestringopt "txn-tolerance" rawopts of
+    Nothing        -> Right TBPEntry
+    Just "entry"   -> Right TBPEntry
+    Just "display" -> Right TBPDisplay
+    Just s         -> Left $ "'"<>s<>"', should be one of: entry, display"
 
 -- | Given a parser to ParsedJournal, input options, file path and
 -- content: run the parser on the content, and finalise the result to

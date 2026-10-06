@@ -93,9 +93,9 @@ General input flags:
      --ignore-assertions    don't check balance assertions by default
      --ignore-lots          don't do lot tracking or checking by default
   -I                        shortcut for --ignore-assertions --ignore-lots
-     --txn-balancing=...    how to check that transactions are balanced:
-                            'old':   - use global display precision
-                            'exact': - use transaction precision (default)
+     --txn-tolerance=...    how much imbalance to allow in transactions:
+                            'entry':   - the entry's precision (default)
+                            'display': - display precision (legacy)
      --infer-costs          infer costs from conversion equity postings
      --infer-equity         infer conversion equity postings from costs
      --infer-market-prices  infer market prices from costs
@@ -204,9 +204,9 @@ General input flags:
      --ignore-assertions    don't check balance assertions by default
      --ignore-lots          don't do lot tracking or checking by default
   -I                        shortcut for --ignore-assertions --ignore-lots
-     --txn-balancing=...    how to check that transactions are balanced:
-                            'old':   - use global display precision
-                            'exact': - use transaction precision (default)
+     --txn-tolerance=...    how much imbalance to allow in transactions:
+                            'entry':   - the entry's precision (default)
+                            'display': - display precision (legacy)
      --infer-costs          infer costs from conversion equity postings
      --infer-equity         infer conversion equity postings from costs
      --infer-market-prices  infer market prices from costs
