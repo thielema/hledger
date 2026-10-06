@@ -37,6 +37,7 @@ import Control.Monad.ST (ST, runST)
 import Control.Monad.Trans.Class (lift)
 import Data.Array.ST (STArray, getElems, newListArray, writeArray)
 import Data.Bifunctor (second)
+import Data.Decimal (roundTo)
 import Data.Foldable (asum)
 import Data.Function ((&))
 import Data.Functor ((<&>), void)
@@ -71,6 +72,7 @@ data BalancingOpts = BalancingOpts
                                     --   Distinct from InputOpts{infer_costs_}.
   , commodity_styles_      :: Maybe (M.Map CommoditySymbol AmountStyle)  -- ^ commodity display styles
   , txn_balancing_         :: TransactionBalancingPrecision
+  , infer_imbalance_       :: Bool  -- ^ should tolerated imbalances be shown, by adding imbalance postings to transactions ?
   , account_types_         :: M.Map AccountName AccountType  -- ^ account type map, passed through for any balancing helpers that need it
   , lotful_commodities_    :: S.Set CommoditySymbol  -- ^ commodities declared lotful, used to guide balancing cost inference (when lots are enabled)
   , account_lots_tags_     :: M.Map AccountName T.Text  -- ^ declared lots: tag values by account, used to detect lots: NONE opt-outs (when lots are enabled)
@@ -84,6 +86,7 @@ defbalancingopts = BalancingOpts
   , infer_balancing_costs_ = True
   , commodity_styles_      = Nothing
   , txn_balancing_         = TBPEntry
+  , infer_imbalance_       = False
   , account_types_         = M.empty
   , lotful_commodities_    = S.empty
   , account_lots_tags_     = M.empty
@@ -119,17 +122,7 @@ transactionCheckBalanced BalancingOpts{commodity_styles_=_mglobalstyles, txn_bal
             BalancedVirtualPosting -> (l, p:r)
             VirtualPosting         -> (l, r)
 
-    -- convert a posting's amount to cost,
-    -- unless it has been marked as a redundant cost (equivalent to some nearby equity conversion postings),
-    -- in which case ignore it;
-    -- or it is a disposal's realised gain posting, which is set aside: a disposal
-    -- balances at cost basis, which is equivalent to its non-gain postings balancing
-    -- at transacted cost (see Hledger.Data.Lots.transactionTagGainPostings;
-    -- not when the entry has conversion postings, see isSetAsideGainPosting).
-    postingBalancingAmount p
-      | costPostingTagName `elem` map fst (ptags p) = mixedAmountStripCosts $ pamount p
-      | setaside p                                  = nullmixedamt
-      | otherwise                                   = mixedAmountCost $ pamount p
+    postingBalancingAmount = postingBalancingAmountWith setaside
 
     -- An exactly zero sum (the usual case) looks zero at any precision,
     -- so the display styles are inferred and applied only for inexact sums.
@@ -204,6 +197,62 @@ transactionCheckBalanced BalancingOpts{commodity_styles_=_mglobalstyles, txn_bal
           ,"You can use --txn-tolerance=display to keep it working, or fix it (recommended);"
           ,"see 'Transaction balancing' in the hledger manual."
           ]
+
+-- | A posting's amount as it counts towards its transaction's balance:
+-- converted to cost, unless it has been marked as a redundant cost
+-- (equivalent to some nearby equity conversion postings), in which case the cost is ignored;
+-- or nothing, if it is a disposal's realised gain posting, which is set aside
+-- (according to the given predicate, usually 'isSetAsideGainPosting' partially applied to the transaction).
+-- A disposal balances at cost basis, which is equivalent to its non-gain postings balancing
+-- at transacted cost (see Hledger.Data.Lots.transactionTagGainPostings;
+-- not when the entry has conversion postings, see isSetAsideGainPosting).
+postingBalancingAmountWith :: (Posting -> Bool) -> Posting -> MixedAmount
+postingBalancingAmountWith setaside p
+  | costPostingTagName `elem` map fst (ptags p) = mixedAmountStripCosts $ pamount p
+  | setaside p                                  = nullmixedamt
+  | otherwise                                   = mixedAmountCost $ pamount p
+
+-- | The account where --infer-imbalance records transactions' tolerated imbalances.
+imbalanceAccount :: AccountName
+imbalanceAccount = "equity:imbalance"
+
+-- | Postings which would show this balanced transaction's remaining imbalance
+-- (tolerated because it's smaller than the balancing precision; see transactionCheckBalanced),
+-- making the transaction balance exactly. These are postings to 'imbalanceAccount',
+-- one for each commodity of the real postings' imbalance, and likewise (but balanced virtual)
+-- for the balanced virtual postings' imbalance, or none if the transaction balances exactly.
+-- They are tagged with imbalancePostingTagName and generatedPostingTagName
+-- (and with a true verbosetags argument, visibly too).
+-- They behave like amountless postings written by the user, whose amount was inferred:
+-- their amounts have the given commodity display styles but keep their full precision,
+-- and since their original posting is amountless, these don't influence commodity display precisions
+-- (see isExplicitAmount).
+-- Imbalances smaller than 10^-200, which can come only from hledger's internal rounding, are ignored.
+transactionImbalancePostings :: Bool -> M.Map CommoditySymbol AmountStyle -> Transaction -> [Posting]
+transactionImbalancePostings verbosetags styles t =
+  [ imbalancePosting r a
+  | r <- [RealPosting, BalancedVirtualPosting]
+  , a <- amounts $ foldMap (postingBalancingAmountWith setaside) [p | p <- tpostings t, preal p == r]
+  , roundTo 200 (aquantity a) /= 0
+  ]
+  where
+    setaside = isSetAsideGainPosting t
+    imbalancePosting r a = p{poriginal = Just p{pamount = missingmixedamt}}
+      where
+        p = postingAddHiddenAndMaybeVisibleTag False verbosetags (generatedPostingTagName, "")
+          $ postingAddHiddenAndMaybeVisibleTag False verbosetags (imbalancePostingTagName, "")
+          $ nullposting{paccount = imbalanceAccount, preal = r,
+                        pamount = styleAmounts (styles & amountStylesSetRounding NoRounding) $ mixedAmount $ negate a}
+
+-- | With the infer_imbalance_ option, add postings showing this balanced transaction's
+-- tolerated imbalance, if any (see 'transactionImbalancePostings').
+-- Returns the (possibly) updated transaction, and the added postings.
+transactionMaybeAddImbalancePostings :: BalancingOpts -> Transaction -> (Transaction, [Posting])
+transactionMaybeAddImbalancePostings bopts t
+  | not (infer_imbalance_ bopts) || null ips = (t, [])
+  | otherwise                                = (txnTieKnot t{tpostings = tpostings t ++ ips}, ips)
+  where
+    ips = transactionImbalancePostings (verbose_balancing_tags_ bopts) (fromMaybe M.empty $ commodity_styles_ bopts) t
 
 -- | Legacy form of transactionCheckBalanced.
 isTransactionBalanced :: BalancingOpts -> Transaction -> Bool
@@ -720,8 +769,9 @@ journalBalanceTransactionsHelper deferassertions bopts' j' =
         -- 1. Step through the transactions, balancing the ones which don't have balance assignments,
         -- postponing those which do until later. The balanced ones are split into their postings,
         -- keeping these and the not-yet-balanced transactions in the same relative order.
+        -- (With --infer-imbalance, balanced transactions also get postings showing any tolerated imbalance.)
         psandts :: [Either Posting Transaction] <- fmap concat $ forM ts $ \case
-          t | null $ assignmentPostings t -> case fst <$> balanceTransactionHelperMaybeSplittingLotFees bopts t of
+          t | null $ assignmentPostings t -> case fst . transactionMaybeAddImbalancePostings bopts . fst <$> balanceTransactionHelperMaybeSplittingLotFees bopts t of
               Left  e  -> throwError e
               Right t' -> do
                 lift $ writeArray balancedtxns (tindex t') t'
@@ -792,10 +842,12 @@ balanceTransactionAndCheckAssertionsB (Right t@Transaction{tpostings=ps}) = do
   case balanceres of
     Left err -> throwError err
     Right (t', inferredacctsandamts) -> do
-      -- for each amount just inferred, update the running balance
-      mapM_ (uncurry addToRunningBalanceB) inferredacctsandamts
+      -- with --infer-imbalance, show any tolerated imbalance
+      let (t'', imbalanceps) = transactionMaybeAddImbalancePostings bopts1 t'
+      -- for each amount just inferred or added, update the running balance
+      mapM_ (uncurry addToRunningBalanceB) $ inferredacctsandamts ++ [(paccount p, pamount p) | p <- imbalanceps]
       -- and save the balanced transaction.
-      updateTransactionB t'
+      updateTransactionB t''
 
 type NumberedPosting = (Integer, Posting)
 

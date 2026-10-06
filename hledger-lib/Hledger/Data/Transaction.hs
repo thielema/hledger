@@ -283,11 +283,14 @@ transactionToCost cost t = t{tpostings = mapMaybe (postingToCost cost) $ tpostin
 
 -- | For any costs in this 'Transaction' which don't have associated equity conversion postings,
 -- generate and add those. Generated amounts are rounded to the transaction's local display
--- precision to avoid arithmetic artifacts (e.g. 9.216 * 1801.215277778 = 16600.000000002 -> 16600.00).
+-- precision to avoid arithmetic artifacts (e.g. 9.216 * 1801.215277778 = 16600.000000002 -> 16600.00),
+-- except in a transaction whose imbalance is shown by an imbalance posting (see --infer-imbalance):
+-- there, the conversion postings keep their exact cost amounts, so that every commodity balances exactly.
 transactionInferEquityPostings :: Bool -> AccountName -> Transaction -> Transaction
 transactionInferEquityPostings verbosetags equityAcct t =
-  t{tpostings = map roundGenerated $ go $ tpostings t}
+  t{tpostings = (if hasimbalanceposting then id else map roundGenerated) $ go $ tpostings t}
   where
+    hasimbalanceposting = any (postingHasTag imbalancePostingTagName) (tpostings t)
     -- The consecutive per-lot fragments of one posting (lotsplit-tagged and
     -- sharing poriginal, as in Lots.mergeLotSplits) get one set of conversion
     -- postings after the last fragment, so collapsing lot detail can still merge them.

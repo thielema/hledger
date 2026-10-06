@@ -1351,8 +1351,48 @@ To see an accumulated imbalance more precisely, increase the display precision w
 $ hledger bal -B -c 'CHF 1.000000000'
 ```
 And to see which entries contribute to it, use a register report: `hledger reg -B -c 'CHF 1.000000000'`.
+Or, show the imbalances explicitly, as described next.
 
-Currently hledger has no check that rejects these small imbalances.
+### Showing imbalances
+
+With the `--infer-imbalance` flag, hledger shows entry imbalances explicitly,
+by generating postings to the `equity:imbalance` account which make the entry balance exactly
+(as if you had added an amountless posting to that account). Eg:
+```cli
+$ hledger print --infer-imbalance
+2024-01-30 currency exchange
+    assets:usd                                -19110.17 USD @ 0.869050 CHF
+    assets:chf                                 16607.69 CHF
+    equity:imbalance                               0.0032385 CHF
+
+```
+This doesn't change which entries are accepted. But totals at cost are now exactly zero,
+and the accumulated imbalance appears as the balance of `equity:imbalance`.
+Eg after three of the currency exchange entries:
+```cli
+$ hledger bal -B --infer-imbalance
+        49823.07 CHF  assets:chf
+       -49823.08 CHF  assets:usd
+            0.01 CHF  equity:imbalance
+--------------------
+                   0
+```
+The imbalance postings' amounts are usually smaller than the display precision,
+so to see them individually, increase the display precision. Eg:
+```cli
+$ hledger areg equity:imbalance --infer-imbalance -c 'CHF 1.0000000'
+Transactions in equity:imbalance and subaccounts:
+2024-01-30 currency exchange   as:usd, as:chf       CHF 0.0032385  CHF 0.0032385
+2024-01-30 currency exchange   as:usd, as:chf       CHF 0.0032385  CHF 0.0064770
+2024-01-30 currency exchange   as:usd, as:chf       CHF 0.0032385  CHF 0.0097155
+```
+Some notes:
+
+- The imbalance postings have a hidden `_imbalance-posting` tag (shown by `--verbose-tags`), so they can also be matched with `tag:imbalance-posting`.
+- With [`--infer-equity`](#inferring-equity-conversion-postings) as well, the generated equity conversion postings use the exact cost amounts,
+  so every commodity balances exactly.
+- In [strict mode], the `equity:imbalance` account must be [declared](#account-error-checking), like other accounts.
+- If you use this flag with [`import`](#import), the imbalance postings will be added to your journal too.
 
 ### Avoiding imbalances
 

@@ -197,6 +197,7 @@ inputflags = [
     ])
   ,flagNone ["infer-costs"] (setboolopt "infer-costs") "infer costs from conversion equity postings"
   ,flagNone ["infer-equity"] (setboolopt "infer-equity") "infer conversion equity postings from costs"
+  ,flagNone ["infer-imbalance"] (setboolopt "infer-imbalance") "add postings showing tolerated imbalances"
   -- history of this flag so far, lest we be confused:
   --  originally --infer-value
   --  2021-02 --infer-market-price added, --infer-value deprecated

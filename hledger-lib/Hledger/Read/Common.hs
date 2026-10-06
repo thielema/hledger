@@ -298,6 +298,7 @@ rawOptsToInputOpts day usecoloronstdout rawopts =
                                  ignore_assertions_     = boolopt "ignore-assertions" rawopts
                                , infer_balancing_costs_ = not noinferbalancingcosts
                                , txn_balancing_         = txnbalancingprecision
+                               , infer_imbalance_       = boolopt "infer-imbalance" rawopts
                                , commodity_styles_      = Just styles
                                }
       ,strict_            = boolopt "strict" rawopts
