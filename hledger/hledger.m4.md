@@ -1279,6 +1279,109 @@ in any order, with different enclosing characters:
 
 If a Ledger-style label annotation contains double quotes, they will be stripped (`("foo")` is read as label `foo`).
 
+## Transaction balancing
+
+A transaction's postings must add up to zero.
+When they are all in one commodity, this is simple: the sum must be exactly zero.
+But when a transaction converts between commodities using a [cost](#costs),
+the cost is often rounded (by you, or by your bank or broker),
+and requiring an exact zero would reject many correct-looking entries.
+So, like Ledger and Beancount, hledger allows a small tolerance.
+
+### How balancing is checked
+
+For each commodity in a journal entry, hledger:
+
+1. adds up the posting amounts in that commodity, after converting any amounts that have a cost to the cost's commodity
+   (exactly; see [Amount arithmetic](#amount-arithmetic))
+2. finds the entry's *balancing precision* for that commodity:
+   the most decimal places used by that commodity's amounts in the entry, not counting cost amounts
+3. considers the entry balanced if the sum rounds to zero at that precision.
+   In other words, the imbalance can be at most half a unit in the last decimal place:
+   0.005 for amounts with 2 decimal places, 0.5 for amounts with no decimal places.
+
+Eg:
+```journal
+2024-01-30 currency exchange
+    assets:usd   -19110.17 USD @ 0.869050 CHF
+    assets:chf    16607.69 CHF
+```
+The first posting converts to -16607.6932385 CHF, so the sum in CHF is -0.0032385 CHF.
+The balancing precision for CHF is 2 (from 16607.69 CHF; the cost amount 0.869050 CHF doesn't count).
+-0.0032385 rounded to 2 decimal places is zero, so this entry is accepted.
+
+To make hledger check an entry more strictly, write its amounts with more decimal places.
+Eg if the second amount above is written as 16607.690 CHF, the balancing precision becomes 3 and the entry is rejected.
+
+Entries without costs always balance exactly:
+amounts with at most N decimal places add up to a number with at most N decimal places,
+which rounds to zero only if it is zero.
+So imbalances can come only from costs.
+
+### Where imbalances come from
+
+- Rounded unit costs (`@`).
+  The exact rate may have infinitely many decimal places
+  (above, the exact rate is 16607.69 / 19110.17 = 0.86904983053...),
+  or just more than your bank or broker shows you.
+  This is the most common cause.
+
+- Total costs (`@@`) that don't quite match the other amounts.
+  Eg this entry is accepted, because the balancing precision for $ is 0 (because $100 was written with no decimals):
+  ```journal
+  2026-01-01
+      assets:stock   -3 AAPL @@ $100.40
+      assets:cash          $100
+  ```
+
+### Accumulated imbalances
+
+Accepted imbalances are not corrected; they stay in the data, and add up.
+So reports which convert amounts at cost, like `balance -B` or `balancesheetequity -B`,
+may show a small non-zero total where you would expect zero.
+Eg after three of the currency exchange entries above, `hledger bal -B` shows a total of -0.01 CHF.
+Typically this is a few cents, but each entry can contribute up to half a unit in its last decimal place.
+
+(Without cost conversion, these imbalances aren't directly visible.
+And with [`--infer-equity`](#inferring-equity-conversion-postings), each commodity balances exactly,
+and the imbalances become part of the conversion rates.)
+
+To see an accumulated imbalance more precisely, increase the display precision with [`-c`](#commodity-style-override). Eg:
+```cli
+$ hledger bal -B -c 'CHF 1.000000000'
+```
+And to see which entries contribute to it, use a register report: `hledger reg -B -c 'CHF 1.000000000'`.
+
+Currently hledger has no check that rejects these small imbalances.
+
+### Avoiding imbalances
+
+You can avoid imbalances by writing exact entries. Any of these will do:
+
+- Use a total cost (`@@`) instead of a unit cost (`@`) when the unit cost would be rounded.
+  Total costs are converted exactly.
+  Eg `-19110.17 USD @@ 16607.69 CHF`.
+- Write the unit cost with enough decimal places to be exact, when possible.
+- Add a posting to absorb the imbalance, eg to an `expenses:rounding` account.
+  If you leave its amount blank, hledger will [calculate it](#postings) exactly.
+
+### Transaction balancing before 1.50
+
+hledger versions before 1.50 used the commodity's display precision as the balancing precision,
+instead of the precision in the entry.
+This masked larger imbalances, and made balancing depend on display settings (see issue #2402).
+So some journal entries (or CSV rules) that worked with hledger <1.50 are now rejected with an "unbalanced transaction" error.
+If you hit this, you can:
+
+- restore the old behaviour, by adding `--txn-balancing=old` to the command or to your `~/.hledger.conf` file.
+  This lets you keep using old journals unchanged.
+
+- or fix the problem entries (recommended), in one of these ways:
+   
+  1. make cost amounts more precise (add more or better decimal digits)
+  2. or make non-cost amounts less precise (remove unnecessary decimal digits that are raising the precision)
+  3. or add a posting to absorb the imbalance, as described above.
+
 ## Balance assertions
 
 hledger supports
@@ -1475,109 +1578,6 @@ except they may contain [tags](#tags), which are not ignored.
     ; a comment for posting 2
     ; a second comment line for posting 2
 ```
-
-## Transaction balancing
-
-A transaction's postings must add up to zero.
-When they are all in one commodity, this is simple: the sum must be exactly zero.
-But when a transaction converts between commodities using a [cost](#costs),
-the cost is often rounded (by you, or by your bank or broker),
-and requiring an exact zero would reject many correct-looking entries.
-So, like Ledger and Beancount, hledger allows a small tolerance.
-
-### How balancing is checked
-
-For each commodity in a journal entry, hledger:
-
-1. adds up the posting amounts in that commodity, after converting any amounts that have a cost to the cost's commodity
-   (exactly; see [Amount arithmetic](#amount-arithmetic))
-2. finds the entry's *balancing precision* for that commodity:
-   the most decimal places used by that commodity's amounts in the entry, not counting cost amounts
-3. considers the entry balanced if the sum rounds to zero at that precision.
-   In other words, the imbalance can be at most half a unit in the last decimal place:
-   0.005 for amounts with 2 decimal places, 0.5 for amounts with no decimal places.
-
-Eg:
-```journal
-2024-01-30 currency exchange
-    assets:usd   -19110.17 USD @ 0.869050 CHF
-    assets:chf    16607.69 CHF
-```
-The first posting converts to -16607.6932385 CHF, so the sum in CHF is -0.0032385 CHF.
-The balancing precision for CHF is 2 (from 16607.69 CHF; the cost amount 0.869050 CHF doesn't count).
--0.0032385 rounded to 2 decimal places is zero, so this entry is accepted.
-
-To make hledger check an entry more strictly, write its amounts with more decimal places.
-Eg if the second amount above is written as 16607.690 CHF, the balancing precision becomes 3 and the entry is rejected.
-
-Entries without costs always balance exactly:
-amounts with at most N decimal places add up to a number with at most N decimal places,
-which rounds to zero only if it is zero.
-So imbalances can come only from costs.
-
-### Where imbalances come from
-
-- Rounded unit costs (`@`).
-  The exact rate may have infinitely many decimal places
-  (above, the exact rate is 16607.69 / 19110.17 = 0.86904983053...),
-  or just more than your bank or broker shows you.
-  This is the most common cause.
-
-- Total costs (`@@`) that don't quite match the other amounts.
-  Eg this entry is accepted, because the balancing precision for $ is 0 (because $100 was written with no decimals):
-  ```journal
-  2026-01-01
-      assets:stock   -3 AAPL @@ $100.40
-      assets:cash          $100
-  ```
-
-### Accumulated imbalances
-
-Accepted imbalances are not corrected; they stay in the data, and add up.
-So reports which convert amounts at cost, like `balance -B` or `balancesheetequity -B`,
-may show a small non-zero total where you would expect zero.
-Eg after three of the currency exchange entries above, `hledger bal -B` shows a total of -0.01 CHF.
-Typically this is a few cents, but each entry can contribute up to half a unit in its last decimal place.
-
-(Without cost conversion, these imbalances aren't directly visible.
-And with [`--infer-equity`](#inferring-equity-conversion-postings), each commodity balances exactly,
-and the imbalances become part of the conversion rates.)
-
-To see an accumulated imbalance more precisely, increase the display precision with [`-c`](#commodity-style-override). Eg:
-```cli
-$ hledger bal -B -c 'CHF 1.000000000'
-```
-And to see which entries contribute to it, use a register report: `hledger reg -B -c 'CHF 1.000000000'`.
-
-Currently hledger has no check that rejects these small imbalances.
-
-### Avoiding imbalances
-
-You can avoid imbalances by writing exact entries. Any of these will do:
-
-- Use a total cost (`@@`) instead of a unit cost (`@`) when the unit cost would be rounded.
-  Total costs are converted exactly.
-  Eg `-19110.17 USD @@ 16607.69 CHF`.
-- Write the unit cost with enough decimal places to be exact, when possible.
-- Add a posting to absorb the imbalance, eg to an `expenses:rounding` account.
-  If you leave its amount blank, hledger will [calculate it](#postings) exactly.
-
-### Balancing in hledger before 1.50
-
-hledger versions before 1.50 used the commodity's display precision as the balancing precision,
-instead of the precision in the entry.
-This masked larger imbalances, and made balancing depend on display settings (see issue #2402).
-So some journal entries (or CSV rules) that worked with hledger <1.50 are now rejected with an "unbalanced transaction" error.
-If you hit this, you can:
-
-- restore the old behaviour, by adding `--txn-balancing=old` to the command or to your `~/.hledger.conf` file.
-  This lets you keep using old journals unchanged.
-
-- or fix the problem entries (recommended), in one of these ways:
-   
-  1. make cost amounts more precise (add more or better decimal digits)
-  2. or make non-cost amounts less precise (remove unnecessary decimal digits that are raising the precision)
-  3. or add a posting to absorb the imbalance, as described above.
 
 ## Tags
 
@@ -5716,6 +5716,9 @@ Some things to note:
   This contrasts with [market prices](#p-directive), which are ambient and fluctuating.
 
 - Conversion to cost is performed before conversion to market value (described below).
+
+- A total at cost can be slightly off zero where you might expect zero (eg a few cents in `bse -B`),
+  because hledger accepts entries whose costs were rounded; see [Accumulated imbalances](#accumulated-imbalances).
 
 ## Equity conversion postings
 
