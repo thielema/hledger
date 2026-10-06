@@ -1478,60 +1478,106 @@ except they may contain [tags](#tags), which are not ignored.
 
 ## Transaction balancing
 
-How exactly does hledger decide when a transaction is balanced ?
-Especially when it involves costs, which often are not exact, because of repeating decimals, or imperfect data from financial institutions ?
-In each commodity, hledger sums the transaction's posting amounts, after converting any with costs;
-then it checks if that sum is zero, when rounded to a suitable number of decimal digits - which we call the *balancing precision*.
+A transaction's postings must add up to zero.
+When they are all in one commodity, this is simple: the sum must be exactly zero.
+But when a transaction converts between commodities using a [cost](#costs),
+the cost is often rounded (by you, or by your bank or broker),
+and requiring an exact zero would reject many correct-looking entries.
+So, like Ledger and Beancount, hledger allows a small tolerance.
 
-Since version 1.50, hledger infers balancing precision in each transaction from the amounts in that transaction's journal entry (like Ledger).
-Ie, when checking the balance of commodity A, it uses the highest decimal precision seen for A in the journal entry (excluding cost amounts).
-This makes transaction balancing robust; any imbalances must be visibly accounted for in the journal entry,
-display precision can be freely increased with `-c`, and compatibility with Ledger and Beancount journals is good.
+### How balancing is checked
 
-Note that hledger versions before 1.50 worked differently: they allowed display precision to override the balancing precision.
-This masked small imbalances and caused fragility (see issue #2402).
-As a result, some journal entries (or CSV rules) that worked with hledger <1.50, are now rejected with an "unbalanced transaction" error.
-If you hit this problem, it's easy to fix:
+For each commodity in a journal entry, hledger:
 
-- You can restore the old behaviour, by adding `--txn-balancing=old` to the command or to your `~/.hledger.conf` file.
-  This lets you keep using old journals unchanged, though without the above benefits.
+1. adds up the posting amounts in that commodity, after converting any amounts that have a cost to the cost's commodity
+   (exactly; see [Amount arithmetic](#amount-arithmetic))
+2. finds the entry's *balancing precision* for that commodity:
+   the most decimal places used by that commodity's amounts in the entry, not counting cost amounts
+3. considers the entry balanced if the sum rounds to zero at that precision.
+   In other words, the imbalance can be at most half a unit in the last decimal place:
+   0.005 for amounts with 2 decimal places, 0.5 for amounts with no decimal places.
 
-- Or you can fix the problem entries (recommended).
-  There are three ways, use whichever seems best:
+Eg:
+```journal
+2024-01-30 currency exchange
+    assets:usd   -19110.17 USD @ 0.869050 CHF
+    assets:chf    16607.69 CHF
+```
+The first posting converts to -16607.6932385 CHF, so the sum in CHF is -0.0032385 CHF.
+The balancing precision for CHF is 2 (from 16607.69 CHF; the cost amount 0.869050 CHF doesn't count).
+-0.0032385 rounded to 2 decimal places is zero, so this entry is accepted.
+
+To make hledger check an entry more strictly, write its amounts with more decimal places.
+Eg if the second amount above is written as 16607.690 CHF, the balancing precision becomes 3 and the entry is rejected.
+
+Entries without costs always balance exactly:
+amounts with at most N decimal places add up to a number with at most N decimal places,
+which rounds to zero only if it is zero.
+So imbalances can come only from costs.
+
+### Where imbalances come from
+
+- Rounded unit costs (`@`).
+  The exact rate may have infinitely many decimal places
+  (above, the exact rate is 16607.69 / 19110.17 = 0.86904983053...),
+  or just more than your bank or broker shows you.
+  This is the most common cause.
+
+- Total costs (`@@`) that don't quite match the other amounts.
+  Eg this entry is accepted, because the balancing precision for $ is 0 (because $100 was written with no decimals):
+  ```journal
+  2026-01-01
+      assets:stock   -3 AAPL @@ $100.40
+      assets:cash          $100
+  ```
+
+### Accumulated imbalances
+
+Accepted imbalances are not corrected; they stay in the data, and add up.
+So reports which convert amounts at cost, like `balance -B` or `balancesheetequity -B`,
+may show a small non-zero total where you would expect zero.
+Eg after three of the currency exchange entries above, `hledger bal -B` shows a total of -0.01 CHF.
+Typically this is a few cents, but each entry can contribute up to half a unit in its last decimal place.
+
+(Without cost conversion, these imbalances aren't directly visible.
+And with [`--infer-equity`](#inferring-equity-conversion-postings), each commodity balances exactly,
+and the imbalances become part of the conversion rates.)
+
+To see an accumulated imbalance more precisely, increase the display precision with [`-c`](#commodity-style-override). Eg:
+```cli
+$ hledger bal -B -c 'CHF 1.000000000'
+```
+And to see which entries contribute to it, use a register report: `hledger reg -B -c 'CHF 1.000000000'`.
+
+Currently hledger has no check that rejects these small imbalances.
+
+### Avoiding imbalances
+
+You can avoid imbalances by writing exact entries. Any of these will do:
+
+- Use a total cost (`@@`) instead of a unit cost (`@`) when the unit cost would be rounded.
+  Total costs are converted exactly.
+  Eg `-19110.17 USD @@ 16607.69 CHF`.
+- Write the unit cost with enough decimal places to be exact, when possible.
+- Add a posting to absorb the imbalance, eg to an `expenses:rounding` account.
+  If you leave its amount blank, hledger will [calculate it](#postings) exactly.
+
+### Balancing in hledger before 1.50
+
+hledger versions before 1.50 used the commodity's display precision as the balancing precision,
+instead of the precision in the entry.
+This masked larger imbalances, and made balancing depend on display settings (see issue #2402).
+So some journal entries (or CSV rules) that worked with hledger <1.50 are now rejected with an "unbalanced transaction" error.
+If you hit this, you can:
+
+- restore the old behaviour, by adding `--txn-balancing=old` to the command or to your `~/.hledger.conf` file.
+  This lets you keep using old journals unchanged.
+
+- or fix the problem entries (recommended), in one of these ways:
    
-  1. make cost amounts more precise (add more/better decimal digits)
+  1. make cost amounts more precise (add more or better decimal digits)
   2. or make non-cost amounts less precise (remove unnecessary decimal digits that are raising the precision)
-  3. or add a posting to absorb the imbalance (eg "expenses:rounding". Remember that one posting may [omit the amount](#postings); that's convenient here.)
-
-## Arithmetic precision
-
-hledger uses decimal ([Decimal](https://hackage.haskell.org/package/Decimal/docs/Data-Decimal.html)) numbers for accounting arithmetic: amounts, balances, costs, prices, valuation and gains.
-Floating point ([Double](https://hackage.haskell.org/package/base/docs/Prelude.html#t:Double)) numbers are used
-for inherently approximate statistics like `stats` txns/s, `prices --summary` coverage, `roi` and `holdings` rates of return,
-and debug timings, where they are a better fit.
-
-Like floating point numbers, each decimal number records where its decimal point is,
-but unlike the usual binary, fixed-size floating point numbers, these are base ten,
-so amounts like 0.1 are stored exactly; also, the integer part can have any number of digits,
-and the decimal part can have up to 255 digits.
-Addition, subtraction and multiplication are exact (as long as the result needs no more than 255 decimal places).
-Division can produce a non-terminating decimal (like 1/3 = 0.333...); hledger rounds these to 255 decimal places.
-The error is less than 10^-250, too small to affect transaction balancing or reports at normal display precisions.
-
-Journal amounts are always written as finite decimals, so non-terminating decimals can arise only where hledger divides.
-Here's when that happens:
-
-| When | What is divided | Visible effect |
-|------------------------------|--------------|------------------------------------|
-| Converting a lot's total [cost](#costs) (`@@`) or total [cost basis](#cost-basis) (`{{ }}`) to a unit cost | total cost / quantity | None in calculations: gains use the unrounded unit cost. Lot names and `print` show it with up to 8 decimal places (more if the cost commodity's display style has more), so text copied from them is slightly rounded; see [Cost basis precision](#cost-basis-precision). |
-| Inferring market prices from costs, with [`--infer-market-prices`](#--infer-market-prices-market-prices-from-transactions) | total cost / quantity | None |
-| Using a [reverse market price](#finding-market-price) | 1 / price | None |
-| Averaging lot costs, with the AVERAGE [cost basis methods](#cost-basis-methods) or in [holdings](#holdings) | total cost / total quantity | None |
-| Inferring costs from [equity conversion postings](#equity-conversion-postings) | one amount / the other | None |
-| Converting amounts written with a [commodity alias](#commodity-aliases) that has a quantity | amount / alias quantity | Can make balance assertions fail, for now, since they compare exactly (eg three `10 min` amounts don't sum to exactly `0.5 h`). |
-| Calculating averages (eg `-A`) and percentages (eg `-%`) in reports | total / count, part / total | None: these are displayed rounded |
-| Converting times to hours in [timeclock](#timeclock) entries, and [timedot](#timedot) durations written with a unit (`10m`) | time / hour length | Each is rounded to 2 decimal places (0.01 hours = 36 seconds), so totals can drift: eg three `10m` timedot entries total 0.51 hours. |
-| Calculating rates of return: [roi](#roi)'s IRR and TWR, and [holdings](#holdings)' XIRR column | various | Rates are approximate (calculated with floating point numbers; IRR and XIRR by iteration) |
+  3. or add a posting to absorb the imbalance, as described above.
 
 ## Tags
 
@@ -5410,6 +5456,40 @@ since they are commonly read by other programs.
 Report titles, however, are translated wherever they appear, as they would be with `--title`;
 and an explicit `--title` or `--subreport-titles` is always used as given, untranslated.
 
+# Amount arithmetic
+
+<a name="arithmetic-precision"></a>
+
+hledger uses decimal ([Decimal](https://hackage.haskell.org/package/Decimal/docs/Data-Decimal.html)) numbers for accounting arithmetic: amounts, balances, costs, prices, valuation and gains.
+Floating point ([Double](https://hackage.haskell.org/package/base/docs/Prelude.html#t:Double)) numbers are used
+for inherently approximate statistics like `stats` txns/s, `prices --summary` coverage, `roi` and `holdings` rates of return,
+and debug timings, where they are a better fit.
+
+Like floating point numbers, each decimal number records where its decimal point is,
+but unlike the usual binary, fixed-size floating point numbers, these are base ten,
+so amounts like 0.1 are stored exactly; also, the integer part can have any number of digits,
+and the decimal part can have up to 255 digits.
+Addition, subtraction and multiplication are exact (as long as the result needs no more than 255 decimal places).
+Division can produce a non-terminating decimal (like 1/3 = 0.333...); hledger rounds these to 255 decimal places.
+The error is less than 10^-250, too small to affect transaction balancing or reports at normal display precisions.
+
+## Where hledger divides
+
+Journal amounts are always written as finite decimals, so non-terminating decimals can arise only where hledger divides.
+Here's when that happens:
+
+| When | What is divided | Visible effect |
+|------------------------------|--------------|------------------------------------|
+| Converting a lot's total [cost](#costs) (`@@`) or total [cost basis](#cost-basis) (`{{ }}`) to a unit cost | total cost / quantity | None in calculations: gains use the unrounded unit cost. Lot names and `print` show it with up to 8 decimal places (more if the cost commodity's display style has more), so text copied from them is slightly rounded; see [Cost basis precision](#cost-basis-precision). |
+| Inferring market prices from costs, with [`--infer-market-prices`](#--infer-market-prices-market-prices-from-transactions) | total cost / quantity | None |
+| Using a [reverse market price](#finding-market-price) | 1 / price | None |
+| Averaging lot costs, with the AVERAGE [cost basis methods](#cost-basis-methods) or in [holdings](#holdings) | total cost / total quantity | None |
+| Inferring costs from [equity conversion postings](#equity-conversion-postings) | one amount / the other | None |
+| Converting amounts written with a [commodity alias](#commodity-aliases) that has a quantity | amount / alias quantity | Can make balance assertions fail, for now, since they compare exactly (eg three `10 min` amounts don't sum to exactly `0.5 h`). |
+| Calculating averages (eg `-A`) and percentages (eg `-%`) in reports | total / count, part / total | None: these are displayed rounded |
+| Converting times to hours in [timeclock](#timeclock) entries, and [timedot](#timedot) durations written with a unit (`10m`) | time / hour length | Each is rounded to 2 decimal places (0.01 hours = 36 seconds), so totals can drift: eg three `10m` timedot entries total 0.51 hours. |
+| Calculating rates of return: [roi](#roi)'s IRR and TWR, and [holdings](#holdings)' XIRR column | various | Rates are approximate (calculated with floating point numbers; IRR and XIRR by iteration) |
+
 # Amount formatting
 
 <a name="amount-display-style"></a>
@@ -5477,9 +5557,11 @@ Some things to note:
 - In some cases hledger will adjust number formatting to improve parseability,
   eg by adding [trailing decimal marks](#trailing-decimal-marks) when needed.
 
-## Rounding
+<a name="rounding"></a>
 
-Amounts are stored internally as decimal numbers with up to 255 decimal places (see [Arithmetic precision](#arithmetic-precision)).
+## Display rounding
+
+Amounts are stored internally as decimal numbers with up to 255 decimal places (see [Amount arithmetic](#amount-arithmetic)).
 They are displayed 
 with their original journal precisions by print and print-like reports,
 and rounded to their display precision (the number of decimal digits specified by the commodity display style)
