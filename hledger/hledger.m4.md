@@ -1394,7 +1394,7 @@ Some notes:
   Imbalance accounts, including `equity:imbalance`, can be matched with `type:M`.
 - With [`--infer-equity`](#inferring-equity-conversion-postings) as well, the generated equity conversion postings use the exact cost amounts,
   so every commodity balances exactly.
-- In [strict mode], the `equity:imbalance` account must be [declared](#account-error-checking), like other accounts.
+- The imbalance account need not be declared, even in [strict mode].
 - If you use this flag with [`import`](#import), the imbalance postings will be added to your journal too.
 
 ### Avoiding imbalances
@@ -1909,7 +1909,11 @@ Some notes:
 - Accounts can only be declared in `journal` files, but will affect [included](#include-directive) files of all types.
 - It's currently not possible to declare "all possible subaccounts" with a wildcard; every account posted to must be declared.
 - As an exception: lot subaccounts (a final account name component like `:{2026-01-15, $50}`) are always ignored by `check accounts`, and need not be declared.
-- If you use the [--infer-equity](#inferring-equity-conversion-postings) flag, you will also need declarations for the account names it generates.
+- Also exempt are the accounts which hledger chooses for the postings it generates:
+  [equity conversion postings](#inferring-equity-conversion-postings) (from `--infer-equity`),
+  [gain postings](#gain-accounts) (in lot disposals),
+  and [imbalance postings](#showing-imbalances) (from `--infer-imbalance`).
+  Postings which you write to those accounts are checked as usual.
 
 ### Account display order
 
@@ -5878,7 +5882,7 @@ $ hledger print --infer-equity desc:sell
 If you write such an entry yourself, write the conversion postings at cost basis like this,
 and keep the transacted cost (`@`/`@@`) on the disposal posting, since the gain is calculated from it.
 
-Note you will need to add [account declarations](#account-error-checking) for these to your journal, if you use `check accounts` or `check --strict`.
+The generated equity conversion accounts need not be [declared](#account-error-checking), even in strict mode.
 (And unlike normal postings, generated equity postings do not inherit tags from account declarations.)
 
 ## Combining costs and equity conversion postings
