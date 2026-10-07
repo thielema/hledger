@@ -7049,6 +7049,12 @@ account revenues:gain  ; type:G
 
 Multiple gain postings are allowed, eg one per lot when disposing from several lots.
 
+Your amount needs to match the calculated gain only at the entry's precision
+(the most decimal places used by the entry's amounts in that commodity, as in [transaction balancing](#transaction-balancing)).
+hledger then uses the exact calculated gain, so that the small difference isn't left unaccounted for
+(with several gain postings, it adjusts the last one).
+`print` still shows your amount as written.
+
 A written gain posting also protects your history, like a [balance assertion](#balance-assertions):
 hledger recalculates lots and gains from the whole journal each time it runs,
 so if a past acquisition is edited, an inferred gain could silently change,

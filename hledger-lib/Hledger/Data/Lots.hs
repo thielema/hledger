@@ -1490,17 +1490,29 @@ journalAddOrCheckGainPostings verbosetags j = do
     -- Check that the user-written gain amount(s) sum to the calculated
     -- disposal gain (negated). The gain is zero when there is no priced
     -- disposal, eg a gain posting mistakenly written in a lot transfer.
-    checkGain t =
-      let ps       = tpostings t
-          gain     = foldMap postingDisposalGain ps
-          writtenGain = foldMap pamount (filter isGain ps)
-          -- writtenGain should equal -gain. Tolerate sub-ULP noise at the
-          -- precision chosen by setLocalGainPrecision, matching how the
-          -- balancer tolerates balancing imprecision.
-          diff = setLocalGainPrecision t (writtenGain <> gain)
-      in if mixedAmountLooksZero diff
-           then Right t
-           else Left (mismatchErr t gain writtenGain)
+    -- Like the balancer, this tolerates a difference below the precision
+    -- chosen by setLocalGainPrecision; the written amounts are then made
+    -- exact, so the difference isn't left unaccounted for.
+    checkGain t
+      | mixedAmountLooksZero (setLocalGainPrecision t diff) = Right exactGain
+      | otherwise = Left (mismatchErr t gain writtenGain)
+      where
+        ps          = tpostings t
+        gain        = foldMap postingDisposalGain ps
+        writtenGain = foldMap pamount (filter isGain ps)
+        diff        = writtenGain <> gain  -- writtenGain should equal -gain
+        exactGain = case filter ((/= 0) . aquantity) (amountsRaw diff) of
+          [] -> t
+          as -> txnTieKnot t{tpostings = foldr subtractFromLastGain ps as}
+        -- Subtract a small difference from the last gain posting in its commodity
+        -- (or the last gain posting), keeping the written amount for print.
+        subtractFromLastGain a qs = reverse $ case break target (reverse qs) of
+          (xs, q:ys) -> xs ++ q{pamount = setLocalGainPrecision t (pamount q <> maNegate (mixedAmount a))
+                               ,poriginal = Just (originalPosting q)} : ys
+          (xs, [])   -> xs
+          where
+            target = if any inCommodity qs then inCommodity else isGain
+            inCommodity q = isGain q && acommodity a `elem` map acommodity (amountsRaw (pamount q))
 
     -- Set each component amount's display precision to the entry's local
     -- precision for that commodity.

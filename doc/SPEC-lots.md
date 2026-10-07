@@ -918,8 +918,8 @@ Styles are listed in the same order as the manual, from implicit to explicit.
   (`transactionTagGainPostings`, before balancing), and the balancer sets them aside.
   After lot matching, the transaction's gain amount is checked against
   the calculated gain at the entry's local precision; sub-last-place-unit differences
-  are tolerated (see "Gain precision" below), but larger discrepancies
-  raise an error.
+  are tolerated, and then removed by adjusting the written amount to the exact gain
+  (see "Gain precision" below), but larger discrepancies raise an error.
 
   When the imbalance is multi-commodity (typically because the dispose posting lacks an `@`
   transacted price), the transaction balancer fills in a balancing `@` price from the
@@ -952,9 +952,18 @@ posting amounts in that commodity).
 As a special case, if the local precision is 0 decimal places (or the commodity is absent),
 and if the gain amount is not an integer, it is shown with 2 decimal places.
 
-This tolerance (and non-accounting) of small imprecisions is similar to
-how transaction balancing works. If you want more precision, write more
-decimal places in the entry's amounts.
+This tolerance of small imprecisions is similar to how transaction balancing works.
+If you want a stricter check, write more decimal places in the entry's amounts.
+
+But unlike transaction balancing, the tolerated difference is not left unaccounted for:
+hledger knows the exact gain, so when a written gain amount passes the check,
+it is replaced by the exact calculated gain (with several gain postings, the
+difference goes to the last one in that commodity), keeping the written amount
+in poriginal for print. This is like the acquire basis check, below, replacing
+a rounded written basis with the exact transacted cost. Inferred gain amounts
+are exact already (only their display precision is set as above).
+So a disposal balances exactly at cost basis, apart from any tolerated
+imbalance at transacted cost, which --infer-imbalance can show.
 
 ## Acquire basis check
 
