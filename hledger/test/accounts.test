@@ -133,3 +133,11 @@ unused:acct
 # ** 15. A declared account is not misreported as undeclared when a date: query is added.
 $ hledger -f- accounts --undeclared date:2026
 income
+
+# ** 16. Account types can also be declared by their long names, case-insensitively.
+<
+account revenues:gain       ; type: Gain
+account equity:unrealised   ; type: UnrealisedGain
+$ hledger -f- accounts --types
+equity:unrealised    ; type: U
+revenues:gain        ; type: G

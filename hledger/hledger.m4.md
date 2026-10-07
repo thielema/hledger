@@ -5210,9 +5210,9 @@ Match unmarked, pending, or cleared transactions respectively.
 **`type:TYPECODES`**\
 Match by account type (see [Declaring accounts > Account types](#account-types)).
 `TYPECODES` is one or more of the single-letter account type codes
-`ALERXCVG`, case insensitive.
+`ALERXCVGU`, case insensitive.
 Note `type:A`, `type:E`, and `type:R` will also match their respective subtypes
-`C` (Cash), `V` (Conversion), and `G` (Gain).
+`C` (Cash), `V` (Conversion) and `U` (UnrealisedGain), and `G` (Gain).
 Certain kinds of account alias can disrupt account types, see 
 [Rewriting accounts > Aliases and account types](#aliases-and-account-types).
 
