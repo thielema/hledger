@@ -5840,7 +5840,9 @@ $ hledger print --infer-equity
 
 The equity account names will be "equity:conversion:A-B:A" and "equity:conversion:A-B:B"
 where A is the alphabetically first commodity symbol.
-You can customise the "equity:conversion" part by declaring an account with the `V`/`Conversion` [account type](#account-types).
+You can customise the "equity:conversion" part by declaring an account with the `V`/`Conversion` [account type](#account-types)
+(the first-declared one, if there are several;
+or if none is declared, the alphabetically first account whose type is inferred as V, such as `equity:trading`, is used).
 
 For a [lot](#lots-and-capital-gains) disposal, the conversion postings record the units sold at their cost basis,
 not at the sale price, so that the entry (and your balance sheet) still sums to zero;
@@ -6995,6 +6997,7 @@ Declaring an account with the G type serves three purposes:
 2. **Customising account names** -
    inferred gain postings will use the first-declared G account,
    rather than the default (`revenues:gain`).
+   (If no account is declared with the G type, they use the alphabetically first account whose type is inferred as G, if any.)
 3. **Categorising** - when reporting, you can match on the G account type specifically.
 
 G is inferred from conventional English account names

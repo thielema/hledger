@@ -888,6 +888,9 @@ Declaring and using this account type is not strictly required,
 but it can improve error checking in disposals,
 it selects the account for inferred gain postings,
 and it facilitates more precise querying.
+(Inferred gain postings use the first account declared with the G type;
+or if there is none, the alphabetically first account whose type is inferred as G;
+or else `revenues:gain`. See journalAccountForType.)
 
 ### Disposal journal entries
 
