@@ -483,7 +483,8 @@ journalFinalise iopts@InputOpts{auto_,balancingopts_,ignore_lots_,infer_costs_,i
                               ,lotful_commodities_ = journalLotfulCommodities j
                               ,account_lots_tags_ = journalAccountLotsTags j
                               ,lenient_lots_ = lenientlots
-                              ,verbose_balancing_tags_ = verbose_tags_}) j
+                              ,verbose_balancing_tags_ = verbose_tags_
+                              ,imbalance_account_ = journalAccountForType defaultImbalanceAccount Imbalance j}) j
         j3 <- Right j2
 
           -- Lot classification

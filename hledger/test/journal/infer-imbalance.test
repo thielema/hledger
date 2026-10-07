@@ -175,3 +175,15 @@ $ hledger -f - bal -B -c '$1.0000' --infer-imbalance
            $-20.0190  revenues:gain
 --------------------
                    0  
+
+# ** 12. To use a different account, declare it with the M/Imbalance type.
+# Imbalance postings can be matched with type:M.
+<
+account equity:rounding  ; type: Imbalance
+
+2024-01-30 exchange
+    assets:usd   -19110.17 USD @ 0.869050 CHF
+    assets:chf    16607.69 CHF
+
+$ hledger -f - reg type:M --infer-imbalance -c 'CHF 1.0000000'
+2024-01-30 exchange            equity:rounding      CHF 0.0032385  CHF 0.0032385

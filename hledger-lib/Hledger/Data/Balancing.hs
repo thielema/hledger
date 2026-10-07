@@ -56,7 +56,7 @@ import Safe (headErr)
 import Text.Printf (printf)
 
 import Hledger.Data.Types
-import Hledger.Data.AccountName (accountNameType, isAccountNamePrefixOf)
+import Hledger.Data.AccountName (accountNameType, defaultImbalanceAccount, isAccountNamePrefixOf)
 import Hledger.Data.Amount
 import Hledger.Data.Journal
 import Hledger.Data.Lots (isSetAsideGainPosting, lotBaseAccount, transactionAutoSplitFeeOutflows, transactionHasLotfulAmounts, transactionTagGainPostings)
@@ -73,6 +73,7 @@ data BalancingOpts = BalancingOpts
   , commodity_styles_      :: Maybe (M.Map CommoditySymbol AmountStyle)  -- ^ commodity display styles
   , txn_balancing_         :: TransactionBalancingPrecision
   , infer_imbalance_       :: Bool  -- ^ should tolerated imbalances be shown, by adding imbalance postings to transactions ?
+  , imbalance_account_     :: AccountName  -- ^ the account for imbalance postings (see journalAccountForType)
   , account_types_         :: M.Map AccountName AccountType  -- ^ account type map, passed through for any balancing helpers that need it
   , lotful_commodities_    :: S.Set CommoditySymbol  -- ^ commodities declared lotful, used to guide balancing cost inference (when lots are enabled)
   , account_lots_tags_     :: M.Map AccountName T.Text  -- ^ declared lots: tag values by account, used to detect lots: NONE opt-outs (when lots are enabled)
@@ -87,6 +88,7 @@ defbalancingopts = BalancingOpts
   , commodity_styles_      = Nothing
   , txn_balancing_         = TBPEntry
   , infer_imbalance_       = False
+  , imbalance_account_     = defaultImbalanceAccount
   , account_types_         = M.empty
   , lotful_commodities_    = S.empty
   , account_lots_tags_     = M.empty
@@ -212,13 +214,9 @@ postingBalancingAmountWith setaside p
   | setaside p                                  = nullmixedamt
   | otherwise                                   = mixedAmountCost $ pamount p
 
--- | The account where --infer-imbalance records transactions' tolerated imbalances.
-imbalanceAccount :: AccountName
-imbalanceAccount = "equity:imbalance"
-
 -- | Postings which would show this balanced transaction's remaining imbalance
 -- (tolerated because it's smaller than the balancing precision; see transactionCheckBalanced),
--- making the transaction balance exactly. These are postings to 'imbalanceAccount',
+-- making the transaction balance exactly. These are postings to the given account,
 -- one for each commodity of the real postings' imbalance, and likewise (but balanced virtual)
 -- for the balanced virtual postings' imbalance, or none if the transaction balances exactly.
 -- They are tagged with imbalancePostingTagName and generatedPostingTagName
@@ -228,8 +226,8 @@ imbalanceAccount = "equity:imbalance"
 -- and since their original posting is amountless, these don't influence commodity display precisions
 -- (see isExplicitAmount).
 -- Imbalances smaller than 10^-200, which can come only from hledger's internal rounding, are ignored.
-transactionImbalancePostings :: Bool -> M.Map CommoditySymbol AmountStyle -> Transaction -> [Posting]
-transactionImbalancePostings verbosetags styles t =
+transactionImbalancePostings :: Bool -> AccountName -> M.Map CommoditySymbol AmountStyle -> Transaction -> [Posting]
+transactionImbalancePostings verbosetags acct styles t =
   [ imbalancePosting r a
   | r <- [RealPosting, BalancedVirtualPosting]
   , a <- amounts $ foldMap (postingBalancingAmountWith setaside) [p | p <- tpostings t, preal p == r]
@@ -241,7 +239,7 @@ transactionImbalancePostings verbosetags styles t =
       where
         p = postingAddHiddenAndMaybeVisibleTag False verbosetags (generatedPostingTagName, "")
           $ postingAddHiddenAndMaybeVisibleTag False verbosetags (imbalancePostingTagName, "")
-          $ nullposting{paccount = imbalanceAccount, preal = r,
+          $ nullposting{paccount = acct, preal = r,
                         pamount = styleAmounts (styles & amountStylesSetRounding NoRounding) $ mixedAmount $ negate a}
 
 -- | With the infer_imbalance_ option, add postings showing this balanced transaction's
@@ -252,7 +250,7 @@ transactionMaybeAddImbalancePostings bopts t
   | not (infer_imbalance_ bopts) || null ips = (t, [])
   | otherwise                                = (txnTieKnot t{tpostings = tpostings t ++ ips}, ips)
   where
-    ips = transactionImbalancePostings (verbose_balancing_tags_ bopts) (fromMaybe M.empty $ commodity_styles_ bopts) t
+    ips = transactionImbalancePostings (verbose_balancing_tags_ bopts) (imbalance_account_ bopts) (fromMaybe M.empty $ commodity_styles_ bopts) t
 
 -- | Legacy form of transactionCheckBalanced.
 isTransactionBalanced :: BalancingOpts -> Transaction -> Bool

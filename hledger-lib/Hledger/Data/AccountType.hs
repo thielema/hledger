@@ -1,7 +1,7 @@
 {-|
 
 Helpers for working with 'AccountType's.
-Subtypes (Cash, Conversion, Gain, UnrealisedGain) are recognised as their parent type
+Subtypes (Cash, Conversion, Gain, UnrealisedGain, Imbalance) are recognised as their parent type
 where appropriate.
 
 -}
@@ -45,6 +45,8 @@ isAccountSubtypeOf Gain           Gain           = True
 isAccountSubtypeOf Gain           Revenue        = True
 isAccountSubtypeOf UnrealisedGain UnrealisedGain = True
 isAccountSubtypeOf UnrealisedGain Equity         = True
+isAccountSubtypeOf Imbalance      Imbalance      = True
+isAccountSubtypeOf Imbalance      Equity         = True
 isAccountSubtypeOf _              _              = False
 
 -- | Is this an Asset or Cash (subtype of Asset) account type ?
@@ -78,6 +80,7 @@ accountTypeName Cash           = "Cash"
 accountTypeName Conversion     = "Conversion"
 accountTypeName Gain           = "Gain"
 accountTypeName UnrealisedGain = "UnrealisedGain"
+accountTypeName Imbalance      = "Imbalance"
 
 -- | Case-insensitively parse an account type's one-letter code,
 -- or if permitted, its long-form name (or another accepted spelling of that).

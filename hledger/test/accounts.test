@@ -173,3 +173,9 @@ b
 equity:trading
 equity:trading:A-B:A
 equity:trading:A-B:B
+
+# ** 19. equity:imbalance (and similar names) are detected as M/Imbalance type by default.
+<
+account equity:imbalance
+$ hledger -f- accounts --types
+equity:imbalance    ; type: M

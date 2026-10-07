@@ -1356,7 +1356,7 @@ Or, show the imbalances explicitly, as described next.
 ### Showing imbalances
 
 With the `--infer-imbalance` flag, hledger shows entry imbalances explicitly,
-by generating postings to the `equity:imbalance` account which make the entry balance exactly
+by generating postings to an imbalance account (`equity:imbalance` by default) which make the entry balance exactly
 (as if you had added an amountless posting to that account). Eg:
 ```cli
 $ hledger print --infer-imbalance
@@ -1389,6 +1389,9 @@ Transactions in equity:imbalance and subaccounts:
 Some notes:
 
 - The imbalance postings have a hidden `_imbalance-posting` tag (shown by `--verbose-tags`), so they can also be matched with `tag:imbalance-posting`.
+- To use a different account, declare it with the `M`/`Imbalance` [account type](#account-types)
+  (the first one declared is used, if there are several).
+  Imbalance accounts, including `equity:imbalance`, can be matched with `type:M`.
 - With [`--infer-equity`](#inferring-equity-conversion-postings) as well, the generated equity conversion postings use the exact cost amounts,
   so every commodity balances exactly.
 - In [strict mode], the `equity:imbalance` account must be [declared](#account-error-checking), like other accounts.
@@ -1967,6 +1970,7 @@ hledger also uses a few subtypes:
 | `Conversion` | `V` | commodity conversions equity (subtype of Equity) |
 | `Gain` | `G` | realised capital gains/losses (subtype of Revenue) |
 | `UnrealisedGain` | `U` | accumulated unrealised capital gains (subtype of Equity) |
+| `Imbalance` | `M` | transactions' tolerated imbalances, shown by [`--infer-imbalance`](#showing-imbalances) (subtype of Equity) |
 
 <!-- [liquid assets]: https://en.wikipedia.org/wiki/Cash_and_cash_equivalents -->
 
@@ -2016,6 +2020,7 @@ Tips:
   ^(debts?|liabilit(y|ies))(:|$)                                      | Liability
   ^equity:(trad(e|ing)|conversion)s?(:|$)                             | Conversion
   ^equity:unreali[sz]ed([- ](capital[- ])?gains?)?(:|$)               | UnrealisedGain
+  ^equity:imbalances?(:|$)                                            | Imbalance
   ^equity(:|$)                                                        | Equity
   ^(income|revenue)s?:(capital[- ]?)?(gains?|loss(es)?)(:|$)          | Gain
   ^(income|revenue)s?(:|$)                                            | Revenue
@@ -5210,9 +5215,9 @@ Match unmarked, pending, or cleared transactions respectively.
 **`type:TYPECODES`**\
 Match by account type (see [Declaring accounts > Account types](#account-types)).
 `TYPECODES` is one or more of the single-letter account type codes
-`ALERXCVGU`, case insensitive.
+`ALERXCVGUM`, case insensitive.
 Note `type:A`, `type:E`, and `type:R` will also match their respective subtypes
-`C` (Cash), `V` (Conversion) and `U` (UnrealisedGain), and `G` (Gain).
+`C` (Cash), `V` (Conversion), `U` (UnrealisedGain) and `M` (Imbalance), and `G` (Gain).
 Certain kinds of account alias can disrupt account types, see 
 [Rewriting accounts > Aliases and account types](#aliases-and-account-types).
 
