@@ -25,7 +25,7 @@ import Yesod.Core.Types (Route(WaiSubsiteRoute))
 import Yesod.Default.Config
 import Yesod.Default.Util
 
-import Hledger.Cli.Version (packagemajorversion)
+import Hledger.Cli.Version (webManualUrl)
 
 development :: Bool
 development =
@@ -38,11 +38,10 @@ development =
 production :: Bool
 production = not development
 
-hledgerorgurl :: Text
-hledgerorgurl = "https://hledger.org"
-
+-- | The hledger manual's URL on hledger.org, for this build's version
+-- (the dev manual, for a dev build; see 'Hledger.Cli.Version.docVersion').
 manualurl :: Text
-manualurl = hledgerorgurl <> "/" <> T.pack packagemajorversion <> "/hledger.html"
+manualurl = T.pack $ webManualUrl "hledger" Nothing
 
 -- | The default IP address to listen on. May be overridden with --host.
 defhost :: String
