@@ -1412,7 +1412,7 @@ hledgerWebTest = do
       bodyNotContains "Balance brought forward"
       bodyNotContains "name=\"accum\""
       -- the balance column's heading switches to historical mode
-      bodyContains ("href=\"" ++ defbaseurl defhost defport ++ "/register?q=date%3A2025-02&amp;account=assets%3Abank%3Achecking&amp;accum=historical\" title=\"Show the running balance including everything before this period\">Period Total</a>")
+      bodyContains ("href=\"" ++ defbaseurl defhost defport ++ "/register?q=date%3A2025-02&amp;account=assets%3Abank%3Achecking&amp;accum=historical\" title=\"Click to show the running balance including everything before this period\">Period Total</a>")
 
     yit "starts from the balance brought forward with accum=historical" $ do
       request $ do

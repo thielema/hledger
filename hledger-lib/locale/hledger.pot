@@ -1105,12 +1105,12 @@ msgstr ""
 
 #. the hint below the commodity filter row.
 #: hledger-web/Hledger/Web/Handler/RegisterR.hs
-msgid "Show the running balance from the start of this period"
+msgid "Click to show the running balance from the start of this period"
 msgstr ""
 
 #. the hint below the commodity filter row.
 #: hledger-web/Hledger/Web/Handler/RegisterR.hs
-msgid "Show the running balance including everything before this period"
+msgid "Click to show the running balance including everything before this period"
 msgstr ""
 
 #. the browser tab title of this page.

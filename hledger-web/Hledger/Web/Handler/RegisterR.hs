@@ -219,8 +219,8 @@ getRegisterR = do
       -- register's other modes.
       accumToggle = (RegisterR, qParams qparam ++ removeAttributes ["accum"] modeParams ++ [("accum", "historical") | not historical])
       accumToggleTitle
-        | historical = tr trs "Show the running balance from the start of this period"
-        | otherwise  = tr trs "Show the running balance including everything before this period"
+        | historical = tr trs "Click to show the running balance from the start of this period"
+        | otherwise  = tr trs "Click to show the running balance including everything before this period"
       -- In historical mode with a start date, the balance brought forward
       -- from before it is the oldest row, linking to the transactions
       -- before the period: those before the start date by the kind of
