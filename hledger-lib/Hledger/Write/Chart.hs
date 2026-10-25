@@ -40,6 +40,7 @@ module Hledger.Write.Chart (
   mainAccountType,
   SeriesValues,
   isContra,
+  totalIsBarEnd,
   seriesValues,
   valueAt,
   setChartScales,
@@ -52,7 +53,7 @@ module Hledger.Write.Chart (
 import Control.Applicative ((<|>))
 import Data.Bits (shiftR, xor)
 import Data.Char (ord)
-import Data.List (find, nub, sortOn)
+import Data.List (find, nub, sortOn, transpose)
 #if !MIN_VERSION_base(4,20,0)
 import Data.List (foldl')
 #endif
@@ -177,6 +178,13 @@ data Mark
 -- | Is this value of the series a contra amount (of the opposite sign to the series' usual sign) ?
 isContra :: Series -> Quantity -> Bool
 isContra s q = seSign s /= 0 && q /= 0 && signum q /= fromIntegral (seSign s)
+
+-- | Is this total, at every x position, just the end of these series' stacked bars (the sum of their positive values, or of their negative ones) ?
+-- Then marking it would add nothing; otherwise (eg with values of both signs, or a total that isn't their sum) it is worth marking.
+totalIsBarEnd :: [Series] -> Series -> Bool
+totalIsBarEnd bars total = and
+  [ t == sum (filter (> 0) qs) || t == sum (filter (< 0) qs)
+  | (Just t, qs) <- zip (seValues total) (map catMaybes (transpose (map seValues bars)) ++ repeat []) ]
 
 -- | The main account type (asset, liability, equity, revenue or expense) of an account type, which is one of those or a subtype of one.
 mainAccountType :: AccountType -> AccountType
@@ -379,6 +387,12 @@ tests_Hledger_Write_Chart = testGroup "Write.Chart" [
      scaleSpans 100 50 30 @?= (70, 30)
      scaleSpans 100 150 50 @?= (75, 25)
      scaleSpans 100 0 0 @?= (100, 0)
+  ,testCase "totalIsBarEnd" $ do
+     let ser vs = Series (ChartLabel "s" "s" 0 Nothing True) SeriesItem MarkBar vs 0 0
+     totalIsBarEnd [ser [Just 1, Just 2], ser [Just 3, Nothing]] (ser [Just 4, Just 2]) @?= True     -- the positive sums
+     totalIsBarEnd [ser [Just (-1)], ser [Just (-3)]] (ser [Just (-4)]) @?= True                     -- the negative sum
+     totalIsBarEnd [ser [Just 5], ser [Just (-3)]] (ser [Just 2]) @?= False                          -- values of both signs
+     totalIsBarEnd [ser [Just 450], ser [Just 300]] (ser [Just 450]) @?= False                       -- a value within the bar
   ,testCase "seriesColours" $ do
      let ser n t = Series (ChartLabel n n 0 t True) SeriesItem MarkBar [Just 1] 0 0
          tints cs = [k | TypeColour _ k <- cs]

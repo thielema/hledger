@@ -63,8 +63,10 @@ report  -->  adapter (Hledger.Cli.Chart; smart defaults)  -->  Chart (Hledger.Wr
   table-only options are ignored.
 - **Mixed signs**: positive segments stack above (right of) zero, negative below; nothing is silently flipped (except grouped compound charts, below).
 - **Nets and totals**: a thin ink line mark across bars (1.5px in SVG; `┃` in text), or an ink line with lines.
-  Not in SVG bars in one stack (not grouped side by side) when no x position has values of both signs (eg activity's counts,
-  or time logged), where it would be just the top of each stack. (Text shows it as the value instead, except in compound reports.)
+  Not for bars in one stack (not grouped side by side) whose total is just the end of the bar at every x position (`totalIsBarEnd`),
+  ie the sum of its positive or negative values: eg activity's counts, or time logged; there it is shown only as the value.
+  So it is marked with values of both signs, or a total that isn't the bars' sum (eg holdings' value, with a loss shown beyond it).
+  In category (single-period) charts too.
 - **Row total and average** (`-T`, `-A`), for changes per period: the net total's total and average per period, on a summary line
   below the chart (eg `Total 11, Average 0.9`; labels are the table's column headings); the average also as a dashed line in SVG, with a legend entry (shown even for a single series);
   `rowtotal` and `average` records in chart data. Not drawn as bars, since a total would be off the scale.
@@ -82,7 +84,7 @@ Per report:
 | `register` | each account's running total as a line (with -H, from its start balance), plus the overall total; with an interval, stacked bars per period |
 | `activity` | transaction counts as a single total (counting each transaction once per depth-clipped account, at depth 0); with `--postings`, as `bal --count` |
 | `bal --count` | posting counts by account, at most one text cell per posting |
-| `holdings` | a bar per holding (or lot), in each commodity's panel: cost basis plus unrealised gain (asset and revenue colours), reaching the value; with a loss, the part of the cost it is worth plus the part lost (expense colour), reaching the cost; without a market price, the cost, as an "other" series. The values are the total (shown as values). Labelled by account and commodity (and lot), also in tree mode, since headings aren't drawn |
+| `holdings` | a bar per holding (or lot), in each commodity's panel: cost basis plus unrealised gain (asset and revenue colours), reaching the value; with a loss, the part of the cost it is worth plus the part lost (expense colour), reaching the cost; without a market price, the cost, as an "other" series. The values are the total (shown as values; and marked, when some holding has a loss, since its value is not its bar's end). Labelled by account and commodity (and lot), also in tree mode, since headings aren't drawn |
 
 Text register charts have a row per posting (or transaction); a report interval gives a row per period.
 

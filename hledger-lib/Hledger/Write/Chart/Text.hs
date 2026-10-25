@@ -168,7 +168,11 @@ panelLines TextChartOpts{tcWidth, tcUnicode} xaxis colouring showheading Panel{p
     -- and the total as a mark over the bar.
     -- In any chart, contra amounts (of the opposite sign to their series' usual sign) are drawn nearest the axis, with a hatched fill character.
     diverging = not grouped && isJust mtotal && any ((/= 0) . seSign) drawn
-    marktotal = if diverging || grouped then mtotal else Nothing
+    -- The total is marked in those, and when it isn't just the end of the bars (eg with values of both signs);
+    -- otherwise it is shown only as the value.
+    marktotal = case mtotal of
+      Just t | not diverging, not grouped, totalIsBarEnd drawn t -> Nothing
+      _ -> mtotal
     seriesStyle i colour s = (colourStyle colour, fillChar i, seriesValues s)
     colourStyle colour = case colour of
       TypeColour at k -> StyleType at k
