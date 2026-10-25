@@ -1432,7 +1432,7 @@ hledgerWebTest = do
       bodyContains "&amp;accum=historical#"
       bodyContains ("data-baselink=\"" ++ defbaseurl defhost defport ++ "/register?account=assets%3Abank%3Achecking&amp;accum=historical\"")
       -- the heading switches back, dropping the mode
-      bodyContains ("href=\"" ++ defbaseurl defhost defport ++ "/register?q=date%3A2025-02&amp;account=assets%3Abank%3Achecking\" title=\"Show the running balance from the start of this period\">Historical Total</a>")
+      bodyContains ("href=\"" ++ defbaseurl defhost defport ++ "/register?q=date%3A2025-02&amp;account=assets%3Abank%3Achecking\" title=\"Click to show the running balance from the start of this period\">Historical Total</a>")
 
     yit "cuts the balance brought forward off by the kind of date the query has" $ do
       request $ do
