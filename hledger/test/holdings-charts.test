@@ -84,10 +84,11 @@ assets:broker AAPL  ████████████████████
 assets:broker NEW   ██▋
 assets:broker XYZ   ████████████████████
 
-# ** 4. In SVG, the bars are coloured as an asset (cost), revenue (gain) and expense (loss), and the values are shown above them.
+# ** 4. In SVG, the bars are coloured as an asset (cost), revenue (gain) and expense (loss),
+# and labelled with their unrealised gain percents (the axis shows their values).
 $ hledger -f- holdings -e 2025-01-01 -O svg broker | grep -o 'class="fill [a-z0-9]*"\|class="value"[^>]*>[^<]*' | sed 's/class="value"[^>]*>//' | sort -u
-2,500.00 USD
-450.00 USD
+-40.0%
++66.7%
 class="fill other"
 class="fill ta0"
 class="fill tr0"

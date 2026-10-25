@@ -49,6 +49,7 @@ import Data.Text qualified as T
 import Data.Text.Lazy qualified as TL
 import Data.Time.Calendar (Day, addDays, diffDays)
 import System.Console.CmdArgs.Explicit (flagNone, flagReq)
+import Safe (headMay)
 import Text.Printf (printf)
 
 import Hledger
@@ -292,7 +293,7 @@ data HoldingsReport = HoldingsReport {
 -- since account headings are not drawn.
 holdingsReportAsChart :: ReportOpts -> T.Text -> HoldingsReport -> Chart
 holdingsReportAsChart ropts title rpt =
-  holdingsBarsChart ropts title (XCategories $ map label positions) [holdingBarParts h | (_, _, h) <- positions]
+  holdingsBarsChart ropts (hrStyles rpt) title (XCategories $ map label positions) [holdingBarParts h | (_, _, h) <- positions]
   where
     -- each holding's account, whether it is a lot, and the holding
     positions = [(a, islot, h) | HoldingsPosition{hlAccount = a, hlIsLot = islot, hlHolding = h} <- hrLines rpt]
@@ -308,7 +309,7 @@ holdingsReportAsChart ropts title rpt =
 -- Periods are labelled by their end dates, the holdings' dates.
 holdingsReportsAsChart :: ReportOpts -> T.Text -> [(DateSpan, HoldingsReport)] -> Chart
 holdingsReportsAsChart ropts title rpts =
-  holdingsBarsChart ropts title (XPeriods [(spn, showDate $ hrDate r) | (spn, r) <- rpts])
+  holdingsBarsChart ropts (maybe M.empty (hrStyles . snd) $ headMay rpts) title (XPeriods [(spn, showDate $ hrDate r) | (spn, r) <- rpts])
     [ mconcat $ map (holdingBarParts . snd) $ hrRows r | (_, r) <- rpts ]
 
 -- | A holding's amounts, for a bar in a holdings chart: its market value and cost basis, if it has a market price
@@ -325,9 +326,10 @@ holdingBarParts h
 -- Holdings with a market price are drawn as their cost basis and their unrealised gain, stacked, reaching their value;
 -- or with an unrealised loss, as the part of their cost basis they are worth, and the part lost (hatched), reaching their cost basis.
 -- Holdings without a market price are drawn as their cost basis, beyond those, in a muted colour.
--- The market values are the chart's total, shown as the values (and marked when not the bar's end).
-holdingsBarsChart :: ReportOpts -> T.Text -> XAxis -> [([Amount], [Amount], [Amount])] -> Chart
-holdingsBarsChart ReportOpts{translations_} title xaxis parts =
+-- The market values are the chart's total (marked when not the bar's end); graphical charts show the unrealised gain percents
+-- instead (with these styles, for the % commodity), where there is a market price, since the axis shows the values.
+holdingsBarsChart :: ReportOpts -> M.Map CommoditySymbol AmountStyle -> T.Text -> XAxis -> [([Amount], [Amount], [Amount])] -> Chart
+holdingsBarsChart ReportOpts{translations_} styles title xaxis parts =
   Chart{chTitle = title, chXAxis = xaxis, chPanels = map panel commodities}
   where
     amts = concat [vs ++ ks ++ us | (vs, ks, us) <- parts]
@@ -344,8 +346,13 @@ holdingsBarsChart ReportOpts{translations_} title xaxis parts =
       , pnLayout = Diverging
       , pnCounts = False
       , pnSummary = []
+      , pnValueLabels = [gainPercent (quantityOf vs) (quantityOf ks) | (vs, ks, _) <- parts]
       }
       where
+        -- eg +12.5%, -3.0%
+        gainPercent mv mk = case (mv, mk) of
+          (Just v, Just k) | k /= 0 -> let p = (v - k) / abs k * 100 in Just $ (if p > 0 then "+" else "") <> showPercentWith styles p
+          _ -> Nothing
         specs =
           [ (tr "Cost", Just Asset, SeriesItem, MarkBar)
           , (tr "Unrealised gain", Just Revenue, SeriesItem, MarkBar)

@@ -31,7 +31,7 @@ module Hledger.Write.Chart.Svg (
   tests_Hledger_Write_Chart_Svg,
 ) where
 
-import Control.Monad (forM_, unless, when)
+import Control.Monad (forM_, join, unless, when)
 import Data.Char (isDigit, isUpper)
 import Data.Function (on)
 import Data.List (find, groupBy, nub, sortOn)
@@ -172,7 +172,7 @@ data DrawSeries = DrawSeries
 
 -- | Draw one panel with its top at the given y; return its height and markup.
 panelSvg :: SvgOptions -> XAxis -> Colouring -> Bool -> Double -> Panel -> (Double, Svg)
-panelSvg opts xaxis colouring showheading top Panel{pnUnit, pnSeries, pnGroupNames, pnScale, pnLayout, pnSummary} =
+panelSvg opts xaxis colouring showheading top Panel{pnUnit, pnSeries, pnGroupNames, pnScale, pnLayout, pnSummary, pnValueLabels} =
   (headingh + legendh + bodyh + summaryh, do
     when (headingh > 0) $
       S.text_ ! A.class_ "heading" ! A.x (toValue $ num pad) ! A.y (toValue $ num (top + 16)) $ S.toMarkup (acommodity pnUnit)
@@ -211,9 +211,9 @@ panelSvg opts xaxis colouring showheading top Panel{pnUnit, pnSeries, pnGroupNam
     hascontra = or [isContra s q | s <- items, seMark s == MarkBar, Just q <- seValues s]
     hashatching = or [isHatched s q | s <- items, seMark s == MarkBar, Just q <- seValues s]
     (bodyh, bodym) = case xaxis of
-      XCategories ls -> categoriesSvg (svgWidth opts) (svgPlotHeight opts) (top + headingh + legendh) pnScale pnUnit drawn mtotal mtotalmark ls
-      XPeriods ps    -> timeSvg opts (top + headingh + legendh) pnScale pnLayout pnUnit drawn mtotalmark averageline (EvenScale $ map snd ps)
-      XDates ds      -> timeSvg opts (top + headingh + legendh) pnScale pnLayout pnUnit drawn mtotalmark Nothing (DateScale ds)
+      XCategories ls -> categoriesSvg (svgWidth opts) (svgPlotHeight opts) (top + headingh + legendh) pnScale pnUnit drawn mtotal mtotalmark pnValueLabels ls
+      XPeriods ps    -> timeSvg opts (top + headingh + legendh) pnScale pnLayout pnUnit drawn mtotalmark averageline pnValueLabels (EvenScale $ map snd ps)
+      XDates ds      -> timeSvg opts (top + headingh + legendh) pnScale pnLayout pnUnit drawn mtotalmark Nothing pnValueLabels (DateScale ds)
     averageline = (\su -> (suLabel su <> " · " <> showSummary su, aquantity $ suValue su)) <$> maverage
 
 -- | A legend: a swatch and label for each series, flowing left to right, if they are to be listed (eg when there are several).
@@ -264,8 +264,8 @@ data XScale = EvenScale [Text] | DateScale [Day]
 
 -- | Draw series over time, along the given x scale:
 -- vertical stacked bars (with the grouped layout, a stack per group, side by side), lines, and total marks or lines.
-timeSvg :: SvgOptions -> Double -> Maybe Quantity -> BarLayout -> Amount -> [DrawSeries] -> Maybe Series -> Maybe (Text, Quantity) -> XScale -> (Double, Svg)
-timeSvg SvgOptions{svgWidth = width, svgPlotHeight = plotheight, svgPointLink, svgDateScale, svgToday} top mscale layout unit drawn mtotal maverage xscale = (plotheight + 32, do
+timeSvg :: SvgOptions -> Double -> Maybe Quantity -> BarLayout -> Amount -> [DrawSeries] -> Maybe Series -> Maybe (Text, Quantity) -> [Maybe Text] -> XScale -> (Double, Svg)
+timeSvg SvgOptions{svgWidth = width, svgPlotHeight = plotheight, svgPointLink, svgDateScale, svgToday} top mscale layout unit drawn mtotal maverage vlabels xscale = (plotheight + 32 + labelroom, do
     -- the plot's area with its date scale, if wanted, beneath the rest so that their tooltips and links still work
     when (svgDateScale && isJust datearray) $
       S.rect ! A.class_ "plot"
@@ -295,6 +295,13 @@ timeSvg SvgOptions{svgWidth = width, svgPlotHeight = plotheight, svgPointLink, s
         let x = xcenter j - groupwidth / 2 + fromIntegral k * (barwidth + 2)
         stack lbl x (contraFirst [(d, q) | d <- stk, Just q <- [valueAt (dsValues d) j], q > 0]) 1
         stack lbl x (contraFirst [(d, q) | d <- stk, Just q <- [valueAt (dsValues d) j], q < 0]) (-1)
+    -- the value labels, if any (see 'pnValueLabels'): above each x position's bars (or below, if they are all negative), where they fit
+    forM_ (zip [0 ..] xlabels) $ \(j, _) -> forM_ (join $ vlabels `atMay` j) $ \t -> when (textWidth t <= band - 2) $ do
+      let ends sign = [sum [toD q | d <- stk, Just q <- [valueAt (dsValues d) j], signum q == sign] | stk <- stacks]
+          up = maximumDef 0 (ends 1)
+          down = minimumDef 0 (ends (-1))
+          vy = if up > 0 || down == 0 then yof up - 6 else yof down + 14
+      S.text_ ! A.class_ "value" ! A.x (toValue $ num (xcenter j)) ! A.y (toValue $ num vy) ! A.textAnchor "middle" $ S.toMarkup t
     -- with a fixed scale, lines are clipped at the plot's edges
     when (isJust mscale) $ S.defs $ S.clippath ! A.id_ (toValue clipid) $
       S.rect ! A.x (toValue $ num plotleft) ! A.y (toValue $ num plottop) ! A.width (toValue $ num (plotright - plotleft)) ! A.height (toValue $ num plotheight)
@@ -305,7 +312,7 @@ timeSvg SvgOptions{svgWidth = width, svgPlotHeight = plotheight, svgPointLink, s
     forM_ mtotal $ \t ->
       if seMark t == MarkLine || null bars then clipLines $ lineSvg "total" t
       else let tvals = seriesValues t in
-        forM_ (zip [0 ..] xlabels) $ \(j, lbl) -> forM_ (valueAt tvals j) $ \q -> when (hasbars j) $ withTooltip (tooltip lbl t q) $ do
+        forM_ (zip [0 ..] xlabels) $ \(j, lbl) -> forM_ (valueAt tvals j) $ \q -> when (hasbars j) $ withTooltip (tooltip lbl t q <> maybe "" (" · " <>) (join $ vlabels `atMay` j)) $ do
           let y = toValue $ num (yof $ toD q)
               halfw = groupwidth / 2 + 4
               x1 = toValue $ num (xcenter j - halfw)
@@ -357,7 +364,9 @@ timeSvg SvgOptions{svgWidth = width, svgPlotHeight = plotheight, svgPointLink, s
     ticklabel = tickLabel unit tickdecimals ticks
     plotleft = pad + maximumDef 0 (map (textWidth . ticklabel) ticks) + 12
     plotright = width - pad
-    plottop = top + 6
+    plottop = top + 6 + labelroom
+    -- room above the plot for value labels above the tallest bars
+    labelroom = if null vlabels then 0 else 14
     plotbottom = plottop + plotheight
     -- a value's y position, within the plot (for bars and marks), or anywhere (for lines, which are clipped)
     yof = clamp plottop plotbottom . yofline
@@ -417,10 +426,10 @@ placeXLabels width = reverse . foldl' place []
 -- | Draw series of categories (eg accounts): as vertical bars, or as horizontal bars when there are more than 'maxColumns' categories.
 -- Categories with no values at all (eg accounts without this commodity) are left out.
 -- With a single series, each category's bar has its own account type's colour, if known.
-categoriesSvg :: Double -> Double -> Double -> Maybe Quantity -> Amount -> [DrawSeries] -> Maybe Series -> Maybe Series -> [ChartLabel] -> (Double, Svg)
-categoriesSvg width plotheight top mscale unit drawn mtotal mtotalmark labels
-  | length rows <= maxColumns = columnsSvg width plotheight top mscale unit rows rowValue mmark
-  | otherwise                 = barsSvg width top mscale unit rows rowValue mmark
+categoriesSvg :: Double -> Double -> Double -> Maybe Quantity -> Amount -> [DrawSeries] -> Maybe Series -> Maybe Series -> [Maybe Text] -> [ChartLabel] -> (Double, Svg)
+categoriesSvg width plotheight top mscale unit drawn mtotal mtotalmark vlabels labels
+  | length rows <= maxColumns = columnsSvg width plotheight top mscale unit rows rowValue valueText mmark
+  | otherwise                 = barsSvg width top mscale unit rows rowValue valueText mmark
   where
     rows = [ (l, j, [(categoryColoured l d, q) | d <- drawn, Just q <- [valueAt (dsValues d) j]])
            | (j, l) <- zip [0 ..] labels, not $ all (isNothing . flip valueAt j . dsValues) drawn ]
@@ -430,6 +439,10 @@ categoriesSvg width plotheight top mscale unit drawn mtotal mtotalmark labels
     mtotalvals = seriesValues <$> mtotal
     -- the name of the total, if it is to be marked across the bars, at the value
     mmark = lbFull . seLabel <$> mtotalmark
+    -- the text to show for each category's value: the value, or the label given instead (see 'pnValueLabels'), if any
+    valueText j q
+      | null vlabels = Just $ showValue unit q
+      | otherwise    = join $ vlabels `atMay` j
     -- the value to show for each category: the total's, or the single series'
     rowValue j = case (mtotal, drawn) of
       (Just _, _) -> mtotalvals >>= flip valueAt j
@@ -442,9 +455,9 @@ maxColumns = 30
 
 -- | Draw categories as vertical bars (stacked if several series), with their names below (angled if they don't fit),
 -- and their values above the bars (when they fit), in a plot this high.
--- If a total's name is given, the values (the total's) are also marked across the bars.
-columnsSvg :: Double -> Double -> Double -> Maybe Quantity -> Amount -> [(ChartLabel, Int, [(DrawSeries, Quantity)])] -> (Int -> Maybe Quantity) -> Maybe Text -> (Double, Svg)
-columnsSvg width plotheight top mscale unit rows rowValue mmark = (plotheight + 22 + negroom + labelheight, do
+-- The values are shown as the given function says, if at all. If a total's name is given, the values (the total's) are also marked across the bars.
+columnsSvg :: Double -> Double -> Double -> Maybe Quantity -> Amount -> [(ChartLabel, Int, [(DrawSeries, Quantity)])] -> (Int -> Maybe Quantity) -> (Int -> Quantity -> Maybe Text) -> Maybe Text -> (Double, Svg)
+columnsSvg width plotheight top mscale unit rows rowValue valueText mmark = (plotheight + 22 + negroom + labelheight, do
     -- gridlines and y tick labels
     forM_ ticks $ \t -> do
       S.line ! A.class_ (if t == 0 then "axis" else "grid")
@@ -465,13 +478,12 @@ columnsSvg width plotheight top mscale unit rows rowValue mmark = (plotheight + 
       vstack (lo, hi) yof bx barwidth [(d, q, tip d q) | (d, q) <- segs, q > 0] 1
       vstack (lo, hi) yof bx barwidth [(d, q, tip d q) | (d, q) <- segs, q < 0] (-1)
       -- the total, if marked: a thin line across the bar
-      forM_ mmark $ \tname -> forM_ (rowValue j) $ \q -> withTooltip (T.intercalate " · " [lbFull lbl, tname, showValue unit q]) $ do
+      forM_ mmark $ \tname -> forM_ (rowValue j) $ \q -> withTooltip (T.intercalate " · " $ nub $ [lbFull lbl, tname, showValue unit q] ++ maybe [] pure (valueText j q)) $ do
         let y = toValue $ num (yof $ toD q)
         S.line ! A.class_ "mark total" ! A.x1 (toValue $ num (bx - 4)) ! A.x2 (toValue $ num (bx + barwidth + 4)) ! A.y1 y ! A.y2 y
       -- the value, above the bar (or below, if negative), if it fits
-      forM_ (rowValue j) $ \q -> do
-        let v = showValue unit q
-            pos = sum [toD a | (_, a) <- segs, a > 0]
+      forM_ (rowValue j) $ \q -> forM_ (valueText j q) $ \v -> do
+        let pos = sum [toD a | (_, a) <- segs, a > 0]
             neg = sum [toD a | (_, a) <- segs, a < 0]
             cliproom = if pos > hi || neg < lo then 6 else 0  -- room for a clip mark
             vy = if q >= 0 then yof pos - 6 - cliproom else yof neg + 14 + cliproom
@@ -508,9 +520,9 @@ columnsSvg width plotheight top mscale unit rows rowValue mmark = (plotheight + 
 
 -- | Draw categories as horizontal bars (rows; stacked if several series), with their names on the left (indented as in the report)
 -- and an aligned value column on the right.
--- If a total's name is given, the values (the total's) are also marked across the bars.
-barsSvg :: Double -> Double -> Maybe Quantity -> Amount -> [(ChartLabel, Int, [(DrawSeries, Quantity)])] -> (Int -> Maybe Quantity) -> Maybe Text -> (Double, Svg)
-barsSvg width top mscale unit rows rowValue mmark = (fromIntegral (length rows) * rowHeight + 32, do
+-- The values are shown as the given function says, if at all. If a total's name is given, the values (the total's) are also marked across the bars.
+barsSvg :: Double -> Double -> Maybe Quantity -> Amount -> [(ChartLabel, Int, [(DrawSeries, Quantity)])] -> (Int -> Maybe Quantity) -> (Int -> Quantity -> Maybe Text) -> Maybe Text -> (Double, Svg)
+barsSvg width top mscale unit rows rowValue valueText mmark = (fromIntegral (length rows) * rowHeight + 32, do
     -- gridlines and x tick labels (labels thinned to avoid overlap, always including zero)
     forM_ ticks $ \t -> do
       S.line ! A.class_ (if t == 0 then "axis" else "grid")
@@ -521,13 +533,13 @@ barsSvg width top mscale unit rows rowValue mmark = (fromIntegral (length rows) 
       let ymid = plottop + rowHeight * (fromIntegral i + 0.5)
       S.text_ ! A.class_ "label" ! A.x (toValue $ num (pad + 12 * fromIntegral (lbIndent lbl))) ! A.y (toValue $ num (ymid + 5))
         $ S.toMarkup (lbShort lbl)
-      forM_ (rowValue j) $ \q ->
+      forM_ (rowValue j) $ \q -> forM_ (valueText j q) $ \v ->
         S.text_ ! A.class_ "value" ! A.x (toValue $ num (width - pad)) ! A.y (toValue $ num (ymid + 5)) ! A.textAnchor "end"
-          $ S.toMarkup (showValue unit q)
+          $ S.toMarkup v
       stack lbl ymid [(d, q) | (d, q) <- segs, q > 0] 1
       stack lbl ymid [(d, q) | (d, q) <- segs, q < 0] (-1)
       -- the total, if marked: a thin line across the bar
-      forM_ mmark $ \tname -> forM_ (rowValue j) $ \q -> withTooltip (T.intercalate " · " [lbFull lbl, tname, showValue unit q]) $ do
+      forM_ mmark $ \tname -> forM_ (rowValue j) $ \q -> withTooltip (T.intercalate " · " $ nub $ [lbFull lbl, tname, showValue unit q] ++ maybe [] pure (valueText j q)) $ do
         let x = toValue $ num (xof $ toD q)
         S.line ! A.class_ "mark total" ! A.x1 x ! A.x2 x ! A.y1 (toValue $ num (ymid - thickness / 2 - 4)) ! A.y2 (toValue $ num (ymid + thickness / 2 + 4))
   )
@@ -536,7 +548,7 @@ barsSvg width top mscale unit rows rowValue mmark = (fromIntegral (length rows) 
     (lo, hi, ticks, tickdecimals) = panelScale 5 mscale (minimumDef 0 $ stackedsums (-1)) (maximumDef 0 $ stackedsums 1)
     ticklabel = tickLabel unit{acommodity = ""} tickdecimals []
     labelwidth = min (width * 0.4) $ maximumDef 0 [12 * fromIntegral (lbIndent l) + textWidth (lbShort l) | (l, _, _) <- rows]
-    valuewidth = maximumDef 0 [textWidth (showValue unit q) | (_, j, _) <- rows, Just q <- [rowValue j]]
+    valuewidth = maximumDef 0 [textWidth v | (_, j, _) <- rows, Just q <- [rowValue j], Just v <- [valueText j q]]
     -- leave room for half of a tick label at each end
     edge = maximumDef 0 (map (textWidth . ticklabel) ticks) / 2
     plotleft = pad + max labelwidth edge + 12
@@ -896,4 +908,4 @@ tests_Hledger_Write_Chart_Svg = testGroup "Write.Chart.Svg" [
     lineChart n = lineChartOf [fromIntegral k | k <- [1 .. n]]
     -- a chart of one line, with these values on successive days from 2024-01-01
     lineChartOf qs = Chart "" (XDates $ take (length qs) $ iterate (addDays 1) (fromGregorian 2024 1 1))
-      [Panel nullamt [Series (ChartLabel "a" "a" 0 Nothing True) SeriesItem MarkLine (map Just qs) 0 0] [] Nothing Diverging False []]
+      [Panel nullamt [Series (ChartLabel "a" "a" 0 Nothing True) SeriesItem MarkLine (map Just qs) 0 0] [] Nothing Diverging False [] []]

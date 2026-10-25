@@ -40,7 +40,8 @@ report  -->  adapter (Hledger.Cli.Chart; smart defaults)  -->  Chart (Hledger.Wr
 
 - **Model** (`Hledger.Write.Chart`): a title, an x axis (categories, periods or dates), and one panel per commodity.
   A panel has a unit (an amount template, for display styles), series, group names, an optional fixed scale, a bar layout,
-  a counts flag, and summary values (eg total, average; each with its own display style). A series has a label (with account type, and whether it's an account), a role (item, other, total, shortfall),
+  a counts flag, summary values (eg total, average; each with its own display style), and optional value labels
+  (text that graphical charts show at each x position instead of its value, eg holdings' gain percents). A series has a label (with account type, and whether it's an account), a role (item, other, total, shortfall),
   a mark (bar, line, marker), values, a group (eg a compound report's section) and a usual sign (for contra amounts).
   Values stay exact (Quantity) until renderers convert them for drawing.
 - **Adapters** (hledger package, so hledger-web/ui can use them): multiBalanceReportAsChart, balanceReportAsChart,
@@ -84,7 +85,7 @@ Per report:
 | `register` | each account's running total as a line (with -H, from its start balance), plus the overall total; with an interval, stacked bars per period |
 | `activity` | transaction counts as a single total (counting each transaction once per depth-clipped account, at depth 0); with `--postings`, as `bal --count` |
 | `bal --count` | posting counts by account, at most one text cell per posting |
-| `holdings` | a bar per holding (or lot), in each commodity's panel: cost basis plus unrealised gain (asset and revenue colours), reaching the value; with a loss, the part of the cost it is worth plus the part lost (a shortfall series: expense colour, hatched, in its place at the end of the stack), reaching the cost; without a market price, the cost, as an "other" series. The values are the total (shown as values; and marked, when some holding has a loss, since its value is not its bar's end). Labelled by account and commodity (and lot), also in tree mode, since headings aren't drawn. With a report interval, a bar per period end (labelled by date), for all the holdings then: their cost basis and net gain or loss |
+| `holdings` | a bar per holding (or lot), in each commodity's panel: cost basis plus unrealised gain (asset and revenue colours), reaching the value; with a loss, the part of the cost it is worth plus the part lost (a shortfall series: expense colour, hatched, in its place at the end of the stack), reaching the cost; without a market price, the cost, as an "other" series. The values are the total (shown as values in text; marked, when some holding has a loss, since its value is not its bar's end). SVG labels each bar with its gain percent instead (value labels), since the axis shows the values; tooltips have both. Labelled by account and commodity (and lot), also in tree mode, since headings aren't drawn. With a report interval, a bar per period end (labelled by date), for all the holdings then: their cost basis and net gain or loss |
 
 Text register charts have a row per posting (or transaction); a report interval gives a row per period.
 

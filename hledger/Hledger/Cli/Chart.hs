@@ -213,6 +213,7 @@ multiBalanceReportAsChart accttype ropts@ReportOpts{balanceaccum_, balancecalc_,
           , pnLayout = Diverging
           , pnCounts = balanceCalcIsCount balancecalc_
           , pnSummary = rowSummaries ropts unit totals
+          , pnValueLabels = []
           }
       where
         unit = unitAmount c allamts
@@ -247,6 +248,7 @@ balanceReportAsChart accttype ReportOpts{balancecalc_, translations_} title (ite
       , pnLayout = Diverging
       , pnCounts = balanceCalcIsCount balancecalc_
       , pnSummary = []
+      , pnValueLabels = []
       }
 
 -- | Chart a compound balance report (balancesheet, incomestatement, cashflow..): its sections' accounts, and the net total.
@@ -305,6 +307,7 @@ compoundBalanceReportAsChart accttype sectiontypes ropts@ReportOpts{balanceaccum
           , pnLayout = if flow then Grouped else Diverging
           , pnCounts = balanceCalcIsCount balancecalc_
           , pnSummary = rowSummaries ropts unit totals
+          , pnValueLabels = []
           }
       where
         unit = unitAmount c allamts
@@ -336,6 +339,7 @@ accountTransactionsReportAsChart accttype title acct txndate items =
       , pnLayout = Diverging
       , pnCounts = False
       , pnSummary = []
+      , pnValueLabels = []
       }
 
 -- | Chart a postings report (register).
@@ -357,10 +361,10 @@ postingsReportAsChart accttype startbals ropts@ReportOpts{average_, translations
           -- with postings to several accounts (and not --average), each account's running total as a line, and the overall running total;
           -- otherwise just the running total (labelled with the account, if there's one, so that it has the account's colour)
           linespanel c
-            | average_ = Panel (unitAmount c totalamts) [totalseries c SeriesItem] [] Nothing Diverging False []
-            | [a] <- runningTotalAccounts c = Panel (unitAmount c totalamts) [(totalseries c SeriesItem){seLabel = ChartLabel a a 0 (accttype a) True}] [] Nothing Diverging False []
-            | length (runningTotalAccounts c) < 2 = Panel (unitAmount c totalamts) [totalseries c SeriesItem] [] Nothing Diverging False []
-            | otherwise = Panel (unitAmount c totalamts) (accountRunningTotals c ++ [totalseries c SeriesTotal]) [] Nothing Diverging False []
+            | average_ = Panel (unitAmount c totalamts) [totalseries c SeriesItem] [] Nothing Diverging False [] []
+            | [a] <- runningTotalAccounts c = Panel (unitAmount c totalamts) [(totalseries c SeriesItem){seLabel = ChartLabel a a 0 (accttype a) True}] [] Nothing Diverging False [] []
+            | length (runningTotalAccounts c) < 2 = Panel (unitAmount c totalamts) [totalseries c SeriesItem] [] Nothing Diverging False [] []
+            | otherwise = Panel (unitAmount c totalamts) (accountRunningTotals c ++ [totalseries c SeriesTotal]) [] Nothing Diverging False [] []
       in Chart
         { chTitle  = title
         , chXAxis  = XDates [postingDateOrDate2 (whichDate ropts) p | p <- postings]
@@ -412,7 +416,7 @@ postingsReportAsChart accttype startbals ropts@ReportOpts{average_, translations
     allamts = concatMap amountsRaw cells
     panel c
       | null series = Nothing
-      | otherwise = Just Panel{pnUnit = unitAmount c allamts, pnSeries = series ++ total, pnGroupNames = [], pnScale = Nothing, pnLayout = Diverging, pnCounts = False, pnSummary = []}
+      | otherwise = Just Panel{pnUnit = unitAmount c allamts, pnSeries = series ++ total, pnGroupNames = [], pnScale = Nothing, pnLayout = Diverging, pnCounts = False, pnSummary = [], pnValueLabels = []}
       where
         series = limitSeries maxSeries translations_ MarkBar
           [ (ChartLabel a a 0 (accttype a) True, qs) | (a, amts) <- rows, let qs = map (quantityIn c) amts, any (/= 0) qs ]

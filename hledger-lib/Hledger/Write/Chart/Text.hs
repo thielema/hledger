@@ -383,13 +383,13 @@ tests_Hledger_Write_Chart_Text = testGroup "Write.Chart.Text" [
   ,testCase "single series, scaled to the width" $ do
      let lbl t = ChartLabel t t 0 Nothing True
          chart = Chart "" (XCategories [lbl "a", lbl "b"])
-                   [Panel nullamt [Series (lbl "s") SeriesItem MarkBar [Just 1, Just 2] 0 0] [] Nothing Diverging False []]
+                   [Panel nullamt [Series (lbl "s") SeriesItem MarkBar [Just 1, Just 2] 0 0] [] Nothing Diverging False [] []]
      map (T.concat . map snd) (chartAsStyledLines (TextChartOpts 20 True) chart)
        @?= ["a  1  ███████", "b  2  ██████████████"]
   ,testCase "mixed signs grow from an axis" $ do
      let lbl t = ChartLabel t t 0 Nothing True
          chart = Chart "" (XCategories [lbl "a", lbl "b"])
-                   [Panel nullamt [Series (lbl "s") SeriesItem MarkBar [Just (-1), Just 2] 0 0] [] Nothing Diverging False []]
+                   [Panel nullamt [Series (lbl "s") SeriesItem MarkBar [Just (-1), Just 2] 0 0] [] Nothing Diverging False [] []]
      map (T.concat . map snd) (chartAsStyledLines (TextChartOpts 21 False) chart)
        @?= ["a  -1  ####|", "b   2      |#########"]
   ]
