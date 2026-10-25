@@ -8125,7 +8125,7 @@ failures are unlikely, but if you see one, please report it as a bug.
 # Charts
 
 hledger can show many reports as a chart: add `--chart` to a
-`balance`, `balancesheet`, `balancesheetequity`, `cashflow`, `incomestatement`, `aregister` or `register` report.
+`balance`, `balancesheet`, `balancesheetequity`, `cashflow`, `incomestatement`, `aregister`, `register` or `holdings` report.
 (The `activity` command always shows one.)
 A suitable kind of chart is chosen for the report: eg stacked bars per period for balance changes,
 lines for balances over time, or a bar per account for a single period.
@@ -8149,7 +8149,7 @@ with [HTML output](#html-output) it is shown with the report's table collapsed b
 and with CSV, TSV or JSON output you get the chart's data.
 To see a graphical chart quickly, add [`--view`](#output-destination), eg `hledger is -M --chart --view`.
 `--chart` also accepts a chart kind and a fixed scale, eg to compare charts.
-For the details, see [Balance charts](#balance-charts), [aregister](#aregister) and [Register charts](#register-charts).
+For the details, see [Balance charts](#balance-charts), [aregister](#aregister), [Register charts](#register-charts) and [Holdings charts](#holdings-charts).
 
 # Command line tips
 

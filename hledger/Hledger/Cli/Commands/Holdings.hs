@@ -28,6 +28,7 @@ module Hledger.Cli.Commands.Holdings (
  ,HoldingsLine(..)
  ,Holding(..)
  ,holdingsReport
+ ,holdingsReportAsChart
  ,showage
  ,showPercentWith
 ) where
@@ -37,7 +38,7 @@ import Control.Monad (guard)
 import Data.Aeson (Value, object, (.=))
 import Data.Decimal (roundTo)
 import Data.Default (def)
-import Data.List.Extra (find, intercalate, intersperse, minimumBy, nubSort, nubSortOn, sortOn)
+import Data.List.Extra (find, intercalate, intersperse, minimumBy, nubSort, nubSortOn, sortOn, transpose)
 import Data.Map.Strict qualified as M
 import Data.Set qualified as S
 import Data.Maybe (fromMaybe, isJust, mapMaybe)
@@ -49,10 +50,13 @@ import System.Console.CmdArgs.Explicit (flagNone, flagReq)
 import Text.Printf (printf)
 
 import Hledger
+import Hledger.Cli.Chart (chartFlag, chartRequested, chartWidthFlag, writeChart)
 import Hledger.Cli.CliOptions
 import Hledger.Cli.Commands.Balance.Internal (addTotalBorders)
 import Hledger.Cli.Commands.Print (roundFromRawOpts)
 import Hledger.Cli.Utils (unsupportedOutputFormatError, writeOutputLazyText)
+import Hledger.Utils.I18n qualified as I18n
+import Hledger.Write.Chart (Chart(..), ChartLabel(..), Mark(..), Panel(..), BarLayout(..), Series(..), SeriesRole(..), XAxis(..))
 import Hledger.Write.Csv (CSV, printCSV, printTSV)
 import Hledger.Write.Html (Html, htmlAsLazyText, titledTableHtml, toHtml)
 import Hledger.Write.Ods (printFods)
@@ -83,7 +87,9 @@ holdingsmode = hledgerCommandMode
      ,"hard - round amounts to precision (default)"
      ,"all  - also round cost amounts to precision"
      ]
-   ,outputFormatFlag ["txt","csv","tsv","html","fods","json"]
+   ,chartFlag
+   ,chartWidthFlag
+   ,outputFormatFlag ["txt","csv","tsv","html","fods","json","svg"]
    ,outputFileFlag
    ,outputViewFlag])
   cligeneralflagsgroups1
@@ -248,6 +254,63 @@ data HoldingsReport = HoldingsReport {
      --   style for the "%" commodity, for showing the percent columns
      --   (see showPercentWith)
   }
+
+-- | Chart a holdings report: a bar for each holding (a commodity in an account, or a lot), in each of its commodities' panels.
+-- A holding with a market price is drawn as its cost basis and its unrealised gain, stacked, reaching its value;
+-- or with an unrealised loss, as the part of its cost basis it is worth, and the part lost (reaching its cost basis).
+-- A holding without a market price is drawn as its cost basis, in a muted colour.
+-- The holdings' market values are the chart's total, shown as their values (none for holdings without a market price).
+-- Holdings are labelled by account (with --drop applied) and commodity, also in tree mode, since account headings are not drawn.
+holdingsReportAsChart :: ReportOpts -> T.Text -> HoldingsReport -> Chart
+holdingsReportAsChart ropts@ReportOpts{translations_} title rpt =
+  Chart{chTitle = title, chXAxis = XCategories (map label positions), chPanels = map panel commodities}
+  where
+    -- each holding's account, whether it is a lot, and the holding
+    positions = [(a, islot, h) | HoldingsPosition{hlAccount = a, hlIsLot = islot, hlHolding = h} <- hrLines rpt]
+    -- eg "assets:broker AAPL", or for a lot, "assets:broker AAPL {2024-01-10, $150}"
+    label (acct, islot, h) = ChartLabel (name acct) (name $ accountNameDrop (drop_ ropts) acct) 0 Nothing True
+      where
+        name a
+          | islot     = T.unwords [parentAccountName a, hCommodity h, accountLeafName a]
+          | otherwise = a <> " " <> hCommodity h
+    amts = concat [hCost h ++ hValue h | (_, _, h) <- positions]
+    -- the commodities of the holdings' costs and values, most used first
+    commodities = map fst $ sortOn (\(c, n) -> (Down n, c)) $ M.toList $ M.fromListWith (+) [(acommodity a, 1 :: Int) | a <- amts]
+    tr = I18n.tr translations_
+    panel c = Panel
+      { pnUnit = maybe nullamt{acommodity = c} (\a -> a{aquantity = 0, acost = Nothing, acostbasis = Nothing}) $ find ((== c) . acommodity) amts
+      , pnSeries = [ Series (ChartLabel name name 0 typ False) role mark vals 0 0
+                   | ((name, typ, role, mark), vals) <- zip specs $ transpose [holdingValues h | (_, _, h) <- positions]
+                   , any isJust vals || role == SeriesTotal ]  -- the values, even if none, so that a cost is not shown as one
+      , pnGroupNames = []
+      , pnScale = Nothing
+      , pnLayout = Diverging
+      , pnCounts = False
+      , pnSummary = []
+      }
+      where
+        specs =
+          [ (tr "Cost", Just Asset, SeriesItem, MarkBar)
+          , (tr "Unrealised gain", Just Revenue, SeriesItem, MarkBar)
+          , (tr "Unrealised loss", Just Expense, SeriesItem, MarkBar)
+          , (tr "No market price", Nothing, SeriesOther, MarkBar)
+          , (tr "Value", Nothing, SeriesTotal, MarkMarker)
+          ]
+        -- A holding's values for those series, in this commodity: the bar is its value and cost basis,
+        -- the smaller of them stacked with the difference, a gain or loss. (Values and costs are of one sign,
+        -- negative for a short position, whose gain is a smaller value.)
+        holdingValues h = case (quantityOf (hValue h), quantityOf (hCost h)) of
+          (Just v, Just k) | not (null $ hUgain h) ->
+            let (base, end) = if abs v <= abs k then (v, k) else (k, v)
+                ugain = v - k
+            in [Just base, nonzero (ugain > 0) (end - base), nonzero (ugain < 0) (end - base), Nothing, Just v]
+          (Just v, _)       -> [Just v, Nothing, Nothing, Nothing, Just v]  -- a value not comparable with the cost: just the value
+          (Nothing, Just k) -> [Nothing, Nothing, Nothing, Just k, Nothing]
+          _                 -> replicate 5 Nothing
+        quantityOf as = case [aquantity a | a <- as, acommodity a == c] of
+          [] -> Nothing
+          qs -> Just $ sum qs
+        nonzero ok q = if ok && q /= 0 then Just q else Nothing
 
 -- | Compute the holdings report: the assets held in lot-tracked accounts
 -- as of the report end date, one line per account (or per lot, with
@@ -944,7 +1007,9 @@ holdings opts@CliOpts{rawopts_=rawopts, reportspec_=rspec@ReportSpec{_rsReportOp
   if (case value_ ropts of Just (AtThen _) -> True; _ -> False)
   then error' "holdings: --value=then is not supported"
   else rounding `seq`  -- validate the --round value before any output
-    writeOutputLazyText opts $ case outputFormatFromOpts opts of
+    if chartRequested opts
+    then writeChart opts (Just $ (<>"\n") $ htmlAsLazyText $ titledTableHtml title htmltable) $ holdingsReportAsChart ropts title rpt
+    else writeOutputLazyText opts $ case outputFormatFromOpts opts of
       "txt"  -> txtoutput
       "csv"  -> printCSV csvoutput
       "tsv"  -> printTSV csvoutput

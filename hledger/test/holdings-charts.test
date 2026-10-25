@@ -1,0 +1,99 @@
+# * holdings --chart and svg output
+
+<
+commodity AAPL ; lots:
+commodity XYZ ; lots:
+commodity NEW ; lots:
+commodity SAP ; lots:
+account revenues:gains ; type: G
+commodity 1,000.00 USD
+commodity 1.000,00 EUR
+
+account assets:broker   ; type: A
+account assets:eu       ; type: A
+
+2024-01-10 buy
+  assets:broker    10 AAPL @ 150 USD
+  assets:cash
+
+2024-02-10 buy
+  assets:broker    20 XYZ @ 50 USD
+  assets:cash
+
+2024-03-10 buy
+  assets:broker    5 NEW @ 20 USD
+  assets:cash
+
+2024-03-15 buy
+  assets:eu        30 SAP @ 100 EUR
+  assets:cash
+
+2024-06-01 sell some
+  assets:broker    -5 XYZ @ 60 USD
+  assets:cash   300 USD
+  revenues:gains
+
+P 2024-12-31 AAPL 250 USD
+P 2024-12-31 XYZ 30 USD
+P 2024-12-31 SAP 120 EUR
+
+# ** 1. A holding is charted as its cost and its unrealised gain, reaching its value (shown);
+# or with an unrealised loss, as the part of its cost it is worth and the part lost, reaching its cost.
+# A holding without a market price is charted as its cost, in a muted colour, with no value.
+# There is a panel per commodity.
+$ hledger -f- holdings -e 2025-01-01 --chart -w 70
+Holdings on 2024-12-31
+
+USD
+█ Cost  ▒ Unrealised gain  ▓ Unrealised loss  ░ No market price
+
+assets:broker AAPL  2,500.00 USD  ██████████████████████▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+assets:broker NEW                 ░
+assets:broker XYZ     450.00 USD  ██████▓▓▓▓▓
+
+EUR
+█ Cost  ▒ Unrealised gain
+
+assets:eu SAP  3.600,00 EUR  ██████████████████████████████████▒▒▒▒▒▒▒
+
+# ** 2. With --lots, each lot is charted, labelled by account, commodity and lot.
+$ hledger -f- holdings -e 2025-01-01 --lots --chart -w 110
+Holdings on 2024-12-31
+
+USD
+█ Cost  ▒ Unrealised gain  ▓ Unrealised loss  ░ No market price
+
+assets:broker AAPL {2024-01-10, 15..  2,500.00 USD  ███████████████████████████████████▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+assets:broker XYZ {2024-02-10, 50...    450.00 USD  ██████████▓▓▓▓▓▓▓
+assets:broker NEW {2024-03-10, 20...                ░░
+
+EUR
+█ Cost  ▒ Unrealised gain
+
+assets:eu SAP {2024-03-15, 100,00 ..  3.600,00 EUR  ████████████████████████████████████████████████▒▒▒▒▒▒▒▒▒▒
+
+# ** 3. A chart of only holdings without a market price (eg with -X and no exchange rate) still has a legend, explaining their colour.
+$ hledger -f- holdings -e 2025-01-01 -X EUR --chart -w 60 broker
+Holdings on 2024-12-31
+
+█ No market price
+
+assets:broker AAPL  ████████████████████████████████████████
+assets:broker NEW   ██▋
+assets:broker XYZ   ████████████████████
+
+# ** 4. In SVG, the bars are coloured as an asset (cost), revenue (gain) and expense (loss), and the values are shown above them.
+$ hledger -f- holdings -e 2025-01-01 -O svg broker | grep -o 'class="fill [a-z0-9]*"\|class="value"[^>]*>[^<]*' | sed 's/class="value"[^>]*>//' | sort -u
+2,500.00 USD
+450.00 USD
+class="fill other"
+class="fill ta0"
+class="fill tr0"
+class="fill tx0"
+
+# ** 5. With csv output, --chart gives the chart's data: each series' value per holding.
+$ hledger -f- holdings -e 2025-01-01 --chart -O csv eu
+"commodity","series","role","mark","x","value"
+"EUR","Cost","item","bar","assets:eu SAP","3000,00"
+"EUR","Unrealised gain","item","bar","assets:eu SAP","600,00"
+"EUR","Value","total","marker","assets:eu SAP","3600,00"

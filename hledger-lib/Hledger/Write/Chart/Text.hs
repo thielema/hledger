@@ -109,7 +109,7 @@ styledLinesAsText mode = TL.fromChunks . concatMap (\l -> map piece l ++ ["\n"])
 
 -- | Draw a chart as styled lines of text: the title (if any), then each panel,
 -- with a heading naming its commodity when there are several (and it has a commodity symbol),
--- and a legend when it has several series (listing those that are visible: a series too small to fill a character cell is not).
+-- and a legend when it has several series, or an "other" series (listing those that are visible: a series too small to fill a character cell is not).
 -- A chart of dates (eg a register) has a row per date, however many there are.
 -- A chart with no panels (nothing to show, eg in an empty period) says so.
 chartAsStyledLines :: TextChartOpts -> Chart -> [StyledLine]
@@ -218,7 +218,7 @@ panelLines TextChartOpts{tcWidth, tcUnicode} xaxis colouring showheading Panel{p
     drawnstyles = nub [st | l <- rowlines, (st, t) <- l, st /= StylePlain, not $ T.null $ T.strip t]
     -- a legend for the series, omitting any not drawn
     legend
-      | length drawn > 1 = wrapLegend (
+      | length drawn > 1 || any ((== SeriesOther) . seRole) drawn = wrapLegend (
           [ [(st, T.singleton c), (StylePlain, " " <> lbFull (seLabel s))] | ((st, c, _), s) <- zip styled drawn, st `elem` drawnstyles ]
           ++ [ [(StylePlain, markchar), (StylePlain, " " <> lbFull (seLabel t))] | Just t <- [marktotal] ]
           ++ [ [(StylePlain, T.singleton contrachar), (StylePlain, " contra")]

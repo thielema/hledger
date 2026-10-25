@@ -119,3 +119,26 @@ tree-mode heading records.
 With `-O json`, a JSON array of holding objects is produced.
 In both, the cost and value fields are named
 `unitcost`, `unitprice`, `totalcost` and `totalvalue`.
+
+### Holdings charts
+
+With `--chart`, holdings are shown as a chart: a bar for each holding (or lot, with `--lots`), labelled by account and commodity.
+A holding's bar shows its cost basis, and its unrealised gain stacked on top, reaching its market value (which is shown);
+or if it has lost value, the part of its cost basis it is still worth, and the part lost, reaching its cost basis.
+In graphical charts these are coloured like assets (blue), revenues (green) and expenses (red).
+A holding without a market price is shown as its cost basis, in grey.
+There is a chart panel for each commodity the holdings are valued in; use `-X COMM` to see them all in one.
+With [SVG output](#svg-output) (eg `-o holdings.svg`, or `--view`) it is a graphical chart,
+and with HTML output it is shown above the report's table. See [Charts](#charts) for more.
+
+```cli
+$ hledger holdings --chart -w 70
+Holdings on 2024-12-31
+
+USD
+█ Cost  ▒ Unrealised gain  ▓ Unrealised loss  ░ No market price
+
+assets:broker AAPL  2,500.00 USD  ██████████████████████▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+assets:broker NEW                 ░
+assets:broker XYZ     450.00 USD  ██████▓▓▓▓▓
+```

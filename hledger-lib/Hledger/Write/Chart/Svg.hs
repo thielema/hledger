@@ -199,7 +199,9 @@ panelSvg opts xaxis colouring showheading top Panel{pnUnit, pnSeries, pnGroupNam
     onestack = not (pnLayout == Grouped && length pnGroupNames > 1)
     mixedsigns = or [any (> 0) qs && any (< 0) qs | qs <- map catMaybes $ transpose $ map seValues items]
     drawn = zipWith (\c s -> DrawSeries (colourClass c) s (seriesValues s)) (seriesColours colouring items) items
-    (legendh, legendm) = legendSvg (svgWidth opts) (top + headingh) [(dsClass d, seMark (dsSeries d), lbFull $ seLabel $ dsSeries d) | d <- drawn]
+    -- the series are listed in a legend when there are several, or when one is an "other" series, whose muted colour needs explaining
+    listseries = length drawn > 1 || any ((== SeriesOther) . seRole . dsSeries) drawn
+    (legendh, legendm) = legendSvg (svgWidth opts) (top + headingh) listseries [(dsClass d, seMark (dsSeries d), lbFull $ seLabel $ dsSeries d) | d <- drawn]
                            (if length items > 1 then mtotalmark else Nothing) hascontra (suLabel <$> maverage)
     hascontra = or [isContra s q | s <- items, seMark s == MarkBar, Just q <- seValues s]
     (bodyh, bodym) = case xaxis of
@@ -208,16 +210,16 @@ panelSvg opts xaxis colouring showheading top Panel{pnUnit, pnSeries, pnGroupNam
       XDates ds      -> timeSvg opts (top + headingh + legendh) pnScale pnLayout pnUnit drawn mtotalmark Nothing (DateScale ds)
     averageline = (\su -> (suLabel su <> " · " <> showSummary su, aquantity $ suValue su)) <$> maverage
 
--- | A legend: a swatch and label for each series, flowing left to right, when there are several series.
+-- | A legend: a swatch and label for each series, flowing left to right, if they are to be listed (eg when there are several).
 -- If there are contra amounts, a hatched swatch is shown for them too.
--- If an average line is drawn (with this label), a dashed swatch is shown for it, even when there is only one series.
-legendSvg :: Double -> Double -> [(Text, Mark, Text)] -> Maybe Series -> Bool -> Maybe Text -> (Double, Svg)
-legendSvg width top entries mtotal hascontra maveragelabel
+-- If an average line is drawn (with this label), a dashed swatch is shown for it, even when the series are not listed.
+legendSvg :: Double -> Double -> Bool -> [(Text, Mark, Text)] -> Maybe Series -> Bool -> Maybe Text -> (Double, Svg)
+legendSvg width top listseries entries mtotal hascontra maveragelabel
   | null allentries = (0, mempty)
   | otherwise = (fromIntegral (length rows) * legendRowHeight + 8, mapM_ drawRow (zip [0 ..] rows))
   where
     allentries
-      | length entries < 2 = averageentry
+      | not listseries = averageentry
       | otherwise = entries
           ++ [("total", if seMark t == MarkLine || all (\(_, mk, _) -> mk == MarkLine) entries then MarkLine else MarkMarker, lbFull (seLabel t)) | Just t <- [mtotal]]
           ++ averageentry

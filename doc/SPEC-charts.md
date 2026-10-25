@@ -82,6 +82,7 @@ Per report:
 | `register` | each account's running total as a line (with -H, from its start balance), plus the overall total; with an interval, stacked bars per period |
 | `activity` | transaction counts as a single total (counting each transaction once per depth-clipped account, at depth 0); with `--postings`, as `bal --count` |
 | `bal --count` | posting counts by account, at most one text cell per posting |
+| `holdings` | a bar per holding (or lot), in each commodity's panel: cost basis plus unrealised gain (asset and revenue colours), reaching the value; with a loss, the part of the cost it is worth plus the part lost (expense colour), reaching the cost; without a market price, the cost, as an "other" series. The values are the total (shown as values). Labelled by account and commodity (and lot), also in tree mode, since headings aren't drawn |
 
 Text register charts have a row per posting (or transaction); a report interval gives a row per period.
 
@@ -155,6 +156,7 @@ Count charts (`pnCounts`) instead cap text at one cell per unit when no SCALE is
 
 - Text: value column before the bars; eighth blocks for single-segment bars, whole cells (rounded cumulatively) for stacked ones;
   fill characters `█▓▒░` (`#=+:` in ASCII, chosen from the locale encoding); legend wrapped, listing only visible series; trailing spaces trimmed.
+- Legends list the series when there are several, or when one is an "other" series, whose muted colour needs explaining.
 - SVG: self-contained, deterministic (one-decimal coordinates, one element per line, for golden tests), system fonts, literal colours in CSS
   (librsvg doesn't support `var()`), a `prefers-color-scheme` dark variant (omitted when embedded in html, which is light).
   Ticks by d3's 1-2-5 rule. Tooltips as `<title>` (marks wrapped in `<g>`, as blaze-svg leaf elements can't have children);

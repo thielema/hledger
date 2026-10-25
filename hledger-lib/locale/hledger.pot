@@ -528,6 +528,26 @@ msgstr ""
 msgid "Cash flows"
 msgstr ""
 
+#: hledger/Hledger/Cli/Commands/Holdings.hs
+msgid "Cost"
+msgstr ""
+
+#: hledger/Hledger/Cli/Commands/Holdings.hs
+msgid "Unrealised gain"
+msgstr ""
+
+#: hledger/Hledger/Cli/Commands/Holdings.hs
+msgid "Unrealised loss"
+msgstr ""
+
+#: hledger/Hledger/Cli/Commands/Holdings.hs
+msgid "No market price"
+msgstr ""
+
+#: hledger/Hledger/Cli/Commands/Holdings.hs
+msgid "Value"
+msgstr ""
+
 #. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
 #: hledger/Hledger/Cli/Commands/Incomestatement.hs
 msgid "Income Statement"
