@@ -27,6 +27,7 @@ import Data.List (find, nub, partition, sortOn)
 #if !MIN_VERSION_base(4,20,0)
 import Data.List (foldl')
 #endif
+import Control.Monad (join)
 import Data.Maybe (fromMaybe, isJust, isNothing)
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -126,10 +127,11 @@ data Row = Row
   , rowSegments :: [(Style, Char, Quantity)]
   , rowMark     :: Maybe Quantity  -- ^ a value to mark with a vertical line, over the bar segments if any (eg a net total)
   , rowSides    :: (Maybe Quantity, Maybe Quantity)  -- ^ in a diverging chart, the totals of the series usually right and left of the axis
+  , rowNote     :: Maybe Text      -- ^ text to show after the value (see 'pnValueLabels'), eg a gain percent
   }
 
 panelLines :: TextChartOpts -> XAxis -> Colouring -> Bool -> Panel -> [StyledLine]
-panelLines TextChartOpts{tcWidth, tcUnicode} xaxis colouring showheading Panel{pnUnit, pnSeries, pnGroupNames, pnScale, pnLayout, pnCounts, pnSummary} =
+panelLines TextChartOpts{tcWidth, tcUnicode} xaxis colouring showheading Panel{pnUnit, pnSeries, pnGroupNames, pnScale, pnLayout, pnCounts, pnSummary, pnValueLabels} =
   [[(StylePlain, acommodity pnUnit)] | showheading, not $ T.null $ acommodity pnUnit]
   ++ legend
   ++ [trimEnd headerline | diverging, not $ all T.null [posname, negname, netname]]
@@ -202,12 +204,12 @@ panelLines TextChartOpts{tcWidth, tcUnicode} xaxis colouring showheading Panel{p
     rows
       | grouped =
         concat
-          [ [ Row (if i == 0 then lbl else "") (groupName k) (groupTotal j k) (segmentsAt j [ss | ss@(_, s) <- styledseries, seGroup s == k]) Nothing (Nothing, Nothing)
+          [ [ Row (if i == 0 then lbl else "") (groupName k) (groupTotal j k) (segmentsAt j [ss | ss@(_, s) <- styledseries, seGroup s == k]) Nothing (Nothing, Nothing) Nothing
             | (i, k) <- zip [0 :: Int ..] groups ]
-            ++ [ Row "" (lbShort $ seLabel t) (valueAt tvals j) [] (valueAt tvals j) (Nothing, Nothing) | Just t <- [marktotal], let tvals = seriesValues t ]
+            ++ [ Row "" (lbShort $ seLabel t) (valueAt tvals j) [] (valueAt tvals j) (Nothing, Nothing) Nothing | Just t <- [marktotal], let tvals = seriesValues t ]
           | (j, lbl) <- zip [0 ..] xlabels ]
       | otherwise =
-      [ Row lbl "" rowval (segmentsAt j styledseries) (if isJust marktotal then rowval else Nothing) (sideTotal j 1, sideTotal j (-1))
+      [ Row lbl "" rowval (segmentsAt j styledseries) (if isJust marktotal then rowval else Nothing) (sideTotal j 1, sideTotal j (-1)) (join $ pnValueLabels `atMay` j)
       | (j, lbl) <- zip [0 ..] xlabels
       , let rowval = case (mtotalvals, styled) of
               (Just tvals, _)     -> valueAt tvals j
@@ -246,6 +248,9 @@ panelLines TextChartOpts{tcWidth, tcUnicode} xaxis colouring showheading Panel{p
     sublabelw = min (tcWidth `div` 4) $ maximumDef 0 $ map (realLength . rowSubLabel) rows
     valuew = maximumDef 0 [realLength (showValue q) | Row{rowValue = Just q} <- rows]
     hasvalues = any (isJust . rowValue) rows
+    -- the notes column, after the values, if any rows have notes
+    notew = maximumDef 0 [realLength t | Row{rowNote = Just t} <- rows]
+    notecolumn t = if notew > 0 then [(StylePlain, "  "), (StylePlain, fitText (Just notew) Nothing False False t)] else []
     -- In a diverging chart, the totals of each side's series (eg a compound report's sections), shown at that end of the bar.
     -- They are shown with their usual sign as positive, like the report's tables (eg expenses as positive),
     -- and include contra amounts (eg a refund counts in expenses, though it is drawn on the other side).
@@ -266,10 +271,11 @@ panelLines TextChartOpts{tcWidth, tcUnicode} xaxis colouring showheading Panel{p
     headerline = drop 1 $
       (if labelw > 0 then [(StylePlain, "  "), (StylePlain, T.replicate labelw " ")] else [])
       ++ (if hasvalues then [(StylePlain, "  "), (StylePlain, fitText (Just valuew) Nothing False False netname)] else [])
+      ++ notecolumn ""
       ++ [(StylePlain, "  ")]
       ++ (if negsumw > 0 then [(StylePlain, fitText (Just negsumw) Nothing False False negname), (StylePlain, " ")] else [])
       ++ (if possumw > 0 then [(StylePlain, T.replicate barw " "), (StylePlain, " "), (StylePlain, posname)] else [])
-    barw = max 10 $ tcWidth - (if labelw > 0 then labelw + 2 else 0) - (if sublabelw > 0 then sublabelw + 2 else 0) - (if hasvalues then valuew + 2 else 0)
+    barw = max 10 $ tcWidth - (if labelw > 0 then labelw + 2 else 0) - (if sublabelw > 0 then sublabelw + 2 else 0) - (if hasvalues then valuew + 2 else 0) - (if notew > 0 then notew + 2 else 0)
                   - (if negsumw > 0 then negsumw + 1 else 0) - (if possumw > 0 then possumw + 1 else 0)
     posTotal r = sum [q | (_, _, q) <- rowSegments r, q > 0] `max` maybe 0 (max 0) (rowMark r)
     negTotal r = sum [abs q | (_, _, q) <- rowSegments r, q < 0] `max` maybe 0 (abs . min 0) (rowMark r)
@@ -302,13 +308,14 @@ panelLines TextChartOpts{tcWidth, tcUnicode} xaxis colouring showheading Panel{p
     clipleft  = if tcUnicode then "◂" else "<"
 
     -- the label column, value column and bars, separated by two spaces (columns with nothing in them are left out)
-    rowLine r@Row{rowLabel, rowSubLabel, rowValue} =
+    rowLine r@Row{rowLabel, rowSubLabel, rowValue, rowNote} =
       drop 1 $
       (if labelw > 0 then [(StylePlain, "  "), (StylePlain, fitText (Just labelw) (Just labelw) True True rowLabel)] else [])
       ++ (if sublabelw > 0 then [(StylePlain, "  "), (StylePlain, fitText (Just sublabelw) (Just sublabelw) True True rowSubLabel)] else [])
       ++ (if hasvalues
           then [(StylePlain, "  "), (maybe StylePlain valueStyle rowValue, fitText (Just valuew) Nothing False False $ maybe "" showValue rowValue)]
           else [])
+      ++ notecolumn (fromMaybe "" rowNote)
       ++ [(StylePlain, "  ")]
       ++ (if negsumw > 0 then [(maybe StylePlain valueStyle (negSum r), fitText (Just negsumw) Nothing False False $ maybe "" showValue (negSum r)), (StylePlain, " ")] else [])
       ++ (if possumw > 0 then padTo barw bars ++ [(StylePlain, " "), (maybe StylePlain valueStyle (posSum r), maybe "" showValue (posSum r))] else bars)

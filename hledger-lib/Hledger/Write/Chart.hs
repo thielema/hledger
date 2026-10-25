@@ -127,8 +127,9 @@ data Panel = Panel
   , pnCounts    :: Bool       -- ^ are the values counts of whole things (eg postings) ? Then text charts draw at most one cell per unit,
                               --   so that small counts are not magnified (unless a fixed scale is set).
   , pnSummary   :: [Summary]  -- ^ values summarising the whole chart, shown below it (eg with -T and -A, the total and the average per period)
-  , pnValueLabels :: [Maybe Text]  -- ^ text for graphical charts to show at each x position instead of its value (eg a holding's gain percent),
-                                   --   or none there; or if empty, the values are shown as usual
+  , pnValueLabels :: [Maybe Text]  -- ^ text to show at each x position (or none there), eg a holding's gain percent:
+                                   --   in graphical charts instead of its value (which the axis shows), in text charts after it.
+                                   --   If empty, the values are shown as usual
   } deriving (Show, Eq, Generic, ToJSON)
 
 -- | A value summarising a panel's values over the whole x axis, such as their total or their average.
