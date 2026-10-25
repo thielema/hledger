@@ -120,6 +120,25 @@ With `-O json`, a JSON array of holding objects is produced.
 In both, the cost and value fields are named
 `unitcost`, `unitprice`, `totalcost` and `totalvalue`.
 
+### Holdings over time
+
+With a [report interval](#report-intervals) (eg `-M`, `-Q`, `-Y`), holdings shows how your holdings changed:
+their totals at the end of each period, each computed as on that date
+(eg valued at its market prices, with realised gains and XIRR up to then).
+List/tree mode and `--lots` make no difference to these totals, and are ignored.
+With `-O csv`, `tsv` or `json`, there is one record per period end.
+
+```cli
+$ hledger holdings -M -e 2026-04-01
+Holdings at period ends, 2026-01-31..2026-03-31
+
+            || Total cost  Total value  UGain  UGain%  RGain     XIRR 
+============++========================================================
+ 2026-01-31 ||       $100         $120    $20   20.0%          820.5% 
+ 2026-02-28 ||        $60          $90    $30   50.0%    $20  1566.4% 
+ 2026-03-31 ||        $60          $54    $-6  -10.0%    $20   108.0% 
+```
+
 ### Holdings charts
 
 With `--chart`, holdings are shown as a chart: a bar for each holding (or lot, with `--lots`), labelled by account and commodity.
@@ -129,6 +148,8 @@ When some holding has lost value, the market values are also marked across the b
 In graphical charts these are coloured like assets (blue), revenues (green) and expenses (red).
 A holding without a market price is shown as its cost basis, in grey.
 There is a chart panel for each commodity the holdings are valued in; use `-X COMM` to see them all in one.
+With a report interval, there is a bar for each period end instead, showing all the holdings then:
+their total cost basis, and their net unrealised gain or loss.
 With [SVG output](#svg-output) (eg `-o holdings.svg`, or `--view`) it is a graphical chart,
 and with HTML output it is shown above the report's table. See [Charts](#charts) for more.
 

@@ -15,6 +15,7 @@ UIs; the holdings command renders it in the usual output formats.
 
 -}
 
+{-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
@@ -29,6 +30,7 @@ module Hledger.Cli.Commands.Holdings (
  ,Holding(..)
  ,holdingsReport
  ,holdingsReportAsChart
+ ,holdingsReportsAsChart
  ,showage
  ,showPercentWith
 ) where
@@ -54,7 +56,7 @@ import Hledger.Cli.Chart (chartFlag, chartRequested, chartWidthFlag, writeChart)
 import Hledger.Cli.CliOptions
 import Hledger.Cli.Commands.Balance.Internal (addTotalBorders)
 import Hledger.Cli.Commands.Print (roundFromRawOpts)
-import Hledger.Cli.Utils (unsupportedOutputFormatError, writeOutputLazyText)
+import Hledger.Cli.Utils (unsupportedOutputFormatError, warnIfLargeMultiPeriodReport, writeOutputLazyText)
 import Hledger.Utils.I18n qualified as I18n
 import Hledger.Write.Chart (Chart(..), ChartLabel(..), Mark(..), Panel(..), BarLayout(..), Series(..), SeriesRole(..), XAxis(..))
 import Hledger.Write.Csv (CSV, printCSV, printTSV)
@@ -142,6 +144,36 @@ holdingCsv h =
     showamt  = T.pack . showAmountWith machineFmt
     showamts [] = ""
     showamts as = T.pack $ showMixedAmountWith machineFmt $ mixed as
+
+-- | Machine-readable fields for a period's totals, in the csv/tsv output with a report interval: like 'holdingCsv'.
+periodTotalsCsv :: Day -> (M.Map CommoditySymbol AmountStyle, HoldingsTotals) -> [T.Text]
+periodTotalsCsv d (_, tot) =
+  [showDate d
+  ,showamts (htCost tot)
+  ,maybe "" showamts (htValue tot)
+  ,maybe "" showamts (htUgain tot)
+  ,maybe "" (T.pack . show . roundTo 1) (htUgainPct tot)
+  ,showamts (htRgain tot)
+  ,maybe "" (T.pack . printf "%.1f") (htXirr tot)
+  ]
+  where
+    showamts [] = ""
+    showamts as = T.pack $ showMixedAmountWith machineFmt $ mixed as
+
+-- | A period's totals, in the json output with a report interval: like 'holdingJson'.
+periodTotalsJson :: Day -> (M.Map CommoditySymbol AmountStyle, HoldingsTotals) -> Value
+periodTotalsJson d (_, tot) = object
+  ["date"       .= d
+  ,"totalcost"  .= showamts (htCost tot)
+  ,"totalvalue" .= (showamts <$> htValue tot)
+  ,"ugain"      .= (showamts <$> htUgain tot)
+  ,"ugainpct"   .= (roundTo 1 <$> htUgainPct tot)
+  ,"rgain"      .= mshowamts (htRgain tot)
+  ,"xirr"       .= htXirr tot
+  ]
+  where
+    showamts = T.pack . showMixedAmountWith machineFmt . mixed
+    mshowamts as = case as of [] -> Nothing; _ -> Just $ showamts as
 
 holdingJson :: Holding -> Value
 holdingJson h = object
@@ -255,15 +287,12 @@ data HoldingsReport = HoldingsReport {
      --   (see showPercentWith)
   }
 
--- | Chart a holdings report: a bar for each holding (a commodity in an account, or a lot), in each of its commodities' panels.
--- A holding with a market price is drawn as its cost basis and its unrealised gain, stacked, reaching its value;
--- or with an unrealised loss, as the part of its cost basis it is worth, and the part lost (reaching its cost basis).
--- A holding without a market price is drawn as its cost basis, in a muted colour.
--- The holdings' market values are the chart's total, shown as their values (none for holdings without a market price).
--- Holdings are labelled by account (with --drop applied) and commodity, also in tree mode, since account headings are not drawn.
+-- | Chart a holdings report: a bar for each holding (a commodity in an account, or a lot), in each of its commodities' panels
+-- (see 'holdingsBarsChart'). Holdings are labelled by account (with --drop applied) and commodity, also in tree mode,
+-- since account headings are not drawn.
 holdingsReportAsChart :: ReportOpts -> T.Text -> HoldingsReport -> Chart
-holdingsReportAsChart ropts@ReportOpts{translations_} title rpt =
-  Chart{chTitle = title, chXAxis = XCategories (map label positions), chPanels = map panel commodities}
+holdingsReportAsChart ropts title rpt =
+  holdingsBarsChart ropts title (XCategories $ map label positions) [holdingBarParts h | (_, _, h) <- positions]
   where
     -- each holding's account, whether it is a lot, and the holding
     positions = [(a, islot, h) | HoldingsPosition{hlAccount = a, hlIsLot = islot, hlHolding = h} <- hrLines rpt]
@@ -273,14 +302,42 @@ holdingsReportAsChart ropts@ReportOpts{translations_} title rpt =
         name a
           | islot     = T.unwords [parentAccountName a, hCommodity h, accountLeafName a]
           | otherwise = a <> " " <> hCommodity h
-    amts = concat [hCost h ++ hValue h | (_, _, h) <- positions]
-    -- the commodities of the holdings' costs and values, most used first
+
+-- | Chart holdings reports at the ends of some periods: a bar for each period, showing all the holdings then,
+-- as their total cost basis and their net unrealised gain or loss (see 'holdingsBarsChart').
+-- Periods are labelled by their end dates, the holdings' dates.
+holdingsReportsAsChart :: ReportOpts -> T.Text -> [(DateSpan, HoldingsReport)] -> Chart
+holdingsReportsAsChart ropts title rpts =
+  holdingsBarsChart ropts title (XPeriods [(spn, showDate $ hrDate r) | (spn, r) <- rpts])
+    [ mconcat $ map (holdingBarParts . snd) $ hrRows r | (_, r) <- rpts ]
+
+-- | A holding's amounts, for a bar in a holdings chart: its market value and cost basis, if it has a market price
+-- (or if its value is not comparable with its cost basis, its value twice, as having no gain or loss);
+-- and its cost basis, if it has no market price.
+holdingBarParts :: Holding -> ([Amount], [Amount], [Amount])
+holdingBarParts h
+  | null (hValue h)       = ([], [], hCost h)
+  | not (null $ hUgain h) = (hValue h, hCost h, [])
+  | otherwise             = (hValue h, hValue h, [])
+
+-- | A chart of holdings: a bar at each x position, in each commodity's panel, from the market value, cost basis
+-- and cost basis without a market price, of one or more holdings there (see 'holdingBarParts').
+-- Holdings with a market price are drawn as their cost basis and their unrealised gain, stacked, reaching their value;
+-- or with an unrealised loss, as the part of their cost basis they are worth, and the part lost (hatched), reaching their cost basis.
+-- Holdings without a market price are drawn as their cost basis, beyond those, in a muted colour.
+-- The market values are the chart's total, shown as the values (and marked when not the bar's end).
+holdingsBarsChart :: ReportOpts -> T.Text -> XAxis -> [([Amount], [Amount], [Amount])] -> Chart
+holdingsBarsChart ReportOpts{translations_} title xaxis parts =
+  Chart{chTitle = title, chXAxis = xaxis, chPanels = map panel commodities}
+  where
+    amts = concat [vs ++ ks ++ us | (vs, ks, us) <- parts]
+    -- the commodities of the costs and values, most used first
     commodities = map fst $ sortOn (\(c, n) -> (Down n, c)) $ M.toList $ M.fromListWith (+) [(acommodity a, 1 :: Int) | a <- amts]
     tr = I18n.tr translations_
     panel c = Panel
       { pnUnit = maybe nullamt{acommodity = c} (\a -> a{aquantity = 0, acost = Nothing, acostbasis = Nothing}) $ find ((== c) . acommodity) amts
       , pnSeries = [ Series (ChartLabel name name 0 typ False) role mark vals 0 0
-                   | ((name, typ, role, mark), vals) <- zip specs $ transpose [holdingValues h | (_, _, h) <- positions]
+                   | ((name, typ, role, mark), vals) <- zip specs $ transpose [barValues vs ks us | (vs, ks, us) <- parts]
                    , any isJust vals || role == SeriesTotal ]  -- the values, even if none, so that a cost is not shown as one
       , pnGroupNames = []
       , pnScale = Nothing
@@ -296,17 +353,15 @@ holdingsReportAsChart ropts@ReportOpts{translations_} title rpt =
           , (tr "No market price", Nothing, SeriesOther, MarkBar)
           , (tr "Value", Nothing, SeriesTotal, MarkMarker)
           ]
-        -- A holding's values for those series, in this commodity: the bar is its value and cost basis,
-        -- the smaller of them stacked with the difference, a gain or loss. (Values and costs are of one sign,
-        -- negative for a short position, whose gain is a smaller value.)
-        holdingValues h = case (quantityOf (hValue h), quantityOf (hCost h)) of
-          (Just v, Just k) | not (null $ hUgain h) ->
+        -- A bar's values for those series, in this commodity: the value and cost basis, the smaller of them
+        -- stacked with the difference, a gain or loss; then the cost basis without a market price.
+        -- (Values and costs are of one sign, negative for a short position, whose gain is a smaller value.)
+        barValues vs ks us = case (quantityOf vs, quantityOf ks) of
+          (Just v, Just k) ->
             let (base, end) = if abs v <= abs k then (v, k) else (k, v)
                 ugain = v - k
-            in [Just base, nonzero (ugain > 0) (end - base), nonzero (ugain < 0) (end - base), Nothing, Just v]
-          (Just v, _)       -> [Just v, Nothing, Nothing, Nothing, Just v]  -- a value not comparable with the cost: just the value
-          (Nothing, Just k) -> [Nothing, Nothing, Nothing, Just k, Nothing]
-          _                 -> replicate 5 Nothing
+            in [Just base, nonzero (ugain > 0) (end - base), nonzero (ugain < 0) (end - base), quantityOf us, Just v]
+          _ -> [Nothing, Nothing, Nothing, quantityOf us, Nothing]
         quantityOf as = case [aquantity a | a <- as, acommodity a == c] of
           [] -> Nothing
           qs -> Just $ sum qs
@@ -1004,19 +1059,30 @@ flatHoldingsReport HoldingsReportOpts{hroLots=showlots, hroRounding=rounding}
 -- (see maybePrepareLotDetail); holdingsReport aggregates lots itself.
 holdings :: CliOpts -> Journal -> IO ()
 holdings opts@CliOpts{rawopts_=rawopts, reportspec_=rspec@ReportSpec{_rsReportOpts=ropts}} j = do
+  warnIfLargeMultiPeriodReport rspec j
   if (case value_ ropts of Just (AtThen _) -> True; _ -> False)
   then error' "holdings: --value=then is not supported"
   else rounding `seq`  -- validate the --round value before any output
-    if chartRequested opts
-    then writeChart opts (Just $ (<>"\n") $ htmlAsLazyText $ titledTableHtml title htmltable) $ holdingsReportAsChart ropts title rpt
-    else writeOutputLazyText opts $ case outputFormatFromOpts opts of
-      "txt"  -> txtoutput
-      "csv"  -> printCSV csvoutput
-      "tsv"  -> printTSV csvoutput
-      "html" -> (<>"\n") $ htmlAsLazyText $ titledTableHtml title htmltable
-      "fods" -> printFods IO.localeEncoding $ M.singleton "Holdings" ((1,0), fodstable)
-      "json" -> (<>"\n") $ toJsonText $ map holdingJson holdingrecords
-      fmt    -> error' $ unsupportedOutputFormatError fmt
+    if | chartRequested opts && periodic ->
+           writeChart opts (Just $ (<>"\n") $ htmlAsLazyText $ titledTableHtml ptitle phtmltable) $ holdingsReportsAsChart ropts ptitle periodrpts
+       | chartRequested opts ->
+           writeChart opts (Just $ (<>"\n") $ htmlAsLazyText $ titledTableHtml title htmltable) $ holdingsReportAsChart ropts title rpt
+       | periodic -> writeOutputLazyText opts $ case outputFormatFromOpts opts of
+           "txt"  -> ptxtoutput
+           "csv"  -> printCSV pcsvoutput
+           "tsv"  -> printTSV pcsvoutput
+           "html" -> (<>"\n") $ htmlAsLazyText $ titledTableHtml ptitle phtmltable
+           "fods" -> printFods IO.localeEncoding $ M.singleton "Holdings" ((1,0), pfodstable)
+           "json" -> (<>"\n") $ toJsonText $ map (uncurry periodTotalsJson) ptotals
+           fmt    -> error' $ unsupportedOutputFormatError fmt
+       | otherwise -> writeOutputLazyText opts $ case outputFormatFromOpts opts of
+           "txt"  -> txtoutput
+           "csv"  -> printCSV csvoutput
+           "tsv"  -> printTSV csvoutput
+           "html" -> (<>"\n") $ htmlAsLazyText $ titledTableHtml title htmltable
+           "fods" -> printFods IO.localeEncoding $ M.singleton "Holdings" ((1,0), fodstable)
+           "json" -> (<>"\n") $ toJsonText $ map holdingJson holdingrecords
+           fmt    -> error' $ unsupportedOutputFormatError fmt
   where
     -- Amounts are displayed normalised to their commodity's display
     -- precision by default; --round can choose another rounding strategy.
@@ -1027,6 +1093,48 @@ holdings opts@CliOpts{rawopts_=rawopts, reportspec_=rspec@ReportSpec{_rsReportOp
       rspec j
     rowlines = hrRows rpt
     reportdate = hrDate rpt
+
+    -- With a report interval, the holdings at the end of each period (their totals, in a row per period),
+    -- like the single-date report computed at each period's end. List/tree mode and --lots don't matter here.
+    periodic = interval_ ropts /= NoInterval
+    periodrpts :: [(DateSpan, HoldingsReport)]
+    periodrpts =
+      [ (spn, holdingsReport HoldingsReportOpts{hroLots = False, hroRounding = rounding} (rspecEndingAt e) j)
+      | spn@(DateSpan _ (Just e)) <- maybeDayPartitionToDateSpans $ snd $ reportSpanBothDates j rspec ]
+    rspecEndingAt e = rspec{ _rsQuery = And [filterQuery (not . queryIsDateOrDate2) (_rsQuery rspec), Date $ DateSpan Nothing (Just e)]
+                           , _rsReportOpts = ropts{accountlistmode_ = ALFlat} }
+    ptotals = [(hrDate r, (hrStyles r, hrTotals r)) | (_, r) <- periodrpts]
+    ptitle = effectiveTitle ropts $ case map fst ptotals of
+      [] -> "Holdings at period ends"
+      ds -> "Holdings at period ends, " <> showDate (minimum ds) <> ".." <> showDate (maximum ds)
+    pcolheadings = ["Total cost", "Total value", "UGain", "UGain%", "RGain", "XIRR"]
+    -- a period's cells: those of the totals row's cells which make sense over time
+    -- (Units and Avg cost are shown only for a single commodity, and Weight is always 100%)
+    periodcells (styles, tot) = [ps | (i, ps) <- zip [0 :: Int ..] (totalsCellParts styles tot), i `elem` [5, 6, 8, 9, 10, 11]]
+    ptxtoutput =
+      (case ptitle of
+         "" -> ""
+         t  -> TL.fromStrict t <> "\n\n")
+      <>
+      if null ptotals
+      then "(no holdings)\n"
+      else renderTable def{tableBorders=False} (textCell TopLeft) (textCell TopRight) (textCell TopRight) $ Table
+        (Group NoLine [Header $ showDate d | (d, _) <- ptotals])
+        (Group NoLine $ map Header pcolheadings)
+        [map (T.intercalate ", ") $ periodcells st | (_, st) <- ptotals]
+    pcsvoutput :: CSV
+    pcsvoutput = ["date","totalcost","totalvalue","ugain","ugainpct","rgain","xirr"] : map (uncurry periodTotalsCsv) ptotals
+    -- spreadsheet-shaped tables for the html and fods output, like the text table
+    pspreadsheetWith :: forall content. (T.Text -> content) -> (Bool -> [T.Text] -> content) -> [[Ods.Cell Ods.NumLines content]]
+    pspreadsheetWith plain parts =
+      addHeaderBorders [plain <$> (headerCell t){Ods.cellClass = Ods.Class cls} | (t, cls) <- zip ("Date" : pcolheadings) pcolclasses]
+      : [ (Ods.defaultCell (plain $ showDate d)){Ods.cellType = Ods.TypeString, Ods.cellClass = Ods.Class "date"}
+          : [ (Ods.defaultCell (parts isamount ps)){Ods.cellType = Ods.TypeMixedAmount, Ods.cellClass = Ods.Class cls}
+            | (isamount, ps, cls) <- zip3 [True, True, True, False, True, False] (periodcells st) (drop 1 pcolclasses) ]
+        | (d, st) <- ptotals ]
+      where pcolclasses = ["date","totalcost","totalvalue","ugain","ugainpct","rgain","xirr"]
+    phtmltable = pspreadsheetWith toHtml htmlParts
+    pfodstable = pspreadsheetWith id (\_ -> T.intercalate ", " . filter (not . T.null))
 
     -- The default title can be customised or suppressed with --title.
     title = effectiveTitle ropts ("Holdings on " <> showDate reportdate)
@@ -1064,7 +1172,7 @@ holdings opts@CliOpts{rawopts_=rawopts, reportspec_=rspec@ReportSpec{_rsReportOp
 
     -- A display line's data cells, each as a list of parts.
     linecells :: HoldingsLine -> [[T.Text]]
-    linecells HoldingsHeading{hlTotals}   = totalsCellParts hlTotals
+    linecells HoldingsHeading{hlTotals}   = totalsCellParts (hrStyles rpt) hlTotals
     linecells HoldingsPosition{hlHolding} = holdingCellParts hlHolding
 
     showpct = showPercentWith (hrStyles rpt)
@@ -1096,8 +1204,8 @@ holdings opts@CliOpts{rawopts_=rawopts, reportspec_=rspec@ReportSpec{_rsReportOp
 
     -- A totals row's cells (the grand total, or an account heading row
     -- in tree mode), each as a list of parts like holdingCellParts.
-    totalsCellParts :: HoldingsTotals -> [[T.Text]]
-    totalsCellParts tot =
+    totalsCellParts :: M.Map CommoditySymbol AmountStyle -> HoldingsTotals -> [[T.Text]]
+    totalsCellParts styles tot =
       [ []
       , []
       , maybe [] ((:[]) . showamt) (htUnits tot)
@@ -1105,13 +1213,14 @@ holdings opts@CliOpts{rawopts_=rawopts, reportspec_=rspec@ReportSpec{_rsReportOp
       , []
       , map showamt (htCost tot)
       , maybe [] (map showamt) (htValue tot)
-      , [maybe "" showpct (htWeight tot)]
+      , [maybe "" pct (htWeight tot)]
       , maybe [] (map showamtz) (htUgain tot)
-      , [maybe "" showpct (htUgainPct tot)]
+      , [maybe "" pct (htUgainPct tot)]
       , map showamt (htRgain tot)
-      , [maybe "" showxirr (htXirr tot)]
+      , [maybe "" (pct . realToFrac) (htXirr tot)]
       ]
       where
+        pct = showPercentWith styles
         showamt  = T.pack . showAmountWith noCostFmt
         showamtz = T.pack . showAmountWith noCostFmt{displayZeroCommodity=True}
 
@@ -1119,7 +1228,7 @@ holdings opts@CliOpts{rawopts_=rawopts, reportspec_=rspec@ReportSpec{_rsReportOp
     mtotalrowparts :: Maybe [[T.Text]]
     mtotalrowparts
       | no_total_ ropts = Nothing
-      | otherwise = Just $ totalsCellParts $ hrTotals rpt
+      | otherwise = Just $ totalsCellParts (hrStyles rpt) $ hrTotals rpt
 
     -- Spreadsheet-shaped tables for the html and fods output: like the
     -- text table, but with single-line cells, an Account column heading,
@@ -1158,12 +1267,11 @@ holdings opts@CliOpts{rawopts_=rawopts, reportspec_=rspec@ReportSpec{_rsReportOp
     -- Each commodity amount gets its own span with an "amount" class,
     -- so eg wrapping within amounts can be prevented with css.
     htmltable :: [[Ods.Cell Ods.NumLines Html]]
-    htmltable = spreadsheetWith toHtml partsHtml
-      where
-        partsHtml isamount parts =
-          mconcat $ intersperse (toHtml (", "::T.Text)) $
-          map (\p -> if isamount then (H.span ! A.class_ "amount") (toHtml p) else toHtml p) $
-          filter (not . T.null) parts
+    htmltable = spreadsheetWith toHtml htmlParts
+    htmlParts isamount parts =
+      mconcat $ intersperse (toHtml (", "::T.Text)) $
+      map (\p -> if isamount then (H.span ! A.class_ "amount") (toHtml p) else toHtml p) $
+      filter (not . T.null) parts
 
     fodstable :: [[Ods.Cell Ods.NumLines T.Text]]
     fodstable = spreadsheetWith id (\_ -> T.intercalate ", " . filter (not . T.null))

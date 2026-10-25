@@ -1046,3 +1046,48 @@ Holdings on 2026-02-28
 --------++-----------------------------------------------------------------------------------------------------------------
         ||                                                   $2020.00     $2424.00  100.0%  $404.00   20.0%         221.6% 
 
+
+# ** 58. With a report interval, holdings shows the totals of the holdings at the end of each period,
+# each computed as on that date (eg valued at its market prices, with realised gains and XIRR up to then).
+<
+commodity AAA ; lots:
+account revenues:gains ; type: G
+
+2026-01-01
+  assets:broker  10 AAA @ $10
+  assets:cash
+
+2026-02-15
+  assets:broker  -4 AAA @ $15
+  assets:cash  $60
+  revenues:gains
+
+P 2026-01-31 AAA $12
+P 2026-02-28 AAA $15
+P 2026-03-31 AAA $9
+
+$ hledger -f- holdings -M -e 2026-04-01
+Holdings at period ends, 2026-01-31..2026-03-31
+
+            || Total cost  Total value  UGain  UGain%  RGain     XIRR 
+============++========================================================
+ 2026-01-31 ||       $100         $120    $20   20.0%          820.5% 
+ 2026-02-28 ||        $60          $90    $30   50.0%    $20  1566.4% 
+ 2026-03-31 ||        $60          $54    $-6  -10.0%    $20   108.0% 
+
+# ** 59. List/tree mode and --lots make no difference to those totals, and are ignored.
+$ hledger -f- holdings -M -e 2026-04-01 --tree --lots
+Holdings at period ends, 2026-01-31..2026-03-31
+
+            || Total cost  Total value  UGain  UGain%  RGain     XIRR 
+============++========================================================
+ 2026-01-31 ||       $100         $120    $20   20.0%          820.5% 
+ 2026-02-28 ||        $60          $90    $30   50.0%    $20  1566.4% 
+ 2026-03-31 ||        $60          $54    $-6  -10.0%    $20   108.0% 
+
+# ** 60. CSV output has a record per period end.
+$ hledger -f- holdings -M -e 2026-04-01 -O csv
+"date","totalcost","totalvalue","ugain","ugainpct","rgain","xirr"
+"2026-01-31","$100","$120","$20","20.0","","820.5"
+"2026-02-28","$60","$90","$30","50.0","$20","1566.4"
+"2026-03-31","$60","$54","$-6","-10.0","$20","108.0"

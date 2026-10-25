@@ -103,3 +103,31 @@ $ hledger -f- holdings -e 2025-01-01 --chart -O csv eu
 "EUR","Cost","item","bar","assets:eu SAP","3000,00"
 "EUR","Unrealised gain","item","bar","assets:eu SAP","600,00"
 "EUR","Value","total","marker","assets:eu SAP","3600,00"
+
+# ** 7. With a report interval, there is a bar per period end, for all the holdings then:
+# their cost basis, and their net unrealised gain or loss.
+<
+commodity AAA ; lots:
+account revenues:gains ; type: G
+
+2026-01-01
+  assets:broker  10 AAA @ $10
+  assets:cash
+
+2026-02-15
+  assets:broker  -4 AAA @ $15
+  assets:cash  $60
+  revenues:gains
+
+P 2026-01-31 AAA $12
+P 2026-02-28 AAA $15
+P 2026-03-31 AAA $9
+
+$ hledger -f- holdings -M -e 2026-04-01 --chart -w 60
+Holdings at period ends, 2026-01-31..2026-03-31
+
+█ Cost  ▒ Unrealised gain  ╱ Unrealised loss  ┃ Value
+
+2026-01-31  $120  ███████████████████████████████████▒▒▒▒▒▒┃
+2026-02-28   $90  █████████████████████▒▒▒▒▒▒▒▒▒┃
+2026-03-31   $54  ██████████████████┃╱╱

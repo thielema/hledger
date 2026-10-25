@@ -84,7 +84,7 @@ Per report:
 | `register` | each account's running total as a line (with -H, from its start balance), plus the overall total; with an interval, stacked bars per period |
 | `activity` | transaction counts as a single total (counting each transaction once per depth-clipped account, at depth 0); with `--postings`, as `bal --count` |
 | `bal --count` | posting counts by account, at most one text cell per posting |
-| `holdings` | a bar per holding (or lot), in each commodity's panel: cost basis plus unrealised gain (asset and revenue colours), reaching the value; with a loss, the part of the cost it is worth plus the part lost (a shortfall series: expense colour, hatched, in its place at the end of the stack), reaching the cost; without a market price, the cost, as an "other" series. The values are the total (shown as values; and marked, when some holding has a loss, since its value is not its bar's end). Labelled by account and commodity (and lot), also in tree mode, since headings aren't drawn |
+| `holdings` | a bar per holding (or lot), in each commodity's panel: cost basis plus unrealised gain (asset and revenue colours), reaching the value; with a loss, the part of the cost it is worth plus the part lost (a shortfall series: expense colour, hatched, in its place at the end of the stack), reaching the cost; without a market price, the cost, as an "other" series. The values are the total (shown as values; and marked, when some holding has a loss, since its value is not its bar's end). Labelled by account and commodity (and lot), also in tree mode, since headings aren't drawn. With a report interval, a bar per period end (labelled by date), for all the holdings then: their cost basis and net gain or loss |
 
 Text register charts have a row per posting (or transaction); a report interval gives a row per period.
 
@@ -243,8 +243,8 @@ Count charts (`pnCounts`) instead cap text at one cell per unit when no SCALE is
 - png output
 - clickable chart ? Lines' points can link, for embedding (`SvgOptions`); bars can't yet.
 - more charts (budget (goal marks), prices)
-- holdings over time (with a report interval): value vs cost basis per period end; later perhaps returns per period
-  (time-weighted, reusing roi's TWR code) as a second chart kind
+- holdings over time: perhaps returns per period (time-weighted, reusing roi's TWR code) as a second chart kind;
+  value and cost as lines with the gap shaded (needs area fills); a per-holding table (a value column per period end)
 - roi --chart (TWR per period as bars, IRR on the summary line) was designed and deferred (2026-10): holdings with intervals
   would show the same in the more maintained command. Its remaining value is for investments without lot tracking
   (roi works on any queried accounts); worth doing if users ask.
