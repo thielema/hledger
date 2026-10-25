@@ -179,7 +179,7 @@ $if elem ViewPermission perms
         <div .row>
           <div .col-xs-6>
             <p>
-              <b>_{HMsg "Keyboard shortcuts"}
+              <b>_{HMsg "Keyboard shortcuts:"}
               <ul>
                 <li> <code>h</code> _{HMsg "or"} <code>?</code> - _{HMsg "view this help"}
                 <li> <code>g</code> - _{HMsg "go to a page: shows the journal and reports with their keys, then press one"}
@@ -202,21 +202,13 @@ $if elem ViewPermission perms
                 <li> <code>0</code>-<code>9</code>, <code>-</code>, <code>+</code> - _{HMsg "set or adjust the depth limit"}
                 <li> <code>escape</code> - _{HMsg "cancel"}
             <p>
-              <b>_{HMsg "General"}
+              <b>_{HMsg "More help:"}
               <ul>
-                <li> _{HMsg "The Journal view shows general journal entries, representing zero-sum movements of money (or other commodity) between hierarchical accounts"}
-                <li> _{HMsg "The sidebar shows the resulting accounts and their final balances"}
-                <li> _{HMsg "The sidebar's report links show the balance sheet, income statement, and cashflow statement, each linking to the other reports"}
-                <li> _{HMsg "For journals using lots, a Holdings report shows investments and their performance, and a Lots link above each report shows the individual lots"}
-                <li> _{HMsg "Parent account balances include subaccount balances"}
-                <li> _{HMsg "Multiple currencies in balances are displayed one above the other"}
-                <li> _{HMsg "Click account name links to see transactions affecting that account, with running balance"}
-                <li> _{HMsg "Click an amount to see the transactions it is made of, in a register ending on that amount"}
-                <li> _{HMsg "Click date links to see journal entries on that date"}
-                <li> _{HMsg "The balance sheet and income statement show liabilities, equity, and revenues as positive amounts; their registers show them negative, as hledger does"}
+                <li>
+                  <a href=#{webmanualurl} target=hledgerhelp>_{HMsg "hledger-web user manual"}
           <div .col-xs-6>
             <p>
-              <b>_{HMsgc "help heading" "Search"}
+              <b>_{HMsgc "help heading" "Search queries:"}
               <ul>
                 <li> _{HMsg "Search patterns with spaces should be enclosed in quotes."}
                 <li> <code>REGEX</code> - _{HMsg "match account names"}

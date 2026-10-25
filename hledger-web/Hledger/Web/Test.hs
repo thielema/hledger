@@ -315,6 +315,11 @@ hledgerWebTest = do
       bodyContains ("href=\"" ++ defaultbaseurl)
       bodyContains ("src=\"" ++ defaultbaseurl)
 
+    yit "links the help dialog to the hledger-web manual for this version" $ do
+      get JournalR
+      statusIs 200
+      bodyContains ("<a href=\"" ++ T.unpack webmanualurl ++ "\" target=\"hledgerhelp\">hledger-web user manual</a>")
+
     -- The Content-Security-Policy (#2703). Every HTML page sends one, and the
     -- page's own inline scripts carry its nonce, so they are the only inline
     -- scripts a browser will run.

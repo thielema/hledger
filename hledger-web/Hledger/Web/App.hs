@@ -59,7 +59,7 @@ import Hledger.Cli.Commands.Cashflow (cashflowSpec)
 import Hledger.Cli.Commands.Incomestatement (incomestatementSpec)
 import Hledger.Cli.CompoundBalanceCommand (CompoundBalanceCommandSpec(..))
 import Hledger.Web.ReportPage (AmountMode(..), accumWord, amountModeOf, intervalPeriodExpr, parseListMode, parseValue, reportLinks, setAmountMode)
-import Hledger.Web.Settings (Extra(..), widgetFile)
+import Hledger.Web.Settings (Extra(..), webmanualurl, widgetFile)
 import Hledger.Web.Settings.StaticFiles
 import Hledger.Web.WebOptions
 import Hledger.Web.Widget.Common (MovedOptions(..), accountParams, balanceReportAsHtml, normalisedSearch)

@@ -38,10 +38,12 @@ development =
 production :: Bool
 production = not development
 
--- | The hledger manual's URL on hledger.org, for this build's version
--- (the dev manual, for a dev build; see 'Hledger.Cli.Version.docVersion').
-manualurl :: Text
-manualurl = T.pack $ webManualUrl "hledger" Nothing
+-- | The hledger and hledger-web manuals' URLs on hledger.org, for this
+-- build's version (the dev manuals, for a dev build; see
+-- 'Hledger.Cli.Version.docVersion').
+manualurl, webmanualurl :: Text
+manualurl    = T.pack $ webManualUrl "hledger" Nothing
+webmanualurl = T.pack $ webManualUrl "hledger-web" Nothing
 
 -- | The default IP address to listen on. May be overridden with --host.
 defhost :: String
