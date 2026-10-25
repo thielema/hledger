@@ -46,12 +46,12 @@ $ hledger -f- holdings -e 2025-01-01 --chart -w 70
 Holdings on 2024-12-31
 
 USD
-█ Cost  ▒ Unrealised gain  ▓ Unrealised loss  ░ No market price
+█ Cost  ▒ Unrealised gain  ╱ Unrealised loss  ▓ No market price
 ┃ Value
 
 assets:broker AAPL  2,500.00 USD  ██████████████████████▒▒▒▒▒▒▒▒▒▒▒▒▒┃
-assets:broker NEW                 ░
-assets:broker XYZ     450.00 USD  █████┃▓▓▓▓▓
+assets:broker NEW                 ▓
+assets:broker XYZ     450.00 USD  █████┃╱╱╱╱╱
 
 EUR
 █ Cost  ▒ Unrealised gain
@@ -63,11 +63,11 @@ $ hledger -f- holdings -e 2025-01-01 --lots --chart -w 110
 Holdings on 2024-12-31
 
 USD
-█ Cost  ▒ Unrealised gain  ▓ Unrealised loss  ░ No market price  ┃ Value
+█ Cost  ▒ Unrealised gain  ╱ Unrealised loss  ▓ No market price  ┃ Value
 
 assets:broker AAPL {2024-01-10, 15..  2,500.00 USD  ███████████████████████████████████▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒┃
-assets:broker XYZ {2024-02-10, 50...    450.00 USD  █████████┃▓▓▓▓▓▓▓
-assets:broker NEW {2024-03-10, 20...                ░░
+assets:broker XYZ {2024-02-10, 50...    450.00 USD  █████████┃╱╱╱╱╱╱╱
+assets:broker NEW {2024-03-10, 20...                ▓▓
 
 EUR
 █ Cost  ▒ Unrealised gain
@@ -93,7 +93,11 @@ class="fill ta0"
 class="fill tr0"
 class="fill tx0"
 
-# ** 5. With csv output, --chart gives the chart's data: each series' value per holding.
+# ** 5. In SVG, the part lost is hatched (here, one holding's, and its legend swatch).
+$ hledger -f- holdings -e 2025-01-01 -O svg broker | grep -c 'fill="url(#hledger-chart-hatch)"'
+2
+
+# ** 6. With csv output, --chart gives the chart's data: each series' value per holding.
 $ hledger -f- holdings -e 2025-01-01 --chart -O csv eu
 "commodity","series","role","mark","x","value"
 "EUR","Cost","item","bar","assets:eu SAP","3000,00"

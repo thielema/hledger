@@ -193,9 +193,10 @@ panelLines TextChartOpts{tcWidth, tcUnicode} xaxis colouring showheading Panel{p
       XCategories ls -> [T.replicate (2 * lbIndent l) " " <> lbShort l | l <- ls]
       XPeriods ps    -> map snd ps
       XDates ds      -> map showDate ds
+    -- contra amounts are drawn nearest the axis; they and shortfalls are drawn hatched
     segmentsAt j sers = map snd $ sortOn (not . fst)
-      [ (contra, (categoryStyle j st, if contra then contrachar else c, q))
-      | ((st, c, vals), s) <- sers, Just q <- [valueAt vals j], q /= 0, let contra = isContra s q ]
+      [ (isContra s q, (categoryStyle j st, if isHatched s q then contrachar else c, q))
+      | ((st, c, vals), s) <- sers, Just q <- [valueAt vals j], q /= 0 ]
     contrachar = if tcUnicode then '╱' else '/'
 
     rows
@@ -223,10 +224,11 @@ panelLines TextChartOpts{tcWidth, tcUnicode} xaxis colouring showheading Panel{p
     -- a legend for the series, omitting any not drawn
     legend
       | length drawn > 1 || any ((== SeriesOther) . seRole) drawn = wrapLegend (
-          [ [(st, T.singleton c), (StylePlain, " " <> lbFull (seLabel s))] | ((st, c, _), s) <- zip styled drawn, st `elem` drawnstyles ]
+          [ [(st, T.singleton $ if seRole s == SeriesShortfall then contrachar else c), (StylePlain, " " <> lbFull (seLabel s))]
+          | ((st, c, _), s) <- zip styled drawn, st `elem` drawnstyles ]
           ++ [ [(StylePlain, markchar), (StylePlain, " " <> lbFull (seLabel t))] | Just t <- [marktotal] ]
           ++ [ [(StylePlain, T.singleton contrachar), (StylePlain, " contra")]
-             | any (any (T.any (== contrachar) . snd)) rowlines ]
+             | or [isContra s q | s <- drawn, Just q <- seValues s] ]
           ) ++ [[]]
       | otherwise = []
     -- Lay out legend items left to right, two spaces apart, starting a new line when the next item won't fit.

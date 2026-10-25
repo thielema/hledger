@@ -40,6 +40,7 @@ module Hledger.Write.Chart (
   mainAccountType,
   SeriesValues,
   isContra,
+  isHatched,
   totalIsBarEnd,
   seriesValues,
   valueAt,
@@ -166,6 +167,8 @@ data SeriesRole
   = SeriesItem   -- ^ an ordinary series, eg one account
   | SeriesOther  -- ^ several items combined, eg "other (5 accounts)", to limit the number of series
   | SeriesTotal  -- ^ a total of other series, eg the net total of stacked bars, or net worth
+  | SeriesShortfall  -- ^ an amount missing from what the bar stands for, eg the part of a holding's cost basis lost (beyond its value):
+                     --   drawn hatched, in its place in the stack
   deriving (Show, Eq, Generic, ToJSON)
 
 -- | How a series is drawn.
@@ -178,6 +181,10 @@ data Mark
 -- | Is this value of the series a contra amount (of the opposite sign to the series' usual sign) ?
 isContra :: Series -> Quantity -> Bool
 isContra s q = seSign s /= 0 && q /= 0 && signum q /= fromIntegral (seSign s)
+
+-- | Is this value of the series drawn hatched ? Contra amounts are, and shortfalls (see 'SeriesShortfall').
+isHatched :: Series -> Quantity -> Bool
+isHatched s q = seRole s == SeriesShortfall || isContra s q
 
 -- | Is this total, at every x position, just the end of these series' stacked bars (the sum of their positive values, or of their negative ones) ?
 -- Then marking it would add nothing; otherwise (eg with values of both signs, or a total that isn't their sum) it is worth marking.
@@ -221,7 +228,7 @@ data Colouring
 chartColouring :: Chart -> Colouring
 chartColouring Chart{chPanels}
   | all ((<= 1) . length . filter ((/= SeriesTotal) . seRole) . pnSeries) chPanels = Single
-  | S.size (S.fromList [mainAccountType t | p <- chPanels, s <- pnSeries p, seRole s == SeriesItem, Just t <- [lbType $ seLabel s]]) > 1 = ByType
+  | S.size (S.fromList [mainAccountType t | p <- chPanels, s <- pnSeries p, seRole s `elem` [SeriesItem, SeriesShortfall], Just t <- [lbType $ seLabel s]]) > 1 = ByType
   | otherwise = ByName
 
 -- | Colours for a panel's series, in order, for the chart's colouring (see 'chartColouring').
@@ -371,6 +378,7 @@ chartAsCsv Chart{chXAxis, chPanels} =
       SeriesItem  -> "item"
       SeriesOther -> "other"
       SeriesTotal -> "total"
+      SeriesShortfall -> "shortfall"
     markName m = case m of
       MarkBar    -> "bar"
       MarkLine   -> "line"

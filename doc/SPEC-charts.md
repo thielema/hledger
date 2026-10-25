@@ -40,7 +40,7 @@ report  -->  adapter (Hledger.Cli.Chart; smart defaults)  -->  Chart (Hledger.Wr
 
 - **Model** (`Hledger.Write.Chart`): a title, an x axis (categories, periods or dates), and one panel per commodity.
   A panel has a unit (an amount template, for display styles), series, group names, an optional fixed scale, a bar layout,
-  a counts flag, and summary values (eg total, average; each with its own display style). A series has a label (with account type, and whether it's an account), a role (item, other, total),
+  a counts flag, and summary values (eg total, average; each with its own display style). A series has a label (with account type, and whether it's an account), a role (item, other, total, shortfall),
   a mark (bar, line, marker), values, a group (eg a compound report's section) and a usual sign (for contra amounts).
   Values stay exact (Quantity) until renderers convert them for drawing.
 - **Adapters** (hledger package, so hledger-web/ui can use them): multiBalanceReportAsChart, balanceReportAsChart,
@@ -84,7 +84,7 @@ Per report:
 | `register` | each account's running total as a line (with -H, from its start balance), plus the overall total; with an interval, stacked bars per period |
 | `activity` | transaction counts as a single total (counting each transaction once per depth-clipped account, at depth 0); with `--postings`, as `bal --count` |
 | `bal --count` | posting counts by account, at most one text cell per posting |
-| `holdings` | a bar per holding (or lot), in each commodity's panel: cost basis plus unrealised gain (asset and revenue colours), reaching the value; with a loss, the part of the cost it is worth plus the part lost (expense colour), reaching the cost; without a market price, the cost, as an "other" series. The values are the total (shown as values; and marked, when some holding has a loss, since its value is not its bar's end). Labelled by account and commodity (and lot), also in tree mode, since headings aren't drawn |
+| `holdings` | a bar per holding (or lot), in each commodity's panel: cost basis plus unrealised gain (asset and revenue colours), reaching the value; with a loss, the part of the cost it is worth plus the part lost (a shortfall series: expense colour, hatched, in its place at the end of the stack), reaching the cost; without a market price, the cost, as an "other" series. The values are the total (shown as values; and marked, when some holding has a loss, since its value is not its bar's end). Labelled by account and commodity (and lot), also in tree mode, since headings aren't drawn |
 
 Text register charts have a row per posting (or transaction); a report interval gives a row per period.
 
@@ -119,7 +119,9 @@ How hues, shades and fill characters are chosen (`chartColouring`, `seriesColour
    In a single-period chart with one series, each category's bar has its own account type's hue.
 2. **Roles override that**: totals and net are ink; a lone series that isn't an account (eg activity's counts) is cyan, a hue no type uses;
    "other" series are grey, or when coloured by type, a greyed version of their type's hue (60% grey), so that several (one per type)
-   can be told apart; contra amounts are hatched (`╱`/`/` in text), with a neutral hatched legend swatch.
+   can be told apart; contra amounts are hatched (`╱`/`/` in text), drawn nearest the axis, with a neutral hatched legend swatch;
+   shortfall series (eg holdings' unrealised loss, beyond the value) are hatched in their colour, in their place in the stack,
+   with a hatched legend swatch of their own.
 3. **Shades within a type**: 4 tints, ordered most visible first: base, darker, lighter, palest (mixed with white/black by [0, -0.3, 0.4, 0.65]);
    on dark backgrounds, where a darker shade sinks into the surface, base, lighter, darker, palest ([0, 0.4, -0.3, 0.65]).
    Preferences favour the first (`stableSlotsFavouringFirst 0.5`), so pale shades appear mainly when several accounts of a type share a panel.

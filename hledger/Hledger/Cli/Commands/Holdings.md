@@ -124,7 +124,7 @@ In both, the cost and value fields are named
 
 With `--chart`, holdings are shown as a chart: a bar for each holding (or lot, with `--lots`), labelled by account and commodity.
 A holding's bar shows its cost basis, and its unrealised gain stacked on top, reaching its market value (which is shown);
-or if it has lost value, the part of its cost basis it is still worth, and the part lost, reaching its cost basis.
+or if it has lost value, the part of its cost basis it is still worth, and the part lost (hatched), reaching its cost basis.
 When some holding has lost value, the market values are also marked across the bars (`┃` in text).
 In graphical charts these are coloured like assets (blue), revenues (green) and expenses (red).
 A holding without a market price is shown as its cost basis, in grey.
@@ -137,10 +137,10 @@ $ hledger holdings --chart -w 70
 Holdings on 2024-12-31
 
 USD
-█ Cost  ▒ Unrealised gain  ▓ Unrealised loss  ░ No market price
+█ Cost  ▒ Unrealised gain  ╱ Unrealised loss  ▓ No market price
 ┃ Value
 
 assets:broker AAPL  2,500.00 USD  ██████████████████████▒▒▒▒▒▒▒▒▒▒▒▒▒┃
-assets:broker NEW                 ░
-assets:broker XYZ     450.00 USD  █████┃▓▓▓▓▓
+assets:broker NEW                 ▓
+assets:broker XYZ     450.00 USD  █████┃╱╱╱╱╱
 ```

@@ -176,6 +176,9 @@ panelSvg opts xaxis colouring showheading top Panel{pnUnit, pnSeries, pnGroupNam
   (headingh + legendh + bodyh + summaryh, do
     when (headingh > 0) $
       S.text_ ! A.class_ "heading" ! A.x (toValue $ num pad) ! A.y (toValue $ num (top + 16)) $ S.toMarkup (acommodity pnUnit)
+    -- a hatching pattern, for contra amounts and shortfalls
+    when hashatching $ S.defs $ S.pattern ! A.id_ (toValue hatchId) ! A.width "5" ! A.height "5" ! A.patternunits "userSpaceOnUse" ! A.patterntransform "rotate(45)" $
+      S.line ! A.class_ "hatch" ! A.x1 "0" ! A.y1 "0" ! A.x2 "0" ! A.y2 "5"
     legendm
     bodym
     when (summaryh > 0) $
@@ -202,9 +205,11 @@ panelSvg opts xaxis colouring showheading top Panel{pnUnit, pnSeries, pnGroupNam
     drawn = zipWith (\c s -> DrawSeries (colourClass c) s (seriesValues s)) (seriesColours colouring items) items
     -- the series are listed in a legend when there are several, or when one is an "other" series, whose muted colour needs explaining
     listseries = length drawn > 1 || any ((== SeriesOther) . seRole . dsSeries) drawn
-    (legendh, legendm) = legendSvg (svgWidth opts) (top + headingh) listseries [(dsClass d, seMark (dsSeries d), lbFull $ seLabel $ dsSeries d) | d <- drawn]
+    (legendh, legendm) = legendSvg (svgWidth opts) (top + headingh) listseries
+                           [(dsClass d, seMark s, lbFull $ seLabel s, seRole s == SeriesShortfall) | d <- drawn, let s = dsSeries d]
                            (if length items > 1 then mtotalmark else Nothing) hascontra (suLabel <$> maverage)
     hascontra = or [isContra s q | s <- items, seMark s == MarkBar, Just q <- seValues s]
+    hashatching = or [isHatched s q | s <- items, seMark s == MarkBar, Just q <- seValues s]
     (bodyh, bodym) = case xaxis of
       XCategories ls -> categoriesSvg (svgWidth opts) (svgPlotHeight opts) (top + headingh + legendh) pnScale pnUnit drawn mtotal mtotalmark ls
       XPeriods ps    -> timeSvg opts (top + headingh + legendh) pnScale pnLayout pnUnit drawn mtotalmark averageline (EvenScale $ map snd ps)
@@ -212,9 +217,9 @@ panelSvg opts xaxis colouring showheading top Panel{pnUnit, pnSeries, pnGroupNam
     averageline = (\su -> (suLabel su <> " · " <> showSummary su, aquantity $ suValue su)) <$> maverage
 
 -- | A legend: a swatch and label for each series, flowing left to right, if they are to be listed (eg when there are several).
--- If there are contra amounts, a hatched swatch is shown for them too.
+-- A series drawn hatched (a shortfall) has a hatched swatch. If there are contra amounts, a neutral hatched swatch is shown for them too.
 -- If an average line is drawn (with this label), a dashed swatch is shown for it, even when the series are not listed.
-legendSvg :: Double -> Double -> Bool -> [(Text, Mark, Text)] -> Maybe Series -> Bool -> Maybe Text -> (Double, Svg)
+legendSvg :: Double -> Double -> Bool -> [(Text, Mark, Text, Bool)] -> Maybe Series -> Bool -> Maybe Text -> (Double, Svg)
 legendSvg width top listseries entries mtotal hascontra maveragelabel
   | null allentries = (0, mempty)
   | otherwise = (fromIntegral (length rows) * legendRowHeight + 8, mapM_ drawRow (zip [0 ..] rows))
@@ -222,23 +227,22 @@ legendSvg width top listseries entries mtotal hascontra maveragelabel
     allentries
       | not listseries = averageentry
       | otherwise = entries
-          ++ [("total", if seMark t == MarkLine || all (\(_, mk, _) -> mk == MarkLine) entries then MarkLine else MarkMarker, lbFull (seLabel t)) | Just t <- [mtotal]]
+          ++ [("total", if seMark t == MarkLine || all (\(_, mk, _, _) -> mk == MarkLine) entries then MarkLine else MarkMarker, lbFull (seLabel t), False) | Just t <- [mtotal]]
           ++ averageentry
-          ++ [(contraClass, MarkBar, "contra") | hascontra]
-    averageentry = [(averageClass, MarkLine, lbl) | Just lbl <- [maveragelabel]]
-    contraClass = "contra"
+          ++ [(colourClass NeutralColour, MarkBar, "contra", True) | hascontra]
+    averageentry = [(averageClass, MarkLine, lbl, False) | Just lbl <- [maveragelabel]]
     averageClass = "average"
-    itemWidth (_, _, lbl) = 20 + textWidth lbl + 18
+    itemWidth (_, _, lbl, _) = 20 + textWidth lbl + 18
     rows = reverse $ map reverse $ foldl place [] allentries
     place [] e = [[e]]
     place (r:rs) e
       | sum (map itemWidth r) + itemWidth e <= width - 2 * pad = (e : r) : rs
       | otherwise = [e] : r : rs
-    drawRow :: (Int, [(Text, Mark, Text)]) -> Svg
+    drawRow :: (Int, [(Text, Mark, Text, Bool)]) -> Svg
     drawRow (i, row) = do
       let y = top + fromIntegral i * legendRowHeight + 10
           xs = scanl (+) pad (map itemWidth row)
-      forM_ (zip xs row) $ \(x, (cls, mk, lbl)) -> do
+      forM_ (zip xs row) $ \(x, (cls, mk, lbl, hatched)) -> do
         case mk of
           MarkLine | cls == averageClass ->  -- a dashed line, a little longer so that it ends with a dash
                           S.line ! A.class_ "average" ! A.x1 (toValue $ num x) ! A.x2 (toValue $ num (x + 14))
@@ -247,8 +251,8 @@ legendSvg width top listseries entries mtotal hascontra maveragelabel
                           ! A.y1 (toValue $ num y) ! A.y2 (toValue $ num y)
           MarkMarker -> S.line ! A.class_ ("mark " <> toValue cls) ! A.x1 (toValue $ num x) ! A.x2 (toValue $ num (x + 12))
                           ! A.y1 (toValue $ num y) ! A.y2 (toValue $ num y)
-          MarkBar | cls == contraClass -> do  -- a neutral swatch, hatched
-                          swatch x y ! A.class_ ("fill " <> toValue (colourClass NeutralColour))
+          MarkBar | hatched -> do
+                          swatch x y ! A.class_ ("fill " <> toValue cls)
                           swatch x y ! A.fill (toValue $ "url(#" <> hatchId <> ")")
           MarkBar    -> swatch x y ! A.class_ ("fill " <> toValue cls)
         S.text_ ! A.class_ "label" ! A.x (toValue $ num (x + 20)) ! A.y (toValue $ num (y + 5)) $ S.toMarkup lbl
@@ -291,9 +295,6 @@ timeSvg SvgOptions{svgWidth = width, svgPlotHeight = plotheight, svgPointLink, s
         let x = xcenter j - groupwidth / 2 + fromIntegral k * (barwidth + 2)
         stack lbl x (contraFirst [(d, q) | d <- stk, Just q <- [valueAt (dsValues d) j], q > 0]) 1
         stack lbl x (contraFirst [(d, q) | d <- stk, Just q <- [valueAt (dsValues d) j], q < 0]) (-1)
-    -- a hatching pattern, for contra amounts
-    when hascontra $ S.defs $ S.pattern ! A.id_ (toValue hatchId) ! A.width "5" ! A.height "5" ! A.patternunits "userSpaceOnUse" ! A.patterntransform "rotate(45)" $
-      S.line ! A.class_ "hatch" ! A.x1 "0" ! A.y1 "0" ! A.x2 "0" ! A.y2 "5"
     -- with a fixed scale, lines are clipped at the plot's edges
     when (isJust mscale) $ S.defs $ S.clippath ! A.id_ (toValue clipid) $
       S.rect ! A.x (toValue $ num plotleft) ! A.y (toValue $ num plottop) ! A.width (toValue $ num (plotright - plotleft)) ! A.height (toValue $ num plotheight)
@@ -347,7 +348,6 @@ timeSvg SvgOptions{svgWidth = width, svgPlotHeight = plotheight, svgPointLink, s
     -- the extent of the bars in each direction: each stack's sum, at each x position
     stackedsums sign = [ sum [toD q | d <- stk, Just q <- [valueAt (dsValues d) j], signum q == sign] | j <- [0 .. n - 1], stk <- stacks ]
     hasbars j = any (\d -> maybe False (/= 0) $ valueAt (dsValues d) j) bars
-    hascontra = or [isContra (dsSeries d) q | d <- bars, Just q <- seValues (dsSeries d)]
     -- contra amounts are drawn nearest the axis
     contraFirst = sortOn (\(d, q) -> not $ isContra (dsSeries d) q)
     pointvalues = [toD q | s <- map dsSeries lines_ ++ maybe [] pure mtotal, Just q <- seValues s]
@@ -558,9 +558,10 @@ barsSvg width top mscale unit rows rowValue mmark = (fromIntegral (length rows) 
           let gap = if k > 0 && abs (xof c1 - xof c0) >= 4 then 2 else 0  -- no gap for tiny segments, which it would hide
               xbase = xof c0 + sign * gap   -- the end nearer the axis, after the gap (the sums are negative for negative segments)
               len = (xof c1 - xbase) * sign
-          when (len > 0.5) $ withTooltip (T.intercalate " · " [lbFull lbl, lbFull (seLabel $ dsSeries d), showValue unit q]) $
-            S.path ! A.class_ ("fill " <> toValue (dsClass d))
-              ! A.d (toValue $ barPath False xbase (ymid - thickness / 2) thickness (sign * len) False)
+          let path = toValue $ barPath False xbase (ymid - thickness / 2) thickness (sign * len) False
+          when (len > 0.5) $ withTooltip (T.intercalate " · " [lbFull lbl, lbFull (seLabel $ dsSeries d), showValue unit q]) $ do
+            S.path ! A.class_ ("fill " <> toValue (dsClass d)) ! A.d path
+            when (isHatched (dsSeries d) q) $ S.path ! A.fill (toValue $ "url(#" <> hatchId <> ")") ! A.d path
       -- a bar clipped by a fixed scale has a small triangle beyond its end
       when clipped $ clipMark False (xof $ if sign > 0 then hi else lo) ymid thickness sign
 
@@ -582,8 +583,8 @@ vstack (lo, hi) yof x width segs sign = do
           path = toValue $ barPath True x ybase width (-sign * len) False
       when (len > 0.5) $ withTooltip tip $ do
         S.path ! A.class_ ("fill " <> toValue (dsClass d)) ! A.d path
-        -- a contra amount is hatched
-        when (isContra (dsSeries d) q) $ S.path ! A.fill (toValue $ "url(#" <> hatchId <> ")") ! A.d path
+        -- a contra amount or shortfall is hatched
+        when (isHatched (dsSeries d) q) $ S.path ! A.fill (toValue $ "url(#" <> hatchId <> ")") ! A.d path
   when clipped $ clipMark True (yof $ if sign > 0 then hi else lo) (x + width / 2) width sign
 
 -- | Draw a bar's segments (if rounded) clipped to the bar's outline with a rounded outer end, so that the end

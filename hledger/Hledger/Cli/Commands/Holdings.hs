@@ -292,7 +292,7 @@ holdingsReportAsChart ropts@ReportOpts{translations_} title rpt =
         specs =
           [ (tr "Cost", Just Asset, SeriesItem, MarkBar)
           , (tr "Unrealised gain", Just Revenue, SeriesItem, MarkBar)
-          , (tr "Unrealised loss", Just Expense, SeriesItem, MarkBar)
+          , (tr "Unrealised loss", Just Expense, SeriesShortfall, MarkBar)
           , (tr "No market price", Nothing, SeriesOther, MarkBar)
           , (tr "Value", Nothing, SeriesTotal, MarkMarker)
           ]
