@@ -57,7 +57,7 @@ import Data.List (find, nub, sortOn)
 import Data.List (foldl')
 #endif
 import Data.Map qualified as M
-import Data.Maybe (catMaybes, fromMaybe, isJust, listToMaybe)
+import Data.Maybe (catMaybes, fromMaybe, isJust, isNothing, listToMaybe)
 import Data.Ord (Down(..))
 import Data.Set qualified as S
 import Data.Word (Word32)
@@ -224,6 +224,8 @@ chartColouring Chart{chPanels}
 --
 -- The tints and categorical colours are chosen by the series' names, not their positions or number (see 'stableSlots'),
 -- so that an account keeps its colour in other charts: eg after removing other accounts (even down to just one), or sorting differently.
+-- A series of known type which is not an account (eg a holding's cost or gain) has its type's first tint,
+-- so that its colour doesn't depend on its name (which may be translated).
 seriesColours :: Colouring -> [Series] -> [Colour]
 seriesColours colouring series = zipWith colour series' slots
   where
@@ -236,16 +238,19 @@ seriesColours colouring series = zipWith colour series' slots
     slots = [ fromMaybe 0 $ M.lookup i slotmap | i <- [0 .. length series' - 1] ]
     slotmap = M.fromList $ concat
       [ zip is $ slotsfor t [(lbFull $ seLabel s, seriesSize s) | s <- ss]
-      | t <- nub $ map typeOf ordinary
-      , let (is, ss) = unzip [(i, s) | (i, s) <- zip [0 :: Int ..] series', seRole s == SeriesItem, typeOf s == t] ]
-    ordinary = [s | s <- series', seRole s == SeriesItem]
+      | t <- nub $ map (typeOf . snd) named
+      , let (is, ss) = unzip [(i, s) | (i, s) <- named, typeOf s == t] ]
+    -- the ordinary series which choose tints or categorical colours by name: accounts, and series of unknown type
+    named = [(i, s) | (i, s) <- zip [0 :: Int ..] series', seRole s == SeriesItem, lbAccount (seLabel s) || isNothing (typeOf s)]
     -- a type's tints are chosen favouring the first, most saturated ones (the paler ones look washed out),
     -- so that they are used mainly when several accounts of the type need telling apart; categorical colours, without bias
     slotsfor t = if isJust t then stableSlotsFavouringFirst 0.5 maxTints else stableSlots categoricalColours
     colour s k = case (seRole s, typeOf s) of
       (SeriesTotal, _) -> TotalColour
       (SeriesOther, t) -> OtherColour t
-      (_, Just t)      -> TypeColour t k
+      (_, Just t)
+        | lbAccount (seLabel s) -> TypeColour t k
+        | otherwise             -> TypeColour t 0
       (_, Nothing)
         | onlyone && (colouring == Single || not (lbAccount $ seLabel s)) -> LoneColour
         | otherwise    -> IndexColour k
@@ -389,6 +394,10 @@ tests_Hledger_Write_Chart = testGroup "Write.Chart" [
      length (nub [k | IndexColour k <- rs]) @?= maxTints + 1
      -- and keep them when fewer are shown, down to one
      seriesColours ByName (take 1 [ser (T.pack $ show i) (Just Revenue) | i <- [0 .. maxTints]]) @?= take 1 rs
+     -- typed series which are not accounts (eg a holding's cost, gain and loss) get their types' first tints, whatever their names
+     let nonacct n t = (ser n (Just t)){seLabel = ChartLabel n n 0 (Just t) False}
+     seriesColours ByType [nonacct n t | (n, t) <- [("Kosten", Asset), ("Gewinn", Revenue), ("Verlust", Expense)]]
+       @?= [TypeColour Asset 0, TypeColour Revenue 0, TypeColour Expense 0]
      -- a lone series which is not an account gets the lone colour; others and totals get theirs
      seriesColours ByName [(ser "u" Nothing){seLabel = ChartLabel "u" "u" 0 Nothing False}] @?= [LoneColour]
      seriesColours ByName [(ser "o" Nothing){seRole = SeriesOther}, (ser "t" Nothing){seRole = SeriesTotal}]

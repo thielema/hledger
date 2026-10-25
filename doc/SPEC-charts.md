@@ -129,6 +129,8 @@ How hues, shades and fill characters are chosen (`chartColouring`, `seriesColour
    for the slots (from a hash, FNV-1a with murmur3's finaliser), and names choose largest first (ties by name), each taking its first free slot.
    So position doesn't matter (`-S` changes nothing), and adding or removing small accounts, or removing the largest (drilling down),
    disturbs few others. Biased preferences (shades, fill characters) make the first slots likelier but stay name-based.
+   Series of known type that aren't accounts (eg holdings' Cost, Unrealised gain/loss) always take their type's base shade,
+   so their colours don't depend on their (translatable) names.
    With `-S`, accounts are drawn largest first, so bars read `█ ▓ ▒ ░`, most saturated first; otherwise they're drawn in name order.
    Costs: slots repeat when more are needed (8 hues, 4 shades, 4 characters); a chart-wide decision can change all colours when the
    chart's mix of types changes (eg adding a liability to an assets chart); a single account's colour changes when a second one joins it.
