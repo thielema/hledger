@@ -242,7 +242,12 @@ Count charts (`pnCounts`) instead cap text at one cell per unit when no SCALE is
     - explore this style of report, make it available to users
 - png output
 - clickable chart ? Lines' points can link, for embedding (`SvgOptions`); bars can't yet.
-- more charts (budget (goal marks), prices, roi, holdings)
+- more charts (budget (goal marks), prices)
+- holdings over time (with a report interval): value vs cost basis per period end; later perhaps returns per period
+  (time-weighted, reusing roi's TWR code) as a second chart kind
+- roi --chart (TWR per period as bars, IRR on the summary line) was designed and deferred (2026-10): holdings with intervals
+  would show the same in the more maintained command. Its remaining value is for investments without lot tracking
+  (roi works on any queried accounts); worth doing if users ask.
 - more kinds of chart (line, hbar, pie); a sparkline column for tables ? Vega-Lite.
 - a default fixed scale, if users ask: a `--chart-scale=SCALE` option that sets the scale without enabling charts,
   for per-command config file sections (eg `[incomestatement]`; an env var was considered, but the config file is per command).
