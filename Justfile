@@ -462,7 +462,8 @@ STACKTEST := STACK + ' test --fast'
 # Run shelltest with a new empty HOME and default XDG dirs, so that the user's config file,
 # default journal etc. can't affect tests (eg ones run in a temp dir outside the project).
 # STACK_ROOT keeps the user's stack setup available to tests which run stack.
-SHELLTEST := STACK + ' exec -- env -u XDG_CONFIG_HOME -u XDG_DATA_HOME -u XDG_CACHE_HOME -u XDG_STATE_HOME STACK_ROOT=${STACK_ROOT:-$HOME/.stack} HOME=$(mktemp -d) shelltest --execdir --threads=40'
+# LC_COLLATE=C makes sort in tests work the same way as in CI, whatever the user's locale.
+SHELLTEST := STACK + ' exec -- env -u XDG_CONFIG_HOME -u XDG_DATA_HOME -u XDG_CACHE_HOME -u XDG_STATE_HOME STACK_ROOT=${STACK_ROOT:-$HOME/.stack} HOME=$(mktemp -d) LC_COLLATE=C shelltest --execdir --threads=40'
 
 #  --hide-successes
 
