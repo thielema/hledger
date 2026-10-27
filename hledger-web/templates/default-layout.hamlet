@@ -183,7 +183,7 @@ $if elem ViewPermission perms
   <div .modal-body>
     <div .row>
       <div .col-sm-6>
-        <h4>_{HMsg "Keyboard shortcuts:"}
+        <h4>_{HMsg "Keyboard shortcuts"}
         <table .help-keys>
           <tr>
             <th><kbd>h</kbd> _{HMsg "or"} <kbd>?</kbd>
@@ -282,7 +282,7 @@ $if elem ViewPermission perms
         <p .help-note>_{HMsg "Pressed again, an option's key turns it back off."}
 
       <div .col-sm-6>
-        <h4>_{HMsgc "help heading" "Search queries:"}
+        <h4>_{HMsgc "help heading" "Search queries"}
         <ul .help-list>
           <li> _{HMsg "Search patterns with spaces should be enclosed in quotes."}
           <li> <code>REGEX</code> - _{HMsg "match account names"}
