@@ -2757,64 +2757,80 @@ Downsides are mentioned to help you decide if you want to use them.
 ### Amount expressions
 
 A posting amount can also be a simple arithmetic expression, which hledger calculates when reading the journal.
-This can be handy for keeping the parts of a total visible, eg when entering several receipts:
+This saves doing sums by hand, and records how an amount was arrived at:
 
 ```journal
-2025-10-14 outing
-    expenses:meals        $47.97
-    expenses:meals        $200.65
-    expenses:parking      $15.75
-    assets:personal       $-47.97 + $-200.65 + $-15.75
+2026-03-02 groceries, two receipts
+    assets:checking
+    expenses:food            $50.20 + $16.54          ; $66.74
+
+2026-03-05 laptop, plus 5% sales tax
+    liabilities:card
+    expenses:equipment       $800.00
+    expenses:tax             $800.00 * 0.05           ; $40.00
+
+2026-03-07 hardware store, 3 boxes of screws less a $2 coupon
+    liabilities:card
+    expenses:supplies        3 * $4.99 - $2           ; $12.97
 ```
 
-You can use `+`, `-`, `*` and `/`, and parentheses.
-`*` and `/` are done before `+` and `-`; otherwise it's left to right.
-Spaces around the operators are optional, except that a `/` following a commodity symbol needs a space before it
-(`10 EUR / 4`; `10 EUR/4` is an error).
-A minus sign can also go before parentheses, eg `-($1 + $2)`.
+Downsides:
+Complicates standard bookkeeping notation; could obscure a posting's true amount.
+Likely to prevent other apps from reading your journal.
 
-- `+` and `-` work only between amounts with the same commodity.
-  A number without a commodity symbol takes the other side's commodity, so you can write the commodity once: `$10 + 5` is $15.
-  The result shows as many decimal places as the more precise of the two.
-- `*` needs a plain number (no commodity symbol) on one side, eg `$47.97 * 0.05` or `3 * $10`.
+#### Amount expression syntax
+
+- You can use `+`, `-`, `*`, `/` and parentheses.
+  `*` and `/` are done before `+` and `-`; otherwise it's left to right.
+  A minus sign can also go before parentheses, eg `-($1 + $2)`.
+- Spaces around the operators are optional, except that a `/` right after a commodity symbol needs a space before it:
+  `10 EUR / 4` works, `10 EUR/4` is an error.
+- `+` and `-` need amounts in the same commodity.
+  You can write the commodity just once, since a plain number takes the other side's commodity: `$10 + 5` is $15.
+- `*` needs a plain number on one side, eg `$800.00 * 0.05` or `3 * $4.99`.
   `/` needs a plain number on the right, eg `$100.00 / 3`.
-- The result of `*` or `/` is rounded, using [banker's rounding](#display-rounding), after the whole entry has been read.
-  It is rounded to the most decimal places used by that commodity's amounts in the entry,
-  including amounts written inside expressions or balance assignments, but not cost amounts, or plain numbers used with `*` or `/`.
-  These are the same decimal places hledger uses to check that the entry balances
-  (see [Transaction balancing](#transaction-balancing)).
-  The rounded amount is what hledger stores and `print` shows (see also [Where hledger divides](#where-hledger-divides)).
-  So in an entry with other amounts like `$-100.00`, `$100/3` is $33.33,
-  and with only whole-number amounts, it is $33.
-  Likewise `$10 * 0.15` is $1.50 in an entry with other amounts like `$-11.50`, and $2 on its own.
-  Write more decimal places if you want more, eg `$100.0000 / 3` is $33.3333.
-  [Commodity directives](#commodity-directive) don't affect this.
-- So a split that doesn't divide evenly makes the entry unbalanced, and the error message says that such amounts are rounded.
-  To split unevenly, leave one amount blank, and hledger will give it the remainder:
-  ```journal
-  2026-01-01 dinner, split three ways
-      expenses:food:alice    $100/3      ; $33.33
-      expenses:food:bob      $100/3      ; $33.33
-      expenses:food:me                   ; $33.34
-      assets:checking        $-100.00
-  ```
-- In [periodic transaction rules](#periodic-transactions) and [auto posting rules](#auto-postings),
-  a result is rounded to its own decimal places, eg `$100/3` is $33 and `$100.00/3` is $33.33.
-- If the result has no commodity, the default commodity from a [`D` directive](#d-directive) is applied to it as usual.
-  It is then like any other plain number after a `D` directive, whose decimal places count:
-  after `D $1,000.00`, `5 / 2` is $2.50 (without `D`, it is 2, or 2.5 in an entry with other amounts like `-2.5`).
 - A cost, lot annotation or balance assertion can follow an expression, and applies to its result:
   `10 EUR + 5 EUR @ $1.10` is 15 EUR, costing $1.10 each.
 - Expressions can be used only in posting amounts, not in costs, balance assertions, directives,
   or auto posting rule multipliers (`*AMT`).
-- hledger keeps only the result. `print` (including `--export`) and all its output formats show the result,
-  eg `$-264.37`, not the expression. So do error messages and other reports.
-  If you want to keep the parts visible, write them in a comment too.
 
-Downsides:
-Complicates standard bookkeeping notation; can obscure a posting's true amount.
-Likely to prevent other apps from reading your journal.
-Rewriting your journal with `print` replaces the expressions with their results (except when exporting to Ledger).
+#### Amount expression rounding
+
+The result of `+` or `-` is exact, and shows as many decimal places as the more precise of the two amounts.
+
+The result of `*` or `/` is rounded, using [banker's rounding](#display-rounding), to the entry's decimal places for that commodity:
+the most decimal places written in that commodity's amounts in the entry,
+including amounts inside expressions or balance assignments, but not cost amounts, or the plain numbers used with `*` or `/`.
+These are the same decimal places hledger uses to check that the entry balances (see [Transaction balancing](#transaction-balancing)).
+So:
+
+- `$100/3` is $33.33 in an entry that also has `$-100.00`, but $33 when all of the entry's dollar amounts are whole numbers.
+- `$10 * 0.15` on its own is $2; write `$10.00 * 0.15` to get $1.50.
+- For more decimal places, write more: `$100.0000 / 3` is $33.3333.
+- In [periodic transaction rules](#periodic-transactions) and [auto posting rules](#auto-postings),
+  a result is rounded to its own decimal places, eg `$100/3` is $33 and `$100.00/3` is $33.33.
+- A result with no commodity gets the default commodity from a [`D` directive](#d-directive), if any, as usual.
+  It is then like any other plain number after a `D` directive, whose decimal places count:
+  after `D $1,000.00`, `5 / 2` is $2.50.
+
+The rounded amount is what hledger stores (see also [Where hledger divides](#where-hledger-divides)).
+So a split that doesn't divide evenly leaves the entry unbalanced, and the error message says that such amounts are rounded.
+To fix it, leave one amount blank, and hledger will give it the remainder:
+
+```journal
+2026-03-09 dinner with Ana and Raj, split three ways
+    liabilities:card         $-107.00
+    assets:receivable:ana    ($92.00 + $15.00) / 3    ; $35.67
+    assets:receivable:raj    ($92.00 + $15.00) / 3    ; $35.67
+    expenses:food                                     ; $35.66
+```
+
+#### Amount expressions are not kept
+
+hledger keeps only an expression's result.
+`print` (including `--export`, and all its output formats), other reports and error messages
+show the result, eg `$66.74`, not `$50.20 + $16.54`.
+If you need to keep the parts visible, write them in a comment too.
 
 ### Balance assignments
 
