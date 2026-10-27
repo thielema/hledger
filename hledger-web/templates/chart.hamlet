@@ -15,10 +15,6 @@ $if not (null charts)
         <p .chart-note>#{moreCommodities trs leftout}
   $else
     <div .register-chart .report-chart .with-legend data-baselink=@?{nodatelink}>
-      <span .chart-legend-label>#{balancelabel}:
-      $forall (k, p, name, first) <- legend
-        <input type=radio name=register-chart id="register-chart-#{show k}" :first:checked>
-        <label for="register-chart-#{show k}">#{name}
-        <div .chart-panel>#{svg p}
+      #{chartLegend "register-chart" balancelabel legend}
       $if leftout > 0
         <p .chart-note>#{moreCommodities trs leftout}

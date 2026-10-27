@@ -234,7 +234,10 @@ Count charts (`pnCounts`) instead cap text at one cell per unit when no SCALE is
   between the page's heading and its table, without their titles (the heading names them), styled by /chart.css,
   as wide as the page's main column (the chartwidth cookie). In tree mode the page folds its table at the depth limit,
   but a chart can't fold, so it is drawn from the report clipped there, as on the command line.
-  The c and d keys hide the chart and the table (the report's details), remembered in the showchart and showtable
+  With several commodities, a legend of radio buttons chooses the one shown, with no javascript (Widget.Chart.chartLegend,
+  shared with the register): each panel is drawn as a chart of its own, coloured as in the whole chart (chartPanelsSvgMarkupWith),
+  so its colours match the CLI's stacked panels. The choice is not remembered across pages.
+  The c and d keys hide the chart and the table (the report's data), remembered in the showchart and showtable
   cookies, named with the server's port like the other UI cookies, which the server reads to render the next page the same way.
 
 ## Possible future work

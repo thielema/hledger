@@ -1118,8 +1118,8 @@ msgstr ""
 msgid "register - hledger-web"
 msgstr ""
 
-#. the register chart's legend entry for amounts written without a commodity symbol.
-#: hledger-web/Hledger/Web/Handler/RegisterR.hs
+#. a chart legend's entry for amounts written without a commodity symbol.
+#: hledger-web/Hledger/Web/Handler/RegisterR.hs hledger-web/Hledger/Web/Widget/Chart.hs
 msgid "no symbol"
 msgstr ""
 
@@ -1225,6 +1225,11 @@ msgstr ""
 
 #: hledger-web/Hledger/Web/Widget/AddForm.hs
 msgid "Postings validation failed"
+msgstr ""
+
+#. in a report page's chart, before the commodities that can be charted.
+#: hledger-web/Hledger/Web/Widget/Chart.hs
+msgid "Commodity"
 msgstr ""
 
 #. the disclosure hiding each page's rows of report controls: its text, and its tooltip.
@@ -1968,7 +1973,11 @@ msgid "toggle the report's chart"
 msgstr ""
 
 #: hledger-web/templates/default-layout.hamlet
-msgid "toggle the report's details (its table)"
+msgid "chart the previous or next commodity"
+msgstr ""
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "toggle the report's data"
 msgstr ""
 
 #: hledger-web/templates/default-layout.hamlet

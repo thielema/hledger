@@ -298,5 +298,5 @@ getHoldingsR = do
         Yesod.toWidget controlRows
         Yesod.toWidget $ H.h2 $ H.toHtml $ withFilter title
         -- the chart, as holdings --chart draws it: a bar per holding, or per lot
-        reportChart (withFilter title) $ holdingsReportAsChart ropts "" rpt
+        reportChart trs (withFilter title) $ holdingsReportAsChart ropts "" rpt
         Yesod.toWidget $ reportTable isTree Nothing header [(mprefixHeading, body, [])] totals

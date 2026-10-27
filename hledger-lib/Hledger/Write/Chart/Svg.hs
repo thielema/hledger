@@ -27,6 +27,7 @@ module Hledger.Write.Chart.Svg (
   SvgOptions(..),
   defaultSvgOptions,
   chartSvgMarkupWith,
+  chartPanelsSvgMarkupWith,
   chartStylesheet,
   tests_Hledger_Write_Chart_Svg,
 ) where
@@ -110,7 +111,16 @@ defaultSvgOptions = SvgOptions
 
 -- | A chart as SVG markup, which can also be embedded in HTML, drawn with these options.
 chartSvgMarkupWith :: SvgOptions -> Chart -> Svg
-chartSvgMarkupWith opts@SvgOptions{svgStyles, svgDark, svgWidth} c@Chart{chTitle, chXAxis, chPanels} =
+chartSvgMarkupWith opts c = chartSvgMarkupColoured (chartColouring c) opts c
+
+-- | Each of a chart's panels as a chart of its own, in SVG markup drawn with these options,
+-- coloured as in the whole chart; eg for a page to show one commodity's panel at a time.
+chartPanelsSvgMarkupWith :: SvgOptions -> Chart -> [Svg]
+chartPanelsSvgMarkupWith opts c = [chartSvgMarkupColoured (chartColouring c) opts c{chPanels = [p]} | p <- chPanels c]
+
+-- | A chart as SVG markup, drawn with these options and this colouring.
+chartSvgMarkupColoured :: Colouring -> SvgOptions -> Chart -> Svg
+chartSvgMarkupColoured colouring opts@SvgOptions{svgStyles, svgDark, svgWidth} Chart{chTitle, chXAxis, chPanels} =
   S.svg
     ! customAttribute "xmlns" "http://www.w3.org/2000/svg"
     ! A.class_ "hledger-chart"
@@ -134,7 +144,7 @@ chartSvgMarkupWith opts@SvgOptions{svgStyles, svgDark, svgWidth} c@Chart{chTitle
     (panelsbottom, panelmarkups) = foldl stackPanel (pad + titleheight, []) chPanels
     totalheight = if null chPanels then panelsbottom + 14 + pad else panelsbottom
     stackPanel (top, ms) p =
-      let (h, m) = panelSvg opts chXAxis (chartColouring c) showheadings top p
+      let (h, m) = panelSvg opts chXAxis colouring showheadings top p
       in (top + h + panelGap, ms ++ [m])
 
 -- Layout constants, in pixels. (The chart's width and its plots' height are in 'SvgOptions'.)

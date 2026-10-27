@@ -2026,6 +2026,18 @@ hledgerWebTest = do
       bodyContains "<label for=\"register-chart-3\">"
       bodyNotContains "chart-note"
 
+    yit "charts one commodity of a report at a time, chosen in a legend like the register's" $ do
+      request $ do
+        setMethod "GET"
+        setUrl BalanceR
+        addGetParam "q" "assets:broker"
+      statusIs 200
+      bodyContains "<div class=\"report-chart with-legend\"><span class=\"chart-legend-label\">Commodity:</span>"
+      bodyContains "<input type=\"radio\" name=\"report-chart\" id=\"report-chart-0\" checked=\"\">"
+      bodyContains "<label for=\"report-chart-3\">"
+      bodyNotContains "report-chart-4"
+      bodyContains "aria-label=\"All accounts, filtered: DDD\""
+
     yit "draws the register chart as wide as the browser measured the page's main column" $ do
       let broker = request $ do
             setMethod "GET"

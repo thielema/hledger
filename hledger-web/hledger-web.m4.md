@@ -167,7 +167,7 @@ hledger-web's main views are:
   and the All accounts report and the balance sheet with equity.
 
 The register's chart shows the running balance over the page's transactions, across the page.
-With several commodities, a legend chooses the one charted, each on its own scale,
+With several commodities, a legend (or the `[` and `]` keys) chooses the one charted, each on its own scale,
 starting with the one with the most transactions.
 Clicking a point goes to its transaction, and dragging across the chart
 shows the transactions of the dates dragged across.
@@ -216,7 +216,8 @@ which work when you are not typing in a field:
 - `s` - show or hide the sidebar
 - `o` - show or hide the report options
 - `c` - show or hide the report's chart (on pages with one)
-- `d` - show or hide the report's details, its table (on pages with a chart)
+- `[` / `]` - chart the previous / next commodity (on pages whose chart has several, wrapping round)
+- `d` - show or hide the report's data, its table (on pages with a chart)
 - `f` - full window: show only the report's heading and data, or everything (`s`, `o` and `/` leave it, showing what they ask for)
 - `z` - show or hide accounts with zero balances
 - `t` - show accounts as a tree, or a list
@@ -295,7 +296,7 @@ Each report has a chart between its heading and its table, the one the command's
 [`--chart`](hledger.md#charts) draws, as wide as the page:
 eg a bar per account, or with an interval, the accounts over time,
 and for the statements, each section's accounts and the net total.
-With several commodities, each has its own panel.
+With several commodities, a legend (or the `[` and `]` keys) chooses the one charted, as on the register.
 In tree mode, the chart shows the accounts down to the depth limit, which the table folds at.
 The `c` key hides or shows the charts, and the `d` key the tables below them;
 the browser remembers this for each hledger-web server (by its port), and later pages open the same way.

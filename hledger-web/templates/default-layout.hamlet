@@ -189,7 +189,8 @@ $if elem ViewPermission perms
                 <li> <code>s</code> - _{HMsg "toggle sidebar"}
                 <li> <code>o</code> - _{HMsg "toggle report options"}
                 <li> <code>c</code> - _{HMsg "toggle the report's chart"}
-                <li> <code>d</code> - _{HMsg "toggle the report's details (its table)"}
+                <li> <code>[</code>, <code>]</code> - _{HMsg "switch the chart between commodities"}
+                <li> <code>d</code> - _{HMsg "toggle the report's data"}
                 <li> <code>f</code> - _{HMsg "toggle full window"}
                 <li> <code>/</code> - _{HMsg "focus search form"}
                 <li> <code>z</code> - _{HMsg "hide empty accounts"}

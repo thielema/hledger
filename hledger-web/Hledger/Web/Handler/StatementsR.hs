@@ -193,7 +193,7 @@ statementPage here tabtitle spec = do
         if empty
           then Yesod.toWidget $ emptyNotice trs zerosHidden (q == Any)
           else do
-            reportChart (withFilter $ cbrTitle cbr) chart
+            reportChart trs (withFilter $ cbrTitle cbr) chart
             Yesod.toWidget $ reportTable isTree mfold [header] sections (relink cbrpNetRows)
 
 -- | What an empty statement shows instead of a table: that its accounts

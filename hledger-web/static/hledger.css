@@ -573,48 +573,49 @@ dialog:focus {
   pointer-events: none;
 }
 
-/* With several commodities, a legend chooses the one charted. Its entries
+/* With several commodities, a legend chooses the one charted, on the
+   register and the report pages (Widget.Chart.chartLegend). Its entries
    are the labels of radio buttons, hidden but still reached from the
    keyboard, each followed by its commodity's chart, shown while it is
    chosen: no javascript needed. The legend makes the first row, the charts
    and the note of any commodities left out the rows below it. */
-.register-chart.with-legend {
+.with-legend {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
   column-gap: 1em;
 }
-.register-chart .chart-legend-label {
+.with-legend .chart-legend-label {
   font-weight: bold;
 }
-.register-chart > input[type=radio] {
+.with-legend > input[type=radio] {
   position: absolute;
   opacity: 0;
   pointer-events: none;
 }
-.register-chart > input + label {
+.with-legend > input + label {
   margin: 0;
   font-weight: normal;
   color: var(--link, #337ab7);
   cursor: pointer;
 }
-.register-chart > input:checked + label {
+.with-legend > input:checked + label {
   color: inherit;
   border-bottom: 2px solid currentColor;
 }
-.register-chart > input:focus-visible + label {
+.with-legend > input:focus-visible + label {
   outline: 2px solid var(--link, #337ab7);
   outline-offset: 2px;
 }
-.register-chart > .chart-panel {
+.with-legend > .chart-panel {
   display: none;
   order: 1;
   flex-basis: 100%;
 }
-.register-chart > input:checked + label + .chart-panel {
+.with-legend > input:checked + label + .chart-panel {
   display: block;
 }
-.register-chart .chart-note {
+.report-chart .chart-note {
   order: 2;
   flex-basis: 100%;
   color: var(--muted);

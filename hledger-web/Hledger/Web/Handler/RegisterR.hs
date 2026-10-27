@@ -9,7 +9,7 @@
 
 module Hledger.Web.Handler.RegisterR where
 
-import Data.List (intersperse, nub, partition, sortOn, zip4)
+import Data.List (intersperse, nub, partition, sortOn)
 import Data.Map qualified as M
 import Data.Ord (Down(..))
 import Data.Set qualified as S
@@ -26,7 +26,7 @@ import Hledger.Write.Chart (Chart(..))
 import Hledger.Write.Chart.Svg (SvgOptions(..), chartSvgMarkupWith, defaultSvgOptions)
 import Hledger.Web.Import
 import Hledger.Web.Paging
-import Hledger.Web.Widget.Chart (chartWidth)
+import Hledger.Web.Widget.Chart (chartLegend, chartWidth)
 import Hledger.Web.ReportPage (amountModeOf, deepestDepth, depthParams, removeAttributes, intervalLinks, listWord, parseCalc, parseInterval, parseListMode, parseValue, setAmountMode, valueParams)
 import Hledger.Web.WebOptions
 import Hledger.Web.Widget.AddForm (addModal)
@@ -336,9 +336,9 @@ registerChartHtml trs j today width q modeParams pointLink acct balancelabel ite
        go _ [] = []
        go _ [r] = [r]
        go n (r : more) = let n' = qty r in if n' == n then go n more else r : go n' more
-   -- the legend's entries: each chart's number, the chart, its commodity's name, and whether it is shown at first
-   legend = zip4 [0 :: Int ..] charts (map commodityName charts) (True : repeat False)
-   -- TRANSLATORS: the register chart's legend entry for amounts written without a commodity symbol.
+   -- the legend's entries: each chart's commodity's name, and the chart
+   legend = [(commodityName c, svg c) | c <- charts]
+   -- TRANSLATORS: a chart legend's entry for amounts written without a commodity symbol.
    commodityName (c, _, _) = if T.null c then tr trs "no symbol" else c
    svgopts rowsat = defaultSvgOptions
      { svgStyles     = False
