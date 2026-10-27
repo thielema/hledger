@@ -549,6 +549,11 @@ dialog:focus {
 .report-chart .hledger-chart .tick {
   fill: var(--muted);
 }
+/* The charts' marks are not Bootstrap's highlighted text. */
+.hledger-chart .mark {
+  background-color: transparent;
+  padding: 0;
+}
 
 /* The c key hides a report's chart, and the d key the report's table
    after it (hledger.js); a page without a chart keeps its table. */
@@ -601,7 +606,8 @@ dialog:focus {
 }
 .with-legend > input:checked + label {
   color: inherit;
-  border-bottom: 2px solid currentColor;
+  text-decoration: underline 2px;
+  text-underline-offset: 4px;
 }
 .with-legend > input:focus-visible + label {
   outline: 2px solid var(--link, #337ab7);
