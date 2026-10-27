@@ -550,6 +550,13 @@ dialog:focus {
   fill: var(--muted);
 }
 
+/* The c key hides a report's chart, and the d key the report's table
+   after it (hledger.js); a page without a chart keeps its table. */
+#main-content.chart-hidden .report-chart,
+#main-content.table-hidden .report-chart ~ .report-table {
+  display: none;
+}
+
 /* On the register, dragging across a plot (hledger.js) shades the dates
    selected; on a touch screen a sideways drag selects too, rather than
    scrolling. */

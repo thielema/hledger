@@ -215,6 +215,8 @@ which work when you are not typing in a field:
 - `a` or `n` - add a transaction (escape to cancel)
 - `s` - show or hide the sidebar
 - `o` - show or hide the report options
+- `c` - show or hide the report's chart (on pages with one)
+- `d` - show or hide the report's details, its table (on pages with a chart)
 - `f` - full window: show only the report's heading and data, or everything (`s`, `o` and `/` leave it, showing what they ask for)
 - `z` - show or hide accounts with zero balances
 - `t` - show accounts as a tree, or a list
@@ -295,6 +297,8 @@ eg a bar per account, or with an interval, the accounts over time,
 and for the statements, each section's accounts and the net total.
 With several commodities, each has its own panel.
 In tree mode, the chart shows the accounts down to the depth limit, which the table folds at.
+The `c` key hides or shows the charts, and the `d` key the tables below them;
+the browser remembers this for each hledger-web server (by its port), and later pages open the same way.
 
 For journals that use [lots](hledger.md#lots-and-capital-gains), the
 [holdings](hledger.md#holdings) report is at `/holdings`, and appears

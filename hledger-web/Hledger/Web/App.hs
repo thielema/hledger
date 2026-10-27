@@ -184,6 +184,8 @@ instance Yesod App where
       addHeader "Vary" "Cookie, Accept-Language"
     let lang = trLang trs
     showSidebar <- shouldShowSidebar
+    chartHidden <- (== Just "0") <$> uiCookie "showchart"
+    tableHidden <- (== Just "0") <$> uiCookie "showtable"
     -- The policy is sent from here rather than from a middleware, so that
     -- the header and the page's script tags always carry the same nonce;
     -- error pages come through here too, in a handler state of their own.

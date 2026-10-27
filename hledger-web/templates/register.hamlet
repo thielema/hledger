@@ -7,7 +7,7 @@
 
 ^{registerChartHtml trs j today chartwidth qparam modeParams chartLink chartacct balancelabel allitems}
 
-<div.table-responsive>
+<div.table-responsive.report-table>
   <table .table.table-condensed>
     <thead>
       <tr>

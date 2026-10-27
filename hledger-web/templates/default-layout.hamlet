@@ -106,8 +106,10 @@ $if elem ViewPermission perms
     })();
 
 $# Focusable (but not by tab), so that hledger.js can focus it and the
-$# keyboard scrolls it (see focusPage).
-<div#main-content .col-xs-12.#{mainShowmd}.#{mainShowsm} tabindex=-1>
+$# keyboard scrolls it (see focusPage). The c and d keys hide a report's
+$# chart and its table, remembered in the showchart and showtable cookies
+$# (hledger.js), so each page is born the way the last one was left.
+<div#main-content .col-xs-12.#{mainShowmd}.#{mainShowsm} :chartHidden:.chart-hidden :tableHidden:.table-hidden tabindex=-1>
   $# Shown by hledger.js while the page can't reach the server.
   $if browsemode
     <div #server-stopped .alert.alert-warning role=alert hidden>
@@ -186,6 +188,8 @@ $if elem ViewPermission perms
                 <li> <code>a</code> - _{HMsg "add a transaction"}
                 <li> <code>s</code> - _{HMsg "toggle sidebar"}
                 <li> <code>o</code> - _{HMsg "toggle report options"}
+                <li> <code>c</code> - _{HMsg "toggle the report's chart"}
+                <li> <code>d</code> - _{HMsg "toggle the report's details (its table)"}
                 <li> <code>f</code> - _{HMsg "toggle full window"}
                 <li> <code>/</code> - _{HMsg "focus search form"}
                 <li> <code>z</code> - _{HMsg "hide empty accounts"}

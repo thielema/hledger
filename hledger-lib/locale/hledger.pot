@@ -1964,6 +1964,14 @@ msgid "toggle report options"
 msgstr ""
 
 #: hledger-web/templates/default-layout.hamlet
+msgid "toggle the report's chart"
+msgstr ""
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "toggle the report's details (its table)"
+msgstr ""
+
+#: hledger-web/templates/default-layout.hamlet
 msgid "toggle full window"
 msgstr ""
 

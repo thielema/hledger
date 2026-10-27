@@ -191,6 +191,8 @@ var keymap = [
   { keys: ['o'], run: function() { if (fullWindowLeave()) { controlsShow(); } else { controlsToggle(); } } },
   { keys: ['a', 'n'], run: function() { addformShow(); } },
   { keys: ['f'], run: fullWindowToggle },
+  { keys: ['c'], at: '#main-content .report-chart', run: function(chart) { return reportPartToggle(chart, 'chart-hidden', 'showchart'); } },
+  { keys: ['d'], at: '#main-content .report-chart', run: function(chart) { return reportPartToggle(chart, 'table-hidden', 'showtable'); } },
   { keys: ['/'], run: function() { fullWindowLeave(); focusSearch(); } },
   { keys: ['z'], at: '.zero-balances a:not(.current)', run: linkFollow },
   { keys: ['t'], at: rowLink('accounts', -1),        run: linkToggle },
@@ -629,6 +631,16 @@ function controlsInit() {
 
 // The c key opens and closes the disclosure like a click on its
 // summary; controlsInit's toggle listener saves the choice either way.
+// The c and d keys hide or show a report's chart, or its table (the
+// report's details), on the pages with a chart: a class on the main
+// column does it (hledger.css), and a cookie remembers it, which the
+// server reads, so the next page renders the same way.
+function reportPartToggle(chart, cls, cookie) {
+  if (!chart) { return false; }
+  var hidden = document.getElementById('main-content').classList.toggle(cls);
+  setCookie(cookie, hidden ? '0' : '1');
+}
+
 function controlsToggle() {
   var d = document.querySelector('#main-content details.report-controls');
   if (d) { d.open = !d.open; }

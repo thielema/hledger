@@ -823,6 +823,23 @@ hledgerWebTest = do
       bodyContains ">expenses:food</text>"
       bodyContains ">Total</text>"
 
+    yit "hides the chart or the table as the c and d keys left them" $ do
+      get BalanceR
+      statusIs 200
+      bodyNotContains "chart-hidden"
+      bodyNotContains "table-hidden"
+      testSetCookie defaultSetCookie{setCookieName = uiCookieName "showchart", setCookieValue = "0"}
+      get BalanceR
+      statusIs 200
+      bodyContains "chart-hidden"
+      bodyNotContains "table-hidden"
+      testSetCookie defaultSetCookie{setCookieName = uiCookieName "showchart", setCookieValue = "1"}
+      testSetCookie defaultSetCookie{setCookieName = uiCookieName "showtable", setCookieValue = "0"}
+      get BalanceR
+      statusIs 200
+      bodyNotContains "chart-hidden"
+      bodyContains "table-hidden"
+
     yit "includes the add form on the report pages too, for the a key" $ do
       forM_ [BalanceR, BalancesheetR, IncomestatementR] $ \r -> do
         get r
