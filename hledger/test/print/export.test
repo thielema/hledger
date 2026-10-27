@@ -212,5 +212,5 @@ $ hledger -f export-inc.csv print --export
 
 # ** 8. Only the txt, ledger and beancount output formats are supported.
 $ hledger -f export-main.j print --export -O csv
->2 /print --export supports only the txt, ledger and beancount output formats/
+>2 /print --export supports only the journal, ledger and beancount output formats/
 >= 1

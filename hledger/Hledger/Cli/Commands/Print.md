@@ -34,8 +34,8 @@ Flags:
                             with this prefix. (Usually the base url shown by
                             hledger-web; can also be relative.)
   -O --output-format=FMT    select the output format. Supported formats:
-                            txt, ledger, beancount, csv, tsv, html, fods, json,
-                            sql.
+                            journal, ledger, beancount, csv, tsv, html, fods,
+                            json, sql.
   -o --output-file=FILE     write output to FILE. A file extension matching
                             one of the above formats selects that format.
      --view                 write output to FILE, or to view.FMT in hledger's
@@ -202,7 +202,7 @@ Some details:
   (In Beancount output, these rules are never exported, only whatever has been generated.)
 - A query still selects which transactions are shown, but all directives and comments are kept.
 - Transactions from non-journal files (eg an included CSV file) are added at the end.
-- The `txt` (default), `ledger` and `beancount` output formats are supported.
+- The `journal` (default), `ledger` and `beancount` output formats are supported.
   With `-O ledger`, transactions use Ledger's lot syntax, and directives which hledger accepts
   but Ledger does not (`decimal-mark`, a one-line `commodity` directive with an amount,
   a periodic transaction rule with a description, an auto posting rule with `*N` amount multipliers)
@@ -239,9 +239,9 @@ This command also supports the
 [output destination](hledger.html#output-destination) and
 [output format](hledger.html#output-format) options
 The output formats supported are
-`txt`, `ledger`, `beancount`, `csv`, `tsv`, `html`, `fods`, `json` and `sql`.
+`journal` (the default; `txt` is also accepted), `ledger`, `beancount`, `csv`, `tsv`, `html`, `fods`, `json` and `sql`.
 
-The `ledger` format is currently the same as `txt` except it renders amounts' cost basis
+The `ledger` format is currently the same as `journal` except it renders amounts' cost basis
 using Ledger's lot syntax (`[DATE] (LABEL) {COST}`)
 instead of hledger's (`{DATE, "LABEL", COST}`).
 

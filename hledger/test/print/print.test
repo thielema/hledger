@@ -137,3 +137,24 @@ $ hledger -f- print --layout=hledger1
     c                 ==* -124.45 USD
 
 >=
+
+# ** 10. The default output format is called journal.
+<
+2025-01-01
+    a              1 USD
+    b
+
+$ hledger -f- print -O journal
+2025-01-01
+    a                                              1 USD
+    b
+
+>=
+
+# ** 11. txt is accepted as another name for it.
+$ hledger -f- print -O txt
+2025-01-01
+    a                                              1 USD
+    b
+
+>=

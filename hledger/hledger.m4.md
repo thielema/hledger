@@ -7855,17 +7855,17 @@ $ hledger run --view -- is -M --chart -- bs -Q --chart -- reg expenses -p thismo
 Some commands offer other kinds of output, not just text on the terminal.
 Here are those commands and the formats currently supported:
 
-|  command           | txt | html | csv/tsv | fods | ledger | beancount | sql | json | svg |
-|--------------------|-----|------|---------|------|--------|-----------|-----|------|-----|
-| aregister          | Y   | Y    | Y       | Y    |        |           |     | Y    | Y   |
-| balance            | Y   | Y    | Y       | Y    |        |           |     | Y    | Y   |
-| balancesheet       | Y   | Y    | Y       | Y    |        |           |     | Y    | Y   |
-| balancesheetequity | Y   | Y    | Y       | Y    |        |           |     | Y    | Y   |
-| cashflow           | Y   | Y    | Y       | Y    |        |           |     | Y    | Y   |
-| holdings           | Y   | Y    | Y       | Y    |        |           |     | Y    |     |
-| incomestatement    | Y   | Y    | Y       | Y    |        |           |     | Y    | Y   |
-| print              | Y   | Y    | Y       | Y    | Y      | Y         | Y   | Y    |     |
-| register           | Y   | Y    | Y       | Y    |        |           |     | Y    | Y   |
+|  command           | txt | journal | html | csv/tsv | fods | ledger | beancount | sql | json | svg |
+|--------------------|-----|---------|------|---------|------|--------|-----------|-----|------|-----|
+| aregister          | Y   |         | Y    | Y       | Y    |        |           |     | Y    | Y   |
+| balance            | Y   |         | Y    | Y       | Y    |        |           |     | Y    | Y   |
+| balancesheet       | Y   |         | Y    | Y       | Y    |        |           |     | Y    | Y   |
+| balancesheetequity | Y   |         | Y    | Y       | Y    |        |           |     | Y    | Y   |
+| cashflow           | Y   |         | Y    | Y       | Y    |        |           |     | Y    | Y   |
+| holdings           | Y   |         | Y    | Y       | Y    |        |           |     | Y    |     |
+| incomestatement    | Y   |         | Y    | Y       | Y    |        |           |     | Y    | Y   |
+| print              |     | Y       | Y    | Y       | Y    | Y      | Y         | Y   | Y    |     |
+| register           | Y   |         | Y    | Y       | Y    |        |           |     | Y    | Y   |
 
 <!--
 | accounts              |     |     |      |      |     |
