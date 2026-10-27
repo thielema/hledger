@@ -2756,6 +2756,8 @@ Downsides are mentioned to help you decide if you want to use them.
 
 ### Amount expressions
 
+*Since 1.99.6; experimental*
+
 A posting amount can also be a simple arithmetic expression, which hledger calculates when reading the journal.
 This saves doing sums by hand, and records how an amount was arrived at:
 

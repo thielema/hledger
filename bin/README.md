@@ -59,7 +59,8 @@ Example usage in a CSV [rules file](https://hledger.org/hledger.html#csv):
 
 [ledgereval](https://github.com/hledgerorg/hledger/blob/main/bin/ledgereval)
 is a helper for evaluating Ledger value expressions.
-It's useful eg when converting amount expressions like `(1 USD + 2 USD)` to simple amounts.
+It might be useful for converting Ledger's amount expressions  to simple amounts.
+(Latest hledger can handle arithmetic amount expressions, but not all of Ledger's value expression language.)
 
 ### paypaljson
 
