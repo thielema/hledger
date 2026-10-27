@@ -23,6 +23,7 @@ import Hledger.Web.Handler.BalanceR (reportTitle)
 import Hledger.Web.Paging (yearsRow)
 import Hledger.Web.ReportPage
 import Hledger.Web.WebOptions
+import Hledger.Web.Widget.Chart (reportChart)
 import Hledger.Web.Widget.Common
   (accountParams, closedLinks, commodityLinks, controlsHint, controlsToggle, optionsSummary,
    depthLinks, holdingsValueLinks, listModeLinks,
@@ -296,4 +297,6 @@ getHoldingsR = do
               , sortLinks trs HoldingsR (qParams ++ removeAttributes ["sort"] pageParams) (sort_amount_ ropts) ]
         Yesod.toWidget controlRows
         Yesod.toWidget $ H.h2 $ H.toHtml $ withFilter title
+        -- the chart, as holdings --chart draws it: a bar per holding, or per lot
+        reportChart (withFilter title) $ holdingsReportAsChart ropts "" rpt
         Yesod.toWidget $ reportTable isTree Nothing header [(mprefixHeading, body, [])] totals

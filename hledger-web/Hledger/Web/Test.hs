@@ -467,6 +467,17 @@ hledgerWebTest = do
       -- with lots hidden, the Depth row reaches the deepest real account
       bodyContains "title=\"Show accounts at every depth\">2</a>"
 
+    yit "charts the holdings between the heading and the table, as holdings --chart does" $ do
+      request $ do
+        setMethod "GET"
+        setUrl (HoldingsR, [("q", "date:2026")])
+      statusIs 200
+      bodyContains "</h2><div class=\"report-chart\"><svg"
+      -- a bar per holding, its cost and gain, labelled with the gain percent
+      bodyContains ">assets:broker AAA</text>"
+      bodyContains ">Unrealised gain</text>"
+      bodyContains ">+12.5%</text>"
+
     yit "shows one row per lot with lots=1" $ do
       request $ do
         setMethod "GET"

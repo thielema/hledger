@@ -230,7 +230,7 @@ Count charts (`pnCounts`) instead cap text at one cell per unit when no SCALE is
 - `run -O html`/`-o FILE.html`/`--view` collects the commands' outputs into one page (a folding section per command, headed by its
   command line; echo lines as headings), by giving each command a part file in the cache directory and reading it back;
   so several charts can be viewed at once, as in the chartsdemo page, without a tab per report.
-- hledger-web: the register's chart, and each report page's (balance, the statements), drawn by the CLI's adapters
+- hledger-web: the register's chart, and each report page's (balance, the statements, holdings), drawn by the CLI's adapters
   between the page's heading and its table, without their titles (the heading names them), styled by /chart.css,
   as wide as the page's main column (the chartwidth cookie). In tree mode the page folds its table at the depth limit,
   but a chart can't fold, so it is drawn from the report clipped there, as on the command line.

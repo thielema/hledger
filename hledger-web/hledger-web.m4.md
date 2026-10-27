@@ -306,7 +306,8 @@ accounts as a tree (positions grouped under account headings that
 subtotal the dollar columns, with each position's lots folding into
 it, opened in place by a caret), values converted to the market
 valuation commodity (`value=end`, like `-V`), and rows sorted by
-value. On such journals
+value. Its chart, like `holdings --chart`'s, has a bar per position (or lot):
+its cost basis and unrealised gain or loss, labelled with the gain percentage. On such journals
 every page also gains a Lots link, showing lot subaccounts and per-lot
 postings everywhere with the same `lots` parameter.
 
