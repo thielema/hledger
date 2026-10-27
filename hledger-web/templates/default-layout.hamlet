@@ -190,7 +190,7 @@ $if elem ViewPermission perms
             <td>_{HMsg "view this help"}
           <tr>
             <th><kbd>g</kbd>
-            <td>_{HMsg "go to a page: shows the journal and reports with their keys, then press one"}
+            <td>_{HMsg "go to any screen"}
           $if elem AddPermission perms
             <tr>
               <th><kbd>a</kbd>
@@ -206,7 +206,7 @@ $if elem ViewPermission perms
             <td>_{HMsg "toggle the report's chart"}
           <tr>
             <th><kbd>[</kbd> <kbd>]</kbd>
-            <td>_{HMsg "switch the chart between commodities"}
+            <td>_{HMsg "select the chart's commodity"}
           <tr>
             <th><kbd>d</kbd>
             <td>_{HMsg "toggle the report's data"}
@@ -226,27 +226,27 @@ $if elem ViewPermission perms
           <tr>
             <th>_{HMsg "Show:"}
             <td>
-              <span><kbd>H</kbd> _{HMsg "Ending balances"}
+              <span><kbd>H</kbd> _{HMsg "historical end balances / balance changes"}
           <tr>
             <th>_{HMsg "Interval:"}
             <td>
-              <span><kbd>Y</kbd> _{HMsg "Yearly"}
-              <span><kbd>Q</kbd> _{HMsg "Quarterly"}
-              <span><kbd>M</kbd> _{HMsg "Monthly"}
-              <span><kbd>W</kbd> _{HMsg "Weekly"}
-              <span><kbd>D</kbd> _{HMsg "Daily"}
+              <span><kbd>Y</kbd> _{HMsg "yearly"}
+              <span><kbd>Q</kbd> _{HMsg "quarterly"}
+              <span><kbd>M</kbd> _{HMsg "monthly"}
+              <span><kbd>W</kbd> _{HMsg "weekly"}
+              <span><kbd>D</kbd> _{HMsg "daily"}
           <tr>
             <th>_{HMsg "Status:"}
             <td>
-              <span><kbd>U</kbd> _{HMsg "Unmarked"}
-              <span><kbd>P</kbd> _{HMsg "Pending"}
-              <span><kbd>C</kbd> _{HMsg "Cleared"}
+              <span><kbd>U</kbd> _{HMsg "unmarked"}
+              <span><kbd>P</kbd> _{HMsg "pending"}
+              <span><kbd>C</kbd> _{HMsg "cleared"}
           <tr>
             <th>_{HMsg "Postings:"}
             <td>
-              <span><kbd>R</kbd> _{HMsg "Real"}
+              <span><kbd>R</kbd> _{HMsg "real only / real + virtual"}
           <tr>
-            <th>_{HMsg "Depth:"}
+            <th>_{HMsg "Depth limit:"}
             <td>
               $# TRANSLATORS: in the help's Depth row: what the digit keys, and the - and + keys, do to the depth limit.
               <span><kbd>0</kbd>–<kbd>9</kbd> _{HMsg "set it"}
@@ -255,29 +255,29 @@ $if elem ViewPermission perms
           <tr>
             <th>_{HMsg "Accounts:"}
             <td>
-              <span><kbd>t</kbd> _{HMsgc "accounts" "Tree"}
+              <span><kbd>t</kbd> _{HMsgc "accounts" "tree / list"}
           <tr>
             <th>_{HMsg "Amounts:"}
             <td>
-              <span><kbd>B</kbd> _{HMsg "At cost"}
-              <span><kbd>V</kbd> _{HMsg "At market value"}
+              <span><kbd>B</kbd> _{HMsg "at cost"}
+              <span><kbd>V</kbd> _{HMsg "at market value"}
           <tr>
             <th>_{HMsg "Zero balances:"}
             <td>
-              <span><kbd>z</kbd> _{HMsg "Hidden"} / _{HMsg "Shown"}
+              <span><kbd>z</kbd> _{HMsg "show / hide zero balances"}
           <tr>
             <th>_{HMsg "Lots:"}
             <td>
-              <span><kbd>L</kbd> _{HMsgc "lots" "Shown"}
+              <span><kbd>L</kbd> _{HMsg "show / hide lot details"}
           <tr>
             <th>_{HMsg "Extra columns:"}
             <td>
-              <span><kbd>T</kbd> _{HMsgc "column" "Total"}
-              <span><kbd>A</kbd> _{HMsgc "column" "Average"}
+              <span><kbd>T</kbd> _{HMsgc "column" "total"}
+              <span><kbd>A</kbd> _{HMsgc "column" "average"}
           <tr>
             <th>_{HMsg "Sort:"}
             <td>
-              <span><kbd>S</kbd> _{HMsg "By amount"}
+              <span><kbd>S</kbd> _{HMsg "by amount / by account display order"}
         $# TRANSLATORS: in the help, below the options' keys.
         <p .help-note>_{HMsg "Pressed again, an option's key turns it back off."}
 
@@ -286,11 +286,10 @@ $if elem ViewPermission perms
         <ul .help-list>
           <li> _{HMsg "Search patterns with spaces should be enclosed in quotes."}
           <li> <code>REGEX</code> - _{HMsg "match account names"}
-          <li> <code>type:TYPE</code> - _{HMsg "match account types"}
+          <li> <code>type:TYPE</code> - _{HMsg "match account types (A, L, E, R, X, ...)"}
           <li> <code>date:PERIODEXP</code> - _{HMsg "match dates"}
           <li> <code>status:*</code>, <code>status:!</code>, <code>status:</code> - _{HMsg "match status"}
           <li> <code>code:REGEX</code> - _{HMsg "match transaction codes"}
-          <li> <code>find:REGEX</code> _{HMsg "or"} <code>::REGEX</code> - _{HMsg "match any visible field (account, amount, comment, description, code), or a date if REGEX is also a period expression"}
           <li> <code>desc:REGEX</code> - _{HMsg "match transaction descriptions"}
           <li> <code>payee:REGEX</code> - _{HMsg "match payee part of descriptions"}
           <li> <code>note:REGEX</code> - _{HMsg "match note part of descriptions"}
@@ -298,11 +297,12 @@ $if elem ViewPermission perms
           <li> <code>cur:REGEX</code> - _{HMsg "match currencies/commodities. Must match the whole symbol/name. To match dollar sign, write"} <code>\$</code>
           <li> <code>tag:NAME</code>, <code>tag:NAME=REGEX</code> - _{HMsg "match tags, or tag and value"}
           <li> <code>real:BOOL</code> - _{HMsg "match postings' realness/virtualness"}
+          <li> <code>find:REGEX</code> _{HMsg "or"} <code>::REGEX</code> - _{HMsg "match any visible field (account, amount, comment, description, code), or a date if REGEX is also a period expression"}
           <li> <code>not:QTERM</code> - _{HMsg "prepend not: to negate a search term"}
-          <li> <code>expr:'QEXPR'</code> - _{HMsg "match with a boolean query (and, or, not, (..))"}
+          <li> <code>expr:'QEXPR'</code> - _{HMsg "match with a boolean query (and, or, not, ()"}
           <li>  <code>any:'QEXPR'</code> - _{HMsg "match transactions where any posting matches"}
           <li>  <code>all:'QEXPR'</code> - _{HMsg "match transactions where all postings match"}
-          <li .gap-above> <code>depth:N</code> - _{HMsg "clip account names at this depth"}
+          <li .gap-above> <code>depth:N</code> - _{HMsg "another way to set depth limit (can be per account)"}
           $# <li> Description, account, status query terms are OR'ed, others are AND'ed.
         <h4>_{HMsg "More help:"}
         <ul .help-list>
