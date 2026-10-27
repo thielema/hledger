@@ -42,6 +42,7 @@ module Hledger.Web.ReportPage (
   intervalLinks,
   accumulationLinks,
   reportTable,
+  chartReportSpec,
   splitAccountNames,
 ) where
 
@@ -576,6 +577,14 @@ splitAccountNames rws = (mprefix, map (map split) rws)
           , cellTitle = cellContent c <> "\n" <> cellTitle c
           }
       | otherwise = c
+
+-- | Where a report page folds its tree at the depth limit (see
+-- reportParams), the report spec for its chart, given the page's search:
+-- one clipping the tree there instead, as the command line does, since a
+-- chart can't fold. Otherwise the chart's report is the page's own.
+chartReportSpec :: Query -> ReportSpec -> Maybe ReportSpec
+chartReportSpec q rspec@ReportSpec{_rsReportOpts = ropts} =
+  rspec{_rsQuery = q, _rsReportOpts = ropts{fold_depth_ = Nothing}} <$ fold_depth_ ropts
 
 -- | A report as a table in the page's own style: the heading rows, then
 -- a table section per report section (a titled row, its rows, then its

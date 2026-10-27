@@ -14,6 +14,7 @@ module Hledger.Cli.CompoundBalanceCommand (
  ,compoundBalanceCommand
  ,compoundBalanceReportTitle
  ,applySubreportTitles
+ ,compoundBalanceSectionTypes
  ,CompoundBalanceReportParts(..)
  ,compoundBalanceReportAsSpreadsheetParts
  ,allCommoditiesFromSubreports
@@ -170,8 +171,7 @@ compoundBalanceCommand spec@CompoundBalanceCommandSpec{..} opts@CliOpts{reportsp
            cbr'{cbrTitle = effectiveTitle ropts' $ compoundBalanceReportTitle spec ropts mbalanceAccumulationOverride cbr'
                ,cbrSubreports = [ (tr t, r, b) | (t, r, b) <- cbrSubreports cbr' ]}
 
-    -- each section's account type, from its query, if that is a simple type query (for colouring charts)
-    sectiontypes = [case cbcsubreportquery q of Type (t:_) -> Just t; _ -> Nothing | q <- cbcqueries]
+    sectiontypes = compoundBalanceSectionTypes cbcqueries
 
     -- render appropriately
     render = case outputFormatFromOpts opts of
@@ -264,6 +264,10 @@ applySubreportTitles ropts cbr@CompoundPeriodicReport{cbrSubreports=subs} =
           let custom = T.splitOn "|" s
               replace i (old,r,b) = (fromMaybe old (atMay custom i), r, b)
           in  cbr{cbrSubreports = zipWith replace [0..] subs}
+
+-- | Each section's account type, from its query, if that is a simple type query (for colouring charts).
+compoundBalanceSectionTypes :: [CBCSubreportSpec a] -> [Maybe AccountType]
+compoundBalanceSectionTypes specs = [case cbcsubreportquery q of Type (t:_) -> Just t; _ -> Nothing | q <- specs]
 
 -- | Merge the intervals that a report title does not distinguish:
 -- twelve months is a year, and a quarter is three months.

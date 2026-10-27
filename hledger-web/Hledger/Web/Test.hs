@@ -794,6 +794,24 @@ hledgerWebTest = do
       bodyContains ">Cashflow statement</a><a class=\"current group-start\""
       bodyContains ">All accounts</a><a href="
 
+    yit "charts the report between its heading and its table, as balance --chart does" $ do
+      get BalanceR
+      statusIs 200
+      bodyContains "<h2>All accounts</h2><div class=\"report-chart\"><svg"
+      bodyContains "aria-label=\"All accounts\""
+      bodyContains "</svg></div><div class=\"table-responsive report-table\">"
+      -- a bar per account, and the chart's styles from the stylesheet
+      bodyContains ">assets:bank:checking</text>"
+      bodyContains "/chart.css"
+      -- with an interval, the accounts over time, and their total
+      request $ do
+        setMethod "GET"
+        setUrl BalanceR
+        addGetParam "interval" "monthly"
+      statusIs 200
+      bodyContains ">expenses:food</text>"
+      bodyContains ">Total</text>"
+
     yit "includes the add form on the report pages too, for the a key" $ do
       forM_ [BalanceR, BalancesheetR, IncomestatementR] $ \r -> do
         get r
@@ -1229,6 +1247,9 @@ hledgerWebTest = do
       bodyContains "<tr class=\"tree-fold-hide\"><td class=\"account indent-1 depth-2\">"
       bodyContains "<tr class=\"tree-fold-hide\"><td class=\"account indent-2 depth-3\">"
       bodyContains ">checking</a>"
+      -- the chart can't fold, so it is clipped at the depth instead
+      bodyContains ">assets</text>"
+      bodyNotContains ">bank</text>"
 
     yit "folds a tree-mode report by account depth, not indent, where boring parents are squashed" $ do
       request $ do
@@ -1497,6 +1518,9 @@ hledgerWebTest = do
       get BalancesheetR
       statusIs 200
       bodyContains "<h2>Balance Sheet 2025-02-06</h2>"
+      -- and charts it below the heading, with the net worth
+      bodyContains "<h2>Balance Sheet 2025-02-06</h2><div class=\"report-chart\"><svg"
+      bodyContains ">Net</text>"
       -- a section heading names a dropped shared prefix deeper than one
       -- component; a single-component one stays implied by the title
       bodyContains "<tr class=\"section\"><th colspan=\"2\" scope=\"rowgroup\">Assets — assets:bank</th></tr>"
@@ -2005,6 +2029,7 @@ hledgerWebTest = do
       bodyContains "No accounts of the types this report shows were found"
       bodyContains "hledger.html#account-types"
       bodyNotContains "balancereport"
+      bodyNotContains "report-chart"
 
     yit "says when a search matches nothing instead" $ do
       request $ do

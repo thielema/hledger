@@ -14,7 +14,7 @@ import Data.Map qualified as M
 import Data.Ord (Down(..))
 import Data.Set qualified as S
 import Data.Text qualified as T
-import Safe (readMay, tailSafe)
+import Safe (tailSafe)
 import Text.Blaze.Html5 qualified as H
 import Text.Hamlet (hamletFile)
 
@@ -26,6 +26,7 @@ import Hledger.Write.Chart (Chart(..))
 import Hledger.Write.Chart.Svg (SvgOptions(..), chartSvgMarkupWith, defaultSvgOptions)
 import Hledger.Web.Import
 import Hledger.Web.Paging
+import Hledger.Web.Widget.Chart (chartWidth)
 import Hledger.Web.ReportPage (amountModeOf, deepestDepth, depthParams, removeAttributes, intervalLinks, listWord, parseCalc, parseInterval, parseListMode, parseValue, setAmountMode, valueParams)
 import Hledger.Web.WebOptions
 import Hledger.Web.Widget.AddForm (addModal)
@@ -66,9 +67,8 @@ getRegisterR = do
   mcalc   <- lookupGetParam "calc"
   urlrender <- getUrlRenderParams
   pagereq <- pageRequest
-  -- How wide to draw the chart: as wide as the page's main column, which
-  -- the browser measures and keeps in the chartwidth cookie (hledger.js).
-  mchartwidth <- (>>= readMay . T.unpack) <$> uiCookie "chartwidth"
+  -- How wide to draw the chart: as wide as the page's main column.
+  chartwidth <- chartWidth
 
   let title = case account of
         Nothing         -> tr trs "all accounts"
@@ -295,9 +295,9 @@ decorateLinks = concatMap $ \(acct, (name, comma)) ->
 -- date terms. Its styles are served by ChartCssR, since the
 -- Content-Security-Policy allows no inline styles.
 registerChartHtml ::
-  Translations -> Journal -> Day -> Maybe Int -> Text -> [(Text, Text)] -> (Transaction -> Text) -> Text -> Text ->
+  Translations -> Journal -> Day -> Double -> Text -> [(Text, Text)] -> (Transaction -> Text) -> Text -> Text ->
   AccountTransactionsReport -> HtmlUrl AppRoute
-registerChartHtml trs j today mwidth q modeParams pointLink acct balancelabel items = $(hamletFile "templates/chart.hamlet")
+registerChartHtml trs j today width q modeParams pointLink acct balancelabel items = $(hamletFile "templates/chart.hamlet")
  where
    nodatelink = (RegisterR, [("q", t) | let t = T.unwords $ removeDates q, not (T.null t)] ++ modeParams)
    -- The commodities charted: at most ten, those with the most transactions.
@@ -342,7 +342,7 @@ registerChartHtml trs j today mwidth q modeParams pointLink acct balancelabel it
    commodityName (c, _, _) = if T.null c then tr trs "no symbol" else c
    svgopts rowsat = defaultSvgOptions
      { svgStyles     = False
-     , svgWidth      = maybe (svgWidth defaultSvgOptions) (fromIntegral . max 320 . min 2400) mwidth
+     , svgWidth      = width
      , svgPlotHeight = 150
      , svgPointLink  = \k -> pointLink . triOrigTransaction <$> M.lookup k rowsat
      , svgDateScale  = True

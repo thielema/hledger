@@ -8,13 +8,13 @@ $# and data-baselink, the register's url without its date terms. Keeping
 $# data and code out of the page is what lets script-src be strict (#2703).
 $if not (null charts)
   $if length charts == 1
-    <div .register-chart data-baselink=@?{nodatelink}>
+    <div .register-chart .report-chart data-baselink=@?{nodatelink}>
       $forall c <- charts
         #{svg c}
       $if leftout > 0
         <p .chart-note>#{moreCommodities trs leftout}
   $else
-    <div .register-chart .with-legend data-baselink=@?{nodatelink}>
+    <div .register-chart .report-chart .with-legend data-baselink=@?{nodatelink}>
       <span .chart-legend-label>#{balancelabel}:
       $forall (k, p, name, first) <- legend
         <input type=radio name=register-chart id="register-chart-#{show k}" :first:checked>

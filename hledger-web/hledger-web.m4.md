@@ -289,6 +289,13 @@ statement, and the row of links at the top of every page links to them
 all: the journal and the named reports first, as in the sidebar, then the
 general ones (All accounts, and the balance sheet with equity).
 
+Each report has a chart between its heading and its table, the one the command's
+[`--chart`](hledger.md#charts) draws, as wide as the page:
+eg a bar per account, or with an interval, the accounts over time,
+and for the statements, each section's accounts and the net total.
+With several commodities, each has its own panel.
+In tree mode, the chart shows the accounts down to the depth limit, which the table folds at.
+
 For journals that use [lots](hledger.md#lots-and-capital-gains), the
 [holdings](hledger.md#holdings) report is at `/holdings`, and appears
 in the sidebar and the report links. It shows one row per account and

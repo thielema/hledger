@@ -9,6 +9,7 @@ import Text.Blaze.Html5 qualified as H
 import Yesod qualified
 
 import Hledger
+import Hledger.Cli.Chart (balanceReportAsChart, multiBalanceReportAsChart)
 import Hledger.Cli.CliOptions
 import Hledger.Cli.Commands.Balance qualified as Balance
 import Data.Text qualified as T
@@ -19,6 +20,7 @@ import Hledger.Web.Widget.AddForm (addModal)
 import Hledger.Web.Paging (yearsRow)
 import Hledger.Web.ReportPage
 import Hledger.Web.WebOptions
+import Hledger.Web.Widget.Chart (reportChart)
 import Hledger.Web.Widget.Common
   (amountLinks, calcLinks, columnsLinks, commodityLinks, controlsHint, controlsToggle, optionsSummary,
    depthLinks, listModeLinks, lotsLinks,
@@ -68,6 +70,13 @@ getBalanceR = do
             rspecR = rspec{_rsReportOpts = roptsR}
             mbr | isJust pctErr = styleAmounts styles $ multiBalanceReport rspecR j
                 | otherwise = mbrAsked
+            br = styleAmounts styles $ balanceReport rspecR j
+            -- The chart, as balance --chart draws it, of the report clipped at
+            -- any depth limit the table folds at.
+            clipped report rpt = maybe rpt (\rs -> styleAmounts styles $ report rs j) $ chartReportSpec q rspecR
+            chart = case rpInterval of
+              NoInterval -> balanceReportAsChart (journalAccountType j) roptsR "" $ clipped balanceReport br
+              _ -> multiBalanceReportAsChart (journalAccountType j) roptsR "" $ clipped multiBalanceReport mbr
             colspans = prDates mbr
             -- What links staying on this page keep: the period as given, and each
             -- report-shaping parameter that is not at its default.
@@ -106,8 +115,7 @@ getBalanceR = do
             (title, header, body, totals) = case rpInterval of
               NoInterval ->
                 let (h, b, t) =
-                      Balance.balanceReportAsSpreadsheetParts oneLineNoCostFmt roptsR $
-                        styleAmounts styles $ balanceReport rspecR j
+                      Balance.balanceReportAsSpreadsheetParts oneLineNoCostFmt roptsR br
                     -- The plain page has its own name; one narrowed to a
                     -- period, or showing ending balances, says so like the
                     -- multi-period page does.
@@ -158,6 +166,7 @@ getBalanceR = do
         Yesod.toWidget controlRows
         Yesod.toWidget $ H.h2 $ H.toHtml $ withFilter title
         for_ pctErr $ Yesod.toWidget . pctError trs
+        reportChart (withFilter title) chart
         Yesod.toWidget $ reportTable isTree mfold header [(acctsPrefix, body', [])] totals
 
 -- | The heading for a report: --title if one was given, otherwise the

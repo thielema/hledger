@@ -108,6 +108,7 @@ library
       Hledger.Web.Test
       Hledger.Web.WebOptions
       Hledger.Web.Widget.AddForm
+      Hledger.Web.Widget.Chart
       Hledger.Web.Widget.Common
   other-modules:
       Paths_hledger_web

@@ -19,6 +19,7 @@ import Yesod qualified
 import Data.Text qualified as T
 
 import Hledger
+import Hledger.Cli.Chart (compoundBalanceReportAsChart)
 import Hledger.Cli.CliOptions
 import Hledger.Cli.Commands.Balancesheet (balancesheetSpec)
 import Hledger.Cli.Commands.Balancesheetequity (balancesheetequitySpec)
@@ -33,6 +34,7 @@ import Hledger.Web.Widget.AddForm (addModal)
 import Hledger.Web.Paging (yearsRow)
 import Hledger.Web.ReportPage
 import Hledger.Web.WebOptions
+import Hledger.Web.Widget.Chart (reportChart)
 import Hledger.Web.Widget.Common
   (amountLinks, calcLinks, columnsLinks, commodityLinks, controlsToggle, optionsSummary,
    depthLinks, helplink,
@@ -93,6 +95,11 @@ statementPage here tabtitle spec = do
               applySubreportTitles ropts $
                 cbr0{cbrTitle = effectiveTitle ropts $ compoundBalanceReportTitle spec rpRopts override cbr0}
             colspans = cbrDates cbr
+            -- The chart, as the command's --chart draws it, of the report
+            -- clipped at any depth limit the table folds at.
+            chart = compoundBalanceReportAsChart (journalAccountType j) (compoundBalanceSectionTypes $ cbcqueries spec) roptsR $
+              maybe cbr (\rs -> cbr{cbrSubreports = cbrSubreports $ styleAmounts styles $ compoundBalanceReport rs j (cbcqueries spec)})
+                (chartReportSpec q rspecR)
             -- What links staying on this page keep: the period as given, the
             -- accumulation mode when it is not the report's own, and each
             -- report-shaping parameter that is not at its default.
@@ -185,7 +192,9 @@ statementPage here tabtitle spec = do
         for_ pctErr $ Yesod.toWidget . pctError trs
         if empty
           then Yesod.toWidget $ emptyNotice trs zerosHidden (q == Any)
-          else Yesod.toWidget $ reportTable isTree mfold [header] sections (relink cbrpNetRows)
+          else do
+            reportChart (withFilter $ cbrTitle cbr) chart
+            Yesod.toWidget $ reportTable isTree mfold [header] sections (relink cbrpNetRows)
 
 -- | What an empty statement shows instead of a table: that its accounts
 -- all have zero balances, which are hidden; or, for the whole journal,

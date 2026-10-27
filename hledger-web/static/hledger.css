@@ -534,24 +534,27 @@ dialog:focus {
 }
 
 /*------------------------------------------------------------------------------------------*/
-/* 7. the register chart */
+/* 7. the report charts */
 
-/* hledger's SVG chart, styled by /chart.css in its own palette, and fitted
-   to the page here: it sits on the page's background, and its tick labels
-   take the page's muted color, which keeps them readable (4.5:1) in both
-   schemes. Dragging across a plot (hledger.js) shades the dates selected;
-   on a touch screen a sideways drag selects too, rather than scrolling. */
-.register-chart {
+/* hledger's SVG charts, styled by /chart.css in their own palette, and
+   fitted to the page here: they sit on the page's background, and their
+   tick labels take the page's muted color, which keeps them readable
+   (4.5:1) in both schemes. */
+.report-chart {
   margin-bottom: 1em;
 }
-.register-chart .hledger-chart {
-  touch-action: pan-y;
-}
-.register-chart .hledger-chart .bg {
+.report-chart .hledger-chart .bg {
   fill: transparent;
 }
-.register-chart .hledger-chart .tick {
+.report-chart .hledger-chart .tick {
   fill: var(--muted);
+}
+
+/* On the register, dragging across a plot (hledger.js) shades the dates
+   selected; on a touch screen a sideways drag selects too, rather than
+   scrolling. */
+.register-chart .hledger-chart {
+  touch-action: pan-y;
 }
 .register-chart .hledger-chart .plot,
 .register-chart .hledger-chart .shade {
