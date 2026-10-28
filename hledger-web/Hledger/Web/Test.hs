@@ -311,6 +311,11 @@ hledgerWebTest = do
       bodyContains "@media screen and (prefers-color-scheme:dark){"
       bodyNotContains "@media (prefers-color-scheme:dark)"
 
+    yit "serves static files for browsers to check before reusing, so an upgrade's hledger.js is used" $ do
+      get $ StaticR hledger_js
+      statusIs 200
+      assertHeader "Cache-Control" "no-cache"
+
     yit "hyperlinks use a base url made from the default host and port" $ do
       get JournalR
       statusIs 200

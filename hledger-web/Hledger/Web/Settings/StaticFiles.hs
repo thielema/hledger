@@ -7,7 +7,7 @@ module Hledger.Web.Settings.StaticFiles where
 import Data.FileEmbed (embedDir)
 import Network.Wai.Application.Static (defaultFileServerSettings, embeddedSettings, staticApp)
 import System.IO (stdout, hFlush)
-import WaiAppStatic.Types (StaticSettings(..))
+import WaiAppStatic.Types (MaxAge(..), StaticSettings(..))
 import Yesod.Core (WaiSubsite(..))
 
 import Hledger.Web.Settings (staticDir, development, staticFileRoute)
@@ -27,8 +27,10 @@ staticSite =
      -- putStrLn "Using built-in web files" >> hFlush stdout
      return $ serve $ embeddedSettings $(embedDir staticDir)
   where
-    -- serve files with hash-based ETag headers, so browsers can cache them
-    serve settings = WaiSubsite $ staticApp settings{ssUseHash = True}
+    -- Serve files with hash-based ETag headers, and Cache-Control: no-cache,
+    -- so browsers keep them but check with us before each use (a cheap 304 if unchanged).
+    -- Otherwise a browser may keep using an old hledger.js after an upgrade or rebuild.
+    serve settings = WaiSubsite $ staticApp settings{ssUseHash = True, ssMaxAge = NoCache}
 
 -- Type-safe routes for the static files used by the app,
 -- verified to exist at compile time.

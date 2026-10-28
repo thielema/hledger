@@ -160,7 +160,7 @@ library
     , unordered-containers
     , utf8-string
     , wai
-    , wai-app-static >=3.1
+    , wai-app-static >=3.1.9
     , wai-cors
     , wai-extra
     , warp
