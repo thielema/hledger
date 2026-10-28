@@ -57,7 +57,7 @@ import Text.DocLayout qualified as DL
 import Text.Printf (printf)
 
 import Hledger.Data.Amount (nullamt, oneLineNoCostFmt, showAmountWith)
-import Hledger.Data.Dates (showDate)
+import Hledger.Data.Dates (nulldatespan, showDate)
 import Hledger.Data.Types (AccountType(..), Amount(..), AmountPrecision(..), AmountStyle(..), Quantity)
 import Hledger.Utils.Test
 import Hledger.Write.Chart
@@ -154,6 +154,12 @@ panelGap        = 16
 legendRowHeight = 24
 rowHeight       = 28   -- height of a row in a horizontal bar chart
 
+-- | The narrowest a chart's periods can be (the chart's width divided by their number, in pixels)
+-- for a total to be marked across their bars. The bars are 3/4 of their period (so here, 24px wide),
+-- and a mark is 4px wider than them on each side, so below this the marks would run into each other.
+minMarkedPeriodWidth :: Double
+minMarkedPeriodWidth = 32
+
 -- | How many intervals a plot this high (in pixels) divides its y axis into, roughly: about one per 50px, from 2 to 5.
 plotIntervals :: Double -> Int
 plotIntervals h = max 2 $ min 5 $ floor (h / 50)
@@ -208,9 +214,17 @@ panelSvg opts xaxis colouring showheading top Panel{pnUnit, pnSeries, pnGroupNam
     mtotal = find ((== SeriesTotal) . seRole) pnSeries
     -- The total, if it's to be marked: not when it is always just the end of the bar, ie with bars in one stack
     -- (not side by side) whose total is their positive or negative sum at every x position (eg counts, or time logged).
+    -- Nor when it would be marked across the bars of periods too narrow for it (eg weekly over years):
+    -- the marks, wider than the bars, would run together and hide them.
     mtotalmark = case mtotal of
       Just t | onestack && all ((== MarkBar) . seMark) items && totalIsBarEnd items t -> Nothing
+      Just t | crowded && seMark t /= MarkLine && any ((== MarkBar) . seMark) items -> Nothing
       _ -> mtotal
+    crowded = case xaxis of
+      XPeriods ps    -> narrow (length ps)
+      XDates ds      -> narrow (length ds)
+      XCategories _  -> False
+    narrow k = svgWidth opts / fromIntegral (max 1 k) < minMarkedPeriodWidth
     onestack = not (pnLayout == Grouped && length pnGroupNames > 1)
     drawn = zipWith (\c s -> DrawSeries (colourClass c) s (seriesValues s)) (seriesColours colouring items) items
     -- the series are listed in a legend when there are several, or when one is an "other" series, whose muted colour needs explaining
@@ -911,6 +925,12 @@ tests_Hledger_Write_Chart_Svg = testGroup "Write.Chart.Svg" [
      assertBool "the zero line" $ "class=\"axis zero\"" `T.isInfixOf` svg
      -- with today after the last day, it's all past
      assertBool "no future" $ not $ "shade future" `T.isInfixOf` shading (fromGregorian 2024 1 9)
+  ,testCase "a net total is marked across each period's bars, unless the periods are too narrow" $ do
+     let marks = T.count "class=\"mark total\"" . svgText defaultSvgOptions . netChart
+     -- one per period, and one in the legend
+     marks 12 @?= 13
+     -- at 880px, 100 periods are 8.8px each, too narrow: neither the marks nor their legend entry
+     marks 100 @?= 0
   ]
   where
     svgText opts = TL.toStrict . renderSvg . chartSvgMarkupWith opts
@@ -919,3 +939,9 @@ tests_Hledger_Write_Chart_Svg = testGroup "Write.Chart.Svg" [
     -- a chart of one line, with these values on successive days from 2024-01-01
     lineChartOf qs = Chart "" (XDates $ take (length qs) $ iterate (addDays 1) (fromGregorian 2024 1 1))
       [Panel nullamt [Series (ChartLabel "a" "a" 0 Nothing True) SeriesItem MarkLine (map Just qs) 0 0] [] Nothing Diverging False [] []]
+    -- a chart of n periods, each with a positive and a negative bar, and their net total
+    netChart n = Chart "" (XPeriods $ replicate n (nulldatespan, "p"))
+      [Panel nullamt [ Series (ChartLabel "a" "a" 0 Nothing True) SeriesItem MarkBar (replicate n (Just 3)) 0 0
+                     , Series (ChartLabel "b" "b" 0 Nothing True) SeriesItem MarkBar (replicate n (Just (-1))) 0 0
+                     , Series (ChartLabel "net" "net" 0 Nothing True) SeriesTotal MarkMarker (replicate n (Just 2)) 0 0
+                     ] [] Nothing Diverging False [] []]

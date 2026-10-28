@@ -67,6 +67,9 @@ report  -->  adapter (Hledger.Cli.Chart; smart defaults)  -->  Chart (Hledger.Wr
   Not for bars in one stack (not grouped side by side) whose total is just the end of the bar at every x position (`totalIsBarEnd`),
   ie the sum of its positive or negative values: eg activity's counts, or time logged; there it is shown only as the value.
   So it is marked with values of both signs, or a total that isn't the bars' sum (eg holdings' value, with a loss shown beyond it).
+  Nor in SVG charts over time whose bars are narrower than about 24px (periods narrower than 32px, the chart's width divided by their number;
+  eg monthly over 20 years, even on a 2400px page),
+  where the marks, wider than the bars, would run into each other and hide them; the legend then doesn't list the total either.
   In category (single-period) charts too.
 - **Row total and average** (`-T`, `-A`), for changes per period: the net total's total and average per period, on a summary line
   below the chart (eg `Total 11, Average 0.9`; labels are the table's column headings); the average also as a dashed line in SVG, with a legend entry (shown even for a single series);
