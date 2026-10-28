@@ -470,14 +470,14 @@ columnsLinks trs route kept total avg =
         (route, kept ++ [("total", "1") | total] ++ [("avg", "1") | not avg]), avg)
     ]
 
--- | Links sorting the report's rows by account name or by amount,
--- keeping the given parameters; the order being shown is marked.
+-- | Links sorting the report's rows by account display order (declaration order, otherwise name)
+--  or by amount, keeping the given parameters; the order being shown is marked.
 -- The S key toggles By amount, the second link (hledger.js).
 sortLinks :: Translations -> r -> [(Text, Text)] -> Bool -> HtmlUrl r
 sortLinks trs route kept byAmount =
   -- TRANSLATORS: the label before a report's sort links, and the links' text and tooltips.
   linksRowClass "sort" (tr trs "Sort:")
-    [ (tr trs "By account", tr trs "Sort rows by account name", (route, kept), not byAmount)
+    [ (tr trs "By account", tr trs "Sort rows by account display order", (route, kept), not byAmount)
     , (tr trs "By amount", tr trs "Sort rows by their amounts, largest first (-S)", (route, kept ++ [("sort", "amount")]), byAmount)
     ]
 

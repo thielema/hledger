@@ -244,7 +244,7 @@ $if elem ViewPermission perms
           <tr>
             <th>_{HMsg "Postings:"}
             <td>
-              <span><kbd>R</kbd> _{HMsg "real only / real + virtual"}
+              <span><kbd>R</kbd> _{HMsg "real only / all"}
           <tr>
             <th>_{HMsg "Depth limit:"}
             <td>
