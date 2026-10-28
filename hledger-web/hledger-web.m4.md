@@ -124,22 +124,17 @@ hledger-web shows accounts with zero balances by default (like `hledger-ui`, and
 `-E/--empty` starts it with them hidden instead. Either way, the Zero balances option
 (or the `z` key) shows or hides them.
 
-Report options and query arguments given at startup become url state:
-hledger-web translates them into the url that browse mode opens, and
-that `--serve` prints, eg `hledger-web -V -M` opens
-`/journal?interval=monthly&value=end`, and `hledger-web --cleared -3 assets`
-opens `/journal?q=assets status:*&depth=3` (url-encoded). The server
-itself keeps the defaults, so every view is fully described by its
-url: a bare url shows the default view, and editing the url (or the
-search and the links above each page) changes the view. Report options
-the web UI has no equivalent for are ignored; options that map to
-page-local state, like `--historical`, shape the opening page only.
+Report options and a query given at startup set the view hledger-web opens with,
+by putting them in its url (see [URL parameters](#url-parameters)).
+Eg `hledger-web -V -M` opens `/journal?interval=monthly&value=end`,
+and `hledger-web --cleared -3 assets` opens `/journal?q=assets status:*&depth=3`.
+They are only a starting point: viewers can change or clear them,
+and they don't affect other urls or the JSON API.
+Report options that hledger-web has no equivalent for are ignored.
 
-This means a startup query is a starting search, not a restriction: a
-viewer can edit or clear it, and the JSON API serves the whole journal
-regardless. To actually restrict what hledger-web serves, give it a
-file holding only the entries to serve (eg one written by `hledger
-print QUERY`).
+So a startup query doesn't restrict what hledger-web serves.
+To do that, give it a file holding only the entries to serve
+(eg one written by `hledger print QUERY`).
 
 If you use the bash shell, you can auto-complete flags by pressing TAB in the command line.
 If this is not working see [Install > Shell completions](install.html#shell-completions).
@@ -150,46 +145,36 @@ hledger-web's main views are:
 
 - the **journal view** (the home page), showing journal entries, newest first, with their postings;
 - the **register view**, showing the transactions affecting one account (and its subaccounts),
-  with a running balance and a balance chart, the account named by an `account` parameter,
-  eg `/register?account=assets:bank` (with `subs=0`, excluding its subaccounts), which the
-  register's links and search keep; and
+  with a running balance and a balance chart; and
 - the **report views**, described [below](#reports): the balance sheet, income statement,
-  cashflow statement (and holdings, for journals using lots), and All accounts report,
-  all linked from the sidebar.
+  cashflow statement (and holdings, for journals using lots), and All accounts report.
 
-The register's chart shows the running balance over the page's transactions, across the page.
-With several commodities, a legend (or the `[` and `]` keys) chooses the one charted, each on its own scale,
-starting with the one with the most transactions.
-Clicking a point goes to its transaction, and dragging across the chart
-shows the transactions of the dates dragged across.
+Every page has, from the top: links to the journal and the reports,
+the search form, the options, and then the view itself.
+The options are hidden until you open them (click Options, or press `o`);
+while hidden, they list the ones in effect, eg "Monthly · Depth 2 · Tree".
 
-A row of links at the top of every page leads to the journal and report views.
-Below it are the search form, the options, and then the view's heading and content.
-The options are hidden until opened (click them, or press `o`); while hidden, they list
-the ones in effect, eg "Monthly · Depth 2 · Tree", so a view's shape is always visible.
+The journal and register show the newest 1000 matching transactions,
+with links to older and newer pages.
+When the transactions span more than one year, the options include a row of years,
+to narrow the view to one year; shift-click a second year to select a range of years.
 
-The journal and register views show the newest 1000 matching transactions, with links to the older
-and newer pages and to pages by number, so that a page stays a reasonable size
-however large the journal is (a `page` parameter in the URL names the page).
-When the matching transactions span more than one year, a row of years among the
-controls links to the view narrowed to each year; "All" widens it again, and shift-clicking
-a year selects a range of years (a `date:FIRST..END` search term, whose years the row marks).
-When they span more than twenty years, the years are shown one row per decade.
+The register's chart shows the running balance over the page's transactions.
+With several commodities, use the legend, or the `[` and `]` keys, to choose the one charted.
+Click a point to go to its transaction, or drag across the chart to see the transactions of those dates.
+The register's Costs option shows the costs recorded with its amounts.
 
-The **sidebar** lists accounts and their balances (parent balances include subaccounts,
-and multiple commodities are shown one above the other).
-When a report shows its accounts as a tree (the Accounts row), the sidebar does too,
-with carets that fold and open each group in place. Folds are remembered in the browser,
-as choices laid over each page's baseline: a page with a depth limit starts folded
-to it, one without starts fully open, and either way the groups you have opened or
-closed by hand stay as you left them. A caret clicked back to its page's baseline
-is forgotten.
-Click an account name to see its register, or an amount to see the transactions it is
-made of. In the journal and register views, click a date to see that day's journal entries.
+The **sidebar** lists accounts and their balances (parent balances include subaccounts).
+When the Accounts option is Tree, the sidebar is a tree too, with carets that fold and open
+each group. It starts folded to the depth limit, if there is one, and the browser remembers
+the groups you open or close.
+
+Click an account name to see its register, or an amount to see the transactions it is made of.
+In the journal and register, click a date to see that day's journal entries.
 
 The **search form** filters every view with hledger's [query](hledger.md#queries) syntax,
 eg `expenses date:thismonth`; the help dialog summarises the query types.
-The current view and search are reflected in the URL, so views can be bookmarked and shared.
+The search and the options are part of the page's url (see [URL parameters](#url-parameters)).
 
 The **add form** (press `a`, or click "Add a transaction" in the journal view)
 adds a transaction to the main journal file, if the [access level](#permissions) allows it.
@@ -327,6 +312,8 @@ An interval or depth typed in the search, like `date:monthly` or `depth:2`,
 moves into the options when the page reloads.
 A depth limit for some accounts only, like `depth:assets=3`, stays in the search.
 
+The options are also [URL parameters](#url-parameters), so you can bookmark a report with them.
+
 (For more detail, see the hledger manual, eg [CONCEPTS](hledger.md#part-4-concepts).)
 
 ## Charts
@@ -374,20 +361,28 @@ the deeper accounts' positions, by commodity, into the accounts at the limit.
 On journals that use lots, every page also has a Lots option, showing
 lot subaccounts and per-lot postings.
 
-## URL parameters
+# URL PARAMETERS
 
-A page's address includes its search and options, so a bookmark or a shared link
-shows the same view. These are the parameters, mostly corresponding to hledger options:
+A page's url includes its search and options, so a bookmark or a shared link
+shows the same view. You can also write these urls yourself, eg
+`/balancesheet?interval=monthly&depth=2` or `/register?account=assets:bank`.
+These are the parameters, most corresponding to hledger options:
 
 - `q` - the search
+- `account` - the account whose register to show (with its subaccounts, unless `subs=0`)
+- `page` - which page of transactions to show, in the journal and register (1 is the newest)
 - `interval` - `daily`, `weekly`, `monthly`, `quarterly` or `yearly` (like `-D`, `-W`, `-M`, `-Q`, `-Y`)
 - `depth` - a number (like `--depth`)
 - `accum` - `change`, `historical` or `cumulative` (like `--change`, `-H`, `--cumulative`)
 - `value` - `none`, `cost`, or `then`, `end`, `now` or a date, optionally followed by `,COMMODITY` (like `--value`)
+- `infer` - `1` to infer market prices from transaction costs too (like `--infer-market-prices`)
 - `empty` - `1` to show zero balances, `0` to hide them (like `-E`)
 - `list` - `tree` or `flat` (like `--tree`, `--flat`)
 - `sort` - `amount` (like `-S`)
 - `total`, `avg`, `pct` - `1` to add totals, averages, or show percentages (like `-T`, `-A`, `-%`)
+- `calc` - `valuechange`, `gain` or `count` (like `--valuechange`, `--gain`, `--count`)
+- `date2` - `1` to use secondary dates (like `--date2`)
+- `costs` - `1` to show costs, in the register
 - `equity` - `1` or `0`, on the balance sheet (the old `/balancesheetequity` address leads to `equity=1`)
 - `lots` - `1` to show lots (like `--lots`)
 - `closed` - `1`, on the holdings page, to show closed positions
