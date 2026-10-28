@@ -456,7 +456,7 @@ hledgerWebTest = do
       bodyContains "<details class=\"report-controls\">"
       bodyContains "Years:"
       bodyContains "Status:"
-      bodyContains "Type:"
+      bodyNotContains "Type:"  -- holdings are of lot-tracked accounts already
       bodyContains "Commodity:"
       bodyContains "Prices:"
       -- the account names' shared prefix is a group heading, rows show the rest

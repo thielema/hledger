@@ -25,7 +25,7 @@ import Hledger.Web.ReportPage
 import Hledger.Web.WebOptions
 import Hledger.Web.Widget.Chart (reportChart)
 import Hledger.Web.Widget.Common
-  (accountParams, closedLinks, commodityLinks, controlsHint, controlsToggle, optionsSummary,
+  (accountParams, closedLinks, commodityLinks, controlsToggle, optionsSummary,
    depthLinks, holdingsValueLinks, listModeLinks,
    lotsLinks, pricesLinks, realLinks, searchTerms,
    sortLinks, statusLinks, zeroBalanceLinks)
