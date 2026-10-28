@@ -25,26 +25,16 @@ See also the hledger manual for common concepts and file formats.
 
 _hledgerdescription_
 
-_web_({{
-<div class="screenshots-right">
-<a href="/images/hledger-web/normal/register.png" class="highslide" onclick="return hs.expand(this)"><img src="/images/hledger-web/normal/register.png" title="Account register view with accounts sidebar" height="180" /></a>
-<a href="/images/hledger-web/normal/journal.png" class="highslide" onclick="return hs.expand(this)"><img src="/images/hledger-web/normal/journal.png" title="Journal view" height="180" /></a>
-<a href="/images/hledger-web/normal/help.png" class="highslide" onclick="return hs.expand(this)"><img src="/images/hledger-web/normal/help.png" title="Help dialog" height="180" /></a>
-<a href="/images/hledger-web/normal/add.png" class="highslide" onclick="return hs.expand(this)"><img src="/images/hledger-web/normal/add.png" title="Add form" height="180" /></a>
-</div>
-}})
-
-hledger-web is a simple web application for browsing and adding transactions.
-It provides a more user-friendly UI than the hledger CLI or
-hledger-ui TUI, showing more at once (accounts, the current account register,
-balance charts) and allowing history-aware data entry, interactive searching,
-and bookmarking.
+hledger-web is hledger's web interface. In a web browser, it shows the journal,
+account registers, and the main financial reports with their charts, and lets you
+search them, add transactions, and (if allowed) edit the journal files.
+It shows more at once than the hledger CLI or hledger-ui
+(eg the accounts beside a register, or a report's chart above its table),
+and every view has its own url, so it can be bookmarked or shared.
 
 hledger-web also lets you share a journal with multiple users, or even the public web.
 There is no user authentication, so if you need that you should put it
-behind a suitable web proxy.  As a small protection against data loss
-when running an unprotected instance, it writes a numbered backup of
-the main journal file (only) on every edit.
+behind a suitable web proxy (see [Permissions](#permissions)).
 
 Like hledger, it _inputfileswithptr_
 
@@ -67,14 +57,16 @@ hledger-web provides the following options:
 
 ```
 Flags:
-     --serve --server       serve and log requests, don't browse or auto-exit
-     --serve-api            like --serve, but serve only the JSON web API,
-                            not the web UI
+     --serve-browse         server mode: serve the web UI and JSON API, and
+                            open a browser, and exit if inactive for 15m
+                            (default)
+     --serve                server mode: just serve the web UI and JSON API
+     --serve-api            server mode: just serve the JSON API
      --allow=view|add|edit  set the user's access level for changing data
                             (default: `add` on a local-only address, `view`
                             otherwise). It also accepts `sandstorm` for that
-                            platform (reads from the `X-Sandstorm-Permissions`
-                            request header).
+                            platform (reading from the
+                            `X-Sandstorm-Permissions` request header).
      --cors=ORIGIN          allow cross-origin requests from the specified
                             origin; setting ORIGIN to "*" allows requests from
                             any origin
@@ -82,12 +74,13 @@ Flags:
      --port=PORT            listen on this TCP port (default: 5000); 0 means
                             a free port chosen by the OS
      --socket=SOCKET        listen on the given unix socket instead of an IP
-                            address and port (unix only; implies --serve)
+                            address and port (only on unix)
      --base-url=BASEURL     set the base url (default: http://IPADDR:PORT)
-     --lang=LANG            show the web UI in this language (en, de, zh); or
-                            with auto, use each viewer's browser language if
-                            available, otherwise the server's. (Default: the
-                            browser's language if available, otherwise en.)
+     --lang=LANG            show the web UI in this language (en, de, es, ru,
+                            zh); or with auto, use each viewer's browser
+                            language if available, otherwise the server's.
+                            (Default: the browser's language if available,
+                            otherwise en.)
 ```
 
 By default hledger-web listens only on IP address `127.0.0.1`,
@@ -127,11 +120,9 @@ hledger-web also supports many of hledger's [general options](hledger.md#options
 
 _webgeneraloptions_
 
-hledger-web shows accounts with zero balances by default (like `hledger-ui`, and unlike `hledger`).
-Using the `-E/--empty` flag will reverse this behaviour.
-If you see accounts which appear to have a zero balance, but cannot be hidden with `-E`,
-it's because they have a mixed-cost balance, which looks like zero when costs are hidden.
-(hledger-web does not show costs.)
+hledger-web shows accounts with zero balances by default (like `hledger-ui`, and unlike `hledger`);
+`-E/--empty` starts it with them hidden instead. Either way, the Zero balances option
+(or the `z` key) shows or hides them.
 
 Report options and query arguments given at startup become url state:
 hledger-web translates them into the url that browse mode opens, and
@@ -269,8 +260,9 @@ file or any files it includes.
 
 Note, unlike any other hledger command, in this mode you (or any visitor)
 can alter or wipe the data files.
-Normally when hledger-web changes any data, it will save a numbered backup of the file
-(assuming file permissions allow it, the disk is not full, etc.)
+Before saving an edited or uploaded file, hledger-web saves a numbered backup of it
+(eg `main.journal.1`, then `main.journal.2`); if the backup can't be written, the file is not changed.
+(Adding a transaction appends it to the main journal file without making a backup.)
 hledger-web is not aware of version control systems, currently; if you use one,
 you'll have to arrange to commit the changes yourself.
 
@@ -475,8 +467,8 @@ $ curl -s http://127.0.0.1:5000/transactions | python3 -m json.tool
                 "pamount": [
                     {
                         "acommodity": "$",
-                        "aismultiplier": false,
-                        "aprice": null,
+                        "acost": null,
+                        "acostbasis": null,
 ...
 ```
 
@@ -649,4 +641,5 @@ _reportbugs_
 
 Some known issues:
 
-Does not work well on small screens, or in text-mode browsers.
+Without JavaScript (eg in text-mode browsers), pages can be viewed and their links followed,
+but the add form, help dialog, keyboard shortcuts, sidebar toggle and folding don't work.
