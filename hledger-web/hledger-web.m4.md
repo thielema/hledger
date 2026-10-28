@@ -53,7 +53,7 @@ In all cases hledger-web runs as a foreground process, logging requests to stdou
 
 # OPTIONS
 
-hledger-web provides the following options:
+hledger-web provides the following command line options:
 
 ```
 Flags:
@@ -120,21 +120,22 @@ hledger-web also supports many of hledger's [general options](hledger.md#options
 
 _webgeneraloptions_
 
+Some of these can be adjusted while hledger-web is running, in the web UI's Options panel.
+
 hledger-web shows accounts with zero balances by default (like `hledger-ui`, and unlike `hledger`);
-`-E/--empty` starts it with them hidden instead. Either way, the Zero balances option
-(or the `z` key) shows or hides them.
+`-E/--empty` starts it with them hidden instead. In the web UI, the Zero balances option
+or the `z` key shows or hides them.
 
 Report options and a query given at startup set the view hledger-web opens with,
 by putting them in its url (see [URL parameters](#url-parameters)).
 Eg `hledger-web -V -M` opens `/journal?interval=monthly&value=end`,
 and `hledger-web --cleared -3 assets` opens `/journal?q=assets status:*&depth=3`.
-They are only a starting point: viewers can change or clear them,
+They are only a starting point: they can be changed in the web UI,
 and they don't affect other urls or the JSON API.
 Report options that hledger-web has no equivalent for are ignored.
 
-So a startup query doesn't restrict what hledger-web serves.
-To do that, give it a file holding only the entries to serve
-(eg one written by `hledger print QUERY`).
+Note, a startup query doesn't restrict what hledger-web serves;
+to do that, give it a file holding only the entries to serve (eg one written by `hledger print QUERY`).
 
 If you use the bash shell, you can auto-complete flags by pressing TAB in the command line.
 If this is not working see [Install > Shell completions](install.html#shell-completions).
@@ -143,11 +144,12 @@ If this is not working see [Install > Shell completions](install.html#shell-comp
 
 hledger-web's main views are:
 
-- the **journal view** (the home page), showing journal entries, newest first, with their postings;
-- the **register view**, showing the transactions affecting one account (and its subaccounts),
-  with a running balance and a balance chart; and
+- the **journal view**, showing journal entries, newest first, with their postings
 - the **report views**, described [below](#reports): the balance sheet, income statement,
-  cashflow statement (and holdings, for journals using lots), and All accounts report.
+  cashflow statement (and holdings, for journals using lots), and All accounts report
+- a **register view** for each account, reached by clicking an account name,
+  showing the transactions affecting that account (and its subaccounts),
+  with a running balance and a balance chart.
 
 Every page has, from the top: links to the journal and the reports,
 the search form, the options, and then the view itself.
