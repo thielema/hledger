@@ -281,8 +281,8 @@ Levels are used roughly as: 0 for unconditional logging during development, 1 wa
 ## Tests
 
 hledger has unit tests, functional tests, doctests, performance tests, installation tests,
-and browser tests for hledger-web
-([README](https://github.com/hledgerorg/hledger/blob/main/hledger-web/test/browser/README.md)).
+and server tests and browser tests for hledger-web
+([hledger-web's tests](TESTS.md#hledger-webs-tests)).
 See [TESTS](TESTS.md) for the kinds of tests and their coverage,
 and [DEVWORKFLOWS](DEVWORKFLOWS.md#run-package-tests) for how to run them.
 

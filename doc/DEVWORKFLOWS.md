@@ -100,7 +100,8 @@ This builds and also copies the hledger executables to `~/.local/bin` or the Win
 
 ## Run package tests
 
-Runs the test suites defined by each hledger package (unit tests, doctests).
+Runs the test suites defined by each hledger package (unit tests, doctests, hledger-web's server tests).
+hledger-web's browser tests are separate: see [hledger-web's tests](TESTS.md#hledger-webs-tests).
 
     stack test    # PKG...
 

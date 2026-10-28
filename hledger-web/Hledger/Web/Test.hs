@@ -1,5 +1,6 @@
 {-|
-Test suite for hledger-web.
+hledger-web's server tests. These check what the server sends, without a browser;
+hledger-web's browser tests are in test/browser/ (see doc/TESTS.md, "hledger-web's tests").
 
 Dev notes:
 

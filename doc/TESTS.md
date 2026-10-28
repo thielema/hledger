@@ -127,9 +127,8 @@ For how to run the tests, see [Developer workflows](DEVWORKFLOWS.md).
     which has one full-message example of each kind of error message
     (see [ERRORS](ERRORS.md)).
 
-    hledger-web also has some browser tests, defined with playwright in
-    [hledger-web/test/browser/](https://github.com/hledgerorg/hledger/tree/main/hledger-web/test/browser);
-    see the README there.
+    hledger-web has its own server tests and browser tests;
+    see [hledger-web's tests](#hledger-webs-tests) below.
 
 4.  Code tests
 
@@ -151,7 +150,24 @@ For how to run the tests, see [Developer workflows](DEVWORKFLOWS.md).
     | hledger-lib | doctest    | doctests |
     | hledger     | unittest   | builtin test command (hledger\'s + hledger-lib\'s unit tests) |
     | hledger-ui  |            | |
-    | hledger-web |            | |
+    | hledger-web | apptest    | hledger-web's server tests |
+
+## hledger-web's tests
+
+hledger-web has two test suites: server tests, which check what the server sends,
+and browser tests, which check what a real browser does with it.
+
+| | **Server tests** | **Browser tests** |
+|---|---|---|
+| Where | [hledger-web/Hledger/Web/Test.hs](https://github.com/hledgerorg/hledger/blob/main/hledger-web/Hledger/Web/Test.hs) (hspec + yesod-test) | [hledger-web/test/browser/](https://github.com/hledgerorg/hledger/tree/main/hledger-web/test/browser) (Playwright, node + chromium) |
+| How they run | In-process: requests go straight to the app, with no network and no browser | Start a real hledger-web on port 5099 with a scratch copy of `fixture.journal`, and drive chromium against it |
+| JavaScript | Never runs | Runs, so they test `hledger.js` |
+| What they check | Status codes, headers, HTML content, redirects, form posts; and unit tests of pure helpers | The add form, autocomplete, date picker, keyboard shortcuts, sidebar, folding, dark colors, paging, browse-mode pings; and that journal data can't inject markup or break the Content-Security-Policy |
+| Run locally | `stack exec -- hledger-web --test`, or `stack test hledger-web` (`just functest` doesn't run them) | `just browsertest [OPTS]`, after a one-time setup (pnpm, chromium; see the [README](https://github.com/hledgerorg/hledger/blob/main/hledger-web/test/browser/README.md)) |
+| In CI | Part of the main job (`stack install --test hledger-web`); a failure fails CI | The separate `web-e2e` job, on the binary the main job built; it reports failures, but is not a required check |
+
+So a change to what the server sends (a header, a page's HTML) is covered by the server tests,
+and a change to `hledger.js` or to how pages behave in a browser needs the browser tests.
 
 ## Coverage
 
@@ -166,7 +182,7 @@ Our current test coverage can be summarised like so:
 | hledger-lib | X    | X   | X          |
 | hledger     | X    |     | X          |
 | hledger-ui  |      |     |            |
-| hledger-web |      |     | X (browser tests) |
+| hledger-web | X    |     | X (server and browser tests) |
 
 There are ways to generate detailed coverage reports for haskell unit
 tests, at least. It would be useful to set this up for hledger.

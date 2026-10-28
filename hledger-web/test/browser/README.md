@@ -1,7 +1,8 @@
 # hledger-web browser tests
 
-End-to-end tests for the hledger-web UI, using [Playwright](https://playwright.dev).
-Unlike the yesod-test suite (`Hledger/Web/Test.hs`), these run a real browser, so
+hledger-web's browser tests: end-to-end tests for the hledger-web UI, using [Playwright](https://playwright.dev).
+Unlike its server tests (the yesod-test suite in `Hledger/Web/Test.hs`;
+both are compared in [TESTS](../../../doc/TESTS.md#hledger-webs-tests)), these run a real browser, so
 they cover the parts of hledger-web that only exist once javascript runs: the add
 form, autocomplete, the date picker, keyboard shortcuts, sidebar state, and hash
 highlighting.
