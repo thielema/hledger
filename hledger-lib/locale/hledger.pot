@@ -949,7 +949,7 @@ msgid "All"
 msgstr ""
 
 #. the hint below the account type filter row.
-#: hledger-web/Hledger/Web/Handler/BalanceR.hs hledger-web/Hledger/Web/Handler/HoldingsR.hs hledger-web/Hledger/Web/Handler/JournalR.hs hledger-web/Hledger/Web/Handler/RegisterR.hs
+#: hledger-web/Hledger/Web/Handler/BalanceR.hs hledger-web/Hledger/Web/Handler/JournalR.hs hledger-web/Hledger/Web/Handler/RegisterR.hs
 msgid "Shift-click selects several types."
 msgstr ""
 
@@ -1520,7 +1520,7 @@ msgstr ""
 
 #. the label before a report's sort links, and the links' text and tooltips.
 #: hledger-web/Hledger/Web/Widget/Common.hs
-msgid "Sort rows by account name"
+msgid "Sort rows by account display order"
 msgstr ""
 
 #. the depth limit, in the list of options in effect.
@@ -2046,7 +2046,7 @@ msgid "cleared"
 msgstr ""
 
 #: hledger-web/templates/default-layout.hamlet
-msgid "real only / real + virtual"
+msgid "real only / all"
 msgstr ""
 
 #: hledger-web/templates/default-layout.hamlet
