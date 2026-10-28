@@ -28,7 +28,7 @@ import Hledger.Web.Widget.Common
   (accountParams, closedLinks, commodityLinks, controlsHint, controlsToggle, optionsSummary,
    depthLinks, holdingsValueLinks, listModeLinks,
    lotsLinks, pricesLinks, realLinks, searchTerms,
-   sortLinks, statusLinks, typeLinks, zeroBalanceLinks)
+   sortLinks, statusLinks, zeroBalanceLinks)
 
 -- | The holdings view: investment holdings and their performance at the
 -- report end date, as the holdings command shows them. In tree mode the
@@ -281,9 +281,6 @@ getHoldingsR = do
               [ yearsNav
               , statusLinks trs HoldingsR pageParams qparam
               , realLinks trs HoldingsR pageParams qparam
-              , typeLinks trs HoldingsR pageParams qparam
-              -- TRANSLATORS: the hint below the account type filter row.
-              , controlsHint $ tr trs "Shift-click selects several types."
               , commodityLinks trs HoldingsR pageParams qparam commoditiesOpen
                   -- TRANSLATORS: the hint below the commodity filter row.
                   (tr trs "Shift-click selects several commodities.") jfull ] ++
