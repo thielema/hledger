@@ -234,8 +234,8 @@ optionsSummary trs deepest = mapMaybe phrase . sortOn (rowOrder . fst)
         [ ("change", tr trs "Balance changes"), ("historical", tr trs "Ending balances")
         , ("cumulative", tr trs "Cumulative totals") ]
       ("value", "none")   -> Just $ tr trs "As recorded"
-      ("value", "cost")   -> Just $ tr trs "At cost"
-      ("value", _)        -> Just $ tr trs "At market value"
+      ("value", "cost")   -> Just $ trc trs "amounts" "Cost"
+      ("value", _)        -> Just $ trc trs "amounts" "Value"
       ("list", "tree")    -> Just $ trc trs "accounts" "Tree"
       ("list", "flat")    -> Just $ trc trs "accounts" "List"
       ("sort", "amount")  -> Just $ tr trs "By amount"
@@ -244,8 +244,8 @@ optionsSummary trs deepest = mapMaybe phrase . sortOn (rowOrder . fst)
         [ ("valuechange", tr trs "Value change"), ("gain", tr trs "Unrealized gain")
         , ("count", tr trs "Posting counts") ]
       -- TRANSLATORS: options in effect, listed on the closed options disclosure.
-      ("total", "1")      -> Just $ tr trs "Row totals"
-      ("avg", "1")        -> Just $ tr trs "Row averages"
+      ("total", "1")      -> Just $ trc trs "column" "Total"
+      ("avg", "1")        -> Just $ trc trs "column" "Average"
       ("infer", "1")      -> Just $ tr trs "Inferred prices"
       ("empty", "0")      -> Just $ tr trs "Zero balances hidden"
       ("empty", "1")      -> Just $ tr trs "Zero balances shown"

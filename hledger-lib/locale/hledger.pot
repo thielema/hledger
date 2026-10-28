@@ -1300,12 +1300,23 @@ msgstr ""
 msgid "As recorded"
 msgstr ""
 
+#. the depth limit, in the list of options in effect.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgctxt "amounts"
+msgid "Cost"
+msgstr ""
+
+#. the depth limit, in the list of options in effect.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgctxt "amounts"
+msgid "Value"
+msgstr ""
+
 #. the label before a report's amount conversion links, and the links' text and tooltips.
 #: hledger-web/Hledger/Web/Widget/Common.hs
 msgid "Show amounts in the commodities they were recorded in"
 msgstr ""
 
-#. the depth limit, in the list of options in effect.
 #. the label before a report's amount conversion links, and the links' text and tooltips.
 #: hledger-web/Hledger/Web/Widget/Common.hs
 msgid "At cost"
@@ -1316,7 +1327,6 @@ msgstr ""
 msgid "Show amounts converted to their cost, as recorded in transactions (-B)"
 msgstr ""
 
-#. the depth limit, in the list of options in effect.
 #. the label before a report's amount conversion links, and the links' text and tooltips.
 #. the label before the holdings page's valuation links, and the links' text and tooltips.
 #: hledger-web/Hledger/Web/Widget/Common.hs
@@ -1491,6 +1501,7 @@ msgstr ""
 msgid "Add a column totaling each row (-T)"
 msgstr ""
 
+#. options in effect, listed on the closed options disclosure.
 #. the label before a report's extra-column toggles, and the toggles' text and tooltips.
 #: hledger-web/Hledger/Web/Widget/Common.hs
 msgctxt "column"
@@ -1502,6 +1513,7 @@ msgstr ""
 msgid "Add a column averaging each row (-A)"
 msgstr ""
 
+#. options in effect, listed on the closed options disclosure.
 #. the label before a report's extra-column toggles, and the toggles' text and tooltips.
 #: hledger-web/Hledger/Web/Widget/Common.hs
 msgctxt "column"
@@ -1592,16 +1604,6 @@ msgstr ""
 #. the label before a report's calculation links, and the links' text and tooltips.
 #: hledger-web/Hledger/Web/Widget/Common.hs
 msgid "Unrealized gain"
-msgstr ""
-
-#. options in effect, listed on the closed options disclosure.
-#: hledger-web/Hledger/Web/Widget/Common.hs
-msgid "Row totals"
-msgstr ""
-
-#. options in effect, listed on the closed options disclosure.
-#: hledger-web/Hledger/Web/Widget/Common.hs
-msgid "Row averages"
 msgstr ""
 
 #. options in effect, listed on the closed options disclosure.

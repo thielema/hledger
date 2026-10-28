@@ -279,6 +279,9 @@ hledgerWebTest = do
       optionsSummary noTranslations 3 [("interval", "every 2 weeks")] `shouldBe` ["every 2 weeks"]
     it "omits a depth limit deeper than the deepest account, which the Depth links show as All" $
       optionsSummary noTranslations 3 [("depth", "9"), ("lots", "1")] `shouldBe` ["Lots shown"]
+    it "names amount conversions and extra columns briefly" $ do
+      optionsSummary noTranslations 3 [("value", "cost"), ("total", "1"), ("avg", "1")] `shouldBe` ["Cost", "Total", "Average"]
+      optionsSummary noTranslations 3 [("value", "end")] `shouldBe` ["Value"]
 
   runTests "hledger-web" [] nulljournal $ do
 
