@@ -216,15 +216,20 @@ panelSvg opts xaxis colouring showheading top Panel{pnUnit, pnSeries, pnGroupNam
     -- (not side by side) whose total is their positive or negative sum at every x position (eg counts, or time logged).
     -- Nor when it would be marked across the bars of periods too narrow for it (eg weekly over years):
     -- the marks, wider than the bars, would run together and hide them.
+    -- A total line over the bars of just one period (eg a single-period balance sheet's net) would be a single point,
+    -- so it is marked across them instead.
     mtotalmark = case mtotal of
       Just t | onestack && all ((== MarkBar) . seMark) items && totalIsBarEnd items t -> Nothing
-      Just t | crowded && seMark t /= MarkLine && any ((== MarkBar) . seMark) items -> Nothing
+      Just t | crowded && seMark t /= MarkLine && hasbars -> Nothing
+      Just t | xcount == Just 1 && seMark t == MarkLine && hasbars -> Just t{seMark = MarkMarker}
       _ -> mtotal
-    crowded = case xaxis of
-      XPeriods ps    -> narrow (length ps)
-      XDates ds      -> narrow (length ds)
-      XCategories _  -> False
-    narrow k = svgWidth opts / fromIntegral (max 1 k) < minMarkedPeriodWidth
+    hasbars = any ((== MarkBar) . seMark) items
+    -- the number of x positions, on a time axis
+    xcount = case xaxis of
+      XPeriods ps    -> Just $ length ps
+      XDates ds      -> Just $ length ds
+      XCategories _  -> Nothing
+    crowded = maybe False (\k -> svgWidth opts / fromIntegral (max 1 k) < minMarkedPeriodWidth) xcount
     onestack = not (pnLayout == Grouped && length pnGroupNames > 1)
     drawn = zipWith (\c s -> DrawSeries (colourClass c) s (seriesValues s)) (seriesColours colouring items) items
     -- the series are listed in a legend when there are several, or when one is an "other" series, whose muted colour needs explaining
@@ -416,10 +421,16 @@ timeSvg SvgOptions{svgWidth = width, svgPlotHeight = plotheight, svgPointLink, s
       let pts = [ fmap (\q -> (j, xcenter j, yofline (toD q), q)) (valueAt vals j) | let vals = seriesValues s, j <- [0 .. n - 1] ]
       forM_ (runs pts) $ \run ->
         S.polyline ! A.class_ ("line " <> toValue cls)
-          ! A.points (toValue $ T.unwords [num x <> "," <> num y | (x, y) <- thinPoints $ (if isJust datearray then dropFlat . steps else id) [(x, y) | (_, x, y, _) <- run]])
+          ! A.points (toValue $ T.unwords [num x <> "," <> num y | (x, y) <- linePoints [(x, y) | (_, x, y, _) <- run]])
       -- invisible larger targets, for tooltips, and links if any
       forM_ (hitPoints $ (if isJust datearray then changes else id) $ catMaybes pts) $ \(j, x, y, q) -> linked j $ withTooltip (tooltip (fromMaybe "" $ xlabels `atMay` j) s q) $
         S.circle ! A.class_ "hit" ! A.cx (toValue $ num x) ! A.cy (toValue $ num y) ! A.r "6"
+    -- the points a line is drawn through: thinned, and stepped on a date scale; or for a lone point
+    -- (eg a single period's, or a register's one transaction), a short dash across it, like the legend's,
+    -- since a line through one point is not drawn
+    linePoints ps = case ps of
+      [(x, y)] -> [(x - 6, y), (x + 6, y)]
+      _        -> thinPoints $ (if isJust datearray then dropFlat . steps else id) ps
     -- some markup for the given x position, as a link if it has one
     linked j m = case svgPointLink j of
       Just url -> S.a ! customAttribute "href" (toValue url) ! customAttribute "tabindex" "-1" $ m
@@ -926,11 +937,19 @@ tests_Hledger_Write_Chart_Svg = testGroup "Write.Chart.Svg" [
      -- with today after the last day, it's all past
      assertBool "no future" $ not $ "shade future" `T.isInfixOf` shading (fromGregorian 2024 1 9)
   ,testCase "a net total is marked across each period's bars, unless the periods are too narrow" $ do
-     let marks = T.count "class=\"mark total\"" . svgText defaultSvgOptions . netChart
+     let marks = T.count "class=\"mark total\"" . svgText defaultSvgOptions . netChart MarkMarker
      -- one per period, and one in the legend
      marks 12 @?= 13
      -- at 880px, 100 periods are 8.8px each, too narrow: neither the marks nor their legend entry
      marks 100 @?= 0
+  ,testCase "a single period's net line is marked across its bars, since a line of one point would not show" $ do
+     let svg = svgText defaultSvgOptions $ netChart MarkLine 1
+     -- one across the bars, and one in the legend
+     T.count "class=\"mark total\"" svg @?= 2
+     assertBool "no line" $ not $ "line total" `T.isInfixOf` svg
+  ,testCase "a line of one point is drawn as a short dash, so that it shows" $ do
+     let points = T.takeWhile (/= '"') . T.drop (T.length "points=\"") . snd . T.breakOn "points=\"" . svgText defaultSvgOptions
+     length (T.words $ points $ lineChartOf [5]) @?= 2
   ]
   where
     svgText opts = TL.toStrict . renderSvg . chartSvgMarkupWith opts
@@ -939,9 +958,9 @@ tests_Hledger_Write_Chart_Svg = testGroup "Write.Chart.Svg" [
     -- a chart of one line, with these values on successive days from 2024-01-01
     lineChartOf qs = Chart "" (XDates $ take (length qs) $ iterate (addDays 1) (fromGregorian 2024 1 1))
       [Panel nullamt [Series (ChartLabel "a" "a" 0 Nothing True) SeriesItem MarkLine (map Just qs) 0 0] [] Nothing Diverging False [] []]
-    -- a chart of n periods, each with a positive and a negative bar, and their net total
-    netChart n = Chart "" (XPeriods $ replicate n (nulldatespan, "p"))
+    -- a chart of n periods, each with a positive and a negative bar, and their net total, drawn with the given mark
+    netChart mk n = Chart "" (XPeriods $ replicate n (nulldatespan, "p"))
       [Panel nullamt [ Series (ChartLabel "a" "a" 0 Nothing True) SeriesItem MarkBar (replicate n (Just 3)) 0 0
                      , Series (ChartLabel "b" "b" 0 Nothing True) SeriesItem MarkBar (replicate n (Just (-1))) 0 0
-                     , Series (ChartLabel "net" "net" 0 Nothing True) SeriesTotal MarkMarker (replicate n (Just 2)) 0 0
+                     , Series (ChartLabel "net" "net" 0 Nothing True) SeriesTotal mk (replicate n (Just 2)) 0 0
                      ] [] Nothing Diverging False [] []]

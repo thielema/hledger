@@ -70,7 +70,7 @@ report  -->  adapter (Hledger.Cli.Chart; smart defaults)  -->  Chart (Hledger.Wr
   Nor in SVG charts over time whose bars are narrower than about 24px (periods narrower than 32px, the chart's width divided by their number;
   eg monthly over 20 years, even on a 2400px page),
   where the marks, wider than the bars, would run into each other and hide them; the legend then doesn't list the total either.
-  In category (single-period) charts too.
+  In category (single-period) charts too. Over a single period, a total that would be a line (eg a balance sheet's net) is marked across the bars instead.
 - **Row total and average** (`-T`, `-A`), for changes per period: the net total's total and average per period, on a summary line
   below the chart (eg `Total 11, Average 0.9`; labels are the table's column headings); the average also as a dashed line in SVG, with a legend entry (shown even for a single series);
   `rowtotal` and `average` records in chart data. Not drawn as bars, since a total would be off the scale.
@@ -173,7 +173,7 @@ Count charts (`pnCounts`) instead cap text at one cell per unit when no SCALE is
   880px wide (shrinking to fit narrower pages), 14px text (estimated widths per kind of character, measured in Chrome with SF Pro);
   bars at most 56px (64px for single-period columns), 2px gaps between segments, and 3px rounded ends
   (each stack is clipped to one rounded outline, so the end is the same however thin its outermost segment); lines 3px, thinned to 4 points per pixel column
-  (a 100k-posting register: 286s to 44s). The unit is shown only on the outermost y tick. x labels are thinned to an even stride
+  (a 100k-posting register: 286s to 44s), a lone point (eg a single period's, or one transaction's) drawn as a 12px dash. The unit is shown only on the outermost y tick. x labels are thinned to an even stride
   that leaves room for all of them, after the end ones are moved inward.
 - Embedded SVG (`SvgOptions`, for pages like hledger-web's): without its styles, for a page that supplies `chartStylesheet` itself
   (eg when its Content-Security-Policy allows no inline styles); at another width than 880px, eg as wide as the page shows it;
