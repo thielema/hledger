@@ -146,7 +146,7 @@ getBalanceR = do
               , yearsNav
               , statusLinks trs BalanceR pageParams qparam
               , realLinks trs BalanceR pageParams qparam
-              , typeLinks trs BalanceR pageParams qparam
+              , typeLinks trs BalanceR pageParams qparam j
               -- TRANSLATORS: the hint below the account type filter row.
               , controlsHint $ tr trs "Shift-click selects several types."
               , commodityLinks trs BalanceR pageParams qparam commoditiesOpen

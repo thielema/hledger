@@ -551,32 +551,39 @@ holdingsValueLinks trs route kept valued =
 -- | Links filtering to accounts of one or more types: a link rewrites
 -- the type: term in the search to its own type, and shift-clicking adds
 -- or removes a type (hledger.js), the selection carried as one
--- type:AL.. term, whose letters mark their links. Not for the statement
--- pages, which choose their own types.
-typeLinks :: Translations -> r -> [(Text, Text)] -> Text -> HtmlUrl r
-typeLinks trs route kept qparam renderUrl =
+-- type:AL.. term, whose letters mark their links. The subtypes are
+-- offered only when the journal has accounts of them. Not for the
+-- statement pages, which choose their own types.
+typeLinks :: Translations -> r -> [(Text, Text)] -> Text -> Journal -> HtmlUrl r
+typeLinks trs route kept qparam j renderUrl =
   H.div ! A.class_ "types" $ do
     -- TRANSLATORS: the label before the account type filter links, and the links' text and tooltips.
     linksRow (tr trs "Type:")
       ( (trc trs "account type" "All", tr trs "Show accounts of every type", link Nothing, null selected)
       : [ (label, title, link (Just letter), letter `elem` selected)
-        | (label, title, letter) <- types ]) renderUrl
+        | (label, title, t) <- types, let letter = T.pack (show t), offered t letter ]) renderUrl
   where
     types =
-      [ (tr trs "Asset",      tr trs "Show only asset accounts (type:A)",      'A')
-      , (tr trs "Liability",  tr trs "Show only liability accounts (type:L)",  'L')
-      , (tr trs "Equity",     tr trs "Show only equity accounts (type:E)",     'E')
-      , (tr trs "Revenue",    tr trs "Show only revenue accounts (type:R)",    'R')
-      , (tr trs "Expense",    tr trs "Show only expense accounts (type:X)",    'X')
-      , (tr trs "Cash",       tr trs "Show only cash accounts (type:C)",       'C')
-      , (tr trs "Conversion", tr trs "Show only conversion accounts (type:V)", 'V')
+      [ (tr trs "Asset",      tr trs "Show only asset accounts (type:A)",      Asset)
+      , (tr trs "Liability",  tr trs "Show only liability accounts (type:L)",  Liability)
+      , (tr trs "Equity",     tr trs "Show only equity accounts (type:E)",     Equity)
+      , (tr trs "Revenue",    tr trs "Show only revenue accounts (type:R)",    Revenue)
+      , (tr trs "Expense",    tr trs "Show only expense accounts (type:X)",    Expense)
+      , (tr trs "Cash",       tr trs "Show only cash accounts (type:C)",       Cash)
+      , (tr trs "Conversion", tr trs "Show only conversion accounts (type:V)", Conversion)
+      , (tr trs "Gain",       tr trs "Show only capital gain accounts (type:G)", Gain)
+      , (tr trs "Imbalance",  tr trs "Show only imbalance accounts (type:M)",  Imbalance)
       ]
+    -- The main types are always offered; the subtypes only when some
+    -- account has them (declared or inferred), or the search selects them.
+    offered t letter =
+      t `elem` [Asset, Liability, Equity, Revenue, Expense] || t `elem` jaccounttypes j || letter `elem` selected
     terms = searchTerms qparam
     rest = map quoteIfSpaced $ filter (not . T.isPrefixOf "type:") terms
     -- the letters of the search's type: terms
-    selected = [c | t <- terms, Just ls <- [T.stripPrefix "type:" t], c <- T.unpack (T.toUpper ls)]
+    selected = [T.singleton c | t <- terms, Just ls <- [T.stripPrefix "type:" t], c <- T.unpack (T.toUpper ls)]
     link mletter =
-      (route, [("q", t) | let t = T.unwords $ rest ++ ["type:" <> T.singleton l | Just l <- [mletter]], not (T.null t)] ++ kept)
+      (route, [("q", t) | let t = T.unwords $ rest ++ ["type:" <> l | Just l <- [mletter]], not (T.null t)] ++ kept)
 
 -- | Links filtering to one or more of the journal's commodities: a link
 -- rewrites the cur: term in the search to its own commodity, and

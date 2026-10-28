@@ -121,7 +121,7 @@ getRegisterR = do
       -- amounts, and costs modes
       statusRow = statusLinks trs RegisterR modeParams qparam
       realRow = realLinks trs RegisterR modeParams qparam
-      typeRow = typeLinks trs RegisterR modeParams qparam
+      typeRow = typeLinks trs RegisterR modeParams qparam j
       -- TRANSLATORS: the hint below the account type filter row.
       typeHintRow = controlsHint $ tr trs "Shift-click selects several types."
       commodityRow = commodityLinks trs RegisterR modeParams qparam commoditiesOpen

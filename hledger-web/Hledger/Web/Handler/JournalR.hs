@@ -92,7 +92,7 @@ getJournalR = do
       -- accounts and amounts modes
       statusRow = statusLinks trs JournalR carried qparam
       realRow = realLinks trs JournalR carried qparam
-      typeRow = typeLinks trs JournalR carried qparam
+      typeRow = typeLinks trs JournalR carried qparam j
       -- TRANSLATORS: the hint below the account type filter row.
       typeHintRow = controlsHint $ tr trs "Shift-click selects several types."
       commodityRow = commodityLinks trs JournalR carried qparam commoditiesOpen

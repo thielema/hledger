@@ -1853,6 +1853,26 @@ msgstr ""
 msgid "Show only conversion accounts (type:V)"
 msgstr ""
 
+#. the label before the account type filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Gain"
+msgstr ""
+
+#. the label before the account type filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show only capital gain accounts (type:G)"
+msgstr ""
+
+#. the label before the account type filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Imbalance"
+msgstr ""
+
+#. the label before the account type filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show only imbalance accounts (type:M)"
+msgstr ""
+
 #: hledger-web/Hledger/Web/Widget/Common.hs
 msgid "List all the commodities"
 msgstr ""

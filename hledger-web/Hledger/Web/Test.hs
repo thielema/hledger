@@ -436,6 +436,12 @@ hledgerWebTest = do
             ])
   runTests "hledger-web holdings page" [] lj $ do
 
+    -- the sales book their gains to a gain account
+    yit "offers the gain account type when there are gains" $ do
+      get BalanceR
+      statusIs 200
+      bodyContains "Show only capital gain accounts (type:G)"
+
     yit "shows the holdings report, hiding closed positions by default" $ do
       request $ do
         setMethod "GET"
@@ -1113,6 +1119,24 @@ hledgerWebTest = do
       bodyContains ("class=\"current\" href=\"" ++ defbaseurl defhost defport ++ "/balance?q=type%3AL\" title=\"Show only liability accounts (type:L)\"")
       bodyContains ("<a href=\"" ++ defbaseurl defhost defport ++ "/balance\" title=\"Show accounts of every type\"")
       bodyContains "Shift-click selects several types."
+
+    -- assets:bank:checking is a cash account; nothing is a conversion,
+    -- gain, or imbalance account
+    yit "offers the account subtypes the journal's accounts have" $ do
+      get BalanceR
+      statusIs 200
+      bodyContains "Show only cash accounts (type:C)"
+      bodyNotContains "(type:V)"
+      bodyNotContains "(type:G)"
+      bodyNotContains "(type:M)"
+
+    yit "offers a subtype the search selects, though no account has it" $ do
+      request $ do
+        setMethod "GET"
+        setUrl BalanceR
+        addGetParam "q" "type:G"
+      statusIs 200
+      bodyContains ("class=\"current\" href=\"" ++ defbaseurl defhost defport ++ "/balance?q=type%3AG\" title=\"Show only capital gain accounts (type:G)\"")
 
     yit "survives an interval whose weekday is out of range" $ do
       -- the period parser accepts this; naming the ninth weekday used
