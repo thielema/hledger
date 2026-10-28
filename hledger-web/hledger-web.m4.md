@@ -279,112 +279,126 @@ Changes which would leave the journal file(s) unparseable or invalid
 
 # REPORTS
 
-Besides the journal and account registers, hledger-web can show the
-reports of the command line's
-[balancesheet](hledger.md#balancesheet),
-[balancesheetequity](hledger.md#balancesheetequity),
-[incomestatement](hledger.md#incomestatement), and
-[cashflow](hledger.md#cashflow) commands, at `/balancesheet`,
-`/incomestatement`, and `/cashflow`, and the
-general [balance report](hledger.md#balance), named All accounts (as in hledger-ui), at `/balance`.
-The balance sheet's Equity option shows balancesheetequity's report, with an equity section
-(an `equity=1` parameter; the old `/balancesheetequity` address leads there).
-The browser remembers this choice for each hledger-web server, until it is changed.
-The sidebar and the row of links at the top of every page both link to
-the journal and all of these reports, ending with All accounts.
+Besides the journal and the account registers, hledger-web shows these
+reports. The sidebar and the links at the top of every page lead to each
+of them, and so does the `g` key followed by the first letter of the report's name:
 
-Each report has a chart between its heading and its table, the one the command's
-[`--chart`](hledger.md#charts) draws, as wide as the page:
-eg a bar per account, or with an interval, the accounts over time,
-and for the statements, each section's accounts and the net total.
-With several commodities, a legend (or the `[` and `]` keys) chooses the one charted, as on the register.
-In tree mode, the chart shows the accounts down to the depth limit, which the table folds at.
-The `c` key hides or shows the charts, and the `d` key the tables below them;
-the browser remembers this for each hledger-web server (by its port), and later pages open the same way.
+- **Balance sheet** (`b`, `/balancesheet`): assets, liabilities and net worth, like the
+  [balancesheet](hledger.md#balancesheet) command.
+  Its Equity option adds an equity section, like [balancesheetequity](hledger.md#balancesheetequity).
+- **Income statement** (`i`, `/incomestatement`): revenues, expenses and net income, like
+  [incomestatement](hledger.md#incomestatement).
+- **Cashflow** (`c`, `/cashflow`): changes in cash accounts, like [cashflow](hledger.md#cashflow).
+- **Holdings** (`h`, `/holdings`): investments and their performance, like [holdings](hledger.md#holdings).
+  Shown only for journals that use [lots](hledger.md#lots-and-capital-gains); see [below](#holdings).
+- **All accounts** (`a`, `/balance`): all accounts, or those you search for, like [balance](hledger.md#balance).
 
-For journals that use [lots](hledger.md#lots-and-capital-gains), the
-[holdings](hledger.md#holdings) report is at `/holdings`, and appears
-in the sidebar and the report links. It shows one row per account and
-held commodity by default; its links can show each individual lot (a
-`lots=1` parameter), fully disposed positions (a `closed=1` parameter;
-`empty` keeps meaning zero-balance accounts, as on the other pages),
-accounts as a tree (positions grouped under account headings that
-subtotal the dollar columns, with each position's lots folding into
-it, opened in place by a caret), values converted to the market
-valuation commodity (`value=end`, like `-V`), and rows sorted by
-value. Its chart, like `holdings --chart`'s, has a bar per position (or lot):
-its cost basis and unrealised gain or loss, labelled with the gain percentage. On such journals
-every page also gains a Lots link, showing lot subaccounts and per-lot
-postings everywhere with the same `lots` parameter.
+Each report shows a chart and then a table (by default; both can be toggled).
+Click any amount to see the transactions it is made of.
 
-The search box filters the reports like the other pages, its `date:`
-terms setting the report's dates. An `interval` parameter, like the
-command line's `-D`/`-W`/`-M`/`-Q`/`-Y` or the interval part of
-`-p/--period`, divides them into columns, eg `/balancesheet?interval=monthly`
-or `/incomestatement?q=date:2025&interval=quarterly`; the links above each
-report offer the usual intervals, and column headings link to the
-report for that column's dates.
-A `date:` term typed with an interval, as on the command line
-(`date:monthly`, or `"date:quarterly in 2025"`), moves its interval to
-the `interval` parameter (the page reloads), leaving its dates in the
-search.
+## Options
 
-A `depth` parameter, like `--depth`, limits the account depth, eg
-`/balancesheet?depth=2`; the Depth links and the digit keys set it, and
-the pages' links carry it. Depth 0 shows only the total, as one row of
-all accounts. A `depth:N` term typed in the search moves
-there too (the page reloads with it as the `depth` parameter), so the
-search holds only the terms selecting data.
-In tree mode, the reports and the sidebar show the accounts below this
-limit folded, with carets that open them in place; folded, they show
-the same rows as `--depth`. The holdings report is clipped to the
-limit instead, as on the command line, merging the clipped accounts'
-positions by commodity.
-A per-account depth limit, like `depth:assets=3`, stays in the search,
-and clips its accounts as on the command line, in tree mode too.
+A report's options (click Options, or press `o`) change what it shows.
+These are similar to hledger's command-line [options](hledger.md#options) 
+and [hledger-ui's keys](hledger-ui.md#keys).
+The main ones, with their keyboard shortcuts:
 
-The links above each report also set how amounts are shown, as recorded, at
-cost (like `-B`), or at market value at the end of each period (like
-`-V`), with a `value` parameter (`none`, `cost`, `then`, `end`, `now`,
-or a date; all but `cost` take an optional commodity, as
-`--value WHEN[,COMM]`) that is carried to the other reports; and
-whether accounts with zero balances are shown, with an `empty`
-parameter that the `z` key toggles and the pages' links carry.
-Other rows filter what every page shows, each rewriting its own search
-term: transaction status, posting realness, account type, and
-commodity, the last two selecting several at once with shift-click.
+- **Interval** (`D`, `W`, `M`, `Q`, `Y`): one column for the whole period,
+  or one per day, week, month, quarter or year
+  (see [Report intervals](hledger.md#report-intervals)).
+  Click a column's heading to see the report for just its dates.
+- **Show** (`H`): balance changes in each period, or ending balances
+  (which include everything before the period).
+  The balance sheet shows ending balances by default and the other reports show changes,
+  as their commands do; the report's heading says which it is showing.
+- **Depth** (`0`-`9`, `-`, `+`): how many levels of accounts to show
+  (see [Depth](hledger.md#depth)). Depth 0 shows only the totals.
+- **Accounts** (`t`): a list, or a tree with subtotals. In a tree, the accounts
+  below the depth limit are folded, and their carets open them in place.
+- **Amounts** (`B`, `V`): as recorded, at cost, or at market value at the end of each period
+  (see [Cost reporting](hledger.md#cost-reporting) and [Value reporting](hledger.md#value-reporting)).
+- **Zero balances** (`z`): hide or show accounts whose balance is zero.
+- **Equity** (balance sheet only): hide or show the equity section.
+  The browser remembers this choice for each hledger-web server.
+- **Status** (`U`, `P`, `C`), **Postings** (`R`), account types, and commodities:
+  show only transactions with that [status](hledger.md#status), only real postings,
+  or only some [account types](hledger.md#account-types) or commodities.
+  These rows edit the search, adding a term like `status:*` or `type:A`.
+  Shift-click selects several types or commodities.
 
-Every page shows and preserves the report state its url carries: a
-link changes only the control it names, and controls that take effect
-on another page (the report-shaping rows, on the journal and register)
-show muted labels, their state marked all the same. Only the
-accumulation mode and the register's costs toggle are page-local:
-each report accumulates its own way, and following a link returns
-to the target page's own default.
+The options you choose stay in effect as you move to other pages, except Show,
+which each report sets to its own default.
+On the journal and register, the report options are shown muted, but are kept.
 
-The balance sheets show ending balances and the income statement and
-cashflow statement show changes, as their commands do; an `accum`
-parameter (`historical` or `change`) overrides that, and the heading
-then says so, as the commands' does. The All accounts report shows changes,
-or with `accum=historical`, which its "Ending balances" link sets,
-each account's balance at the end of each period.
-Like the commands, the statements show all balances as positive
-amounts, so liabilities, equity, and revenues appear with the opposite
-sign to the register's; the link on such a figure says so.
+The search form filters reports as it does the other pages, and its `date:` terms set the report's dates.
+An interval or depth typed in the search, like `date:monthly` or `depth:2`,
+moves into the options when the page reloads.
+A depth limit for some accounts only, like `depth:assets=3`, stays in the search.
 
-Every figure links to the register it is derived from: the account's
-transactions in that period, whose final balance is the figure, or its
-negation in the sections shown with the opposite sign. (The two can
-differ when a transaction's postings have dates of their own: the
-report counts such a posting in its own period, while the register
-shows its whole transaction.) A section's total links to the register
-of the section's account types.
-An ending balance's register runs in historical mode (its own
-`accum=historical`): its running balance starts from the balance
-brought forward from before the period, shown as its oldest row, and
-its balance column's heading switches between the two modes.
-A figure at cost or at market value links to a register showing its
-amounts the same way (with the same `value` parameter).
+(For more detail, see the hledger manual, eg [CONCEPTS](hledger.md#part-4-concepts).)
+
+## Charts
+
+A report's chart is the one its command draws with [`--chart`](hledger.md#charts):
+eg a bar per account, or with an interval, each account over time,
+and for the statements, each section and the net total.
+In tree mode it shows the accounts down to the depth limit.
+With several commodities, use the legend, or the `[` and `]` keys, to choose the one charted.
+
+The `c` key hides or shows the chart, and `d` the table.
+The browser remembers this for each hledger-web server.
+
+## From a report to its transactions
+
+Click an amount to see its account's register for that period:
+the transactions the amount is made of.
+An ending balance's register starts with the balance brought forward,
+so its final running balance is that amount.
+A section's total shows the register of all the section's accounts.
+An amount shown at cost or market value leads to a register showing its amounts the same way.
+
+Some things can make the register look different from the report:
+
+- The statements show liabilities, equity and revenues as positive amounts,
+  as their commands do, so their registers show the same amounts negated.
+  The amount's tooltip says so.
+- When a posting has a date of its own, the report counts it on that date,
+  but the register lists its whole transaction, on the transaction's date.
+
+## Holdings
+
+The holdings report shows one row for each commodity held in each account,
+with its cost basis, value and gains. Its chart has a bar for each one,
+showing its cost basis and unrealised gain or loss.
+Its own options can show:
+
+- each lot separately (**Lots**, `L`),
+- fully disposed positions and their realised gains (**Closed positions**),
+- all values in the market valuation commodity (**Values**).
+
+Its depth limit doesn't fold accounts: as on the command line, it merges
+the deeper accounts' positions, by commodity, into the accounts at the limit.
+
+On journals that use lots, every page also has a Lots option, showing
+lot subaccounts and per-lot postings.
+
+## URL parameters
+
+A page's address includes its search and options, so a bookmark or a shared link
+shows the same view. These are the parameters, mostly corresponding to hledger options:
+
+- `q` - the search
+- `interval` - `daily`, `weekly`, `monthly`, `quarterly` or `yearly` (like `-D`, `-W`, `-M`, `-Q`, `-Y`)
+- `depth` - a number (like `--depth`)
+- `accum` - `change`, `historical` or `cumulative` (like `--change`, `-H`, `--cumulative`)
+- `value` - `none`, `cost`, or `then`, `end`, `now` or a date, optionally followed by `,COMMODITY` (like `--value`)
+- `empty` - `1` to show zero balances, `0` to hide them (like `-E`)
+- `list` - `tree` or `flat` (like `--tree`, `--flat`)
+- `sort` - `amount` (like `-S`)
+- `total`, `avg`, `pct` - `1` to add totals, averages, or show percentages (like `-T`, `-A`, `-%`)
+- `equity` - `1` or `0`, on the balance sheet (the old `/balancesheetequity` address leads to `equity=1`)
+- `lots` - `1` to show lots (like `--lots`)
+- `closed` - `1`, on the holdings page, to show closed positions
 
 # RELOADING
 
