@@ -1,0 +1,2359 @@
+# Irish translations for hledger.
+# This file is distributed under the same license as hledger.
+# Terminology and choices to check: see hledger-lib/locale/README.md, Irish.
+# Machine-made (Claude Opus 5.5); needs review by a native speaker.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: hledger\n"
+"Report-Msgid-Bugs-To: https://github.com/simonmichael/hledger/issues\n"
+"Language: ga\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n==2 ? 1 : 2);\n"
+
+#. stand-alone (nominative) month names, as used in a column heading.
+#: hledger-lib/Hledger/Utils/I18n.hs
+msgctxt "month"
+msgid "January"
+msgstr "Eanáir"
+
+#. stand-alone (nominative) month names, as used in a column heading.
+#: hledger-lib/Hledger/Utils/I18n.hs
+msgctxt "month"
+msgid "February"
+msgstr "Feabhra"
+
+#. stand-alone (nominative) month names, as used in a column heading.
+#: hledger-lib/Hledger/Utils/I18n.hs
+msgctxt "month"
+msgid "March"
+msgstr "Márta"
+
+#. stand-alone (nominative) month names, as used in a column heading.
+#: hledger-lib/Hledger/Utils/I18n.hs
+msgctxt "month"
+msgid "April"
+msgstr "Aibreán"
+
+#. stand-alone (nominative) month names, as used in a column heading.
+#: hledger-lib/Hledger/Utils/I18n.hs
+msgctxt "month"
+msgid "May"
+msgstr "Bealtaine"
+
+#. stand-alone (nominative) month names, as used in a column heading.
+#: hledger-lib/Hledger/Utils/I18n.hs
+msgctxt "month"
+msgid "June"
+msgstr "Meitheamh"
+
+#. stand-alone (nominative) month names, as used in a column heading.
+#: hledger-lib/Hledger/Utils/I18n.hs
+msgctxt "month"
+msgid "July"
+msgstr "Iúil"
+
+#. stand-alone (nominative) month names, as used in a column heading.
+#: hledger-lib/Hledger/Utils/I18n.hs
+msgctxt "month"
+msgid "August"
+msgstr "Lúnasa"
+
+#. stand-alone (nominative) month names, as used in a column heading.
+#: hledger-lib/Hledger/Utils/I18n.hs
+msgctxt "month"
+msgid "September"
+msgstr "Meán Fómhair"
+
+#. stand-alone (nominative) month names, as used in a column heading.
+#: hledger-lib/Hledger/Utils/I18n.hs
+msgctxt "month"
+msgid "October"
+msgstr "Deireadh Fómhair"
+
+#. stand-alone (nominative) month names, as used in a column heading.
+#: hledger-lib/Hledger/Utils/I18n.hs
+msgctxt "month"
+msgid "November"
+msgstr "Samhain"
+
+#. stand-alone (nominative) month names, as used in a column heading.
+#: hledger-lib/Hledger/Utils/I18n.hs
+msgctxt "month"
+msgid "December"
+msgstr "Nollaig"
+
+#. short stand-alone month names, as used in a column heading.
+#: hledger-lib/Hledger/Utils/I18n.hs
+msgctxt "month abbrev"
+msgid "Jan"
+msgstr "Ean"
+
+#. short stand-alone month names, as used in a column heading.
+#: hledger-lib/Hledger/Utils/I18n.hs
+msgctxt "month abbrev"
+msgid "Feb"
+msgstr "Feabh"
+
+#. short stand-alone month names, as used in a column heading.
+#: hledger-lib/Hledger/Utils/I18n.hs
+msgctxt "month abbrev"
+msgid "Mar"
+msgstr "Márta"
+
+#. short stand-alone month names, as used in a column heading.
+#: hledger-lib/Hledger/Utils/I18n.hs
+msgctxt "month abbrev"
+msgid "Apr"
+msgstr "Aib"
+
+#. short stand-alone month names, as used in a column heading.
+#: hledger-lib/Hledger/Utils/I18n.hs
+msgctxt "month abbrev"
+msgid "May"
+msgstr "Beal"
+
+#. short stand-alone month names, as used in a column heading.
+#: hledger-lib/Hledger/Utils/I18n.hs
+msgctxt "month abbrev"
+msgid "Jun"
+msgstr "Meith"
+
+#. short stand-alone month names, as used in a column heading.
+#: hledger-lib/Hledger/Utils/I18n.hs
+msgctxt "month abbrev"
+msgid "Jul"
+msgstr "Iúil"
+
+#. short stand-alone month names, as used in a column heading.
+#: hledger-lib/Hledger/Utils/I18n.hs
+msgctxt "month abbrev"
+msgid "Aug"
+msgstr "Lún"
+
+#. short stand-alone month names, as used in a column heading.
+#: hledger-lib/Hledger/Utils/I18n.hs
+msgctxt "month abbrev"
+msgid "Sep"
+msgstr "MFómh"
+
+#. short stand-alone month names, as used in a column heading.
+#: hledger-lib/Hledger/Utils/I18n.hs
+msgctxt "month abbrev"
+msgid "Oct"
+msgstr "DFómh"
+
+#. short stand-alone month names, as used in a column heading.
+#: hledger-lib/Hledger/Utils/I18n.hs
+msgctxt "month abbrev"
+msgid "Nov"
+msgstr "Samh"
+
+#. short stand-alone month names, as used in a column heading.
+#: hledger-lib/Hledger/Utils/I18n.hs
+msgctxt "month abbrev"
+msgid "Dec"
+msgstr "Noll"
+
+#: hledger/Hledger/Cli/Chart.hs
+msgid "Report details"
+msgstr "Sonraí na tuarascála"
+
+#: hledger/Hledger/Cli/Chart.hs
+msgid "Total"
+msgstr "Iomlán"
+
+#: hledger/Hledger/Cli/Chart.hs
+msgid "Balance"
+msgstr "Iarmhéid"
+
+#: hledger/Hledger/Cli/Chart.hs hledger/Hledger/Cli/CompoundBalanceCommand.hs
+msgid "Net:"
+msgstr "Glan:"
+
+#: hledger/Hledger/Cli/Chart.hs
+#, python-brace-format
+msgid "other {parent} ({n} account)"
+msgid_plural "other {parent} ({n} accounts)"
+msgstr[0] "{parent} eile (cuntas: {n})"
+msgstr[1] "{parent} eile (cuntais: {n})"
+msgstr[2] "{parent} eile (cuntais: {n})"
+
+#: hledger/Hledger/Cli/Chart.hs
+#, python-brace-format
+msgid "other ({n} account)"
+msgid_plural "other ({n} accounts)"
+msgstr[0] "eile (cuntas: {n})"
+msgstr[1] "eile (cuntais: {n})"
+msgstr[2] "eile (cuntais: {n})"
+
+#. the report title, eg "Monthly Balance Sheet 2024 (Historical Ending Balances), valued at period ends". {clarification} brings its own leading space when present.
+#: hledger/Hledger/Cli/CompoundBalanceCommand.hs
+#, python-brace-format
+msgid "{report} {dates}{clarification}{valuation}"
+msgstr "{report} {dates}{clarification}{valuation}"
+
+#: hledger/Hledger/Cli/CompoundBalanceCommand.hs
+msgid "(Period-End Value Changes)"
+msgstr "(Athruithe Luacha ag Deireadh Tréimhse)"
+
+#: hledger/Hledger/Cli/CompoundBalanceCommand.hs
+msgid "(Cumulative Period-End Value Changes)"
+msgstr "(Athruithe Carnacha Luacha ag Deireadh Tréimhse)"
+
+#: hledger/Hledger/Cli/CompoundBalanceCommand.hs
+msgid "(Incremental Gain)"
+msgstr "(Gnóthachan Incriminteach)"
+
+#: hledger/Hledger/Cli/CompoundBalanceCommand.hs
+msgid "(Cumulative Gain)"
+msgstr "(Gnóthachan Carnach)"
+
+#: hledger/Hledger/Cli/CompoundBalanceCommand.hs
+msgid "(Historical Gain)"
+msgstr "(Gnóthachan Stairiúil)"
+
+#: hledger/Hledger/Cli/CompoundBalanceCommand.hs
+msgid "(Balance Changes)"
+msgstr "(Athruithe Iarmhéide)"
+
+#: hledger/Hledger/Cli/CompoundBalanceCommand.hs
+msgid "(Cumulative Ending Balances)"
+msgstr "(Iarmhéideanna Deiridh Carnacha)"
+
+#: hledger/Hledger/Cli/CompoundBalanceCommand.hs
+msgid "(Historical Ending Balances)"
+msgstr "(Iarmhéideanna Deiridh Stairiúla)"
+
+#. the budget report title, eg "Budget performance in 2024, valued at period ends:".
+#: hledger/Hledger/Cli/CompoundBalanceCommand.hs hledger/Hledger/Cli/Commands/Balance.hs
+msgid ", converted to cost"
+msgstr ", i gcostas"
+
+#. the budget report title, eg "Budget performance in 2024, valued at period ends:".
+#: hledger/Hledger/Cli/CompoundBalanceCommand.hs hledger/Hledger/Cli/Commands/Balance.hs
+msgid ", valued at posting date"
+msgstr ", luacháil ar dháta na postála"
+
+#. the budget report title, eg "Budget performance in 2024, valued at period ends:".
+#: hledger/Hledger/Cli/CompoundBalanceCommand.hs hledger/Hledger/Cli/Commands/Balance.hs
+msgid ", valued at period ends"
+msgstr ", luacháil ag deireadh gach tréimhse"
+
+#. the budget report title, eg "Budget performance in 2024, valued at period ends:".
+#: hledger/Hledger/Cli/CompoundBalanceCommand.hs hledger/Hledger/Cli/Commands/Balance.hs
+msgid ", current value"
+msgstr ", luach reatha"
+
+#. the budget report title, eg "Budget performance in 2024, valued at period ends:".
+#: hledger/Hledger/Cli/CompoundBalanceCommand.hs hledger/Hledger/Cli/Commands/Balance.hs
+#, python-brace-format
+msgid ", valued at {date}"
+msgstr ", luacháil ar {date}"
+
+#: hledger/Hledger/Cli/Commands/Balance.hs
+msgid "Budget Report"
+msgstr "Tuarascáil Bhuiséid"
+
+#: hledger/Hledger/Cli/Commands/Balance.hs
+msgid "Multi-period Balance Report"
+msgstr "Tuarascáil Iarmhéideanna Ilthréimhse"
+
+#: hledger/Hledger/Cli/Commands/Balance.hs
+msgid "Balance Report"
+msgstr "Tuarascáil Iarmhéideanna"
+
+#. the multi-period balance report title, eg "Balance changes in 2024, valued at period ends:".
+#: hledger/Hledger/Cli/Commands/Balance.hs
+#, python-brace-format
+msgid "{report} in {dates}{valuation}:"
+msgstr "{report} {dates}{valuation}:"
+
+#: hledger/Hledger/Cli/Commands/Balance.hs
+msgid "Period-end value changes"
+msgstr "Athruithe luacha ag deireadh tréimhse"
+
+#: hledger/Hledger/Cli/Commands/Balance.hs
+msgid "Cumulative period-end value changes"
+msgstr "Athruithe carnacha luacha ag deireadh tréimhse"
+
+#: hledger/Hledger/Cli/Commands/Balance.hs
+msgid "Incremental gain"
+msgstr "Gnóthachan incriminteach"
+
+#: hledger/Hledger/Cli/Commands/Balance.hs
+msgid "Cumulative gain"
+msgstr "Gnóthachan carnach"
+
+#: hledger/Hledger/Cli/Commands/Balance.hs
+msgid "Historical gain"
+msgstr "Gnóthachan stairiúil"
+
+#. the depth limit, in the list of options in effect.
+#. the label before a report's calculation links, and the links' text and tooltips.
+#: hledger/Hledger/Cli/Commands/Balance.hs hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Posting counts"
+msgstr "Líon postálacha"
+
+#: hledger/Hledger/Cli/Commands/Balance.hs
+msgid "Cumulative posting counts"
+msgstr "Líon carnach postálacha"
+
+#: hledger/Hledger/Cli/Commands/Balance.hs
+msgid "Historical posting counts"
+msgstr "Líon stairiúil postálacha"
+
+#: hledger/Hledger/Cli/Commands/Balance.hs
+msgid "Transaction counts"
+msgstr "Líon idirbheart"
+
+#. the label before a report's accumulation mode links, and the links' text and tooltips.
+#. the depth limit, in the list of options in effect.
+#: hledger/Hledger/Cli/Commands/Balance.hs hledger-web/Hledger/Web/ReportPage.hs hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Balance changes"
+msgstr "Athruithe iarmhéide"
+
+#: hledger/Hledger/Cli/Commands/Balance.hs
+msgid "Ending balances (cumulative)"
+msgstr "Iarmhéideanna deiridh (carnach)"
+
+#: hledger/Hledger/Cli/Commands/Balance.hs
+msgid "Ending balances (historical)"
+msgstr "Iarmhéideanna deiridh (stairiúil)"
+
+#. the budget report title, eg "Budget performance in 2024, valued at period ends:".
+#: hledger/Hledger/Cli/Commands/Balance.hs
+#, python-brace-format
+msgid "Budget performance in {dates}{valuation}:"
+msgstr "Feidhmíocht an bhuiséid {dates}{valuation}:"
+
+#: hledger/Hledger/Cli/Commands/Balance.hs hledger/Hledger/Cli/Commands/Balance/Internal.hs
+msgctxt "column heading"
+msgid "Commodity"
+msgstr "Aonad"
+
+#. the hint below the commodity filter row.
+#: hledger/Hledger/Cli/Commands/Balance.hs hledger/Hledger/Cli/Commands/Balance/Internal.hs hledger-web/Hledger/Web/Handler/RegisterR.hs
+msgctxt "column heading"
+msgid "Total"
+msgstr "Iomlán"
+
+#: hledger/Hledger/Cli/Commands/Balance.hs hledger/Hledger/Cli/Commands/Balance/Internal.hs
+msgctxt "column heading"
+msgid "Average"
+msgstr "Meán"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Balancesheet.hs
+msgid "Balance Sheet"
+msgstr "Clár Comhardaithe"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Balancesheet.hs
+msgid "Daily Balance Sheet"
+msgstr "Clár Comhardaithe Laethúil"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Balancesheet.hs
+msgid "Weekly Balance Sheet"
+msgstr "Clár Comhardaithe Seachtainiúil"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Balancesheet.hs
+msgid "Biweekly Balance Sheet"
+msgstr "Clár Comhardaithe Coicísiúil"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Balancesheet.hs
+msgid "Monthly Balance Sheet"
+msgstr "Clár Comhardaithe Míosúil"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Balancesheet.hs
+msgid "Bimonthly Balance Sheet"
+msgstr "Clár Comhardaithe Démhíosúil"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Balancesheet.hs
+msgid "Quarterly Balance Sheet"
+msgstr "Clár Comhardaithe Ráithiúil"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Balancesheet.hs
+msgid "Half-yearly Balance Sheet"
+msgstr "Clár Comhardaithe Leathbhliantúil"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Balancesheet.hs
+msgid "Yearly Balance Sheet"
+msgstr "Clár Comhardaithe Bliantúil"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Balancesheet.hs
+msgid "Biennial Balance Sheet"
+msgstr "Clár Comhardaithe Débhliantúil"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Balancesheet.hs
+msgid "Periodic Balance Sheet"
+msgstr "Clár Comhardaithe Tréimhsiúil"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Balancesheet.hs hledger/Hledger/Cli/Commands/Balancesheetequity.hs
+msgid "Assets"
+msgstr "Sócmhainní"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Balancesheet.hs hledger/Hledger/Cli/Commands/Balancesheetequity.hs
+msgid "Liabilities"
+msgstr "Dliteanais"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Balancesheetequity.hs
+msgid "Balance Sheet With Equity"
+msgstr "Clár Comhardaithe le Cothromas"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Balancesheetequity.hs
+msgid "Daily Balance Sheet With Equity"
+msgstr "Clár Comhardaithe Laethúil le Cothromas"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Balancesheetequity.hs
+msgid "Weekly Balance Sheet With Equity"
+msgstr "Clár Comhardaithe Seachtainiúil le Cothromas"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Balancesheetequity.hs
+msgid "Biweekly Balance Sheet With Equity"
+msgstr "Clár Comhardaithe Coicísiúil le Cothromas"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Balancesheetequity.hs
+msgid "Monthly Balance Sheet With Equity"
+msgstr "Clár Comhardaithe Míosúil le Cothromas"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Balancesheetequity.hs
+msgid "Bimonthly Balance Sheet With Equity"
+msgstr "Clár Comhardaithe Démhíosúil le Cothromas"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Balancesheetequity.hs
+msgid "Quarterly Balance Sheet With Equity"
+msgstr "Clár Comhardaithe Ráithiúil le Cothromas"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Balancesheetequity.hs
+msgid "Half-yearly Balance Sheet With Equity"
+msgstr "Clár Comhardaithe Leathbhliantúil le Cothromas"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Balancesheetequity.hs
+msgid "Yearly Balance Sheet With Equity"
+msgstr "Clár Comhardaithe Bliantúil le Cothromas"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Balancesheetequity.hs
+msgid "Biennial Balance Sheet With Equity"
+msgstr "Clár Comhardaithe Débhliantúil le Cothromas"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Balancesheetequity.hs
+msgid "Periodic Balance Sheet With Equity"
+msgstr "Clár Comhardaithe Tréimhsiúil le Cothromas"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#. the label before the account type filter links, and the links' text and tooltips.
+#: hledger/Hledger/Cli/Commands/Balancesheetequity.hs hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Equity"
+msgstr "Cothromas"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Cashflow.hs
+msgid "Cashflow Statement"
+msgstr "Ráiteas Sreabhadh Airgid"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Cashflow.hs
+msgid "Daily Cashflow Statement"
+msgstr "Ráiteas Sreabhadh Airgid Laethúil"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Cashflow.hs
+msgid "Weekly Cashflow Statement"
+msgstr "Ráiteas Sreabhadh Airgid Seachtainiúil"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Cashflow.hs
+msgid "Biweekly Cashflow Statement"
+msgstr "Ráiteas Sreabhadh Airgid Coicísiúil"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Cashflow.hs
+msgid "Monthly Cashflow Statement"
+msgstr "Ráiteas Sreabhadh Airgid Míosúil"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Cashflow.hs
+msgid "Bimonthly Cashflow Statement"
+msgstr "Ráiteas Sreabhadh Airgid Démhíosúil"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Cashflow.hs
+msgid "Quarterly Cashflow Statement"
+msgstr "Ráiteas Sreabhadh Airgid Ráithiúil"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Cashflow.hs
+msgid "Half-yearly Cashflow Statement"
+msgstr "Ráiteas Sreabhadh Airgid Leathbhliantúil"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Cashflow.hs
+msgid "Yearly Cashflow Statement"
+msgstr "Ráiteas Sreabhadh Airgid Bliantúil"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Cashflow.hs
+msgid "Biennial Cashflow Statement"
+msgstr "Ráiteas Sreabhadh Airgid Débhliantúil"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Cashflow.hs
+msgid "Periodic Cashflow Statement"
+msgstr "Ráiteas Sreabhadh Airgid Tréimhsiúil"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Cashflow.hs
+msgid "Cash flows"
+msgstr "Sreabhadh airgid"
+
+#: hledger/Hledger/Cli/Commands/Holdings.hs
+msgid "Cost"
+msgstr "Costas"
+
+#: hledger/Hledger/Cli/Commands/Holdings.hs
+msgid "Unrealised gain"
+msgstr "Gnóthachan neamhréadaithe"
+
+#: hledger/Hledger/Cli/Commands/Holdings.hs
+msgid "Unrealised loss"
+msgstr "Caillteanas neamhréadaithe"
+
+#: hledger/Hledger/Cli/Commands/Holdings.hs
+msgid "No market price"
+msgstr "Gan praghas margaidh"
+
+#: hledger/Hledger/Cli/Commands/Holdings.hs
+msgid "Value"
+msgstr "Luach"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Incomestatement.hs
+msgid "Income Statement"
+msgstr "Ráiteas Ioncaim"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Incomestatement.hs
+msgid "Daily Income Statement"
+msgstr "Ráiteas Ioncaim Laethúil"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Incomestatement.hs
+msgid "Weekly Income Statement"
+msgstr "Ráiteas Ioncaim Seachtainiúil"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Incomestatement.hs
+msgid "Biweekly Income Statement"
+msgstr "Ráiteas Ioncaim Coicísiúil"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Incomestatement.hs
+msgid "Monthly Income Statement"
+msgstr "Ráiteas Ioncaim Míosúil"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Incomestatement.hs
+msgid "Bimonthly Income Statement"
+msgstr "Ráiteas Ioncaim Démhíosúil"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Incomestatement.hs
+msgid "Quarterly Income Statement"
+msgstr "Ráiteas Ioncaim Ráithiúil"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Incomestatement.hs
+msgid "Half-yearly Income Statement"
+msgstr "Ráiteas Ioncaim Leathbhliantúil"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Incomestatement.hs
+msgid "Yearly Income Statement"
+msgstr "Ráiteas Ioncaim Bliantúil"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Incomestatement.hs
+msgid "Biennial Income Statement"
+msgstr "Ráiteas Ioncaim Débhliantúil"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Incomestatement.hs
+msgid "Periodic Income Statement"
+msgstr "Ráiteas Ioncaim Tréimhsiúil"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Incomestatement.hs
+msgid "Revenues"
+msgstr "Ioncam"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Incomestatement.hs
+msgid "Expenses"
+msgstr "Speansais"
+
+#: hledger/Hledger/Cli/Commands/Register.hs
+msgid "Register"
+msgstr "Clár"
+
+#. the label before a report's accumulation mode links, and the links' text and tooltips.
+#: hledger/Hledger/Cli/Commands/Run.hs hledger-web/Hledger/Web/ReportPage.hs hledger-web/templates/default-layout.hamlet
+msgid "Show:"
+msgstr "Taispeáin:"
+
+#: hledger/Hledger/Cli/Commands/Run.hs
+msgid "Titles"
+msgstr "Teidil"
+
+#: hledger/Hledger/Cli/Commands/Run.hs
+msgid "Charts"
+msgstr "Cairteacha"
+
+#: hledger/Hledger/Cli/Commands/Run.hs
+msgid "All"
+msgstr "Uile"
+
+#: hledger-ui/Hledger/UI/AccountsScreen.hs
+msgid "account balances"
+msgstr "iarmhéideanna cuntas"
+
+#: hledger-ui/Hledger/UI/AccountsScreen.hs
+msgid "account changes"
+msgstr "athruithe cuntas"
+
+#: hledger-ui/Hledger/UI/AccountsScreen.hs
+msgid "cash balances"
+msgstr "iarmhéideanna airgid"
+
+#: hledger-ui/Hledger/UI/AccountsScreen.hs
+msgid "balance sheet balances"
+msgstr "iarmhéideanna an chláir chomhardaithe"
+
+#: hledger-ui/Hledger/UI/AccountsScreen.hs
+msgid "income statement changes"
+msgstr "athruithe an ráitis ioncaim"
+
+#. the menu screen's entries; translated when drawn.
+#: hledger-ui/Hledger/UI/UIScreens.hs
+msgid "Cash accounts"
+msgstr "Cuntais airgid"
+
+#. the menu screen's entries; translated when drawn.
+#: hledger-ui/Hledger/UI/UIScreens.hs
+msgid "Balance sheet accounts"
+msgstr "Cuntais an chláir chomhardaithe"
+
+#. the menu screen's entries; translated when drawn.
+#: hledger-ui/Hledger/UI/UIScreens.hs
+msgid "Income statement accounts"
+msgstr "Cuntais an ráitis ioncaim"
+
+#. the menu screen's entries; translated when drawn.
+#. the report links above each report page and in the sidebar: each link's text, and its tooltip.
+#. the browser tab title of this page.
+#. the name of a depth 0 report's one row, all accounts in one.
+#: hledger-ui/Hledger/UI/UIScreens.hs hledger-web/Hledger/Web/App.hs hledger-web/Hledger/Web/Handler/BalanceR.hs
+msgid "All accounts"
+msgstr "Gach cuntas"
+
+#. the go menu's items for the next and previous page, and their tooltips.
+#: hledger-web/Hledger/Web/App.hs
+msgid "Next report"
+msgstr "An chéad tuarascáil eile"
+
+#. the go menu's items for the next and previous page, and their tooltips.
+#: hledger-web/Hledger/Web/App.hs
+msgid "Go to the next report"
+msgstr "Téigh go dtí an chéad tuarascáil eile"
+
+#. the go menu's items for the next and previous page, and their tooltips.
+#: hledger-web/Hledger/Web/App.hs
+msgid "Previous report"
+msgstr "An tuarascáil roimhe seo"
+
+#. the go menu's items for the next and previous page, and their tooltips.
+#: hledger-web/Hledger/Web/App.hs
+msgid "Go to the previous report"
+msgstr "Téigh go dtí an tuarascáil roimhe seo"
+
+#. the go menu's items for the next and previous page, and their tooltips.
+#: hledger-web/Hledger/Web/App.hs
+msgid "Net, at cost:"
+msgstr "Glan, i gcostas:"
+
+#. the go menu's items for the next and previous page, and their tooltips.
+#: hledger-web/Hledger/Web/App.hs
+msgid "The sum of every account, converted to cost: zero for balanced books; anything left comes from unbalanced virtual postings."
+msgstr "Suim gach cuntais, i gcostas: nialas do leabhair chothromaithe; tagann aon rud a fhanann ó phostálacha fíorúla neamhchothromaithe."
+
+#. the go menu's items for the next and previous page, and their tooltips.
+#: hledger-web/Hledger/Web/App.hs
+msgid "Unbooked gains:"
+msgstr "Gnóthachain neamhthaifeadta:"
+
+#. the go menu's items for the next and previous page, and their tooltips.
+#: hledger-web/Hledger/Web/App.hs
+msgid "The sum of every account at market value: appreciation not booked by any entry. If realized gains are booked, this is the unrealized gains."
+msgstr "Suim gach cuntais ag luach margaidh: luachmhéadú nach bhfuil taifeadta ag aon iontráil. Má thaifeadtar gnóthachain réadaithe, is iad seo na gnóthachain neamhréadaithe."
+
+#. the go menu's items for the next and previous page, and their tooltips.
+#: hledger-web/Hledger/Web/App.hs
+msgid "Net flows:"
+msgstr "Glansreabhadh:"
+
+#. the go menu's items for the next and previous page, and their tooltips.
+#: hledger-web/Hledger/Web/App.hs
+msgid "The sum of every account: open positions in each commodity, and the cash that paid for them. Zero when nothing crosses commodities."
+msgstr "Suim gach cuntais: na suíomhanna oscailte i ngach aonad, agus an t-airgead a d'íoc astu. Nialas nuair nach dtrasnaíonn aon rud ó aonad go haonad."
+
+#. the report links above each report page and in the sidebar: each link's text, and its tooltip.
+#: hledger-web/Hledger/Web/App.hs
+msgid "Balance sheet"
+msgstr "Clár comhardaithe"
+
+#. the report links above each report page and in the sidebar: each link's text, and its tooltip.
+#: hledger-web/Hledger/Web/App.hs
+msgid "Show assets, liabilities, and net worth"
+msgstr "Taispeáin sócmhainní, dliteanais, agus glanfhiúchas"
+
+#. the report links above each report page and in the sidebar: each link's text, and its tooltip.
+#: hledger-web/Hledger/Web/App.hs
+msgid "Income statement"
+msgstr "Ráiteas ioncaim"
+
+#. the report links above each report page and in the sidebar: each link's text, and its tooltip.
+#: hledger-web/Hledger/Web/App.hs
+msgid "Show revenues and expenses"
+msgstr "Taispeáin ioncam agus speansais"
+
+#. the report links above each report page and in the sidebar: each link's text, and its tooltip.
+#: hledger-web/Hledger/Web/App.hs
+msgid "Cashflow statement"
+msgstr "Ráiteas sreabhadh airgid"
+
+#. the report links above each report page and in the sidebar: each link's text, and its tooltip.
+#: hledger-web/Hledger/Web/App.hs
+msgid "Show changes in liquid assets"
+msgstr "Taispeáin athruithe i sócmhainní leachtacha"
+
+#. the report links above each report page and in the sidebar: each link's text, and its tooltip.
+#: hledger-web/Hledger/Web/App.hs
+msgid "Show the balances of all accounts, by period, like the balance command"
+msgstr "Taispeáin iarmhéideanna gach cuntais, de réir tréimhse, mar a dhéanann an t-ordú balance"
+
+#. the report links above each report page and in the sidebar: each link's text, and its tooltip.
+#. the browser tab title of this page.
+#: hledger-web/Hledger/Web/App.hs hledger-web/Hledger/Web/Handler/HoldingsR.hs
+msgid "Holdings"
+msgstr "Sealúchais"
+
+#. the report links above each report page and in the sidebar: each link's text, and its tooltip.
+#: hledger-web/Hledger/Web/App.hs
+msgid "Show investment holdings, lots, and gains"
+msgstr "Taispeáin sealúchais infheistíochta, lotaí, agus gnóthachain"
+
+#: hledger-web/Hledger/Web/Paging.hs
+#, python-brace-format
+msgid "Showing {first} to {last} of {total} transactions"
+msgstr "Idirbhearta {first} go {last} as {total} á dtaispeáint"
+
+#: hledger-web/Hledger/Web/Paging.hs
+#, python-brace-format
+msgid "Show page {n}"
+msgstr "Taispeáin leathanach {n}"
+
+#: hledger-web/Hledger/Web/Paging.hs
+#, python-brace-format
+msgid "Page {n}"
+msgstr "Leathanach {n}"
+
+#: hledger-web/Hledger/Web/Paging.hs
+#, python-brace-format
+msgid "Show only {year}"
+msgstr "Taispeáin {year} amháin"
+
+#. the hint below the years row.
+#: hledger-web/Hledger/Web/Paging.hs
+msgid "Shift-click selects a range of years."
+msgstr "Roghnaíonn Shift-chliceáil raon blianta."
+
+#. the label before a report's interval links.
+#: hledger-web/Hledger/Web/ReportPage.hs hledger-web/templates/default-layout.hamlet
+msgid "Interval:"
+msgstr "Eatramh:"
+
+#. the interval links above a report: each link's text, and its tooltip.
+#: hledger-web/Hledger/Web/ReportPage.hs
+msgid "Show one column for the whole period"
+msgstr "Taispeáin colún amháin don tréimhse iomlán"
+
+#. the interval links above a report: each link's text, and its tooltip.
+#: hledger-web/Hledger/Web/ReportPage.hs
+msgctxt "interval"
+msgid "None"
+msgstr "Dada"
+
+#. the interval links above a report: each link's text, and its tooltip.
+#: hledger-web/Hledger/Web/ReportPage.hs hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Yearly"
+msgstr "Bliantúil"
+
+#. the interval links above a report: each link's text, and its tooltip.
+#: hledger-web/Hledger/Web/ReportPage.hs
+msgid "Show a column per year"
+msgstr "Taispeáin colún do gach bliain"
+
+#. the interval links above a report: each link's text, and its tooltip.
+#: hledger-web/Hledger/Web/ReportPage.hs hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Quarterly"
+msgstr "Ráithiúil"
+
+#. the interval links above a report: each link's text, and its tooltip.
+#: hledger-web/Hledger/Web/ReportPage.hs
+msgid "Show a column per quarter"
+msgstr "Taispeáin colún do gach ráithe"
+
+#. the interval links above a report: each link's text, and its tooltip.
+#: hledger-web/Hledger/Web/ReportPage.hs hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Monthly"
+msgstr "Míosúil"
+
+#. the interval links above a report: each link's text, and its tooltip.
+#: hledger-web/Hledger/Web/ReportPage.hs
+msgid "Show a column per month"
+msgstr "Taispeáin colún do gach mí"
+
+#. the interval links above a report: each link's text, and its tooltip.
+#: hledger-web/Hledger/Web/ReportPage.hs hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Weekly"
+msgstr "Seachtainiúil"
+
+#. the interval links above a report: each link's text, and its tooltip.
+#: hledger-web/Hledger/Web/ReportPage.hs
+msgid "Show a column per week"
+msgstr "Taispeáin colún do gach seachtain"
+
+#. the interval links above a report: each link's text, and its tooltip.
+#: hledger-web/Hledger/Web/ReportPage.hs hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Daily"
+msgstr "Laethúil"
+
+#. the interval links above a report: each link's text, and its tooltip.
+#: hledger-web/Hledger/Web/ReportPage.hs
+msgid "Show a column per day"
+msgstr "Taispeáin colún do gach lá"
+
+#. the label before a report's accumulation mode links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/ReportPage.hs
+msgid "Show how much each balance changed in each period"
+msgstr "Taispeáin an méid a d'athraigh gach iarmhéid i ngach tréimhse"
+
+#. the label before a report's accumulation mode links, and the links' text and tooltips.
+#. the depth limit, in the list of options in effect.
+#: hledger-web/Hledger/Web/ReportPage.hs hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Ending balances"
+msgstr "Iarmhéideanna deiridh"
+
+#. the label before a report's accumulation mode links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/ReportPage.hs
+msgid "Show each balance at the end of each period, including everything before it"
+msgstr "Taispeáin gach iarmhéid ag deireadh gach tréimhse, lena n-áirítear gach rud roimhe"
+
+#. the label before a report's accumulation mode links, and the links' text and tooltips.
+#. the depth limit, in the list of options in effect.
+#: hledger-web/Hledger/Web/ReportPage.hs hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Cumulative totals"
+msgstr "Iomláin charnacha"
+
+#. the label before a report's accumulation mode links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/ReportPage.hs
+msgid "Show each balance's change since the start of the report (--cumulative)"
+msgstr "Taispeáin athrú gach iarmhéide ó thús na tuarascála (--cumulative)"
+
+#: hledger-web/Hledger/Web/ReportPage.hs
+msgid "Could not calculate percentages:"
+msgstr "Níorbh fhéidir céatadáin a ríomh:"
+
+#: hledger-web/Hledger/Web/ReportPage.hs
+msgid "Could not parse the reporting interval:"
+msgstr "Níorbh fhéidir an t-eatramh tuairiscithe a pharsáil:"
+
+#: hledger-web/Hledger/Web/ReportPage.hs
+msgid "Unknown balance accumulation mode:"
+msgstr "Mód carntha iarmhéide anaithnid:"
+
+#: hledger-web/Hledger/Web/ReportPage.hs
+msgid "Unknown amount conversion:"
+msgstr "Tiontú méide anaithnid:"
+
+#: hledger-web/Hledger/Web/ReportPage.hs
+#, python-brace-format
+msgid "The {name} parameter has a value this page does not know:"
+msgstr "Tá luach ag an bparaiméadar {name} nach n-aithníonn an leathanach seo:"
+
+#: hledger-web/Hledger/Web/ReportPage.hs
+msgid "Value changes and gains are figured from period-end market values: leave the value parameter off, or use value=end."
+msgstr "Ríomhtar athruithe luacha agus gnóthachain ó luachanna margaidh ag deireadh tréimhse: fág an paraiméadar value ar lár, nó úsáid value=end."
+
+#: hledger-web/Hledger/Web/ReportPage.hs
+msgid "Gains compare market value against cost, so they do not combine with value=cost."
+msgstr "Cuireann gnóthachain luach margaidh i gcomparáid le costas, mar sin ní féidir iad a úsáid le value=cost."
+
+#: hledger-web/Hledger/Web/ReportPage.hs
+msgid "This report is at a single date, so value=then does not apply: use value=end, value=now, or a date."
+msgstr "Tá an tuarascáil seo ar dháta amháin, mar sin ní bhaineann value=then léi: úsáid value=end, value=now, nó dáta."
+
+#: hledger-web/Hledger/Web/ReportPage.hs
+msgid "Show this report for this period"
+msgstr "Taispeáin an tuarascáil seo don tréimhse seo"
+
+#: hledger-web/Hledger/Web/Handler/AddR.hs
+msgid "Transaction added."
+msgstr "Idirbheart curtha leis."
+
+#: hledger-web/Hledger/Web/Handler/BalanceR.hs hledger-web/Hledger/Web/Handler/HoldingsR.hs hledger-web/Hledger/Web/Handler/StatementsR.hs hledger-web/Hledger/Web/Widget/Common.hs
+#, python-brace-format
+msgid "{title}, filtered"
+msgstr "{title}, scagtha"
+
+#. the browser tab title of this page.
+#: hledger-web/Hledger/Web/Handler/BalanceR.hs
+msgid "balance - hledger-web"
+msgstr "iarmhéid - hledger-web"
+
+#. the name of a depth 0 report's one row, all accounts in one.
+#: hledger-web/Hledger/Web/Handler/BalanceR.hs hledger-web/Hledger/Web/Handler/StatementsR.hs hledger-web/Hledger/Web/Widget/Common.hs
+msgctxt "accounts"
+msgid "All"
+msgstr "Uile"
+
+#. the hint below the account type filter row.
+#: hledger-web/Hledger/Web/Handler/BalanceR.hs hledger-web/Hledger/Web/Handler/JournalR.hs hledger-web/Hledger/Web/Handler/RegisterR.hs
+msgid "Shift-click selects several types."
+msgstr "Roghnaíonn Shift-chliceáil roinnt cineálacha."
+
+#: hledger-web/Hledger/Web/Handler/EditR.hs hledger-web/Hledger/Web/Handler/UploadR.hs
+#, python-brace-format
+msgid "Failed to load journal: {error}"
+msgstr "Níorbh fhéidir an dialann a lódáil: {error}"
+
+#: hledger-web/Hledger/Web/Handler/EditR.hs
+#, python-brace-format
+msgid "Saved journal {file}"
+msgstr "Sábháladh an dialann {file}"
+
+#: hledger-web/Hledger/Web/Handler/EditR.hs hledger-web/Hledger/Web/Handler/MiscR.hs
+msgid "Edit journal"
+msgstr "Cuir an dialann in eagar"
+
+#. the browser tab title of this page.
+#: hledger-web/Hledger/Web/Handler/HoldingsR.hs
+msgid "holdings - hledger-web"
+msgstr "sealúchais - hledger-web"
+
+#. the holdings page's heading; {date} is the report date.
+#: hledger-web/Hledger/Web/Handler/HoldingsR.hs
+#, python-brace-format
+msgid "Holdings on {date}"
+msgstr "Sealúchais ar {date}"
+
+#. the holdings table's column headings. The cost heading is "Unit cost", "Avg cost", or "Unit/Avg cost".
+#: hledger-web/Hledger/Web/Handler/HoldingsR.hs
+msgid "Date"
+msgstr "Dáta"
+
+#. the holdings table's column headings. The cost heading is "Unit cost", "Avg cost", or "Unit/Avg cost".
+#: hledger-web/Hledger/Web/Handler/HoldingsR.hs
+msgid "Age"
+msgstr "Aois"
+
+#. the holdings table's column headings. The cost heading is "Unit cost", "Avg cost", or "Unit/Avg cost".
+#: hledger-web/Hledger/Web/Handler/HoldingsR.hs
+msgid "Units"
+msgstr "Aonaid"
+
+#. the holdings table's column headings. The cost heading is "Unit cost", "Avg cost", or "Unit/Avg cost".
+#: hledger-web/Hledger/Web/Handler/HoldingsR.hs
+msgid "Unit price"
+msgstr "Praghas aonaid"
+
+#. the holdings table's column headings. The cost heading is "Unit cost", "Avg cost", or "Unit/Avg cost".
+#: hledger-web/Hledger/Web/Handler/HoldingsR.hs
+msgid "Total cost"
+msgstr "Costas iomlán"
+
+#. the holdings table's column headings. The cost heading is "Unit cost", "Avg cost", or "Unit/Avg cost".
+#: hledger-web/Hledger/Web/Handler/HoldingsR.hs
+msgid "Total value"
+msgstr "Luach iomlán"
+
+#. the holdings table's column headings. The cost heading is "Unit cost", "Avg cost", or "Unit/Avg cost".
+#: hledger-web/Hledger/Web/Handler/HoldingsR.hs
+msgid "Weight"
+msgstr "Ualach"
+
+#. the holdings table's column headings. The cost heading is "Unit cost", "Avg cost", or "Unit/Avg cost".
+#: hledger-web/Hledger/Web/Handler/HoldingsR.hs
+msgid "UGain"
+msgstr "Gnóth. neamhr."
+
+#. the holdings table's column headings. The cost heading is "Unit cost", "Avg cost", or "Unit/Avg cost".
+#: hledger-web/Hledger/Web/Handler/HoldingsR.hs
+msgid "UGain%"
+msgstr "Gnóth. neamhr. %"
+
+#. the holdings table's column headings. The cost heading is "Unit cost", "Avg cost", or "Unit/Avg cost".
+#: hledger-web/Hledger/Web/Handler/HoldingsR.hs
+msgid "RGain"
+msgstr "Gnóth. réad."
+
+#. the holdings table's column headings. The cost heading is "Unit cost", "Avg cost", or "Unit/Avg cost".
+#: hledger-web/Hledger/Web/Handler/HoldingsR.hs
+msgid "XIRR"
+msgstr "XIRR"
+
+#. the holdings table's column headings. The cost heading is "Unit cost", "Avg cost", or "Unit/Avg cost".
+#: hledger-web/Hledger/Web/Handler/HoldingsR.hs
+msgid "Account"
+msgstr "Cuntas"
+
+#. the tooltip of an account heading or lot's register link.
+#: hledger-web/Hledger/Web/Handler/HoldingsR.hs
+msgid "Show this account's register"
+msgstr "Taispeáin clár an chuntais seo"
+
+#. the tooltip of a position's register link, which filters to its commodity.
+#: hledger-web/Hledger/Web/Handler/HoldingsR.hs
+msgid "Show this holding's register"
+msgstr "Taispeáin clár an tsealúchais seo"
+
+#. the heading of the holdings table's totals row.
+#: hledger-web/Hledger/Web/Handler/HoldingsR.hs
+msgid "Total:"
+msgstr "Iomlán:"
+
+#: hledger-web/Hledger/Web/Handler/JournalR.hs
+msgid "General Journal"
+msgstr "Dialann Ghinearálta"
+
+#: hledger-web/Hledger/Web/Handler/JournalR.hs
+#, python-brace-format
+msgid "Transactions in {account}"
+msgstr "Idirbhearta: {account}"
+
+#: hledger-web/Hledger/Web/Handler/JournalR.hs
+#, python-brace-format
+msgid "Transactions in {account} (excluding subaccounts)"
+msgstr "Idirbhearta: {account} (gan fochuntais)"
+
+#. the browser tab title of this page.
+#: hledger-web/Hledger/Web/Handler/JournalR.hs
+msgid "journal - hledger-web"
+msgstr "dialann - hledger-web"
+
+#: hledger-web/Hledger/Web/Handler/RegisterR.hs
+msgid "all accounts"
+msgstr "gach cuntas"
+
+#: hledger-web/Hledger/Web/Handler/RegisterR.hs
+#, python-brace-format
+msgid "{account} (excluding subaccounts)"
+msgstr "{account} (gan fochuntais)"
+
+#. the hint below the commodity filter row.
+#: hledger-web/Hledger/Web/Handler/RegisterR.hs
+msgctxt "column heading"
+msgid "Historical Total"
+msgstr "Iomlán Stairiúil"
+
+#. the hint below the commodity filter row.
+#: hledger-web/Hledger/Web/Handler/RegisterR.hs
+msgctxt "column heading"
+msgid "Period Total"
+msgstr "Iomlán na Tréimhse"
+
+#. the hint below the commodity filter row.
+#: hledger-web/Hledger/Web/Handler/RegisterR.hs
+msgid "Click to show the running balance from the start of this period"
+msgstr "Cliceáil chun an t-iarmhéid reatha ó thús na tréimhse seo a thaispeáint"
+
+#. the hint below the commodity filter row.
+#: hledger-web/Hledger/Web/Handler/RegisterR.hs
+msgid "Click to show the running balance including everything before this period"
+msgstr "Cliceáil chun an t-iarmhéid reatha a thaispeáint, lena n-áirítear gach rud roimh an tréimhse seo"
+
+#. the browser tab title of this page.
+#: hledger-web/Hledger/Web/Handler/RegisterR.hs
+msgid "register - hledger-web"
+msgstr "clár - hledger-web"
+
+#. a chart legend's entry for amounts written without a commodity symbol.
+#: hledger-web/Hledger/Web/Handler/RegisterR.hs hledger-web/Hledger/Web/Widget/Chart.hs
+msgid "no symbol"
+msgstr "gan siombail"
+
+#. the browser tab titles of the statement pages.
+#: hledger-web/Hledger/Web/Handler/StatementsR.hs
+msgid "balance sheet - hledger-web"
+msgstr "clár comhardaithe - hledger-web"
+
+#. the browser tab titles of the statement pages.
+#: hledger-web/Hledger/Web/Handler/StatementsR.hs
+msgid "balance sheet with equity - hledger-web"
+msgstr "clár comhardaithe le cothromas - hledger-web"
+
+#. the browser tab titles of the statement pages.
+#: hledger-web/Hledger/Web/Handler/StatementsR.hs
+msgid "income statement - hledger-web"
+msgstr "ráiteas ioncaim - hledger-web"
+
+#. the browser tab titles of the statement pages.
+#: hledger-web/Hledger/Web/Handler/StatementsR.hs
+msgid "cashflow statement - hledger-web"
+msgstr "ráiteas sreabhadh airgid - hledger-web"
+
+#. the hint below the commodity filter row.
+#: hledger-web/Hledger/Web/Handler/BalanceR.hs hledger-web/Hledger/Web/Handler/HoldingsR.hs hledger-web/Hledger/Web/Handler/JournalR.hs hledger-web/Hledger/Web/Handler/RegisterR.hs hledger-web/Hledger/Web/Handler/StatementsR.hs
+msgid "Shift-click selects several commodities."
+msgstr "Roghnaíonn Shift-chliceáil roinnt aonad."
+
+#: hledger-web/Hledger/Web/Handler/StatementsR.hs
+msgid "All the accounts this report shows have zero balances, which are hidden. Press z to show them."
+msgstr "Tá iarmhéid nialasach ag gach cuntas a thaispeánann an tuarascáil seo, agus tá siad i bhfolach. Brúigh z chun iad a thaispeáint."
+
+#: hledger-web/Hledger/Web/Handler/StatementsR.hs
+msgid "No accounts of the types this report shows were found. Declare account types, or use hledger's standard top-level account names. "
+msgstr "Níor aimsíodh aon chuntas de na cineálacha a thaispeánann an tuarascáil seo. Fógair cineálacha cuntas, nó úsáid ainmneacha caighdeánacha barrleibhéil cuntas hledger. "
+
+#: hledger-web/Hledger/Web/Handler/StatementsR.hs
+msgid "How hledger finds account types"
+msgstr "Conas a aimsíonn hledger cineálacha cuntas"
+
+#: hledger-web/Hledger/Web/Handler/StatementsR.hs
+msgid "Nothing matches this search in this period."
+msgstr "Níl aon rud sa tréimhse seo a mheaitseálann an cuardach seo."
+
+#: hledger-web/Hledger/Web/Handler/UploadR.hs
+#, python-brace-format
+msgid "Encoding error: '{error}'. If your file is not UTF-8 encoded, try the 'edit form', where the transcoding should be handled by the browser."
+msgstr "Earráid ionchódaithe: '{error}'. Mura bhfuil do chomhad ionchódaithe in UTF-8, bain triail as an 'fhoirm eagarthóireachta', áit ar cheart don bhrabhsálaí an tras-ionchódú a láimhseáil."
+
+#: hledger-web/Hledger/Web/Handler/UploadR.hs
+#, python-brace-format
+msgid "File {file} uploaded successfully"
+msgstr "Uaslódáladh an comhad {file}"
+
+#: hledger-web/Hledger/Web/Handler/UploadR.hs
+msgid "Upload journal"
+msgstr "Uaslódáil dialann"
+
+#: hledger-web/Hledger/Web/Widget/AddForm.hs hledger-web/templates/default-layout.hamlet
+msgid "Close"
+msgstr "Dún"
+
+#: hledger-web/Hledger/Web/Widget/AddForm.hs hledger-web/templates/journal.hamlet
+msgid "Add a transaction"
+msgstr "Cuir idirbheart leis"
+
+#: hledger-web/Hledger/Web/Widget/AddForm.hs
+#, python-brace-format
+msgid "Account {n}"
+msgstr "Cuntas {n}"
+
+#: hledger-web/Hledger/Web/Widget/AddForm.hs
+#, python-brace-format
+msgid "Amount {n}"
+msgstr "Méid {n}"
+
+#: hledger-web/Hledger/Web/Widget/AddForm.hs
+msgid "Invalid date format"
+msgstr "Formáid dáta neamhbhailí"
+
+#: hledger-web/Hledger/Web/Widget/AddForm.hs
+msgctxt "placeholder"
+msgid "Date"
+msgstr "Dáta"
+
+#: hledger-web/Hledger/Web/Widget/AddForm.hs
+msgctxt "placeholder"
+msgid "Description"
+msgstr "Cur síos"
+
+#: hledger-web/Hledger/Web/Widget/AddForm.hs
+msgid "Missing amount"
+msgstr "Méid ar iarraidh"
+
+#: hledger-web/Hledger/Web/Widget/AddForm.hs
+msgid "Missing account"
+msgstr "Cuntas ar iarraidh"
+
+#: hledger-web/Hledger/Web/Widget/AddForm.hs
+#, python-brace-format
+msgid "Invalid value: {error}"
+msgstr "Luach neamhbhailí: {error}"
+
+#: hledger-web/Hledger/Web/Widget/AddForm.hs
+msgid "Postings validation failed"
+msgstr "Theip ar bhailíochtú na bpostálacha"
+
+#. in a report page's chart, before the commodities that can be charted.
+#: hledger-web/Hledger/Web/Widget/Chart.hs
+msgid "Commodity"
+msgstr "Aonad"
+
+#. the disclosure hiding each page's rows of report controls: its text, and its tooltip.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show the options that reshape this view"
+msgstr "Taispeáin na roghanna a athraíonn an t-amharc seo"
+
+#. the disclosure hiding each page's rows of report controls: its text, and its tooltip.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Options"
+msgstr "Roghanna"
+
+#. the depth limit, in the list of options in effect.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+#, python-brace-format
+msgid "Depth {depth}"
+msgstr "Doimhneacht {depth}"
+
+#. the tooltip on the muted control rows of the journal and register pages.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "These controls take effect on the report pages"
+msgstr "Bíonn éifeacht ag na rialuithe seo ar leathanaigh na dtuarascálacha"
+
+#. the label before a page's market price source links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Prices:"
+msgstr "Praghsanna:"
+
+#. the label before a page's market price source links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Declared"
+msgstr "Fógartha"
+
+#. the label before a page's market price source links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Value amounts using declared market prices (P directives) only"
+msgstr "Luacháil méideanna le praghsanna margaidh fógartha (treoracha P) amháin"
+
+#. the label before a page's market price source links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Inferred too"
+msgstr "Tátalaithe freisin"
+
+#. the label before a page's market price source links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Infer market prices from transaction costs too (--infer-market-prices)"
+msgstr "Bain praghsanna margaidh as costais idirbheart freisin (--infer-market-prices)"
+
+#. the label before a report's depth links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Depth:"
+msgstr "Doimhneacht:"
+
+#. the tooltips of a report's depth links.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show accounts at every depth"
+msgstr "Taispeáin cuntais ag gach doimhneacht"
+
+#. the tooltips of a report's depth links.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show only the total"
+msgstr "Taispeáin an t-iomlán amháin"
+
+#. the tooltips of a report's depth links.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+#, python-brace-format
+msgid "Show accounts down to depth {depth}"
+msgstr "Taispeáin cuntais síos go doimhneacht {depth}"
+
+#. the label before a report's amount conversion links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs hledger-web/templates/default-layout.hamlet
+msgid "Amounts:"
+msgstr "Méideanna:"
+
+#. the depth limit, in the list of options in effect.
+#. the label before a report's amount conversion links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "As recorded"
+msgstr "Mar a taifeadadh"
+
+#. the depth limit, in the list of options in effect.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgctxt "amounts"
+msgid "Cost"
+msgstr "Costas"
+
+#. the depth limit, in the list of options in effect.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgctxt "amounts"
+msgid "Value"
+msgstr "Luach"
+
+#. the label before a report's amount conversion links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show amounts in the commodities they were recorded in"
+msgstr "Taispeáin méideanna sna haonaid inar taifeadadh iad"
+
+#. the label before a report's amount conversion links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "At cost"
+msgstr "Ag costas"
+
+#. the label before a report's amount conversion links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show amounts converted to their cost, as recorded in transactions (-B)"
+msgstr "Taispeáin méideanna arna dtiontú go dtí a gcostas, mar a taifeadadh in idirbhearta iad (-B)"
+
+#. the label before a report's amount conversion links, and the links' text and tooltips.
+#. the label before the holdings page's valuation links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "At market value"
+msgstr "Ag luach margaidh"
+
+#. the label before a report's amount conversion links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show amounts converted to their market value at the end of each period, using market prices (-V)"
+msgstr "Taispeáin méideanna arna dtiontú go dtí a luach margaidh ag deireadh gach tréimhse, le praghsanna margaidh (-V)"
+
+#. the label before the links that show or hide zero balances, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs hledger-web/templates/default-layout.hamlet
+msgid "Zero balances:"
+msgstr "Iarmhéideanna nialasacha:"
+
+#. the label before the links that show or hide zero balances, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show accounts whose balances are zero"
+msgstr "Taispeáin cuntais a bhfuil iarmhéid nialasach acu"
+
+#. the label before the links that show or hide zero balances, and the links' text and tooltips.
+#. the label before the balance sheet's links that hide or show equity, and the links' tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Shown"
+msgstr "Taispeánta"
+
+#. the label before the balance sheet's links that hide or show equity, and the links' tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Equity:"
+msgstr "Cothromas:"
+
+#. the label before the balance sheet's links that hide or show equity, and the links' tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show assets, liabilities, and net worth, as the balancesheet command does"
+msgstr "Taispeáin sócmhainní, dliteanais, agus glanfhiúchas, mar a dhéanann an t-ordú balancesheet"
+
+#. the label before the balance sheet's links that hide or show equity, and the links' tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show assets, liabilities, and equity, as the balancesheetequity command does"
+msgstr "Taispeáin sócmhainní, dliteanais, agus cothromas, mar a dhéanann an t-ordú balancesheetequity"
+
+#. the label before the links that show or hide zero balances, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Hide accounts whose balances are zero"
+msgstr "Folaigh cuntais a bhfuil iarmhéid nialasach acu"
+
+#. the label before the links that show or hide zero balances, and the links' text and tooltips.
+#. the label before the balance sheet's links that hide or show equity, and the links' tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Hidden"
+msgstr "I bhfolach"
+
+#. the label before a report's status filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs hledger-web/templates/default-layout.hamlet
+msgid "Status:"
+msgstr "Stádas:"
+
+#. the label before a report's status filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show transactions of any status"
+msgstr "Taispeáin idirbhearta d'aon stádas"
+
+#. the label before a report's status filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgctxt "status"
+msgid "All"
+msgstr "Uile"
+
+#. the label before a report's status filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Unmarked"
+msgstr "Gan mharcáil"
+
+#. the label before a report's status filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show only unmarked transactions (status:)"
+msgstr "Taispeáin idirbhearta gan mharcáil amháin (status:)"
+
+#. the label before a report's status filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Pending"
+msgstr "Ar feitheamh"
+
+#. the label before a report's status filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show only pending transactions (status:!)"
+msgstr "Taispeáin idirbhearta ar feitheamh amháin (status:!)"
+
+#. the label before a report's status filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Cleared"
+msgstr "Glanta"
+
+#. the label before a report's status filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show only cleared transactions (status:*)"
+msgstr "Taispeáin idirbhearta glanta amháin (status:*)"
+
+#. the label before a report's real/virtual filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs hledger-web/templates/default-layout.hamlet
+msgid "Postings:"
+msgstr "Postálacha:"
+
+#. the label before a report's real/virtual filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show real and virtual postings"
+msgstr "Taispeáin postálacha fíora agus fíorúla"
+
+#. the label before a report's real/virtual filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgctxt "postings"
+msgid "All"
+msgstr "Uile"
+
+#. the label before a report's real/virtual filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Real"
+msgstr "Fíor"
+
+#. the label before a report's real/virtual filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show only real postings, as -R does (real:1)"
+msgstr "Taispeáin postálacha fíora amháin, mar a dhéanann -R (real:1)"
+
+#. the label before a report's real/virtual filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Virtual"
+msgstr "Fíorúil"
+
+#. the label before a report's real/virtual filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show only virtual postings, the parenthesized ones (real:0)"
+msgstr "Taispeáin postálacha fíorúla amháin, iad siúd idir lúibíní (real:0)"
+
+#. the label before a report's list/tree links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs hledger-web/templates/default-layout.hamlet
+msgid "Accounts:"
+msgstr "Cuntais:"
+
+#. the label before a report's list/tree links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show accounts as a flat list (--flat)"
+msgstr "Taispeáin cuntais mar liosta cothrom (--flat)"
+
+#. the depth limit, in the list of options in effect.
+#. the label before a report's list/tree links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgctxt "accounts"
+msgid "List"
+msgstr "Liosta"
+
+#. the label before a report's list/tree links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show accounts as a tree (--tree)"
+msgstr "Taispeáin cuntais mar chrann (--tree)"
+
+#. the depth limit, in the list of options in effect.
+#. the label before a report's list/tree links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgctxt "accounts"
+msgid "Tree"
+msgstr "Crann"
+
+#. the label before a report's extra-column toggles, and the toggles' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs hledger-web/templates/default-layout.hamlet
+msgid "Extra columns:"
+msgstr "Colúin bhreise:"
+
+#. the label before a report's extra-column toggles, and the toggles' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Add a column totaling each row (-T)"
+msgstr "Cuir colún leis a thugann iomlán gach sraithe (-T)"
+
+#. options in effect, listed on the closed options disclosure.
+#. the label before a report's extra-column toggles, and the toggles' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgctxt "column"
+msgid "Total"
+msgstr "Iomlán"
+
+#. the label before a report's extra-column toggles, and the toggles' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Add a column averaging each row (-A)"
+msgstr "Cuir colún leis a thugann meán gach sraithe (-A)"
+
+#. options in effect, listed on the closed options disclosure.
+#. the label before a report's extra-column toggles, and the toggles' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgctxt "column"
+msgid "Average"
+msgstr "Meán"
+
+#. the label before a report's sort links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs hledger-web/templates/default-layout.hamlet
+msgid "Sort:"
+msgstr "Sórtáil:"
+
+#. the label before a report's sort links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "By account"
+msgstr "De réir cuntais"
+
+#. the label before a report's sort links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Sort rows by account display order"
+msgstr "Sórtáil sraitheanna de réir ord taispeána na gcuntas"
+
+#. the depth limit, in the list of options in effect.
+#. the label before a report's sort links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "By amount"
+msgstr "De réir méide"
+
+#. the label before a report's sort links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Sort rows by their amounts, largest first (-S)"
+msgstr "Sórtáil sraitheanna de réir a méideanna, an ceann is mó ar dtús (-S)"
+
+#. the label before a report's amounts/percentages links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Numbers:"
+msgstr "Uimhreacha:"
+
+#. the label before a report's amounts/percentages links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show the amounts"
+msgstr "Taispeáin na méideanna"
+
+#. the label before a report's amounts/percentages links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgctxt "numbers"
+msgid "Amounts"
+msgstr "Méideanna"
+
+#. the depth limit, in the list of options in effect.
+#. the label before a report's amounts/percentages links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Percentages"
+msgstr "Céatadáin"
+
+#. the label before a report's amounts/percentages links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show each amount as a percentage of its column's total (-%)"
+msgstr "Taispeáin gach méid mar chéatadán d'iomlán a cholúin (-%)"
+
+#. the label before a report's calculation links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Calculate:"
+msgstr "Ríomh:"
+
+#. the label before a report's calculation links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show sums of postings"
+msgstr "Taispeáin suimeanna postálacha"
+
+#. the label before a report's calculation links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgctxt "calculation"
+msgid "Sums"
+msgstr "Suimeanna"
+
+#. the depth limit, in the list of options in effect.
+#. the label before a report's calculation links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Value change"
+msgstr "Athrú luacha"
+
+#. the label before a report's calculation links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show how period-end market values changed (--valuechange)"
+msgstr "Taispeáin conas a d'athraigh luachanna margaidh ag deireadh tréimhse (--valuechange)"
+
+#. the depth limit, in the list of options in effect.
+#. the label before a report's calculation links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Unrealized gain"
+msgstr "Gnóthachan neamhréadaithe"
+
+#. options in effect, listed on the closed options disclosure.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Inferred prices"
+msgstr "Praghsanna tátalaithe"
+
+#. options in effect, listed on the closed options disclosure.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Zero balances hidden"
+msgstr "Iarmhéideanna nialasacha i bhfolach"
+
+#. options in effect, listed on the closed options disclosure.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Zero balances shown"
+msgstr "Iarmhéideanna nialasacha taispeánta"
+
+#. options in effect, listed on the closed options disclosure.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Lots shown"
+msgstr "Lotaí taispeánta"
+
+#. options in effect, listed on the closed options disclosure.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Costs shown"
+msgstr "Costais taispeánta"
+
+#. options in effect, listed on the closed options disclosure.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Closed positions shown"
+msgstr "Suíomhanna dúnta taispeánta"
+
+#. options in effect, listed on the closed options disclosure.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Closed positions hidden"
+msgstr "Suíomhanna dúnta i bhfolach"
+
+#. options in effect, listed on the closed options disclosure.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Secondary dates"
+msgstr "Dátaí tánaisteacha"
+
+#. options in effect, listed on the closed options disclosure.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Equity shown"
+msgstr "Cothromas taispeánta"
+
+#. a journal or register page's heading when the search has dates, eg "General Journal in 2024".
+#: hledger-web/Hledger/Web/Widget/Common.hs
+#, python-brace-format
+msgid "{title} in {dates}"
+msgstr "{title}, {dates}"
+
+#. a journal or register page's heading when the search has dates, eg "General Journal in 2024".
+#: hledger-web/Hledger/Web/Widget/Common.hs
+#, python-brace-format
+msgid "{title} in {dates}, filtered"
+msgstr "{title}, {dates}, scagtha"
+
+#. the label before a report's calculation links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show unrealized capital gains: market value minus cost (--gain)"
+msgstr "Taispeáin gnóthachain chaipitiúla neamhréadaithe: luach margaidh lúide costas (--gain)"
+
+#. the label before a report's calculation links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Count the postings instead of summing them (--count)"
+msgstr "Comhair na postálacha in ionad iad a shuimiú (--count)"
+
+#. the label before the register's cost links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Costs:"
+msgstr "Costais:"
+
+#. the label before the register's cost links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show amounts without their costs"
+msgstr "Taispeáin méideanna gan a gcostais"
+
+#. the label before the register's cost links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgctxt "costs"
+msgid "Hidden"
+msgstr "I bhfolach"
+
+#. the label before the register's cost links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show amounts with the costs recorded in the journal"
+msgstr "Taispeáin méideanna leis na costais a taifeadadh sa dialann"
+
+#. the label before the register's cost links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgctxt "costs"
+msgid "Shown"
+msgstr "Taispeánta"
+
+#. the label before a report's lot detail links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs hledger-web/templates/default-layout.hamlet
+msgid "Lots:"
+msgstr "Lotaí:"
+
+#. the label before a report's lot detail links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Aggregate each account's lots"
+msgstr "Comhiomlánaigh lotaí gach cuntais"
+
+#. the label before a report's lot detail links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgctxt "lots"
+msgid "Hidden"
+msgstr "I bhfolach"
+
+#. the label before a report's lot detail links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show each lot separately (--lots)"
+msgstr "Taispeáin gach lota ar leith (--lots)"
+
+#. the label before a report's lot detail links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgctxt "lots"
+msgid "Shown"
+msgstr "Taispeánta"
+
+#. the label before the holdings page's closed-position links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Closed positions:"
+msgstr "Suíomhanna dúnta:"
+
+#. the label before the holdings page's closed-position links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show only open positions"
+msgstr "Taispeáin suíomhanna oscailte amháin"
+
+#. the label before the holdings page's closed-position links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgctxt "closed"
+msgid "Hidden"
+msgstr "I bhfolach"
+
+#. the label before the holdings page's closed-position links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Also show fully disposed positions and their realized gains (-E)"
+msgstr "Taispeáin freisin suíomhanna a diúscraíodh go hiomlán agus a ngnóthachain réadaithe (-E)"
+
+#. the label before the holdings page's closed-position links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgctxt "closed"
+msgid "Shown"
+msgstr "Taispeánta"
+
+#. the label before the holdings page's valuation links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Values:"
+msgstr "Luachanna:"
+
+#. the label before the holdings page's valuation links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Per cost commodity"
+msgstr "De réir aonad costais"
+
+#. the label before the holdings page's valuation links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Value each holding in its own cost commodity"
+msgstr "Luacháil gach sealúchas ina aonad costais féin"
+
+#. the label before the holdings page's valuation links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Convert values and costs to the market valuation commodity (-V)"
+msgstr "Tiontaigh luachanna agus costais go haonad luachála an mhargaidh (-V)"
+
+#. the label before the account type filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Type:"
+msgstr "Cineál:"
+
+#. the label before the account type filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show accounts of every type"
+msgstr "Taispeáin cuntais de gach cineál"
+
+#. the label before the account type filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgctxt "account type"
+msgid "All"
+msgstr "Uile"
+
+#. the label before the account type filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Asset"
+msgstr "Sócmhainn"
+
+#. the label before the account type filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show only asset accounts (type:A)"
+msgstr "Taispeáin cuntais shócmhainne amháin (type:A)"
+
+#. the label before the account type filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Liability"
+msgstr "Dliteanas"
+
+#. the label before the account type filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show only liability accounts (type:L)"
+msgstr "Taispeáin cuntais dhliteanais amháin (type:L)"
+
+#. the label before the account type filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show only equity accounts (type:E)"
+msgstr "Taispeáin cuntais chothromais amháin (type:E)"
+
+#. the label before the account type filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Revenue"
+msgstr "Ioncam"
+
+#. the label before the account type filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show only revenue accounts (type:R)"
+msgstr "Taispeáin cuntais ioncaim amháin (type:R)"
+
+#. the label before the account type filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Expense"
+msgstr "Speansas"
+
+#. the label before the account type filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show only expense accounts (type:X)"
+msgstr "Taispeáin cuntais speansais amháin (type:X)"
+
+#. the label before the account type filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Cash"
+msgstr "Airgead"
+
+#. the label before the account type filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show only cash accounts (type:C)"
+msgstr "Taispeáin cuntais airgid amháin (type:C)"
+
+#. the label before the account type filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Conversion"
+msgstr "Tiontú"
+
+#. the label before the account type filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show only conversion accounts (type:V)"
+msgstr "Taispeáin cuntais thiontaithe amháin (type:V)"
+
+#. the label before the account type filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Gain"
+msgstr "Gnóthachan"
+
+#. the label before the account type filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show only capital gain accounts (type:G)"
+msgstr "Taispeáin cuntais ghnóthachain chaipitiúil amháin (type:G)"
+
+#. the label before the account type filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Imbalance"
+msgstr "Míchothromaíocht"
+
+#. the label before the account type filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show only imbalance accounts (type:M)"
+msgstr "Taispeáin cuntais mhíchothromaíochta amháin (type:M)"
+
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "List all the commodities"
+msgstr "Liostaigh na haonaid go léir"
+
+#. the label before a page's commodity filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Commodity:"
+msgstr "Aonad:"
+
+#. the label before a page's commodity filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show amounts in every commodity"
+msgstr "Taispeáin méideanna i ngach aonad"
+
+#. the label before a page's commodity filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgctxt "commodity"
+msgid "All"
+msgstr "Uile"
+
+#. the label before a page's commodity filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+#, python-brace-format
+msgid "Show only amounts in {commodity}"
+msgstr "Taispeáin méideanna in {commodity} amháin"
+
+#. the note for a balance, or the register chart, showing fewer commodities than it has.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+#, python-brace-format
+msgid "… and {n} more"
+msgstr "… agus {n} eile"
+
+#: hledger-web/templates/add-form.hamlet
+msgid "Pick a date"
+msgstr "Roghnaigh dáta"
+
+#: hledger-web/templates/add-form.hamlet
+msgid "Add to:"
+msgstr "Cuir le:"
+
+#: hledger-web/templates/add-form.hamlet hledger-web/templates/edit-form.hamlet
+msgid "Save"
+msgstr "Sábháil"
+
+#. the report links above each report page and in the sidebar: each link's text, and its tooltip.
+#: hledger-web/Hledger/Web/App.hs
+msgid "Show general journal entries, most recent first"
+msgstr "Taispeáin iontrálacha na dialainne ginearálta, an ceann is déanaí ar dtús"
+
+#. the report links above each report page and in the sidebar: each link's text, and its tooltip.
+#: hledger-web/Hledger/Web/App.hs
+msgid "Journal"
+msgstr "Dialann"
+
+#: hledger-web/templates/balance-report.hamlet
+msgid "Show transactions affecting this account and subaccounts"
+msgstr "Taispeáin idirbhearta a bhaineann leis an gcuntas seo agus lena fhochuntais"
+
+#: hledger-web/templates/balance-report.hamlet
+msgid "Show transactions affecting this account but not subaccounts"
+msgstr "Taispeáin idirbhearta a bhaineann leis an gcuntas seo ach ní lena fhochuntais"
+
+#: hledger-web/templates/balance-report.hamlet
+msgid "only"
+msgstr "amháin"
+
+#: hledger-web/templates/balance-report.hamlet
+msgid "Show the transactions that make up this balance"
+msgstr "Taispeáin na hidirbhearta a dhéanann suas an t-iarmhéid seo"
+
+#: hledger-web/templates/balance-report.hamlet
+msgid "Show the transactions that make up this total"
+msgstr "Taispeáin na hidirbhearta a dhéanann suas an t-iomlán seo"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "hledger-web is no longer running. It exits after fifteen minutes with no browser window showing it, or when stopped. To continue, start it again and reload this page."
+msgstr "Níl hledger-web ag rith a thuilleadh. Stopann sé tar éis cúig nóiméad déag gan aon fhuinneog brabhsálaí á thaispeáint, nó nuair a stoptar é. Chun leanúint ar aghaidh, tosaigh arís é agus athlódáil an leathanach seo."
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "Leave full window"
+msgstr "Fág an fhuinneog iomlán"
+
+#: hledger-web/templates/default-layout.hamlet
+msgctxt "search box"
+msgid "Search"
+msgstr "Cuardaigh"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "Enter hledger search patterns to filter the data below"
+msgstr "Cuir isteach patrúin chuardaigh hledger chun na sonraí thíos a scagadh"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "Clear search terms"
+msgstr "Glan na téarmaí cuardaigh"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "Apply search terms"
+msgstr "Cuir na téarmaí cuardaigh i bhfeidhm"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "Manage journal files"
+msgstr "Bainistigh comhaid dialainne"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "Show search and general help"
+msgstr "Taispeáin cabhair chuardaigh agus ghinearálta"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "Go to"
+msgstr "Téigh go"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "Help"
+msgstr "Cabhair"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "Keyboard shortcuts"
+msgstr "Aicearraí méarchláir"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "toggle sidebar"
+msgstr "scoránaigh an barra taoibh"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "toggle report options"
+msgstr "scoránaigh roghanna na tuarascála"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "toggle the report's chart"
+msgstr "scoránaigh cairt na tuarascála"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "select the chart's commodity"
+msgstr "roghnaigh aonad na cairte"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "toggle the report's data"
+msgstr "scoránaigh sonraí na tuarascála"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "toggle full window"
+msgstr "scoránaigh an fhuinneog iomlán"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "focus search form"
+msgstr "dírigh ar an bhfoirm chuardaigh"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "cancel"
+msgstr "cealaigh"
+
+#. in the help, the heading of the options' keys, listed under the options panel's own labels.
+#: hledger-web/templates/default-layout.hamlet
+msgid "Report options"
+msgstr "Roghanna tuarascála"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "historical end balances / balance changes"
+msgstr "iarmhéideanna deiridh stairiúla / athruithe iarmhéide"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "yearly"
+msgstr "bliantúil"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "quarterly"
+msgstr "ráithiúil"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "monthly"
+msgstr "míosúil"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "weekly"
+msgstr "seachtainiúil"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "daily"
+msgstr "laethúil"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "unmarked"
+msgstr "gan mharcáil"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "pending"
+msgstr "ar feitheamh"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "cleared"
+msgstr "glanta"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "real only / all"
+msgstr "fíor amháin / uile"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "Depth limit:"
+msgstr "Teorainn doimhneachta:"
+
+#. in the help's Depth row: what the digit keys, and the - and + keys, do to the depth limit.
+#: hledger-web/templates/default-layout.hamlet
+msgid "set it"
+msgstr "socraigh í"
+
+#. in the help's Depth row: what the digit keys, and the - and + keys, do to the depth limit.
+#: hledger-web/templates/default-layout.hamlet
+msgid "decrease or increase it"
+msgstr "laghdaigh nó méadaigh í"
+
+#: hledger-web/templates/default-layout.hamlet
+msgctxt "accounts"
+msgid "tree / list"
+msgstr "crann / liosta"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "at cost"
+msgstr "ag costas"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "at market value"
+msgstr "ag luach margaidh"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "show / hide zero balances"
+msgstr "taispeáin / folaigh iarmhéideanna nialasacha"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "show / hide lot details"
+msgstr "taispeáin / folaigh sonraí na lotaí"
+
+#: hledger-web/templates/default-layout.hamlet
+msgctxt "column"
+msgid "total"
+msgstr "iomlán"
+
+#: hledger-web/templates/default-layout.hamlet
+msgctxt "column"
+msgid "average"
+msgstr "meán"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "by amount / by account display order"
+msgstr "de réir méide / de réir ord taispeána na gcuntas"
+
+#. in the help, below the options' keys.
+#: hledger-web/templates/default-layout.hamlet
+msgid "Pressed again, an option's key turns it back off."
+msgstr "Má bhrúitear eochair rogha arís, casann sé as í."
+
+#: hledger-web/templates/default-layout.hamlet
+msgctxt "help heading"
+msgid "Search queries"
+msgstr "Iarratais chuardaigh"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "More help:"
+msgstr "Tuilleadh cabhrach:"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "hledger-web user manual"
+msgstr "Lámhleabhar úsáideora hledger-web"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "Search patterns with spaces should be enclosed in quotes."
+msgstr "Ba cheart patrúin chuardaigh ina bhfuil spásanna a chur idir comharthaí athfhriotail."
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "match account names"
+msgstr "meaitseáil ainmneacha cuntas"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "match account types (A, L, E, R, X, ...)"
+msgstr "meaitseáil cineálacha cuntas (A, L, E, R, X, ...)"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "match dates"
+msgstr "meaitseáil dátaí"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "match status"
+msgstr "meaitseáil stádas"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "match transaction codes"
+msgstr "meaitseáil cóid idirbheart"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "or"
+msgstr "nó"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "view this help"
+msgstr "féach ar an gcabhair seo"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "go to any screen"
+msgstr "téigh go dtí aon scáileán"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "add a transaction"
+msgstr "cuir idirbheart leis"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "match any visible field (account, amount, comment, description, code), or a date if REGEX is also a period expression"
+msgstr "meaitseáil aon réimse infheicthe (cuntas, méid, nóta tráchta, cur síos, cód), nó dáta más slonn tréimhse é REGEX freisin"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "match transaction descriptions"
+msgstr "meaitseáil cur síos idirbheart"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "match payee part of descriptions"
+msgstr "meaitseáil an chuid íocaí den chur síos"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "match note part of descriptions"
+msgstr "meaitseáil an chuid nóta den chur síos"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "match unsigned magnitudes, or with signed N, signed amounts. For single-commodity amounts only."
+msgstr "meaitseáil méideanna gan chomhartha, nó le N sínithe, méideanna sínithe. Do mhéideanna in aon aonad amháin."
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "match currencies/commodities. Must match the whole symbol/name. To match dollar sign, write"
+msgstr "meaitseáil airgeadraí/tráchtearraí. Caithfidh sé an tsiombail/an t-ainm iomlán a mheaitseáil. Chun an comhartha dollair a mheaitseáil, scríobh"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "match tags, or tag and value"
+msgstr "meaitseáil clibeanna, nó clib agus luach"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "match postings' realness/virtualness"
+msgstr "meaitseáil fíoracht/fíorúlacht postálacha"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "prepend not: to negate a search term"
+msgstr "cuir not: roimh théarma cuardaigh chun é a dhiúltú"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "match with a boolean query (and, or, not, ()"
+msgstr "meaitseáil le hiarratas Boole (and, or, not, ()"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "match transactions where any posting matches"
+msgstr "meaitseáil idirbhearta ina meaitseálann aon phostáil"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "match transactions where all postings match"
+msgstr "meaitseáil idirbhearta ina meaitseálann gach postáil"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "another way to set depth limit (can be per account)"
+msgstr "bealach eile chun teorainn doimhneachta a shocrú (is féidir í a shocrú in aghaidh an chuntais)"
+
+#: hledger-web/templates/edit-form.hamlet
+msgid "Edit file"
+msgstr "Cuir an comhad in eagar"
+
+#: hledger-web/templates/edit-form.hamlet hledger-web/templates/upload-form.hamlet
+msgid "Are you sure? This will overwrite your journal!"
+msgstr "An bhfuil tú cinnte? Forscríobhfaidh sé seo do dhialann!"
+
+#: hledger-web/templates/edit-form.hamlet
+msgid "File format help"
+msgstr "Cabhair maidir le formáid an chomhaid"
+
+#: hledger-web/templates/edit-form.hamlet
+msgid "Go back"
+msgstr "Téigh siar"
+
+#: hledger-web/templates/journal.hamlet
+msgid "Add a new transaction to the journal"
+msgstr "Cuir idirbheart nua leis an dialann"
+
+#: hledger-web/templates/journal.hamlet hledger-web/templates/register.hamlet
+msgctxt "column heading"
+msgid "Date"
+msgstr "Dáta"
+
+#: hledger-web/templates/journal.hamlet hledger-web/templates/register.hamlet
+msgctxt "column heading"
+msgid "Description"
+msgstr "Cur síos"
+
+#: hledger-web/templates/journal.hamlet
+msgctxt "column heading"
+msgid "Account"
+msgstr "Cuntas"
+
+#: hledger-web/templates/journal.hamlet
+msgctxt "column heading"
+msgid "Amount"
+msgstr "Méid"
+
+#: hledger-web/templates/journal.hamlet
+msgid "Show the journal entries on this date"
+msgstr "Taispeáin iontrálacha na dialainne ar an dáta seo"
+
+#: hledger-web/templates/manage.hamlet
+msgid "Your journal's files"
+msgstr "Comhaid do dhialainne"
+
+#: hledger-web/templates/manage.hamlet
+msgctxt "column heading"
+msgid "File"
+msgstr "Comhad"
+
+#: hledger-web/templates/manage.hamlet
+msgid "Edit"
+msgstr "Cuir in eagar"
+
+#: hledger-web/templates/manage.hamlet hledger-web/templates/upload-form.hamlet
+msgid "Upload"
+msgstr "Uaslódáil"
+
+#: hledger-web/templates/manage.hamlet
+msgid "Download"
+msgstr "Íoslódáil"
+
+#: hledger-web/templates/paging.hamlet
+msgid "Show the newer transactions"
+msgstr "Taispeáin na hidirbhearta níos nuaí"
+
+#: hledger-web/templates/paging.hamlet
+msgid "Newer"
+msgstr "Níos nuaí"
+
+#: hledger-web/templates/paging.hamlet
+msgid "Show the older transactions"
+msgstr "Taispeáin na hidirbhearta níos sine"
+
+#: hledger-web/templates/paging.hamlet
+msgid "Older"
+msgstr "Níos sine"
+
+#: hledger-web/templates/register.hamlet
+msgctxt "column heading"
+msgid "To/From Account(s)"
+msgstr "Chuig/Ó Chuntas"
+
+#: hledger-web/templates/register.hamlet
+msgctxt "column heading"
+msgid "Amount Out/In"
+msgstr "Méid Amach/Isteach"
+
+#: hledger-web/templates/register.hamlet
+msgid "Show this entry and the other journal entries on its date"
+msgstr "Taispeáin an iontráil seo agus iontrálacha eile na dialainne ar a dáta"
+
+#: hledger-web/templates/register.hamlet
+msgid "Balance brought forward"
+msgstr "Iarmhéid tugtha ar aghaidh"
+
+#: hledger-web/templates/register.hamlet
+msgid "Show the transactions before this period"
+msgstr "Taispeáin na hidirbhearta roimh an tréimhse seo"
+
+#: hledger-web/templates/upload-form.hamlet
+msgid "Upload to file"
+msgstr "Uaslódáil chuig comhad"
+
+#: hledger-web/templates/upload-form.hamlet
+msgid "Select file"
+msgstr "Roghnaigh comhad"
+
+#: hledger-web/templates/years.hamlet
+msgctxt "years row"
+msgid "Years:"
+msgstr "Blianta:"
+
+#: hledger-web/templates/years.hamlet
+msgid "Show all years"
+msgstr "Taispeáin gach bliain"
+
+#: hledger-web/templates/years.hamlet
+msgctxt "years row"
+msgid "All"
+msgstr "Uile"

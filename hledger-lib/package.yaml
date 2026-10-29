@@ -35,6 +35,8 @@ extra-source-files:
 - locale/hledger.pot
 - locale/de.po
 - locale/es.po
+- locale/ga.po
+- locale/ja.po
 - locale/ru.po
 - locale/zh-Hans.po
 - test/unittest.hs

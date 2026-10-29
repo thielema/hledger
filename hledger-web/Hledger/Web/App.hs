@@ -47,6 +47,7 @@ import Yesod
 import Yesod.Default.Config
 import Yesod.Form.I18n.Chinese (chineseFormMessage)
 import Yesod.Form.I18n.German (germanFormMessage)
+import Yesod.Form.I18n.Japanese (japaneseFormMessage)
 import Yesod.Form.I18n.Russian (russianFormMessage)
 import Yesod.Form.I18n.Spanish (spanishFormMessage)
 
@@ -352,6 +353,7 @@ instance RenderMessage App FormMessage where
       formMessages =
         [ ("de",      germanFormMessage)
         , ("es",      spanishFormMessage)
+        , ("ja",      japaneseFormMessage)
         , ("ru",      russianFormMessage)
         , ("zh-Hans", chineseFormMessage)
         ]

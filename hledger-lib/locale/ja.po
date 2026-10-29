@@ -1,0 +1,2355 @@
+# Japanese translations for hledger.
+# This file is distributed under the same license as hledger.
+# Terminology and choices to check: see hledger-lib/locale/README.md, Japanese.
+# Machine-made (Claude Opus 5.5); needs review by a native speaker.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: hledger\n"
+"Report-Msgid-Bugs-To: https://github.com/simonmichael/hledger/issues\n"
+"Language: ja\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. stand-alone (nominative) month names, as used in a column heading.
+#: hledger-lib/Hledger/Utils/I18n.hs
+msgctxt "month"
+msgid "January"
+msgstr "1月"
+
+#. stand-alone (nominative) month names, as used in a column heading.
+#: hledger-lib/Hledger/Utils/I18n.hs
+msgctxt "month"
+msgid "February"
+msgstr "2月"
+
+#. stand-alone (nominative) month names, as used in a column heading.
+#: hledger-lib/Hledger/Utils/I18n.hs
+msgctxt "month"
+msgid "March"
+msgstr "3月"
+
+#. stand-alone (nominative) month names, as used in a column heading.
+#: hledger-lib/Hledger/Utils/I18n.hs
+msgctxt "month"
+msgid "April"
+msgstr "4月"
+
+#. stand-alone (nominative) month names, as used in a column heading.
+#: hledger-lib/Hledger/Utils/I18n.hs
+msgctxt "month"
+msgid "May"
+msgstr "5月"
+
+#. stand-alone (nominative) month names, as used in a column heading.
+#: hledger-lib/Hledger/Utils/I18n.hs
+msgctxt "month"
+msgid "June"
+msgstr "6月"
+
+#. stand-alone (nominative) month names, as used in a column heading.
+#: hledger-lib/Hledger/Utils/I18n.hs
+msgctxt "month"
+msgid "July"
+msgstr "7月"
+
+#. stand-alone (nominative) month names, as used in a column heading.
+#: hledger-lib/Hledger/Utils/I18n.hs
+msgctxt "month"
+msgid "August"
+msgstr "8月"
+
+#. stand-alone (nominative) month names, as used in a column heading.
+#: hledger-lib/Hledger/Utils/I18n.hs
+msgctxt "month"
+msgid "September"
+msgstr "9月"
+
+#. stand-alone (nominative) month names, as used in a column heading.
+#: hledger-lib/Hledger/Utils/I18n.hs
+msgctxt "month"
+msgid "October"
+msgstr "10月"
+
+#. stand-alone (nominative) month names, as used in a column heading.
+#: hledger-lib/Hledger/Utils/I18n.hs
+msgctxt "month"
+msgid "November"
+msgstr "11月"
+
+#. stand-alone (nominative) month names, as used in a column heading.
+#: hledger-lib/Hledger/Utils/I18n.hs
+msgctxt "month"
+msgid "December"
+msgstr "12月"
+
+#. short stand-alone month names, as used in a column heading.
+#: hledger-lib/Hledger/Utils/I18n.hs
+msgctxt "month abbrev"
+msgid "Jan"
+msgstr "1月"
+
+#. short stand-alone month names, as used in a column heading.
+#: hledger-lib/Hledger/Utils/I18n.hs
+msgctxt "month abbrev"
+msgid "Feb"
+msgstr "2月"
+
+#. short stand-alone month names, as used in a column heading.
+#: hledger-lib/Hledger/Utils/I18n.hs
+msgctxt "month abbrev"
+msgid "Mar"
+msgstr "3月"
+
+#. short stand-alone month names, as used in a column heading.
+#: hledger-lib/Hledger/Utils/I18n.hs
+msgctxt "month abbrev"
+msgid "Apr"
+msgstr "4月"
+
+#. short stand-alone month names, as used in a column heading.
+#: hledger-lib/Hledger/Utils/I18n.hs
+msgctxt "month abbrev"
+msgid "May"
+msgstr "5月"
+
+#. short stand-alone month names, as used in a column heading.
+#: hledger-lib/Hledger/Utils/I18n.hs
+msgctxt "month abbrev"
+msgid "Jun"
+msgstr "6月"
+
+#. short stand-alone month names, as used in a column heading.
+#: hledger-lib/Hledger/Utils/I18n.hs
+msgctxt "month abbrev"
+msgid "Jul"
+msgstr "7月"
+
+#. short stand-alone month names, as used in a column heading.
+#: hledger-lib/Hledger/Utils/I18n.hs
+msgctxt "month abbrev"
+msgid "Aug"
+msgstr "8月"
+
+#. short stand-alone month names, as used in a column heading.
+#: hledger-lib/Hledger/Utils/I18n.hs
+msgctxt "month abbrev"
+msgid "Sep"
+msgstr "9月"
+
+#. short stand-alone month names, as used in a column heading.
+#: hledger-lib/Hledger/Utils/I18n.hs
+msgctxt "month abbrev"
+msgid "Oct"
+msgstr "10月"
+
+#. short stand-alone month names, as used in a column heading.
+#: hledger-lib/Hledger/Utils/I18n.hs
+msgctxt "month abbrev"
+msgid "Nov"
+msgstr "11月"
+
+#. short stand-alone month names, as used in a column heading.
+#: hledger-lib/Hledger/Utils/I18n.hs
+msgctxt "month abbrev"
+msgid "Dec"
+msgstr "12月"
+
+#: hledger/Hledger/Cli/Chart.hs
+msgid "Report details"
+msgstr "レポートの詳細"
+
+#: hledger/Hledger/Cli/Chart.hs
+msgid "Total"
+msgstr "合計"
+
+#: hledger/Hledger/Cli/Chart.hs
+msgid "Balance"
+msgstr "残高"
+
+#: hledger/Hledger/Cli/Chart.hs hledger/Hledger/Cli/CompoundBalanceCommand.hs
+msgid "Net:"
+msgstr "純額:"
+
+#: hledger/Hledger/Cli/Chart.hs
+#, python-brace-format
+msgid "other {parent} ({n} account)"
+msgid_plural "other {parent} ({n} accounts)"
+msgstr[0] "{parent} のその他 ({n} 勘定科目)"
+
+#: hledger/Hledger/Cli/Chart.hs
+#, python-brace-format
+msgid "other ({n} account)"
+msgid_plural "other ({n} accounts)"
+msgstr[0] "その他 ({n} 勘定科目)"
+
+#. the report title, eg "Monthly Balance Sheet 2024 (Historical Ending Balances), valued at period ends". {clarification} brings its own leading space when present.
+#: hledger/Hledger/Cli/CompoundBalanceCommand.hs
+#, python-brace-format
+msgid "{report} {dates}{clarification}{valuation}"
+msgstr "{report} {dates}{clarification}{valuation}"
+
+#: hledger/Hledger/Cli/CompoundBalanceCommand.hs
+msgid "(Period-End Value Changes)"
+msgstr "(期末評価額の増減)"
+
+#: hledger/Hledger/Cli/CompoundBalanceCommand.hs
+msgid "(Cumulative Period-End Value Changes)"
+msgstr "(期末評価額の累計増減)"
+
+#: hledger/Hledger/Cli/CompoundBalanceCommand.hs
+msgid "(Incremental Gain)"
+msgstr "(含み損益の増減)"
+
+#: hledger/Hledger/Cli/CompoundBalanceCommand.hs
+msgid "(Cumulative Gain)"
+msgstr "(含み損益の累計)"
+
+#: hledger/Hledger/Cli/CompoundBalanceCommand.hs
+msgid "(Historical Gain)"
+msgstr "(繰越込み含み損益)"
+
+#: hledger/Hledger/Cli/CompoundBalanceCommand.hs
+msgid "(Balance Changes)"
+msgstr "(残高の増減)"
+
+#: hledger/Hledger/Cli/CompoundBalanceCommand.hs
+msgid "(Cumulative Ending Balances)"
+msgstr "(累計期末残高)"
+
+#: hledger/Hledger/Cli/CompoundBalanceCommand.hs
+msgid "(Historical Ending Balances)"
+msgstr "(繰越込み期末残高)"
+
+#. the budget report title, eg "Budget performance in 2024, valued at period ends:".
+#: hledger/Hledger/Cli/CompoundBalanceCommand.hs hledger/Hledger/Cli/Commands/Balance.hs
+msgid ", converted to cost"
+msgstr "、原価換算"
+
+#. the budget report title, eg "Budget performance in 2024, valued at period ends:".
+#: hledger/Hledger/Cli/CompoundBalanceCommand.hs hledger/Hledger/Cli/Commands/Balance.hs
+msgid ", valued at posting date"
+msgstr "、転記日時点の時価"
+
+#. the budget report title, eg "Budget performance in 2024, valued at period ends:".
+#: hledger/Hledger/Cli/CompoundBalanceCommand.hs hledger/Hledger/Cli/Commands/Balance.hs
+msgid ", valued at period ends"
+msgstr "、各期末時点の時価"
+
+#. the budget report title, eg "Budget performance in 2024, valued at period ends:".
+#: hledger/Hledger/Cli/CompoundBalanceCommand.hs hledger/Hledger/Cli/Commands/Balance.hs
+msgid ", current value"
+msgstr "、現在の時価"
+
+#. the budget report title, eg "Budget performance in 2024, valued at period ends:".
+#: hledger/Hledger/Cli/CompoundBalanceCommand.hs hledger/Hledger/Cli/Commands/Balance.hs
+#, python-brace-format
+msgid ", valued at {date}"
+msgstr "、{date} 時点の時価"
+
+#: hledger/Hledger/Cli/Commands/Balance.hs
+msgid "Budget Report"
+msgstr "予算レポート"
+
+#: hledger/Hledger/Cli/Commands/Balance.hs
+msgid "Multi-period Balance Report"
+msgstr "複数期間残高レポート"
+
+#: hledger/Hledger/Cli/Commands/Balance.hs
+msgid "Balance Report"
+msgstr "残高レポート"
+
+#. the multi-period balance report title, eg "Balance changes in 2024, valued at period ends:".
+#: hledger/Hledger/Cli/Commands/Balance.hs
+#, python-brace-format
+msgid "{report} in {dates}{valuation}:"
+msgstr "{report} {dates}{valuation}:"
+
+#: hledger/Hledger/Cli/Commands/Balance.hs
+msgid "Period-end value changes"
+msgstr "期末評価額の増減"
+
+#: hledger/Hledger/Cli/Commands/Balance.hs
+msgid "Cumulative period-end value changes"
+msgstr "期末評価額の累計増減"
+
+#: hledger/Hledger/Cli/Commands/Balance.hs
+msgid "Incremental gain"
+msgstr "含み損益の増減"
+
+#: hledger/Hledger/Cli/Commands/Balance.hs
+msgid "Cumulative gain"
+msgstr "含み損益の累計"
+
+#: hledger/Hledger/Cli/Commands/Balance.hs
+msgid "Historical gain"
+msgstr "繰越込み含み損益"
+
+#. the depth limit, in the list of options in effect.
+#. the label before a report's calculation links, and the links' text and tooltips.
+#: hledger/Hledger/Cli/Commands/Balance.hs hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Posting counts"
+msgstr "転記件数"
+
+#: hledger/Hledger/Cli/Commands/Balance.hs
+msgid "Cumulative posting counts"
+msgstr "転記件数 (累計)"
+
+#: hledger/Hledger/Cli/Commands/Balance.hs
+msgid "Historical posting counts"
+msgstr "転記件数 (繰越込み)"
+
+#: hledger/Hledger/Cli/Commands/Balance.hs
+msgid "Transaction counts"
+msgstr "取引件数"
+
+#. the label before a report's accumulation mode links, and the links' text and tooltips.
+#. the depth limit, in the list of options in effect.
+#: hledger/Hledger/Cli/Commands/Balance.hs hledger-web/Hledger/Web/ReportPage.hs hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Balance changes"
+msgstr "残高の増減"
+
+#: hledger/Hledger/Cli/Commands/Balance.hs
+msgid "Ending balances (cumulative)"
+msgstr "期末残高 (累計)"
+
+#: hledger/Hledger/Cli/Commands/Balance.hs
+msgid "Ending balances (historical)"
+msgstr "期末残高 (繰越込み)"
+
+#. the budget report title, eg "Budget performance in 2024, valued at period ends:".
+#: hledger/Hledger/Cli/Commands/Balance.hs
+#, python-brace-format
+msgid "Budget performance in {dates}{valuation}:"
+msgstr "予算実績 {dates}{valuation}:"
+
+#: hledger/Hledger/Cli/Commands/Balance.hs hledger/Hledger/Cli/Commands/Balance/Internal.hs
+msgctxt "column heading"
+msgid "Commodity"
+msgstr "単位"
+
+#. the hint below the commodity filter row.
+#: hledger/Hledger/Cli/Commands/Balance.hs hledger/Hledger/Cli/Commands/Balance/Internal.hs hledger-web/Hledger/Web/Handler/RegisterR.hs
+msgctxt "column heading"
+msgid "Total"
+msgstr "合計"
+
+#: hledger/Hledger/Cli/Commands/Balance.hs hledger/Hledger/Cli/Commands/Balance/Internal.hs
+msgctxt "column heading"
+msgid "Average"
+msgstr "平均"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Balancesheet.hs
+msgid "Balance Sheet"
+msgstr "貸借対照表"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Balancesheet.hs
+msgid "Daily Balance Sheet"
+msgstr "日次貸借対照表"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Balancesheet.hs
+msgid "Weekly Balance Sheet"
+msgstr "週次貸借対照表"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Balancesheet.hs
+msgid "Biweekly Balance Sheet"
+msgstr "隔週貸借対照表"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Balancesheet.hs
+msgid "Monthly Balance Sheet"
+msgstr "月次貸借対照表"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Balancesheet.hs
+msgid "Bimonthly Balance Sheet"
+msgstr "隔月貸借対照表"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Balancesheet.hs
+msgid "Quarterly Balance Sheet"
+msgstr "四半期貸借対照表"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Balancesheet.hs
+msgid "Half-yearly Balance Sheet"
+msgstr "半期貸借対照表"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Balancesheet.hs
+msgid "Yearly Balance Sheet"
+msgstr "年次貸借対照表"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Balancesheet.hs
+msgid "Biennial Balance Sheet"
+msgstr "隔年貸借対照表"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Balancesheet.hs
+msgid "Periodic Balance Sheet"
+msgstr "期間別貸借対照表"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Balancesheet.hs hledger/Hledger/Cli/Commands/Balancesheetequity.hs
+msgid "Assets"
+msgstr "資産"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Balancesheet.hs hledger/Hledger/Cli/Commands/Balancesheetequity.hs
+msgid "Liabilities"
+msgstr "負債"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Balancesheetequity.hs
+msgid "Balance Sheet With Equity"
+msgstr "純資産を含む貸借対照表"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Balancesheetequity.hs
+msgid "Daily Balance Sheet With Equity"
+msgstr "純資産を含む日次貸借対照表"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Balancesheetequity.hs
+msgid "Weekly Balance Sheet With Equity"
+msgstr "純資産を含む週次貸借対照表"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Balancesheetequity.hs
+msgid "Biweekly Balance Sheet With Equity"
+msgstr "純資産を含む隔週貸借対照表"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Balancesheetequity.hs
+msgid "Monthly Balance Sheet With Equity"
+msgstr "純資産を含む月次貸借対照表"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Balancesheetequity.hs
+msgid "Bimonthly Balance Sheet With Equity"
+msgstr "純資産を含む隔月貸借対照表"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Balancesheetequity.hs
+msgid "Quarterly Balance Sheet With Equity"
+msgstr "純資産を含む四半期貸借対照表"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Balancesheetequity.hs
+msgid "Half-yearly Balance Sheet With Equity"
+msgstr "純資産を含む半期貸借対照表"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Balancesheetequity.hs
+msgid "Yearly Balance Sheet With Equity"
+msgstr "純資産を含む年次貸借対照表"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Balancesheetequity.hs
+msgid "Biennial Balance Sheet With Equity"
+msgstr "純資産を含む隔年貸借対照表"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Balancesheetequity.hs
+msgid "Periodic Balance Sheet With Equity"
+msgstr "純資産を含む期間別貸借対照表"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#. the label before the account type filter links, and the links' text and tooltips.
+#: hledger/Hledger/Cli/Commands/Balancesheetequity.hs hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Equity"
+msgstr "純資産"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Cashflow.hs
+msgid "Cashflow Statement"
+msgstr "キャッシュ・フロー計算書"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Cashflow.hs
+msgid "Daily Cashflow Statement"
+msgstr "日次キャッシュ・フロー計算書"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Cashflow.hs
+msgid "Weekly Cashflow Statement"
+msgstr "週次キャッシュ・フロー計算書"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Cashflow.hs
+msgid "Biweekly Cashflow Statement"
+msgstr "隔週キャッシュ・フロー計算書"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Cashflow.hs
+msgid "Monthly Cashflow Statement"
+msgstr "月次キャッシュ・フロー計算書"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Cashflow.hs
+msgid "Bimonthly Cashflow Statement"
+msgstr "隔月キャッシュ・フロー計算書"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Cashflow.hs
+msgid "Quarterly Cashflow Statement"
+msgstr "四半期キャッシュ・フロー計算書"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Cashflow.hs
+msgid "Half-yearly Cashflow Statement"
+msgstr "半期キャッシュ・フロー計算書"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Cashflow.hs
+msgid "Yearly Cashflow Statement"
+msgstr "年次キャッシュ・フロー計算書"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Cashflow.hs
+msgid "Biennial Cashflow Statement"
+msgstr "隔年キャッシュ・フロー計算書"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Cashflow.hs
+msgid "Periodic Cashflow Statement"
+msgstr "期間別キャッシュ・フロー計算書"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Cashflow.hs
+msgid "Cash flows"
+msgstr "キャッシュ・フロー"
+
+#: hledger/Hledger/Cli/Commands/Holdings.hs
+msgid "Cost"
+msgstr "取得原価"
+
+#: hledger/Hledger/Cli/Commands/Holdings.hs
+msgid "Unrealised gain"
+msgstr "含み益"
+
+#: hledger/Hledger/Cli/Commands/Holdings.hs
+msgid "Unrealised loss"
+msgstr "含み損"
+
+#: hledger/Hledger/Cli/Commands/Holdings.hs
+msgid "No market price"
+msgstr "市場価格なし"
+
+#: hledger/Hledger/Cli/Commands/Holdings.hs
+msgid "Value"
+msgstr "評価額"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Incomestatement.hs
+msgid "Income Statement"
+msgstr "損益計算書"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Incomestatement.hs
+msgid "Daily Income Statement"
+msgstr "日次損益計算書"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Incomestatement.hs
+msgid "Weekly Income Statement"
+msgstr "週次損益計算書"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Incomestatement.hs
+msgid "Biweekly Income Statement"
+msgstr "隔週損益計算書"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Incomestatement.hs
+msgid "Monthly Income Statement"
+msgstr "月次損益計算書"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Incomestatement.hs
+msgid "Bimonthly Income Statement"
+msgstr "隔月損益計算書"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Incomestatement.hs
+msgid "Quarterly Income Statement"
+msgstr "四半期損益計算書"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Incomestatement.hs
+msgid "Half-yearly Income Statement"
+msgstr "半期損益計算書"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Incomestatement.hs
+msgid "Yearly Income Statement"
+msgstr "年次損益計算書"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Incomestatement.hs
+msgid "Biennial Income Statement"
+msgstr "隔年損益計算書"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Incomestatement.hs
+msgid "Periodic Income Statement"
+msgstr "期間別損益計算書"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Incomestatement.hs
+msgid "Revenues"
+msgstr "収益"
+
+#. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
+#: hledger/Hledger/Cli/Commands/Incomestatement.hs
+msgid "Expenses"
+msgstr "費用"
+
+#: hledger/Hledger/Cli/Commands/Register.hs
+msgid "Register"
+msgstr "元帳"
+
+#. the label before a report's accumulation mode links, and the links' text and tooltips.
+#: hledger/Hledger/Cli/Commands/Run.hs hledger-web/Hledger/Web/ReportPage.hs hledger-web/templates/default-layout.hamlet
+msgid "Show:"
+msgstr "表示:"
+
+#: hledger/Hledger/Cli/Commands/Run.hs
+msgid "Titles"
+msgstr "タイトル"
+
+#: hledger/Hledger/Cli/Commands/Run.hs
+msgid "Charts"
+msgstr "グラフ"
+
+#: hledger/Hledger/Cli/Commands/Run.hs
+msgid "All"
+msgstr "すべて"
+
+#: hledger-ui/Hledger/UI/AccountsScreen.hs
+msgid "account balances"
+msgstr "勘定科目の残高"
+
+#: hledger-ui/Hledger/UI/AccountsScreen.hs
+msgid "account changes"
+msgstr "勘定科目の増減"
+
+#: hledger-ui/Hledger/UI/AccountsScreen.hs
+msgid "cash balances"
+msgstr "現金の残高"
+
+#: hledger-ui/Hledger/UI/AccountsScreen.hs
+msgid "balance sheet balances"
+msgstr "貸借対照表の残高"
+
+#: hledger-ui/Hledger/UI/AccountsScreen.hs
+msgid "income statement changes"
+msgstr "損益計算書の増減"
+
+#. the menu screen's entries; translated when drawn.
+#: hledger-ui/Hledger/UI/UIScreens.hs
+msgid "Cash accounts"
+msgstr "現金勘定"
+
+#. the menu screen's entries; translated when drawn.
+#: hledger-ui/Hledger/UI/UIScreens.hs
+msgid "Balance sheet accounts"
+msgstr "貸借対照表の勘定科目"
+
+#. the menu screen's entries; translated when drawn.
+#: hledger-ui/Hledger/UI/UIScreens.hs
+msgid "Income statement accounts"
+msgstr "損益計算書の勘定科目"
+
+#. the menu screen's entries; translated when drawn.
+#. the report links above each report page and in the sidebar: each link's text, and its tooltip.
+#. the browser tab title of this page.
+#. the name of a depth 0 report's one row, all accounts in one.
+#: hledger-ui/Hledger/UI/UIScreens.hs hledger-web/Hledger/Web/App.hs hledger-web/Hledger/Web/Handler/BalanceR.hs
+msgid "All accounts"
+msgstr "すべての勘定科目"
+
+#. the go menu's items for the next and previous page, and their tooltips.
+#: hledger-web/Hledger/Web/App.hs
+msgid "Next report"
+msgstr "次のレポート"
+
+#. the go menu's items for the next and previous page, and their tooltips.
+#: hledger-web/Hledger/Web/App.hs
+msgid "Go to the next report"
+msgstr "次のレポートへ移動"
+
+#. the go menu's items for the next and previous page, and their tooltips.
+#: hledger-web/Hledger/Web/App.hs
+msgid "Previous report"
+msgstr "前のレポート"
+
+#. the go menu's items for the next and previous page, and their tooltips.
+#: hledger-web/Hledger/Web/App.hs
+msgid "Go to the previous report"
+msgstr "前のレポートへ移動"
+
+#. the go menu's items for the next and previous page, and their tooltips.
+#: hledger-web/Hledger/Web/App.hs
+msgid "Net, at cost:"
+msgstr "純額 (原価):"
+
+#. the go menu's items for the next and previous page, and their tooltips.
+#: hledger-web/Hledger/Web/App.hs
+msgid "The sum of every account, converted to cost: zero for balanced books; anything left comes from unbalanced virtual postings."
+msgstr "全勘定科目の原価換算での合計。帳簿が釣り合っていればゼロになり、残りは釣り合っていない仮想転記によるものです。"
+
+#. the go menu's items for the next and previous page, and their tooltips.
+#: hledger-web/Hledger/Web/App.hs
+msgid "Unbooked gains:"
+msgstr "未計上の損益:"
+
+#. the go menu's items for the next and previous page, and their tooltips.
+#: hledger-web/Hledger/Web/App.hs
+msgid "The sum of every account at market value: appreciation not booked by any entry. If realized gains are booked, this is the unrealized gains."
+msgstr "全勘定科目の時価での合計。どの仕訳にも計上されていない評価損益です。実現損益を計上している場合、これが含み損益になります。"
+
+#. the go menu's items for the next and previous page, and their tooltips.
+#: hledger-web/Hledger/Web/App.hs
+msgid "Net flows:"
+msgstr "純フロー:"
+
+#. the go menu's items for the next and previous page, and their tooltips.
+#: hledger-web/Hledger/Web/App.hs
+msgid "The sum of every account: open positions in each commodity, and the cash that paid for them. Zero when nothing crosses commodities."
+msgstr "全勘定科目の合計。各単位の未決済ポジションと、その支払いに使った現金です。単位をまたぐものがなければゼロになります。"
+
+#. the report links above each report page and in the sidebar: each link's text, and its tooltip.
+#: hledger-web/Hledger/Web/App.hs
+msgid "Balance sheet"
+msgstr "貸借対照表"
+
+#. the report links above each report page and in the sidebar: each link's text, and its tooltip.
+#: hledger-web/Hledger/Web/App.hs
+msgid "Show assets, liabilities, and net worth"
+msgstr "資産、負債、正味資産を表示"
+
+#. the report links above each report page and in the sidebar: each link's text, and its tooltip.
+#: hledger-web/Hledger/Web/App.hs
+msgid "Income statement"
+msgstr "損益計算書"
+
+#. the report links above each report page and in the sidebar: each link's text, and its tooltip.
+#: hledger-web/Hledger/Web/App.hs
+msgid "Show revenues and expenses"
+msgstr "収益と費用を表示"
+
+#. the report links above each report page and in the sidebar: each link's text, and its tooltip.
+#: hledger-web/Hledger/Web/App.hs
+msgid "Cashflow statement"
+msgstr "キャッシュ・フロー計算書"
+
+#. the report links above each report page and in the sidebar: each link's text, and its tooltip.
+#: hledger-web/Hledger/Web/App.hs
+msgid "Show changes in liquid assets"
+msgstr "流動資産の増減を表示"
+
+#. the report links above each report page and in the sidebar: each link's text, and its tooltip.
+#: hledger-web/Hledger/Web/App.hs
+msgid "Show the balances of all accounts, by period, like the balance command"
+msgstr "すべての勘定科目の残高を期間別に表示 (balance コマンドと同様)"
+
+#. the report links above each report page and in the sidebar: each link's text, and its tooltip.
+#. the browser tab title of this page.
+#: hledger-web/Hledger/Web/App.hs hledger-web/Hledger/Web/Handler/HoldingsR.hs
+msgid "Holdings"
+msgstr "保有資産"
+
+#. the report links above each report page and in the sidebar: each link's text, and its tooltip.
+#: hledger-web/Hledger/Web/App.hs
+msgid "Show investment holdings, lots, and gains"
+msgstr "投資の保有資産、ロット、損益を表示"
+
+#: hledger-web/Hledger/Web/Paging.hs
+#, python-brace-format
+msgid "Showing {first} to {last} of {total} transactions"
+msgstr "{total} 件中 {first}〜{last} 件目の取引を表示"
+
+#: hledger-web/Hledger/Web/Paging.hs
+#, python-brace-format
+msgid "Show page {n}"
+msgstr "{n} ページを表示"
+
+#: hledger-web/Hledger/Web/Paging.hs
+#, python-brace-format
+msgid "Page {n}"
+msgstr "{n} ページ"
+
+#: hledger-web/Hledger/Web/Paging.hs
+#, python-brace-format
+msgid "Show only {year}"
+msgstr "{year} 年のみ表示"
+
+#. the hint below the years row.
+#: hledger-web/Hledger/Web/Paging.hs
+msgid "Shift-click selects a range of years."
+msgstr "Shift キーを押しながらクリックすると年の範囲を選択できます。"
+
+#. the label before a report's interval links.
+#: hledger-web/Hledger/Web/ReportPage.hs hledger-web/templates/default-layout.hamlet
+msgid "Interval:"
+msgstr "間隔:"
+
+#. the interval links above a report: each link's text, and its tooltip.
+#: hledger-web/Hledger/Web/ReportPage.hs
+msgid "Show one column for the whole period"
+msgstr "期間全体を 1 列で表示"
+
+#. the interval links above a report: each link's text, and its tooltip.
+#: hledger-web/Hledger/Web/ReportPage.hs
+msgctxt "interval"
+msgid "None"
+msgstr "なし"
+
+#. the interval links above a report: each link's text, and its tooltip.
+#: hledger-web/Hledger/Web/ReportPage.hs hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Yearly"
+msgstr "年次"
+
+#. the interval links above a report: each link's text, and its tooltip.
+#: hledger-web/Hledger/Web/ReportPage.hs
+msgid "Show a column per year"
+msgstr "年ごとに 1 列を表示"
+
+#. the interval links above a report: each link's text, and its tooltip.
+#: hledger-web/Hledger/Web/ReportPage.hs hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Quarterly"
+msgstr "四半期"
+
+#. the interval links above a report: each link's text, and its tooltip.
+#: hledger-web/Hledger/Web/ReportPage.hs
+msgid "Show a column per quarter"
+msgstr "四半期ごとに 1 列を表示"
+
+#. the interval links above a report: each link's text, and its tooltip.
+#: hledger-web/Hledger/Web/ReportPage.hs hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Monthly"
+msgstr "月次"
+
+#. the interval links above a report: each link's text, and its tooltip.
+#: hledger-web/Hledger/Web/ReportPage.hs
+msgid "Show a column per month"
+msgstr "月ごとに 1 列を表示"
+
+#. the interval links above a report: each link's text, and its tooltip.
+#: hledger-web/Hledger/Web/ReportPage.hs hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Weekly"
+msgstr "週次"
+
+#. the interval links above a report: each link's text, and its tooltip.
+#: hledger-web/Hledger/Web/ReportPage.hs
+msgid "Show a column per week"
+msgstr "週ごとに 1 列を表示"
+
+#. the interval links above a report: each link's text, and its tooltip.
+#: hledger-web/Hledger/Web/ReportPage.hs hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Daily"
+msgstr "日次"
+
+#. the interval links above a report: each link's text, and its tooltip.
+#: hledger-web/Hledger/Web/ReportPage.hs
+msgid "Show a column per day"
+msgstr "日ごとに 1 列を表示"
+
+#. the label before a report's accumulation mode links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/ReportPage.hs
+msgid "Show how much each balance changed in each period"
+msgstr "各期間に各残高がどれだけ増減したかを表示"
+
+#. the label before a report's accumulation mode links, and the links' text and tooltips.
+#. the depth limit, in the list of options in effect.
+#: hledger-web/Hledger/Web/ReportPage.hs hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Ending balances"
+msgstr "期末残高"
+
+#. the label before a report's accumulation mode links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/ReportPage.hs
+msgid "Show each balance at the end of each period, including everything before it"
+msgstr "各期末の残高を、それ以前のすべてを含めて表示"
+
+#. the label before a report's accumulation mode links, and the links' text and tooltips.
+#. the depth limit, in the list of options in effect.
+#: hledger-web/Hledger/Web/ReportPage.hs hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Cumulative totals"
+msgstr "累計"
+
+#. the label before a report's accumulation mode links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/ReportPage.hs
+msgid "Show each balance's change since the start of the report (--cumulative)"
+msgstr "レポート開始時点からの各残高の増減を表示 (--cumulative)"
+
+#: hledger-web/Hledger/Web/ReportPage.hs
+msgid "Could not calculate percentages:"
+msgstr "割合を計算できませんでした:"
+
+#: hledger-web/Hledger/Web/ReportPage.hs
+msgid "Could not parse the reporting interval:"
+msgstr "レポート間隔を解析できませんでした:"
+
+#: hledger-web/Hledger/Web/ReportPage.hs
+msgid "Unknown balance accumulation mode:"
+msgstr "不明な残高の累積方法:"
+
+#: hledger-web/Hledger/Web/ReportPage.hs
+msgid "Unknown amount conversion:"
+msgstr "不明な金額の換算方法:"
+
+#: hledger-web/Hledger/Web/ReportPage.hs
+#, python-brace-format
+msgid "The {name} parameter has a value this page does not know:"
+msgstr "{name} パラメータに、このページが認識しない値があります:"
+
+#: hledger-web/Hledger/Web/ReportPage.hs
+msgid "Value changes and gains are figured from period-end market values: leave the value parameter off, or use value=end."
+msgstr "評価額の増減と損益は各期末の時価から算出されます。value パラメータを外すか、value=end を使ってください。"
+
+#: hledger-web/Hledger/Web/ReportPage.hs
+msgid "Gains compare market value against cost, so they do not combine with value=cost."
+msgstr "損益は時価と原価を比較するため、value=cost とは併用できません。"
+
+#: hledger-web/Hledger/Web/ReportPage.hs
+msgid "This report is at a single date, so value=then does not apply: use value=end, value=now, or a date."
+msgstr "このレポートは単一の日付のものなので、value=then は使えません。value=end、value=now、または日付を使ってください。"
+
+#: hledger-web/Hledger/Web/ReportPage.hs
+msgid "Show this report for this period"
+msgstr "この期間のこのレポートを表示"
+
+#: hledger-web/Hledger/Web/Handler/AddR.hs
+msgid "Transaction added."
+msgstr "取引を追加しました。"
+
+#: hledger-web/Hledger/Web/Handler/BalanceR.hs hledger-web/Hledger/Web/Handler/HoldingsR.hs hledger-web/Hledger/Web/Handler/StatementsR.hs hledger-web/Hledger/Web/Widget/Common.hs
+#, python-brace-format
+msgid "{title}, filtered"
+msgstr "{title}、絞り込み済み"
+
+#. the browser tab title of this page.
+#: hledger-web/Hledger/Web/Handler/BalanceR.hs
+msgid "balance - hledger-web"
+msgstr "残高 - hledger-web"
+
+#. the name of a depth 0 report's one row, all accounts in one.
+#: hledger-web/Hledger/Web/Handler/BalanceR.hs hledger-web/Hledger/Web/Handler/StatementsR.hs hledger-web/Hledger/Web/Widget/Common.hs
+msgctxt "accounts"
+msgid "All"
+msgstr "すべて"
+
+#. the hint below the account type filter row.
+#: hledger-web/Hledger/Web/Handler/BalanceR.hs hledger-web/Hledger/Web/Handler/JournalR.hs hledger-web/Hledger/Web/Handler/RegisterR.hs
+msgid "Shift-click selects several types."
+msgstr "Shift キーを押しながらクリックすると複数の種類を選択できます。"
+
+#: hledger-web/Hledger/Web/Handler/EditR.hs hledger-web/Hledger/Web/Handler/UploadR.hs
+#, python-brace-format
+msgid "Failed to load journal: {error}"
+msgstr "ジャーナルを読み込めませんでした: {error}"
+
+#: hledger-web/Hledger/Web/Handler/EditR.hs
+#, python-brace-format
+msgid "Saved journal {file}"
+msgstr "ジャーナル {file} を保存しました"
+
+#: hledger-web/Hledger/Web/Handler/EditR.hs hledger-web/Hledger/Web/Handler/MiscR.hs
+msgid "Edit journal"
+msgstr "ジャーナルを編集"
+
+#. the browser tab title of this page.
+#: hledger-web/Hledger/Web/Handler/HoldingsR.hs
+msgid "holdings - hledger-web"
+msgstr "保有資産 - hledger-web"
+
+#. the holdings page's heading; {date} is the report date.
+#: hledger-web/Hledger/Web/Handler/HoldingsR.hs
+#, python-brace-format
+msgid "Holdings on {date}"
+msgstr "{date} 時点の保有資産"
+
+#. the holdings table's column headings. The cost heading is "Unit cost", "Avg cost", or "Unit/Avg cost".
+#: hledger-web/Hledger/Web/Handler/HoldingsR.hs
+msgid "Date"
+msgstr "日付"
+
+#. the holdings table's column headings. The cost heading is "Unit cost", "Avg cost", or "Unit/Avg cost".
+#: hledger-web/Hledger/Web/Handler/HoldingsR.hs
+msgid "Age"
+msgstr "保有期間"
+
+#. the holdings table's column headings. The cost heading is "Unit cost", "Avg cost", or "Unit/Avg cost".
+#: hledger-web/Hledger/Web/Handler/HoldingsR.hs
+msgid "Units"
+msgstr "数量"
+
+#. the holdings table's column headings. The cost heading is "Unit cost", "Avg cost", or "Unit/Avg cost".
+#: hledger-web/Hledger/Web/Handler/HoldingsR.hs
+msgid "Unit price"
+msgstr "単価"
+
+#. the holdings table's column headings. The cost heading is "Unit cost", "Avg cost", or "Unit/Avg cost".
+#: hledger-web/Hledger/Web/Handler/HoldingsR.hs
+msgid "Total cost"
+msgstr "取得原価合計"
+
+#. the holdings table's column headings. The cost heading is "Unit cost", "Avg cost", or "Unit/Avg cost".
+#: hledger-web/Hledger/Web/Handler/HoldingsR.hs
+msgid "Total value"
+msgstr "評価額合計"
+
+#. the holdings table's column headings. The cost heading is "Unit cost", "Avg cost", or "Unit/Avg cost".
+#: hledger-web/Hledger/Web/Handler/HoldingsR.hs
+msgid "Weight"
+msgstr "比率"
+
+#. the holdings table's column headings. The cost heading is "Unit cost", "Avg cost", or "Unit/Avg cost".
+#: hledger-web/Hledger/Web/Handler/HoldingsR.hs
+msgid "UGain"
+msgstr "含み損益"
+
+#. the holdings table's column headings. The cost heading is "Unit cost", "Avg cost", or "Unit/Avg cost".
+#: hledger-web/Hledger/Web/Handler/HoldingsR.hs
+msgid "UGain%"
+msgstr "含み損益%"
+
+#. the holdings table's column headings. The cost heading is "Unit cost", "Avg cost", or "Unit/Avg cost".
+#: hledger-web/Hledger/Web/Handler/HoldingsR.hs
+msgid "RGain"
+msgstr "実現損益"
+
+#. the holdings table's column headings. The cost heading is "Unit cost", "Avg cost", or "Unit/Avg cost".
+#: hledger-web/Hledger/Web/Handler/HoldingsR.hs
+msgid "XIRR"
+msgstr "XIRR"
+
+#. the holdings table's column headings. The cost heading is "Unit cost", "Avg cost", or "Unit/Avg cost".
+#: hledger-web/Hledger/Web/Handler/HoldingsR.hs
+msgid "Account"
+msgstr "勘定科目"
+
+#. the tooltip of an account heading or lot's register link.
+#: hledger-web/Hledger/Web/Handler/HoldingsR.hs
+msgid "Show this account's register"
+msgstr "この勘定科目の元帳を表示"
+
+#. the tooltip of a position's register link, which filters to its commodity.
+#: hledger-web/Hledger/Web/Handler/HoldingsR.hs
+msgid "Show this holding's register"
+msgstr "この保有資産の元帳を表示"
+
+#. the heading of the holdings table's totals row.
+#: hledger-web/Hledger/Web/Handler/HoldingsR.hs
+msgid "Total:"
+msgstr "合計:"
+
+#: hledger-web/Hledger/Web/Handler/JournalR.hs
+msgid "General Journal"
+msgstr "仕訳帳"
+
+#: hledger-web/Hledger/Web/Handler/JournalR.hs
+#, python-brace-format
+msgid "Transactions in {account}"
+msgstr "{account} の取引"
+
+#: hledger-web/Hledger/Web/Handler/JournalR.hs
+#, python-brace-format
+msgid "Transactions in {account} (excluding subaccounts)"
+msgstr "{account} の取引 (下位勘定科目を除く)"
+
+#. the browser tab title of this page.
+#: hledger-web/Hledger/Web/Handler/JournalR.hs
+msgid "journal - hledger-web"
+msgstr "仕訳帳 - hledger-web"
+
+#: hledger-web/Hledger/Web/Handler/RegisterR.hs
+msgid "all accounts"
+msgstr "すべての勘定科目"
+
+#: hledger-web/Hledger/Web/Handler/RegisterR.hs
+#, python-brace-format
+msgid "{account} (excluding subaccounts)"
+msgstr "{account} (下位勘定科目を除く)"
+
+#. the hint below the commodity filter row.
+#: hledger-web/Hledger/Web/Handler/RegisterR.hs
+msgctxt "column heading"
+msgid "Historical Total"
+msgstr "繰越込み合計"
+
+#. the hint below the commodity filter row.
+#: hledger-web/Hledger/Web/Handler/RegisterR.hs
+msgctxt "column heading"
+msgid "Period Total"
+msgstr "期間合計"
+
+#. the hint below the commodity filter row.
+#: hledger-web/Hledger/Web/Handler/RegisterR.hs
+msgid "Click to show the running balance from the start of this period"
+msgstr "クリックすると、この期間の開始時点からの累計残高を表示します"
+
+#. the hint below the commodity filter row.
+#: hledger-web/Hledger/Web/Handler/RegisterR.hs
+msgid "Click to show the running balance including everything before this period"
+msgstr "クリックすると、この期間より前のすべてを含む累計残高を表示します"
+
+#. the browser tab title of this page.
+#: hledger-web/Hledger/Web/Handler/RegisterR.hs
+msgid "register - hledger-web"
+msgstr "元帳 - hledger-web"
+
+#. a chart legend's entry for amounts written without a commodity symbol.
+#: hledger-web/Hledger/Web/Handler/RegisterR.hs hledger-web/Hledger/Web/Widget/Chart.hs
+msgid "no symbol"
+msgstr "記号なし"
+
+#. the browser tab titles of the statement pages.
+#: hledger-web/Hledger/Web/Handler/StatementsR.hs
+msgid "balance sheet - hledger-web"
+msgstr "貸借対照表 - hledger-web"
+
+#. the browser tab titles of the statement pages.
+#: hledger-web/Hledger/Web/Handler/StatementsR.hs
+msgid "balance sheet with equity - hledger-web"
+msgstr "純資産を含む貸借対照表 - hledger-web"
+
+#. the browser tab titles of the statement pages.
+#: hledger-web/Hledger/Web/Handler/StatementsR.hs
+msgid "income statement - hledger-web"
+msgstr "損益計算書 - hledger-web"
+
+#. the browser tab titles of the statement pages.
+#: hledger-web/Hledger/Web/Handler/StatementsR.hs
+msgid "cashflow statement - hledger-web"
+msgstr "キャッシュ・フロー計算書 - hledger-web"
+
+#. the hint below the commodity filter row.
+#: hledger-web/Hledger/Web/Handler/BalanceR.hs hledger-web/Hledger/Web/Handler/HoldingsR.hs hledger-web/Hledger/Web/Handler/JournalR.hs hledger-web/Hledger/Web/Handler/RegisterR.hs hledger-web/Hledger/Web/Handler/StatementsR.hs
+msgid "Shift-click selects several commodities."
+msgstr "Shift キーを押しながらクリックすると複数の単位を選択できます。"
+
+#: hledger-web/Hledger/Web/Handler/StatementsR.hs
+msgid "All the accounts this report shows have zero balances, which are hidden. Press z to show them."
+msgstr "このレポートに表示される勘定科目の残高はすべてゼロのため、非表示になっています。z キーを押すと表示されます。"
+
+#: hledger-web/Hledger/Web/Handler/StatementsR.hs
+msgid "No accounts of the types this report shows were found. Declare account types, or use hledger's standard top-level account names. "
+msgstr "このレポートが表示する種類の勘定科目が見つかりませんでした。勘定科目の種類を宣言するか、hledger の標準の最上位勘定科目名を使ってください。 "
+
+#: hledger-web/Hledger/Web/Handler/StatementsR.hs
+msgid "How hledger finds account types"
+msgstr "hledger が勘定科目の種類を判断する方法"
+
+#: hledger-web/Hledger/Web/Handler/StatementsR.hs
+msgid "Nothing matches this search in this period."
+msgstr "この期間に、この検索に一致するものはありません。"
+
+#: hledger-web/Hledger/Web/Handler/UploadR.hs
+#, python-brace-format
+msgid "Encoding error: '{error}'. If your file is not UTF-8 encoded, try the 'edit form', where the transcoding should be handled by the browser."
+msgstr "エンコーディングエラー: '{error}'。ファイルが UTF-8 でない場合は、ブラウザが文字コードを変換する「編集フォーム」を試してください。"
+
+#: hledger-web/Hledger/Web/Handler/UploadR.hs
+#, python-brace-format
+msgid "File {file} uploaded successfully"
+msgstr "ファイル {file} をアップロードしました"
+
+#: hledger-web/Hledger/Web/Handler/UploadR.hs
+msgid "Upload journal"
+msgstr "ジャーナルをアップロード"
+
+#: hledger-web/Hledger/Web/Widget/AddForm.hs hledger-web/templates/default-layout.hamlet
+msgid "Close"
+msgstr "閉じる"
+
+#: hledger-web/Hledger/Web/Widget/AddForm.hs hledger-web/templates/journal.hamlet
+msgid "Add a transaction"
+msgstr "取引を追加"
+
+#: hledger-web/Hledger/Web/Widget/AddForm.hs
+#, python-brace-format
+msgid "Account {n}"
+msgstr "勘定科目 {n}"
+
+#: hledger-web/Hledger/Web/Widget/AddForm.hs
+#, python-brace-format
+msgid "Amount {n}"
+msgstr "金額 {n}"
+
+#: hledger-web/Hledger/Web/Widget/AddForm.hs
+msgid "Invalid date format"
+msgstr "日付の形式が正しくありません"
+
+#: hledger-web/Hledger/Web/Widget/AddForm.hs
+msgctxt "placeholder"
+msgid "Date"
+msgstr "日付"
+
+#: hledger-web/Hledger/Web/Widget/AddForm.hs
+msgctxt "placeholder"
+msgid "Description"
+msgstr "摘要"
+
+#: hledger-web/Hledger/Web/Widget/AddForm.hs
+msgid "Missing amount"
+msgstr "金額がありません"
+
+#: hledger-web/Hledger/Web/Widget/AddForm.hs
+msgid "Missing account"
+msgstr "勘定科目がありません"
+
+#: hledger-web/Hledger/Web/Widget/AddForm.hs
+#, python-brace-format
+msgid "Invalid value: {error}"
+msgstr "無効な値: {error}"
+
+#: hledger-web/Hledger/Web/Widget/AddForm.hs
+msgid "Postings validation failed"
+msgstr "転記の検証に失敗しました"
+
+#. in a report page's chart, before the commodities that can be charted.
+#: hledger-web/Hledger/Web/Widget/Chart.hs
+msgid "Commodity"
+msgstr "単位"
+
+#. the disclosure hiding each page's rows of report controls: its text, and its tooltip.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show the options that reshape this view"
+msgstr "この表示を変更するオプションを表示"
+
+#. the disclosure hiding each page's rows of report controls: its text, and its tooltip.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Options"
+msgstr "オプション"
+
+#. the depth limit, in the list of options in effect.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+#, python-brace-format
+msgid "Depth {depth}"
+msgstr "深さ {depth}"
+
+#. the tooltip on the muted control rows of the journal and register pages.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "These controls take effect on the report pages"
+msgstr "これらの設定はレポートページで有効になります"
+
+#. the label before a page's market price source links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Prices:"
+msgstr "価格:"
+
+#. the label before a page's market price source links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Declared"
+msgstr "宣言済み"
+
+#. the label before a page's market price source links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Value amounts using declared market prices (P directives) only"
+msgstr "宣言された市場価格 (P ディレクティブ) のみで金額を評価"
+
+#. the label before a page's market price source links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Inferred too"
+msgstr "推定も使用"
+
+#. the label before a page's market price source links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Infer market prices from transaction costs too (--infer-market-prices)"
+msgstr "取引の原価からも市場価格を推定 (--infer-market-prices)"
+
+#. the label before a report's depth links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Depth:"
+msgstr "深さ:"
+
+#. the tooltips of a report's depth links.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show accounts at every depth"
+msgstr "すべての深さの勘定科目を表示"
+
+#. the tooltips of a report's depth links.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show only the total"
+msgstr "合計のみ表示"
+
+#. the tooltips of a report's depth links.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+#, python-brace-format
+msgid "Show accounts down to depth {depth}"
+msgstr "深さ {depth} までの勘定科目を表示"
+
+#. the label before a report's amount conversion links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs hledger-web/templates/default-layout.hamlet
+msgid "Amounts:"
+msgstr "金額:"
+
+#. the depth limit, in the list of options in effect.
+#. the label before a report's amount conversion links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "As recorded"
+msgstr "記録どおり"
+
+#. the depth limit, in the list of options in effect.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgctxt "amounts"
+msgid "Cost"
+msgstr "原価"
+
+#. the depth limit, in the list of options in effect.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgctxt "amounts"
+msgid "Value"
+msgstr "時価"
+
+#. the label before a report's amount conversion links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show amounts in the commodities they were recorded in"
+msgstr "記録された単位のまま金額を表示"
+
+#. the label before a report's amount conversion links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "At cost"
+msgstr "原価で"
+
+#. the label before a report's amount conversion links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show amounts converted to their cost, as recorded in transactions (-B)"
+msgstr "取引に記録された原価に換算して金額を表示 (-B)"
+
+#. the label before a report's amount conversion links, and the links' text and tooltips.
+#. the label before the holdings page's valuation links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "At market value"
+msgstr "時価で"
+
+#. the label before a report's amount conversion links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show amounts converted to their market value at the end of each period, using market prices (-V)"
+msgstr "市場価格を使い、各期末の時価に換算して金額を表示 (-V)"
+
+#. the label before the links that show or hide zero balances, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs hledger-web/templates/default-layout.hamlet
+msgid "Zero balances:"
+msgstr "ゼロ残高:"
+
+#. the label before the links that show or hide zero balances, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show accounts whose balances are zero"
+msgstr "残高がゼロの勘定科目を表示"
+
+#. the label before the links that show or hide zero balances, and the links' text and tooltips.
+#. the label before the balance sheet's links that hide or show equity, and the links' tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Shown"
+msgstr "表示"
+
+#. the label before the balance sheet's links that hide or show equity, and the links' tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Equity:"
+msgstr "純資産:"
+
+#. the label before the balance sheet's links that hide or show equity, and the links' tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show assets, liabilities, and net worth, as the balancesheet command does"
+msgstr "資産、負債、正味資産を表示 (balancesheet コマンドと同様)"
+
+#. the label before the balance sheet's links that hide or show equity, and the links' tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show assets, liabilities, and equity, as the balancesheetequity command does"
+msgstr "資産、負債、純資産を表示 (balancesheetequity コマンドと同様)"
+
+#. the label before the links that show or hide zero balances, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Hide accounts whose balances are zero"
+msgstr "残高がゼロの勘定科目を非表示"
+
+#. the label before the links that show or hide zero balances, and the links' text and tooltips.
+#. the label before the balance sheet's links that hide or show equity, and the links' tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Hidden"
+msgstr "非表示"
+
+#. the label before a report's status filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs hledger-web/templates/default-layout.hamlet
+msgid "Status:"
+msgstr "ステータス:"
+
+#. the label before a report's status filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show transactions of any status"
+msgstr "すべてのステータスの取引を表示"
+
+#. the label before a report's status filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgctxt "status"
+msgid "All"
+msgstr "すべて"
+
+#. the label before a report's status filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Unmarked"
+msgstr "未マーク"
+
+#. the label before a report's status filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show only unmarked transactions (status:)"
+msgstr "未マークの取引のみ表示 (status:)"
+
+#. the label before a report's status filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Pending"
+msgstr "保留"
+
+#. the label before a report's status filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show only pending transactions (status:!)"
+msgstr "保留中の取引のみ表示 (status:!)"
+
+#. the label before a report's status filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Cleared"
+msgstr "確定"
+
+#. the label before a report's status filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show only cleared transactions (status:*)"
+msgstr "確定済みの取引のみ表示 (status:*)"
+
+#. the label before a report's real/virtual filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs hledger-web/templates/default-layout.hamlet
+msgid "Postings:"
+msgstr "転記:"
+
+#. the label before a report's real/virtual filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show real and virtual postings"
+msgstr "実転記と仮想転記を表示"
+
+#. the label before a report's real/virtual filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgctxt "postings"
+msgid "All"
+msgstr "すべて"
+
+#. the label before a report's real/virtual filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Real"
+msgstr "実転記"
+
+#. the label before a report's real/virtual filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show only real postings, as -R does (real:1)"
+msgstr "実転記のみ表示 (-R と同様、real:1)"
+
+#. the label before a report's real/virtual filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Virtual"
+msgstr "仮想転記"
+
+#. the label before a report's real/virtual filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show only virtual postings, the parenthesized ones (real:0)"
+msgstr "仮想転記 (括弧で囲まれたもの) のみ表示 (real:0)"
+
+#. the label before a report's list/tree links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs hledger-web/templates/default-layout.hamlet
+msgid "Accounts:"
+msgstr "勘定科目:"
+
+#. the label before a report's list/tree links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show accounts as a flat list (--flat)"
+msgstr "勘定科目をフラットなリストで表示 (--flat)"
+
+#. the depth limit, in the list of options in effect.
+#. the label before a report's list/tree links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgctxt "accounts"
+msgid "List"
+msgstr "リスト"
+
+#. the label before a report's list/tree links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show accounts as a tree (--tree)"
+msgstr "勘定科目をツリーで表示 (--tree)"
+
+#. the depth limit, in the list of options in effect.
+#. the label before a report's list/tree links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgctxt "accounts"
+msgid "Tree"
+msgstr "ツリー"
+
+#. the label before a report's extra-column toggles, and the toggles' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs hledger-web/templates/default-layout.hamlet
+msgid "Extra columns:"
+msgstr "追加の列:"
+
+#. the label before a report's extra-column toggles, and the toggles' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Add a column totaling each row (-T)"
+msgstr "各行の合計列を追加 (-T)"
+
+#. options in effect, listed on the closed options disclosure.
+#. the label before a report's extra-column toggles, and the toggles' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgctxt "column"
+msgid "Total"
+msgstr "合計"
+
+#. the label before a report's extra-column toggles, and the toggles' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Add a column averaging each row (-A)"
+msgstr "各行の平均列を追加 (-A)"
+
+#. options in effect, listed on the closed options disclosure.
+#. the label before a report's extra-column toggles, and the toggles' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgctxt "column"
+msgid "Average"
+msgstr "平均"
+
+#. the label before a report's sort links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs hledger-web/templates/default-layout.hamlet
+msgid "Sort:"
+msgstr "並べ替え:"
+
+#. the label before a report's sort links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "By account"
+msgstr "勘定科目順"
+
+#. the label before a report's sort links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Sort rows by account display order"
+msgstr "行を勘定科目の表示順に並べ替え"
+
+#. the depth limit, in the list of options in effect.
+#. the label before a report's sort links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "By amount"
+msgstr "金額順"
+
+#. the label before a report's sort links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Sort rows by their amounts, largest first (-S)"
+msgstr "行を金額の大きい順に並べ替え (-S)"
+
+#. the label before a report's amounts/percentages links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Numbers:"
+msgstr "数値:"
+
+#. the label before a report's amounts/percentages links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show the amounts"
+msgstr "金額を表示"
+
+#. the label before a report's amounts/percentages links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgctxt "numbers"
+msgid "Amounts"
+msgstr "金額"
+
+#. the depth limit, in the list of options in effect.
+#. the label before a report's amounts/percentages links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Percentages"
+msgstr "割合"
+
+#. the label before a report's amounts/percentages links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show each amount as a percentage of its column's total (-%)"
+msgstr "各金額を列の合計に対する割合で表示 (-%)"
+
+#. the label before a report's calculation links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Calculate:"
+msgstr "計算:"
+
+#. the label before a report's calculation links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show sums of postings"
+msgstr "転記の合計を表示"
+
+#. the label before a report's calculation links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgctxt "calculation"
+msgid "Sums"
+msgstr "合計"
+
+#. the depth limit, in the list of options in effect.
+#. the label before a report's calculation links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Value change"
+msgstr "評価額の増減"
+
+#. the label before a report's calculation links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show how period-end market values changed (--valuechange)"
+msgstr "各期末の時価の増減を表示 (--valuechange)"
+
+#. the depth limit, in the list of options in effect.
+#. the label before a report's calculation links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Unrealized gain"
+msgstr "含み損益"
+
+#. options in effect, listed on the closed options disclosure.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Inferred prices"
+msgstr "推定価格"
+
+#. options in effect, listed on the closed options disclosure.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Zero balances hidden"
+msgstr "ゼロ残高を非表示"
+
+#. options in effect, listed on the closed options disclosure.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Zero balances shown"
+msgstr "ゼロ残高を表示"
+
+#. options in effect, listed on the closed options disclosure.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Lots shown"
+msgstr "ロットを表示"
+
+#. options in effect, listed on the closed options disclosure.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Costs shown"
+msgstr "原価を表示"
+
+#. options in effect, listed on the closed options disclosure.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Closed positions shown"
+msgstr "決済済みポジションを表示"
+
+#. options in effect, listed on the closed options disclosure.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Closed positions hidden"
+msgstr "決済済みポジションを非表示"
+
+#. options in effect, listed on the closed options disclosure.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Secondary dates"
+msgstr "第 2 日付"
+
+#. options in effect, listed on the closed options disclosure.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Equity shown"
+msgstr "純資産を表示"
+
+#. a journal or register page's heading when the search has dates, eg "General Journal in 2024".
+#: hledger-web/Hledger/Web/Widget/Common.hs
+#, python-brace-format
+msgid "{title} in {dates}"
+msgstr "{title} {dates}"
+
+#. a journal or register page's heading when the search has dates, eg "General Journal in 2024".
+#: hledger-web/Hledger/Web/Widget/Common.hs
+#, python-brace-format
+msgid "{title} in {dates}, filtered"
+msgstr "{title} {dates}、絞り込み済み"
+
+#. the label before a report's calculation links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show unrealized capital gains: market value minus cost (--gain)"
+msgstr "未実現のキャピタルゲイン (時価 - 原価) を表示 (--gain)"
+
+#. the label before a report's calculation links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Count the postings instead of summing them (--count)"
+msgstr "転記を合計せずに件数を数える (--count)"
+
+#. the label before the register's cost links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Costs:"
+msgstr "原価:"
+
+#. the label before the register's cost links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show amounts without their costs"
+msgstr "原価なしで金額を表示"
+
+#. the label before the register's cost links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgctxt "costs"
+msgid "Hidden"
+msgstr "非表示"
+
+#. the label before the register's cost links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show amounts with the costs recorded in the journal"
+msgstr "ジャーナルに記録された原価付きで金額を表示"
+
+#. the label before the register's cost links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgctxt "costs"
+msgid "Shown"
+msgstr "表示"
+
+#. the label before a report's lot detail links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs hledger-web/templates/default-layout.hamlet
+msgid "Lots:"
+msgstr "ロット:"
+
+#. the label before a report's lot detail links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Aggregate each account's lots"
+msgstr "各勘定科目のロットをまとめる"
+
+#. the label before a report's lot detail links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgctxt "lots"
+msgid "Hidden"
+msgstr "非表示"
+
+#. the label before a report's lot detail links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show each lot separately (--lots)"
+msgstr "各ロットを個別に表示 (--lots)"
+
+#. the label before a report's lot detail links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgctxt "lots"
+msgid "Shown"
+msgstr "表示"
+
+#. the label before the holdings page's closed-position links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Closed positions:"
+msgstr "決済済みポジション:"
+
+#. the label before the holdings page's closed-position links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show only open positions"
+msgstr "未決済のポジションのみ表示"
+
+#. the label before the holdings page's closed-position links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgctxt "closed"
+msgid "Hidden"
+msgstr "非表示"
+
+#. the label before the holdings page's closed-position links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Also show fully disposed positions and their realized gains (-E)"
+msgstr "すべて処分済みのポジションとその実現損益も表示 (-E)"
+
+#. the label before the holdings page's closed-position links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgctxt "closed"
+msgid "Shown"
+msgstr "表示"
+
+#. the label before the holdings page's valuation links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Values:"
+msgstr "評価:"
+
+#. the label before the holdings page's valuation links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Per cost commodity"
+msgstr "原価の単位ごと"
+
+#. the label before the holdings page's valuation links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Value each holding in its own cost commodity"
+msgstr "各保有資産をそれぞれの原価の単位で評価"
+
+#. the label before the holdings page's valuation links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Convert values and costs to the market valuation commodity (-V)"
+msgstr "評価額と原価を時価評価の単位に換算 (-V)"
+
+#. the label before the account type filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Type:"
+msgstr "種類:"
+
+#. the label before the account type filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show accounts of every type"
+msgstr "すべての種類の勘定科目を表示"
+
+#. the label before the account type filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgctxt "account type"
+msgid "All"
+msgstr "すべて"
+
+#. the label before the account type filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Asset"
+msgstr "資産"
+
+#. the label before the account type filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show only asset accounts (type:A)"
+msgstr "資産勘定のみ表示 (type:A)"
+
+#. the label before the account type filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Liability"
+msgstr "負債"
+
+#. the label before the account type filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show only liability accounts (type:L)"
+msgstr "負債勘定のみ表示 (type:L)"
+
+#. the label before the account type filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show only equity accounts (type:E)"
+msgstr "純資産勘定のみ表示 (type:E)"
+
+#. the label before the account type filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Revenue"
+msgstr "収益"
+
+#. the label before the account type filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show only revenue accounts (type:R)"
+msgstr "収益勘定のみ表示 (type:R)"
+
+#. the label before the account type filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Expense"
+msgstr "費用"
+
+#. the label before the account type filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show only expense accounts (type:X)"
+msgstr "費用勘定のみ表示 (type:X)"
+
+#. the label before the account type filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Cash"
+msgstr "現金"
+
+#. the label before the account type filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show only cash accounts (type:C)"
+msgstr "現金勘定のみ表示 (type:C)"
+
+#. the label before the account type filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Conversion"
+msgstr "換算"
+
+#. the label before the account type filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show only conversion accounts (type:V)"
+msgstr "換算勘定のみ表示 (type:V)"
+
+#. the label before the account type filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Gain"
+msgstr "損益"
+
+#. the label before the account type filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show only capital gain accounts (type:G)"
+msgstr "キャピタルゲイン勘定のみ表示 (type:G)"
+
+#. the label before the account type filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Imbalance"
+msgstr "不一致"
+
+#. the label before the account type filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show only imbalance accounts (type:M)"
+msgstr "不一致勘定のみ表示 (type:M)"
+
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "List all the commodities"
+msgstr "すべての単位を一覧表示"
+
+#. the label before a page's commodity filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Commodity:"
+msgstr "単位:"
+
+#. the label before a page's commodity filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show amounts in every commodity"
+msgstr "すべての単位の金額を表示"
+
+#. the label before a page's commodity filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgctxt "commodity"
+msgid "All"
+msgstr "すべて"
+
+#. the label before a page's commodity filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+#, python-brace-format
+msgid "Show only amounts in {commodity}"
+msgstr "{commodity} の金額のみ表示"
+
+#. the note for a balance, or the register chart, showing fewer commodities than it has.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+#, python-brace-format
+msgid "… and {n} more"
+msgstr "…ほか {n} 件"
+
+#: hledger-web/templates/add-form.hamlet
+msgid "Pick a date"
+msgstr "日付を選択"
+
+#: hledger-web/templates/add-form.hamlet
+msgid "Add to:"
+msgstr "追加先:"
+
+#: hledger-web/templates/add-form.hamlet hledger-web/templates/edit-form.hamlet
+msgid "Save"
+msgstr "保存"
+
+#. the report links above each report page and in the sidebar: each link's text, and its tooltip.
+#: hledger-web/Hledger/Web/App.hs
+msgid "Show general journal entries, most recent first"
+msgstr "仕訳帳の取引を新しい順に表示"
+
+#. the report links above each report page and in the sidebar: each link's text, and its tooltip.
+#: hledger-web/Hledger/Web/App.hs
+msgid "Journal"
+msgstr "仕訳帳"
+
+#: hledger-web/templates/balance-report.hamlet
+msgid "Show transactions affecting this account and subaccounts"
+msgstr "この勘定科目と下位勘定科目に関わる取引を表示"
+
+#: hledger-web/templates/balance-report.hamlet
+msgid "Show transactions affecting this account but not subaccounts"
+msgstr "この勘定科目に関わる取引を表示 (下位勘定科目を除く)"
+
+#: hledger-web/templates/balance-report.hamlet
+msgid "only"
+msgstr "のみ"
+
+#: hledger-web/templates/balance-report.hamlet
+msgid "Show the transactions that make up this balance"
+msgstr "この残高を構成する取引を表示"
+
+#: hledger-web/templates/balance-report.hamlet
+msgid "Show the transactions that make up this total"
+msgstr "この合計を構成する取引を表示"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "hledger-web is no longer running. It exits after fifteen minutes with no browser window showing it, or when stopped. To continue, start it again and reload this page."
+msgstr "hledger-web は実行されていません。表示しているブラウザウィンドウがない状態が 15 分続くか、停止されると終了します。続けるには、もう一度起動してこのページを再読み込みしてください。"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "Leave full window"
+msgstr "全画面表示を終了"
+
+#: hledger-web/templates/default-layout.hamlet
+msgctxt "search box"
+msgid "Search"
+msgstr "検索"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "Enter hledger search patterns to filter the data below"
+msgstr "hledger の検索パターンを入力して、下のデータを絞り込みます"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "Clear search terms"
+msgstr "検索条件をクリア"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "Apply search terms"
+msgstr "検索条件を適用"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "Manage journal files"
+msgstr "ジャーナルファイルを管理"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "Show search and general help"
+msgstr "検索と全般のヘルプを表示"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "Go to"
+msgstr "移動"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "Help"
+msgstr "ヘルプ"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "Keyboard shortcuts"
+msgstr "キーボードショートカット"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "toggle sidebar"
+msgstr "サイドバーの切り替え"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "toggle report options"
+msgstr "レポートオプションの切り替え"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "toggle the report's chart"
+msgstr "レポートのグラフの切り替え"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "select the chart's commodity"
+msgstr "グラフの単位を選択"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "toggle the report's data"
+msgstr "レポートのデータの切り替え"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "toggle full window"
+msgstr "全画面表示の切り替え"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "focus search form"
+msgstr "検索フォームにフォーカス"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "cancel"
+msgstr "キャンセル"
+
+#. in the help, the heading of the options' keys, listed under the options panel's own labels.
+#: hledger-web/templates/default-layout.hamlet
+msgid "Report options"
+msgstr "レポートオプション"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "historical end balances / balance changes"
+msgstr "繰越込み期末残高 / 残高の増減"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "yearly"
+msgstr "年次"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "quarterly"
+msgstr "四半期"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "monthly"
+msgstr "月次"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "weekly"
+msgstr "週次"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "daily"
+msgstr "日次"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "unmarked"
+msgstr "未マーク"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "pending"
+msgstr "保留"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "cleared"
+msgstr "確定"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "real only / all"
+msgstr "実転記のみ / すべて"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "Depth limit:"
+msgstr "深さの上限:"
+
+#. in the help's Depth row: what the digit keys, and the - and + keys, do to the depth limit.
+#: hledger-web/templates/default-layout.hamlet
+msgid "set it"
+msgstr "設定する"
+
+#. in the help's Depth row: what the digit keys, and the - and + keys, do to the depth limit.
+#: hledger-web/templates/default-layout.hamlet
+msgid "decrease or increase it"
+msgstr "減らす、または増やす"
+
+#: hledger-web/templates/default-layout.hamlet
+msgctxt "accounts"
+msgid "tree / list"
+msgstr "ツリー / リスト"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "at cost"
+msgstr "原価で"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "at market value"
+msgstr "時価で"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "show / hide zero balances"
+msgstr "ゼロ残高の表示 / 非表示"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "show / hide lot details"
+msgstr "ロットの詳細の表示 / 非表示"
+
+#: hledger-web/templates/default-layout.hamlet
+msgctxt "column"
+msgid "total"
+msgstr "合計"
+
+#: hledger-web/templates/default-layout.hamlet
+msgctxt "column"
+msgid "average"
+msgstr "平均"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "by amount / by account display order"
+msgstr "金額順 / 勘定科目の表示順"
+
+#. in the help, below the options' keys.
+#: hledger-web/templates/default-layout.hamlet
+msgid "Pressed again, an option's key turns it back off."
+msgstr "オプションのキーをもう一度押すと、オフに戻ります。"
+
+#: hledger-web/templates/default-layout.hamlet
+msgctxt "help heading"
+msgid "Search queries"
+msgstr "検索クエリ"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "More help:"
+msgstr "その他のヘルプ:"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "hledger-web user manual"
+msgstr "hledger-web ユーザーマニュアル"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "Search patterns with spaces should be enclosed in quotes."
+msgstr "スペースを含む検索パターンは引用符で囲んでください。"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "match account names"
+msgstr "勘定科目名に一致"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "match account types (A, L, E, R, X, ...)"
+msgstr "勘定科目の種類に一致 (A, L, E, R, X, ...)"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "match dates"
+msgstr "日付に一致"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "match status"
+msgstr "ステータスに一致"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "match transaction codes"
+msgstr "取引コードに一致"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "or"
+msgstr "または"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "view this help"
+msgstr "このヘルプを表示"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "go to any screen"
+msgstr "任意の画面へ移動"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "add a transaction"
+msgstr "取引を追加"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "match any visible field (account, amount, comment, description, code), or a date if REGEX is also a period expression"
+msgstr "表示される任意のフィールド (勘定科目、金額、コメント、摘要、コード) に一致。REGEX が期間式でもある場合は日付に一致"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "match transaction descriptions"
+msgstr "取引の摘要に一致"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "match payee part of descriptions"
+msgstr "摘要の取引先部分に一致"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "match note part of descriptions"
+msgstr "摘要のメモ部分に一致"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "match unsigned magnitudes, or with signed N, signed amounts. For single-commodity amounts only."
+msgstr "符号なしの大きさに一致。N に符号を付けると符号付きの金額に一致。単一単位の金額のみ。"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "match currencies/commodities. Must match the whole symbol/name. To match dollar sign, write"
+msgstr "通貨・単位に一致。記号・名前の全体に一致する必要があります。ドル記号に一致させるには次のように書きます"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "match tags, or tag and value"
+msgstr "タグ、またはタグと値に一致"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "match postings' realness/virtualness"
+msgstr "転記が実か仮想かに一致"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "prepend not: to negate a search term"
+msgstr "検索語の前に not: を付けると否定になります"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "match with a boolean query (and, or, not, ()"
+msgstr "論理式のクエリで一致 (and, or, not, ()"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "match transactions where any posting matches"
+msgstr "いずれかの転記が一致する取引に一致"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "match transactions where all postings match"
+msgstr "すべての転記が一致する取引に一致"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "another way to set depth limit (can be per account)"
+msgstr "深さの上限を設定する別の方法 (勘定科目ごとに指定可)"
+
+#: hledger-web/templates/edit-form.hamlet
+msgid "Edit file"
+msgstr "ファイルを編集"
+
+#: hledger-web/templates/edit-form.hamlet hledger-web/templates/upload-form.hamlet
+msgid "Are you sure? This will overwrite your journal!"
+msgstr "よろしいですか? ジャーナルが上書きされます!"
+
+#: hledger-web/templates/edit-form.hamlet
+msgid "File format help"
+msgstr "ファイル形式のヘルプ"
+
+#: hledger-web/templates/edit-form.hamlet
+msgid "Go back"
+msgstr "戻る"
+
+#: hledger-web/templates/journal.hamlet
+msgid "Add a new transaction to the journal"
+msgstr "ジャーナルに新しい取引を追加"
+
+#: hledger-web/templates/journal.hamlet hledger-web/templates/register.hamlet
+msgctxt "column heading"
+msgid "Date"
+msgstr "日付"
+
+#: hledger-web/templates/journal.hamlet hledger-web/templates/register.hamlet
+msgctxt "column heading"
+msgid "Description"
+msgstr "摘要"
+
+#: hledger-web/templates/journal.hamlet
+msgctxt "column heading"
+msgid "Account"
+msgstr "勘定科目"
+
+#: hledger-web/templates/journal.hamlet
+msgctxt "column heading"
+msgid "Amount"
+msgstr "金額"
+
+#: hledger-web/templates/journal.hamlet
+msgid "Show the journal entries on this date"
+msgstr "この日付の仕訳を表示"
+
+#: hledger-web/templates/manage.hamlet
+msgid "Your journal's files"
+msgstr "ジャーナルのファイル"
+
+#: hledger-web/templates/manage.hamlet
+msgctxt "column heading"
+msgid "File"
+msgstr "ファイル"
+
+#: hledger-web/templates/manage.hamlet
+msgid "Edit"
+msgstr "編集"
+
+#: hledger-web/templates/manage.hamlet hledger-web/templates/upload-form.hamlet
+msgid "Upload"
+msgstr "アップロード"
+
+#: hledger-web/templates/manage.hamlet
+msgid "Download"
+msgstr "ダウンロード"
+
+#: hledger-web/templates/paging.hamlet
+msgid "Show the newer transactions"
+msgstr "新しい取引を表示"
+
+#: hledger-web/templates/paging.hamlet
+msgid "Newer"
+msgstr "新しい方"
+
+#: hledger-web/templates/paging.hamlet
+msgid "Show the older transactions"
+msgstr "古い取引を表示"
+
+#: hledger-web/templates/paging.hamlet
+msgid "Older"
+msgstr "古い方"
+
+#: hledger-web/templates/register.hamlet
+msgctxt "column heading"
+msgid "To/From Account(s)"
+msgstr "相手勘定科目"
+
+#: hledger-web/templates/register.hamlet
+msgctxt "column heading"
+msgid "Amount Out/In"
+msgstr "出金/入金"
+
+#: hledger-web/templates/register.hamlet
+msgid "Show this entry and the other journal entries on its date"
+msgstr "この仕訳と、同じ日付の他の仕訳を表示"
+
+#: hledger-web/templates/register.hamlet
+msgid "Balance brought forward"
+msgstr "前期繰越"
+
+#: hledger-web/templates/register.hamlet
+msgid "Show the transactions before this period"
+msgstr "この期間より前の取引を表示"
+
+#: hledger-web/templates/upload-form.hamlet
+msgid "Upload to file"
+msgstr "ファイルにアップロード"
+
+#: hledger-web/templates/upload-form.hamlet
+msgid "Select file"
+msgstr "ファイルを選択"
+
+#: hledger-web/templates/years.hamlet
+msgctxt "years row"
+msgid "Years:"
+msgstr "年:"
+
+#: hledger-web/templates/years.hamlet
+msgid "Show all years"
+msgstr "すべての年を表示"
+
+#: hledger-web/templates/years.hamlet
+msgctxt "years row"
+msgid "All"
+msgstr "すべて"

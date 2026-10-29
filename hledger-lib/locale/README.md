@@ -26,6 +26,8 @@ the git log.
 |---|---|---|---|
 | de | Henning Thielemann | @thielema | chose the vocabulary (#2735) |
 | es | - | - | machine-made; a native speaker to review it is wanted |
+| ga | - | - | machine-made; a native speaker to review it is wanted |
+| ja | - | - | machine-made; a native speaker to review it is wanted |
 | ru | Daniil Iaitskov | @yaitskov | translator (#2773) |
 | zh-Hans | Chunhui Ouyang | @jack9603301 | translator (#2757, #2761) |
 
@@ -150,3 +152,66 @@ Regional tags like `ru-RU` or `ru_RU` select it too.
 Contributed by Chunhui Ouyang, as `zh_CN.po`; renamed to `zh-Hans.po`,
 the tag that `zh`, `zh_CN` and `zh-CN` all resolve to. It was later
 brought up to date with the current template by its contributor.
+
+## Japanese
+
+Machine-made (by Claude Opus 5.5) and not yet reviewed by a native
+speaker; corrections are welcome. The statement names follow Japanese
+GAAP usage, and the account words match `examples/i18n/ja.journal`.
+Regional tags like `ja-JP` or `ja_JP` select it too.
+
+| English | Japanese |
+|---|---|
+| Balance Sheet / With Equity | 貸借対照表 / 純資産を含む貸借対照表 |
+| Income Statement | 損益計算書 |
+| Cashflow Statement | キャッシュ・フロー計算書 |
+| Assets / Liabilities / Equity | 資産 / 負債 / 純資産 |
+| Revenues / Expenses | 収益 / 費用 |
+| Net: | 純額: |
+| Account / Amount / Commodity | 勘定科目 / 金額 / 単位 |
+| transaction / posting / journal entry | 取引 / 転記 / 仕訳 |
+| Journal (hledger-web's view) / Register / Holdings | 仕訳帳 / 元帳 / 保有資産 |
+| Cumulative / Historical | 累計 / 繰越込み |
+| Balance brought forward | 前期繰越 |
+| Daily ... Periodic | 日次, 週次, 隔週, 月次, 隔月, 四半期, 半期, 年次, 隔年, 期間別 (eg 月次貸借対照表) |
+
+Choices to check:
+
+- 単位 for Commodity, since it covers both currencies and securities;
+  it may read oddly.
+- 転記 for posting, bookkeeping's word for posting to the ledger.
+- Parentheses and colons are ASCII rather than full-width, to match
+  hledger's layout.
+- Japanese has no plural forms, so the plural rule is `nplurals=1`.
+
+## Irish
+
+Machine-made (by Claude Opus 5.5) and not yet reviewed by a native
+speaker; corrections are welcome. Regional tags like `ga-IE` or `ga_IE`
+select it too.
+
+| English | Irish |
+|---|---|
+| Balance Sheet / With Equity | Clár Comhardaithe / Clár Comhardaithe le Cothromas |
+| Income Statement | Ráiteas Ioncaim |
+| Cashflow Statement | Ráiteas Sreabhadh Airgid |
+| Assets / Liabilities / Equity | Sócmhainní / Dliteanais / Cothromas |
+| Revenues / Expenses | Ioncam / Speansais |
+| Net: | Glan: |
+| Account / Amount / Commodity | Cuntas / Méid / Aonad |
+| transaction / posting / journal | idirbheart / postáil / dialann |
+| Register / Holdings | Clár / Sealúchais |
+| Monthly Balance Sheet | Clár Comhardaithe Míosúil |
+| Months | Eanáir ... Nollaig; short forms Ean, Feabh ... Noll, as in CLDR |
+
+Choices to check:
+
+- Speansais for Expenses, not Costais, which would look the same as the
+  options' "Costs" (Costais).
+- Interval words follow the statement name, unlenited, so that they
+  describe the statement (Clár), not the genitive (Comhardaithe).
+- Counts are written "cuntais: {n}" rather than "{n} cuntas", since the
+  mutation after a numeral depends on the number.
+- The least certain: mutations in phrases like "cuntais shócmhainne",
+  the long help texts, and the shortened holdings column headings
+  (Gnóth. neamhr., Gnóth. réad.).
