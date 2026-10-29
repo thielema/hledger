@@ -355,7 +355,9 @@ refreshed only before a release, so between releases refresh your file
 from main's template. Before each major or preview release there is a
 short message freeze, when the English text stops changing and the
 catalogs are refreshed, and a translation sprint; that is the best time
-to update a translation.
+to update a translation. After it, any entries still untranslated are
+filled in by machine translation, marked for review as described in
+step 1, so every release ships complete catalogs.
 
 To refresh your file:
 

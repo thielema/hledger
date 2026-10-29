@@ -79,7 +79,14 @@ to avoid interfering with branch switching; RELEASING.md should be updated from 
    `just i18n-check`; commit the template and catalogs. Tell the translators which entries each language lacks
    (`just i18n-check` counts them), and allow a few days for their updates; until the release, avoid changing
    translatable text. (Feature work updates only the template, so this is when the catalogs catch up.)
+   The freeze is soft: a late text change runs `just i18n-pot` and `just i18n-merge` too, so main's catalogs stay current,
+   and a translation received is fitted to the latest template with `msgmerge --update --no-fuzzy-matching`.
    A bugfix release skips this unless its changes touch translatable text.
+1. **(major or preview release) main: fill the translation gaps,** after the translation deadline and before the
+   final binaries: `just i18n-pot`, `just i18n-merge`, then machine-translate every entry still untranslated in
+   every built-in catalog, marking each with the translator comment `# machine-translated, please review`
+   (kept by msgmerge, and how translators find them; not `#, fuzzy`, which hledger ignores).
+   `just i18n-check` then shows none untranslated; try the catalogs (see the translations skill) and commit.
 1. **main: begin/fix release builds:** `just oldest` (and `just ghbin` if needed)
 1. **main: update general flags help:** `just generaloptionshelp` (updates doc/common.m4 from the build's --help output; review the diff)
 1. **main: update command docs and manuals ?** `just manuals`; check the manuals' internal links: `just anchortest`

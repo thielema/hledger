@@ -37,6 +37,11 @@ Before producing anything meant to be contributed, read the current
   translation sprint before each release (see `doc/RELEASING.md`). So
   don't merge catalogs in feature work, and expect main's catalogs to lag
   behind the template between releases.
+- At each major or preview release, after the translation deadline, every
+  entry still untranslated in every built-in catalog gets a machine
+  translation with the translator comment
+  `# machine-translated, please review` (not `#, fuzzy`, which hledger
+  ignores). When doing this, add that comment line to each entry filled.
 
 Establish, asking if it isn't clear:
 
