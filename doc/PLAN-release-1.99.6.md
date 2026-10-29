@@ -102,6 +102,9 @@ In order.
   - try it in the CLI (`--lang`), hledger-ui and hledger-web (see the translations skill)
   - commit on main with the translator as author (`git commit --author`); cherry-pick to the release branch
   - credit the translators in the changelog / release notes
+  - add additional languages. Done (Oct 29): Irish and Japanese, machine-made, built in and labelled
+    unreviewed in their README sections; still to do: ask for native reviewers. They follow the template,
+    so `just i18n-merge` keeps them current like the others, and the gap filling covers them.
 - [ ] **Late text changes**: the freeze is soft. Prefer fixes that don't change text; any that do land by
   Sat morning, with `just i18n-pot` and `just i18n-merge` (during the freeze the catalogs on main
   follow the template, so translators' files stay current). No follow-up request unless there are several and time allows.
