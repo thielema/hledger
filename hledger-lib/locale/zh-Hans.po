@@ -545,6 +545,26 @@ msgstr "定期现金流量表"
 msgid "Cash flows"
 msgstr "现金流"
 
+#: hledger/Hledger/Cli/Commands/Holdings.hs
+msgid "Cost"
+msgstr ""
+
+#: hledger/Hledger/Cli/Commands/Holdings.hs
+msgid "Unrealised gain"
+msgstr ""
+
+#: hledger/Hledger/Cli/Commands/Holdings.hs
+msgid "Unrealised loss"
+msgstr ""
+
+#: hledger/Hledger/Cli/Commands/Holdings.hs
+msgid "No market price"
+msgstr ""
+
+#: hledger/Hledger/Cli/Commands/Holdings.hs
+msgid "Value"
+msgstr ""
+
 #. the report title, with its reporting interval if any. Each is a whole phrase, so put the words in the order and form your language needs.
 #: hledger/Hledger/Cli/Commands/Incomestatement.hs
 msgid "Income Statement"
@@ -616,6 +636,7 @@ msgstr "日记账"
 
 #. the label before a report's accumulation mode links, and the links' text and tooltips.
 #: hledger/Hledger/Cli/Commands/Run.hs hledger-web/Hledger/Web/ReportPage.hs
+#: hledger-web/templates/default-layout.hamlet
 msgid "Show:"
 msgstr "显示："
 
@@ -743,16 +764,6 @@ msgstr "列示资产、负债和净值"
 
 #. the report links above each report page and in the sidebar: each link's text, and its tooltip.
 #: hledger-web/Hledger/Web/App.hs
-msgid "Balance sheet with equity"
-msgstr "包含权益的资产负债表"
-
-#. the report links above each report page and in the sidebar: each link's text, and its tooltip.
-#: hledger-web/Hledger/Web/App.hs
-msgid "Show assets, liabilities, and equity"
-msgstr "显示资产、负债和权益"
-
-#. the report links above each report page and in the sidebar: each link's text, and its tooltip.
-#: hledger-web/Hledger/Web/App.hs
 msgid "Income statement"
 msgstr "损益表"
 
@@ -814,6 +825,7 @@ msgstr ""
 
 #. the label before a report's interval links.
 #: hledger-web/Hledger/Web/ReportPage.hs
+#: hledger-web/templates/default-layout.hamlet
 msgid "Interval:"
 msgstr "间隔："
 
@@ -983,7 +995,6 @@ msgstr ""
 
 #. the hint below the account type filter row.
 #: hledger-web/Hledger/Web/Handler/BalanceR.hs
-#: hledger-web/Hledger/Web/Handler/HoldingsR.hs
 #: hledger-web/Hledger/Web/Handler/JournalR.hs
 #: hledger-web/Hledger/Web/Handler/RegisterR.hs
 msgid "Shift-click selects several types."
@@ -1133,18 +1144,25 @@ msgstr "期间总计"
 
 #. the hint below the commodity filter row.
 #: hledger-web/Hledger/Web/Handler/RegisterR.hs
-msgid "Show the running balance from the start of this period"
-msgstr "显示本期开始以来的累计余额"
+msgid "Click to show the running balance from the start of this period"
+msgstr ""
 
 #. the hint below the commodity filter row.
 #: hledger-web/Hledger/Web/Handler/RegisterR.hs
-msgid "Show the running balance including everything before this period"
-msgstr "显示包含本期之前所有项目的累计余额。"
+msgid ""
+"Click to show the running balance including everything before this period"
+msgstr ""
 
 #. the browser tab title of this page.
 #: hledger-web/Hledger/Web/Handler/RegisterR.hs
 msgid "register - hledger-web"
 msgstr "登记册 - hledger-web"
+
+#. a chart legend's entry for amounts written without a commodity symbol.
+#: hledger-web/Hledger/Web/Handler/RegisterR.hs
+#: hledger-web/Hledger/Web/Widget/Chart.hs
+msgid "no symbol"
+msgstr ""
 
 #. the browser tab titles of the statement pages.
 #: hledger-web/Hledger/Web/Handler/StatementsR.hs
@@ -1267,6 +1285,11 @@ msgstr "无效值：{error}"
 msgid "Postings validation failed"
 msgstr "过账验证失败"
 
+#. in a report page's chart, before the commodities that can be charted.
+#: hledger-web/Hledger/Web/Widget/Chart.hs
+msgid "Commodity"
+msgstr ""
+
 #. the disclosure hiding each page's rows of report controls: its text, and its tooltip.
 #: hledger-web/Hledger/Web/Widget/Common.hs
 msgid "Show the options that reshape this view"
@@ -1336,6 +1359,7 @@ msgstr ""
 
 #. the label before a report's amount conversion links, and the links' text and tooltips.
 #: hledger-web/Hledger/Web/Widget/Common.hs
+#: hledger-web/templates/default-layout.hamlet
 msgid "Amounts:"
 msgstr ""
 
@@ -1345,12 +1369,23 @@ msgstr ""
 msgid "As recorded"
 msgstr ""
 
+#. the depth limit, in the list of options in effect.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgctxt "amounts"
+msgid "Cost"
+msgstr ""
+
+#. the depth limit, in the list of options in effect.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgctxt "amounts"
+msgid "Value"
+msgstr ""
+
 #. the label before a report's amount conversion links, and the links' text and tooltips.
 #: hledger-web/Hledger/Web/Widget/Common.hs
 msgid "Show amounts in the commodities they were recorded in"
 msgstr ""
 
-#. the depth limit, in the list of options in effect.
 #. the label before a report's amount conversion links, and the links' text and tooltips.
 #: hledger-web/Hledger/Web/Widget/Common.hs
 msgid "At cost"
@@ -1361,7 +1396,6 @@ msgstr ""
 msgid "Show amounts converted to their cost, as recorded in transactions (-B)"
 msgstr ""
 
-#. the depth limit, in the list of options in effect.
 #. the label before a report's amount conversion links, and the links' text and tooltips.
 #. the label before the holdings page's valuation links, and the links' text and tooltips.
 #: hledger-web/Hledger/Web/Widget/Common.hs
@@ -1377,6 +1411,7 @@ msgstr ""
 
 #. the label before the links that show or hide zero balances, and the links' text and tooltips.
 #: hledger-web/Hledger/Web/Widget/Common.hs
+#: hledger-web/templates/default-layout.hamlet
 msgid "Zero balances:"
 msgstr ""
 
@@ -1386,8 +1421,26 @@ msgid "Show accounts whose balances are zero"
 msgstr ""
 
 #. the label before the links that show or hide zero balances, and the links' text and tooltips.
+#. the label before the balance sheet's links that hide or show equity, and the links' tooltips.
 #: hledger-web/Hledger/Web/Widget/Common.hs
 msgid "Shown"
+msgstr ""
+
+#. the label before the balance sheet's links that hide or show equity, and the links' tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Equity:"
+msgstr ""
+
+#. the label before the balance sheet's links that hide or show equity, and the links' tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid ""
+"Show assets, liabilities, and net worth, as the balancesheet command does"
+msgstr ""
+
+#. the label before the balance sheet's links that hide or show equity, and the links' tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid ""
+"Show assets, liabilities, and equity, as the balancesheetequity command does"
 msgstr ""
 
 #. the label before the links that show or hide zero balances, and the links' text and tooltips.
@@ -1396,12 +1449,14 @@ msgid "Hide accounts whose balances are zero"
 msgstr ""
 
 #. the label before the links that show or hide zero balances, and the links' text and tooltips.
+#. the label before the balance sheet's links that hide or show equity, and the links' tooltips.
 #: hledger-web/Hledger/Web/Widget/Common.hs
 msgid "Hidden"
 msgstr ""
 
 #. the label before a report's status filter links, and the links' text and tooltips.
 #: hledger-web/Hledger/Web/Widget/Common.hs
+#: hledger-web/templates/default-layout.hamlet
 msgid "Status:"
 msgstr ""
 
@@ -1448,6 +1503,7 @@ msgstr ""
 
 #. the label before a report's real/virtual filter links, and the links' text and tooltips.
 #: hledger-web/Hledger/Web/Widget/Common.hs
+#: hledger-web/templates/default-layout.hamlet
 msgid "Postings:"
 msgstr ""
 
@@ -1484,6 +1540,7 @@ msgstr ""
 
 #. the label before a report's list/tree links, and the links' text and tooltips.
 #: hledger-web/Hledger/Web/Widget/Common.hs
+#: hledger-web/templates/default-layout.hamlet
 msgid "Accounts:"
 msgstr ""
 
@@ -1513,6 +1570,7 @@ msgstr ""
 
 #. the label before a report's extra-column toggles, and the toggles' text and tooltips.
 #: hledger-web/Hledger/Web/Widget/Common.hs
+#: hledger-web/templates/default-layout.hamlet
 msgid "Extra columns:"
 msgstr ""
 
@@ -1521,6 +1579,7 @@ msgstr ""
 msgid "Add a column totaling each row (-T)"
 msgstr ""
 
+#. options in effect, listed on the closed options disclosure.
 #. the label before a report's extra-column toggles, and the toggles' text and tooltips.
 #: hledger-web/Hledger/Web/Widget/Common.hs
 msgctxt "column"
@@ -1532,6 +1591,7 @@ msgstr ""
 msgid "Add a column averaging each row (-A)"
 msgstr ""
 
+#. options in effect, listed on the closed options disclosure.
 #. the label before a report's extra-column toggles, and the toggles' text and tooltips.
 #: hledger-web/Hledger/Web/Widget/Common.hs
 msgctxt "column"
@@ -1540,6 +1600,7 @@ msgstr ""
 
 #. the label before a report's sort links, and the links' text and tooltips.
 #: hledger-web/Hledger/Web/Widget/Common.hs
+#: hledger-web/templates/default-layout.hamlet
 msgid "Sort:"
 msgstr ""
 
@@ -1550,7 +1611,7 @@ msgstr ""
 
 #. the label before a report's sort links, and the links' text and tooltips.
 #: hledger-web/Hledger/Web/Widget/Common.hs
-msgid "Sort rows by account name"
+msgid "Sort rows by account display order"
 msgstr ""
 
 #. the depth limit, in the list of options in effect.
@@ -1626,16 +1687,6 @@ msgstr ""
 
 #. options in effect, listed on the closed options disclosure.
 #: hledger-web/Hledger/Web/Widget/Common.hs
-msgid "Row totals"
-msgstr ""
-
-#. options in effect, listed on the closed options disclosure.
-#: hledger-web/Hledger/Web/Widget/Common.hs
-msgid "Row averages"
-msgstr ""
-
-#. options in effect, listed on the closed options disclosure.
-#: hledger-web/Hledger/Web/Widget/Common.hs
 msgid "Inferred prices"
 msgstr ""
 
@@ -1672,6 +1723,11 @@ msgstr ""
 #. options in effect, listed on the closed options disclosure.
 #: hledger-web/Hledger/Web/Widget/Common.hs
 msgid "Secondary dates"
+msgstr ""
+
+#. options in effect, listed on the closed options disclosure.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Equity shown"
 msgstr ""
 
 #. a journal or register page's heading when the search has dates, eg "General Journal in 2024".
@@ -1725,6 +1781,7 @@ msgstr ""
 
 #. the label before a report's lot detail links, and the links' text and tooltips.
 #: hledger-web/Hledger/Web/Widget/Common.hs
+#: hledger-web/templates/default-layout.hamlet
 msgid "Lots:"
 msgstr ""
 
@@ -1878,6 +1935,26 @@ msgstr ""
 msgid "Show only conversion accounts (type:V)"
 msgstr ""
 
+#. the label before the account type filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Gain"
+msgstr ""
+
+#. the label before the account type filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show only capital gain accounts (type:G)"
+msgstr ""
+
+#. the label before the account type filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Imbalance"
+msgstr ""
+
+#. the label before the account type filter links, and the links' text and tooltips.
+#: hledger-web/Hledger/Web/Widget/Common.hs
+msgid "Show only imbalance accounts (type:M)"
+msgstr ""
+
 #: hledger-web/Hledger/Web/Widget/Common.hs
 msgid "List all the commodities"
 msgstr ""
@@ -2011,6 +2088,18 @@ msgid "toggle report options"
 msgstr ""
 
 #: hledger-web/templates/default-layout.hamlet
+msgid "toggle the report's chart"
+msgstr ""
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "select the chart's commodity"
+msgstr ""
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "toggle the report's data"
+msgstr ""
+
+#: hledger-web/templates/default-layout.hamlet
 msgid "toggle full window"
 msgstr ""
 
@@ -2019,123 +2108,120 @@ msgid "focus search form"
 msgstr "聚焦搜索表单"
 
 #: hledger-web/templates/default-layout.hamlet
-msgid "hide empty accounts"
-msgstr ""
-
-#: hledger-web/templates/default-layout.hamlet
-msgid "toggle tree mode"
-msgstr ""
-
-#: hledger-web/templates/default-layout.hamlet
-msgid "toggle historical balances"
-msgstr ""
-
-#: hledger-web/templates/default-layout.hamlet
-msgid "toggle lot detail"
-msgstr ""
-
-#: hledger-web/templates/default-layout.hamlet
-msgid "toggle market value"
-msgstr ""
-
-#: hledger-web/templates/default-layout.hamlet
-msgid "toggle cost"
-msgstr ""
-
-#: hledger-web/templates/default-layout.hamlet
-msgid "toggle real postings"
-msgstr ""
-
-#: hledger-web/templates/default-layout.hamlet
-msgid "filter by status"
-msgstr ""
-
-#: hledger-web/templates/default-layout.hamlet
-msgid "sort by amount"
-msgstr ""
-
-#: hledger-web/templates/default-layout.hamlet
-msgid "total and average columns"
-msgstr ""
-
-#: hledger-web/templates/default-layout.hamlet
-msgid "set the report interval"
-msgstr ""
-
-#: hledger-web/templates/default-layout.hamlet
-msgid "set or adjust the depth limit"
-msgstr ""
-
-#: hledger-web/templates/default-layout.hamlet
 msgid "cancel"
 msgstr "取消"
 
+#. in the help, the heading of the options' keys, listed under the options panel's own labels.
 #: hledger-web/templates/default-layout.hamlet
-msgid "General"
-msgstr "通用"
-
-#: hledger-web/templates/default-layout.hamlet
-msgid ""
-"The Journal view shows general journal entries, representing zero-sum "
-"movements of money (or other commodity) between hierarchical accounts"
-msgstr ""
-"“日记账”视图显示了普通日记账分录，代表了层级账户之间资金（或其他商品）的零和"
-"变动"
-
-#: hledger-web/templates/default-layout.hamlet
-msgid "The sidebar shows the resulting accounts and their final balances"
-msgstr "侧边栏显示了生成的账户及其最终余额"
-
-#: hledger-web/templates/default-layout.hamlet
-msgid ""
-"The sidebar's report links show the balance sheet, income statement, and "
-"cashflow statement, each linking to the other reports"
-msgstr ""
-"侧边栏中的报表链接指向资产负债表、损益表和现金流量表，且各报表之间相互链接"
-
-#: hledger-web/templates/default-layout.hamlet
-msgid ""
-"For journals using lots, a Holdings report shows investments and their "
-"performance, and a Lots link above each report shows the individual lots"
+msgid "Report options"
 msgstr ""
 
 #: hledger-web/templates/default-layout.hamlet
-msgid "Parent account balances include subaccount balances"
-msgstr "父账户余额包含子账户余额"
-
-#: hledger-web/templates/default-layout.hamlet
-msgid "Multiple currencies in balances are displayed one above the other"
-msgstr "余额中的多种货币呈上下排列显示"
-
-#: hledger-web/templates/default-layout.hamlet
-msgid ""
-"Click account name links to see transactions affecting that account, with "
-"running balance"
-msgstr "点击账户名称链接，即可查看影响该账户的交易记录及实时余额"
-
-#: hledger-web/templates/default-layout.hamlet
-msgid ""
-"Click an amount to see the transactions it is made of, in a register ending "
-"on that amount"
-msgstr "点击某个金额，即可在以该金额为终值的明细列表中查看构成该金额的各项交易"
-
-#: hledger-web/templates/default-layout.hamlet
-msgid "Click date links to see journal entries on that date"
-msgstr "点击日期链接，查看该日期的日志条目"
-
-#: hledger-web/templates/default-layout.hamlet
-msgid ""
-"The balance sheet and income statement show liabilities, equity, and "
-"revenues as positive amounts; their registers show them negative, as hledger "
-"does"
+msgid "historical end balances / balance changes"
 msgstr ""
-"资产负债表和损益表将负债、权益和收入显示为正数；而在账目明细中，它们则显示为"
-"负数，这与 hledger 的处理方式一致"
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "yearly"
+msgstr ""
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "quarterly"
+msgstr ""
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "monthly"
+msgstr ""
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "weekly"
+msgstr ""
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "daily"
+msgstr ""
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "unmarked"
+msgstr ""
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "pending"
+msgstr ""
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "cleared"
+msgstr ""
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "real only / all"
+msgstr ""
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "Depth limit:"
+msgstr ""
+
+#. in the help's Depth row: what the digit keys, and the - and + keys, do to the depth limit.
+#: hledger-web/templates/default-layout.hamlet
+msgid "set it"
+msgstr ""
+
+#. in the help's Depth row: what the digit keys, and the - and + keys, do to the depth limit.
+#: hledger-web/templates/default-layout.hamlet
+msgid "decrease or increase it"
+msgstr ""
+
+#: hledger-web/templates/default-layout.hamlet
+msgctxt "accounts"
+msgid "tree / list"
+msgstr ""
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "at cost"
+msgstr ""
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "at market value"
+msgstr ""
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "show / hide zero balances"
+msgstr ""
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "show / hide lot details"
+msgstr ""
+
+#: hledger-web/templates/default-layout.hamlet
+msgctxt "column"
+msgid "total"
+msgstr ""
+
+#: hledger-web/templates/default-layout.hamlet
+msgctxt "column"
+msgid "average"
+msgstr ""
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "by amount / by account display order"
+msgstr ""
+
+#. in the help, below the options' keys.
+#: hledger-web/templates/default-layout.hamlet
+msgid "Pressed again, an option's key turns it back off."
+msgstr ""
 
 #: hledger-web/templates/default-layout.hamlet
 msgctxt "help heading"
-msgid "Search"
-msgstr "搜索"
+msgid "Search queries"
+msgstr ""
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "More help:"
+msgstr ""
+
+#: hledger-web/templates/default-layout.hamlet
+msgid "hledger-web user manual"
+msgstr ""
 
 #: hledger-web/templates/default-layout.hamlet
 msgid "Search patterns with spaces should be enclosed in quotes."
@@ -2146,8 +2232,8 @@ msgid "match account names"
 msgstr "匹配账户名称"
 
 #: hledger-web/templates/default-layout.hamlet
-msgid "match account types"
-msgstr "匹配账户类型"
+msgid "match account types (A, L, E, R, X, ...)"
+msgstr ""
 
 #: hledger-web/templates/default-layout.hamlet
 msgid "match dates"
@@ -2170,8 +2256,7 @@ msgid "view this help"
 msgstr ""
 
 #: hledger-web/templates/default-layout.hamlet
-msgid ""
-"go to a page: shows the journal and reports with their keys, then press one"
+msgid "go to any screen"
 msgstr ""
 
 #: hledger-web/templates/default-layout.hamlet
@@ -2224,8 +2309,8 @@ msgid "prepend not: to negate a search term"
 msgstr "在搜索词前加上 not：用于否定该搜索词"
 
 #: hledger-web/templates/default-layout.hamlet
-msgid "match with a boolean query (and, or, not, (..))"
-msgstr "与布尔查询（and、or、not、(..)）匹配"
+msgid "match with a boolean query (and, or, not, ()"
+msgstr ""
 
 #: hledger-web/templates/default-layout.hamlet
 msgid "match transactions where any posting matches"
@@ -2236,8 +2321,8 @@ msgid "match transactions where all postings match"
 msgstr "匹配所有过账项均相符的交易"
 
 #: hledger-web/templates/default-layout.hamlet
-msgid "clip account names at this depth"
-msgstr "在此层级截断账户名称"
+msgid "another way to set depth limit (can be per account)"
+msgstr ""
 
 #: hledger-web/templates/edit-form.hamlet
 msgid "Edit file"
@@ -2364,6 +2449,78 @@ msgstr "显示所有年份"
 msgctxt "years row"
 msgid "All"
 msgstr "全部"
+
+#~ msgid "Balance sheet with equity"
+#~ msgstr "包含权益的资产负债表"
+
+#~ msgid "Show assets, liabilities, and equity"
+#~ msgstr "显示资产、负债和权益"
+
+#~ msgid "Show the running balance from the start of this period"
+#~ msgstr "显示本期开始以来的累计余额"
+
+#~ msgid "Show the running balance including everything before this period"
+#~ msgstr "显示包含本期之前所有项目的累计余额。"
+
+#~ msgid "General"
+#~ msgstr "通用"
+
+#~ msgid ""
+#~ "The Journal view shows general journal entries, representing zero-sum "
+#~ "movements of money (or other commodity) between hierarchical accounts"
+#~ msgstr ""
+#~ "“日记账”视图显示了普通日记账分录，代表了层级账户之间资金（或其他商品）的零"
+#~ "和变动"
+
+#~ msgid "The sidebar shows the resulting accounts and their final balances"
+#~ msgstr "侧边栏显示了生成的账户及其最终余额"
+
+#~ msgid ""
+#~ "The sidebar's report links show the balance sheet, income statement, and "
+#~ "cashflow statement, each linking to the other reports"
+#~ msgstr ""
+#~ "侧边栏中的报表链接指向资产负债表、损益表和现金流量表，且各报表之间相互链接"
+
+#~ msgid "Parent account balances include subaccount balances"
+#~ msgstr "父账户余额包含子账户余额"
+
+#~ msgid "Multiple currencies in balances are displayed one above the other"
+#~ msgstr "余额中的多种货币呈上下排列显示"
+
+#~ msgid ""
+#~ "Click account name links to see transactions affecting that account, with "
+#~ "running balance"
+#~ msgstr "点击账户名称链接，即可查看影响该账户的交易记录及实时余额"
+
+#~ msgid ""
+#~ "Click an amount to see the transactions it is made of, in a register "
+#~ "ending on that amount"
+#~ msgstr ""
+#~ "点击某个金额，即可在以该金额为终值的明细列表中查看构成该金额的各项交易"
+
+#~ msgid "Click date links to see journal entries on that date"
+#~ msgstr "点击日期链接，查看该日期的日志条目"
+
+#~ msgid ""
+#~ "The balance sheet and income statement show liabilities, equity, and "
+#~ "revenues as positive amounts; their registers show them negative, as "
+#~ "hledger does"
+#~ msgstr ""
+#~ "资产负债表和损益表将负债、权益和收入显示为正数；而在账目明细中，它们则显示"
+#~ "为负数，这与 hledger 的处理方式一致"
+
+#~ msgctxt "help heading"
+#~ msgid "Search"
+#~ msgstr "搜索"
+
+#~ msgid "match account types"
+#~ msgstr "匹配账户类型"
+
+#~ msgid "match with a boolean query (and, or, not, (..))"
+#~ msgstr "与布尔查询（and、or、not、(..)）匹配"
+
+#~ msgid "clip account names at this depth"
+#~ msgstr "在此层级截断账户名称"
 
 #~ msgid "Could not parse the period expression:"
 #~ msgstr "无法解析周期表达式："
