@@ -302,8 +302,33 @@ startingCatalog raw = case normalizeLangTag raw of
           <> "# Check the Plural-Forms rule below: see https://hledger.org/TRANSLATING.html\n")
       . T.replace "#, fuzzy\nmsgid \"\"\n" "msgid \"\"\n"
       . T.replace "\"Language: \\n\"" ("\"Language: " <> tag <> "\\n\"")
-      . T.replace "\"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\\n\"" "\"Plural-Forms: nplurals=2; plural=(n != 1);\\n\""
+      . T.replace "\"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\\n\"" ("\"Plural-Forms: " <> pluralFormsFor tag <> "\\n\"")
       $ TE.decodeUtf8With lenientDecode catalogTemplate
+
+-- | The Plural-Forms rule to start a new catalog with: the language's rule
+-- if it is in 'commonPluralForms' (looked up by the whole tag, then by the
+-- language alone, so zh-Hant gets zh's), otherwise the most common one.
+pluralFormsFor :: Text -> Text
+pluralFormsFor tag = fromMaybe "nplurals=2; plural=(n != 1);" $
+  lookup tag commonPluralForms <|> lookup (T.takeWhile (/= '-') tag) commonPluralForms
+
+-- | The plural rules of languages whose rule is not the most common one,
+-- as given in the GNU gettext manual.
+commonPluralForms :: [(Text, Text)]
+commonPluralForms =
+     [ (l, "nplurals=1; plural=0;") | l <- ["id", "ja", "ko", "th", "vi", "zh"] ]
+  ++ [ (l, "nplurals=2; plural=(n > 1);") | l <- ["fr", "pt-BR"] ]
+  ++ [ (l, "nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);")
+     | l <- ["be", "bs", "hr", "ru", "sr", "uk"] ]
+  ++ [ (l, "nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;") | l <- ["cs", "sk"] ]
+  ++ [ ("pl", "nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);")
+     , ("lt", "nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && (n%100<10 || n%100>=20) ? 1 : 2);")
+     , ("lv", "nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n != 0 ? 1 : 2);")
+     , ("ro", "nplurals=3; plural=(n==1 ? 0 : (n==0 || (n%100 > 0 && n%100 < 20)) ? 1 : 2);")
+     , ("ga", "nplurals=3; plural=(n==1 ? 0 : n==2 ? 1 : 2);")
+     , ("sl", "nplurals=4; plural=(n%100==1 ? 0 : n%100==2 ? 1 : n%100==3 || n%100==4 ? 2 : 3);")
+     , ("ar", "nplurals=6; plural=(n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 && n%100<=10 ? 3 : n%100>=11 ? 4 : 5);")
+     ]
 
 -- | Write the catalog to start translating a language from (see
 -- 'startingCatalog') into 'translationsOverrideDir', where --lang will find
@@ -917,6 +942,18 @@ tests_I18n = testGroup "I18n" [
          t <- either assertFailure return $ parsePo "fr" "fr" $ TE.decodeUtf8With lenientDecode bs
          assertBool "plural rule" $ isJust $ trPluralForms t
        Left e -> assertFailure e
+     -- with the language's plural rule, if known
+     case startingCatalog "uk-UA" of
+       Right (_, _, bs) -> fmap (fmap pfCount . trPluralForms) (parsePo "t" "uk-UA" $ TE.decodeUtf8With lenientDecode bs) @?= Right (Just 3)
+       Left e -> assertFailure e
+     pluralFormsFor "zh-Hant" @?= pluralFormsFor "ja"
+     assertBool "pt-BR differs from pt" $ pluralFormsFor "pt-BR" /= pluralFormsFor "pt"
+  ,testCase "commonPluralForms" $
+     mapM_ (\(l, r) -> case parsePluralForms r of
+       Nothing -> assertFailure $ T.unpack l ++ ": could not parse " ++ T.unpack r
+       Just pf -> assertBool (T.unpack l ++ ": a form number out of range") $
+         all (\n -> let i = pfRule pf n in i >= 0 && i < pfCount pf) [0..1000])
+       commonPluralForms
   ]
   where
     checkBuiltin (lang, bs) = do

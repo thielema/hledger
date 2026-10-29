@@ -80,8 +80,8 @@ place to start reviewing. In Poedit, search for `machine-translated`.
 Once you have checked or corrected one, delete that comment line.
 
 For a new language, check the file's `Plural-Forms` header (see
-[Plural forms](#plural-forms)): hledger fills in the most common rule,
-which is wrong for some languages, including French.
+[Plural forms](#plural-forms)): hledger fills in the rule for many
+languages, but for others, the most common rule, which may be wrong.
 
 ### Language tags
 
@@ -124,16 +124,17 @@ msgstr ""
 ```
 
 `--write-lang` fills in a new file's header with the language's tag
-and `nplurals=2; plural=(n != 1);`; if your language's rule is
-different, change the `Plural-Forms` line (in Poedit, Translation >
-Properties). Keep the charset as UTF-8. Common rules:
+and plural rule. It knows the rules in the table below; for other
+languages it uses `nplurals=2; plural=(n != 1);`. If your language's
+rule is different, change the `Plural-Forms` line (in Poedit,
+Translation > Properties). Keep the charset as UTF-8. Common rules:
 
 | Languages | Plural-Forms |
 |---|---|
 | English, German, Dutch, Spanish, Italian, Swedish, Turkish | `nplurals=2; plural=(n != 1);` |
 | French, Portuguese (Brazil) | `nplurals=2; plural=(n > 1);` |
-| Chinese, Japanese, Korean, Vietnamese, Thai | `nplurals=1; plural=0;` |
-| Russian, Ukrainian, Polish, Czech | see the [GNU gettext list](https://www.gnu.org/software/gettext/manual/html_node/Plural-forms.html) |
+| Chinese, Japanese, Korean, Vietnamese, Thai, Indonesian | `nplurals=1; plural=0;` |
+| Russian, Ukrainian, Belarusian, Serbian, Croatian, Bosnian, Polish, Czech, Slovak, Slovenian, Lithuanian, Latvian, Romanian, Irish, Arabic | three or more forms: see the [GNU gettext list](https://www.gnu.org/software/gettext/manual/html_node/Plural-forms.html) |
 
 ### Without --write-lang
 
