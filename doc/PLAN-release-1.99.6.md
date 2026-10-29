@@ -73,13 +73,19 @@ In order.
   - Compose and send the mail: per-language gap counts from `just i18n-check`, the deadline (Sat Oct 31, 20:00 UTC),
     a link to TRANSLATING.md, how to send the result back (PR, or the .po file by mail),
     and that partial translations are welcome.
-- [ ] **Design/document an easy process for users to update and submit translations after release**,
+- [x] **Design/document an easy process for users to update and submit translations after release**,
   on all platforms, without building hledger. TRANSLATING.md already covers translating against an installed
   release (user catalogs in the config directory); what's missing is an easy way to get the current template
   and to send the result back. Options to weigh: a "submit" section in TRANSLATING.md (attach the .po to a
   github issue, or mail it); a github issue template for translations; hosted Weblate (free for libre projects;
   web-based, so works everywhere, but another service to maintain). Link it from the release notes and
   announcement.
+  Done (Oct 28): `hledger --write-catalog=LANG` writes the built-in catalog, or a filled-in template, to the
+  config directory, matching the installed version; TRANSLATING.md is rewritten around it, with mail as the
+  main way to send a file back, and says how to review machine-translated entries.
+  Deferred: a github submission workflow (issue template; .po attachments may be refused), and Weblate
+  (another service, and its continuous .po commits would need fitting to the pot-only policy).
+  Still to do: the release notes / announcement line inviting translations.
 - [ ] **Review/update affected docs** (site repo)
   - [ ] **Upgrading to hledger 2** (site/src/upgrading.md): the breaking changes, for 1.x users:
     `test` -> `--test`, `activity` output, amounts that may now read as expressions,
