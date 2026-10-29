@@ -12,7 +12,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
 
-#. ---- Entries for the command line and hledger-ui (and shared with hledger-web). Translating just these gives a translated command line. ----
+#. ---- Entries for the hledger command line (some, like month names, also shown by hledger-ui and hledger-web). ----
 #. stand-alone (nominative) month names, as used in a column heading.
 #: hledger-lib/Hledger/Utils/I18n.hs
 msgctxt "month"
@@ -635,6 +635,7 @@ msgstr ""
 msgid "All"
 msgstr ""
 
+#. ---- Entries for hledger-ui. ----
 #: hledger-ui/Hledger/UI/AccountsScreen.hs
 msgid "account balances"
 msgstr ""

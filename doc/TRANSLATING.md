@@ -183,13 +183,12 @@ In Poedit the same entry appears as a row; the notes show in the right
 hand panel.
 
 The entries are grouped by program, and a note on each group's first
-entry says which it is. First come those for the command line and
-hledger-ui, whose `#:` lines start with `hledger-lib/`, `hledger/` or
-`hledger-ui/`; then hledger-web's, starting with `hledger-web/`, which
-are most of them. So translating only the first
-group, up to the first hledger-web entry, is a quicker way to a useful
-translation: the command line and hledger-ui are then fully translated,
-and hledger-web shows English where you stopped.
+entry says which it is: first those for the hledger command line
+(some of which, like month names, the other programs show too), then
+hledger-ui's, then hledger-web's, which are most of them. Untranslated
+entries show in English, so you can translate just the groups for the
+programs you use: the first group gives a translated command line, and
+the first two cover most of hledger-ui.
 
 ### Placeholders
 
