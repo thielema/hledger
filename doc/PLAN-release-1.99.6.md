@@ -38,7 +38,7 @@ Then the riskiest and most time-consuming work.
 
 | Day | Tasks |
 |---|---|
-| **Wed Oct 28** | #2821/#2807 review/discussion/merge. Single-period bs SVG net mark fix. Message freeze; collect translator addresses; send the translation request. Cache-busting. |
+| **Wed Oct 28** | #2821/#2807 review/discussion/merge. Single-period bs SVG net mark fix. Cache-busting. Message freeze; collect translator addresses; send the translation request. |
 | **Thu Oct 29** | Start `just oldest`. Doc updates: Post-release translation process, Upgrading page, Ledger and Beancount pages. Charts page and screenshots. |
 | **Fri Oct 30** | `just generaloptionshelp`, `just manuals`, `just anchortest`. `just relbranch 1.99.6`. Changelogs (`just changelogs`, edit, `just changelogs-finalise` - allow most of a day.) Draft announcements. |
 | **Sat Oct 31** | Translation deadline 20:00 UTC. Merge translations as they arrive (on main, cherry-pick to the release branch). `just relnotes` + summary; `doc/ANNOUNCE`; `doc/ghrelnotes`; Install page updates; manuals snapshot (`make -C site snapshot-1.99.6`, site.js / Makefile / caddy). Cherry-pick docs back to main. Last: `just ghbin` (30-40 min), after the translation deadline. |
@@ -48,12 +48,24 @@ Then the riskiest and most time-consuming work.
 
 In order.
 
-- [ ] **#2821 review/merge** (web refactor). First, since it may touch web text, and so CI can shake it out.
-- [ ] **Single-period bs SVG net mark**: the net is a one-point polyline, so invisible;
+- [x] **#2821 review/merge/redo** (web refactor). First, since it may touch web text, and so CI can shake it out.
+  Discussed and done for now (Oct 28);  #2821 (cosmetic) is set aside in favour of #2807;
+  if there's time, revisit for inclusion in this release.
+- [x] **Single-period bs SVG net mark**: the net is a one-point polyline, so invisible;
   it now shows in hledger-web's balance sheet page too. Fix, with a test.
-- [ ] **Request new translations**
+  Done (Oct 28, b8c247a07): marked across the bars; any other lone line point is drawn as a dash.
+- [x] **hledger-web static file cache-busting**: this release changes hledger.js a lot, and on Oct 27
+  Safari kept a stale copy, silently disabling the report keys.
+  Done (Oct 28): static files are served with `Cache-Control: no-cache` (and their ETag), so browsers
+  check them before each use, at the cost of a cheap 304 per file per page view.
+  `?etag=HASH` URLs with long caching were considered and set aside: wai-app-static 3.2.1 ignores the
+  query, so it would need TH hashing in `staticFileRoute`, a per-request max-age and a dev-mode exception,
+  and it would mainly speed up remote instances, which are uncommon. Revisit if they become common.
+- [x] **Request new translations**
   - Message freeze: `just i18n-pot`, `just i18n-merge`, `just i18n-check`; commit and push the template and catalogs,
     so translators work from main. Avoid changing translatable text until the release.
+    Merged Oct 28: each catalog has 220 untranslated entries (~870 words, nearly all hledger-web; 173 have notes).
+    Translator list: hledger-lib/locale/README.md, Translators.
   - Collect translator addresses: authors of past catalog work (`git log` on hledger-lib/locale/*.po;
     eg Daniil Iaitskov for ru, Chunhui Ouyang for zh), participants in the i18n PRs/issues (#2735, #2736, #2806),
     and a call for a native Spanish reviewer (es.po is machine-made) and a German translator if none is known,
@@ -61,11 +73,6 @@ In order.
   - Compose and send the mail: per-language gap counts from `just i18n-check`, the deadline (Sat Oct 31, 20:00 UTC),
     a link to TRANSLATING.md, how to send the result back (PR, or the .po file by mail),
     and that partial translations are welcome.
-- [ ] **hledger-web static file cache-busting**: serve bootstrap.min.css, hledger.css and hledger.js with
-  `?etag=HASH` URLs (wai-app-static `ssUseHash`, computed in `staticFileRoute` / Settings/StaticFiles.hs;
-  take care with dev mode, which reads from disk). This release changes hledger.js a lot, and on Oct 27
-  Safari kept a stale copy, silently disabling the report keys. Fallback, if it proves risky:
-  a "hard-refresh after upgrading" note in the release notes.
 - [ ] **Design/document an easy process for users to update and submit translations after release**,
   on all platforms, without building hledger. TRANSLATING.md already covers translating against an installed
   release (user catalogs in the config directory); what's missing is an easy way to get the current template
@@ -83,10 +90,19 @@ In order.
   - [ ] **Charts page** (site/src/charts.md): bring up to date with the CLI, html, `run` and hledger-web charts;
     add screenshots (a terminal `--chart`, an SVG chart, a hledger-web report page), reusable in the announcement.
 - [ ] **Merge translations** (until Sat Oct 31 20:00 UTC), for each catalog received:
-  - put it in hledger-lib/locale/ (or merge the PR); `just i18n-check` (placeholders, stale entries)
+  - put it in hledger-lib/locale/ (or merge the PR); merge it with the latest template if it is behind
+    (`msgmerge --update --no-fuzzy-matching`), so translators needn't track late text changes;
+    `just i18n-check` (placeholders, stale entries)
   - try it in the CLI (`--lang`), hledger-ui and hledger-web (see the translations skill)
   - commit on main with the translator as author (`git commit --author`); cherry-pick to the release branch
   - credit the translators in the changelog / release notes
+- [ ] **Late text changes**: the freeze is soft. Prefer fixes that don't change text; any that do land by
+  Sat morning, with `just i18n-pot` and `just i18n-merge` (during the freeze the catalogs on main
+  follow the template, so translators' files stay current). No follow-up request unless there are several and time allows.
+- [ ] **Fill the gaps** (after the deadline, before `just ghbin`): `just i18n-pot`, `just i18n-merge`, then
+  machine-translate every entry still untranslated in every catalog, each marked with the translator comment
+  `# machine-translated, please review` (msgmerge keeps it; not fuzzy, which hledger would ignore);
+  `just i18n-check` shows 0 untranslated; try them as above; commit on main and cherry-pick.
 
 ## Release process
 
