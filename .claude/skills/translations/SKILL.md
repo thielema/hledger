@@ -84,7 +84,7 @@ Keep the template's `#.` comments and `#:` references. Never change a
 `msgid` or `msgctxt`.
 
 **Existing language.** Run `just i18n-merge` (every built-in catalog) or
-`msgmerge --update --no-fuzzy-matching FILE hledger-lib/locale/hledger.pot`.
+`msgmerge --update --no-fuzzy-matching --no-wrap FILE hledger-lib/locale/hledger.pot`.
 Fuzzy matching is off because its guesses are often translations of
 unrelated strings, and hledger's terminology must be precise. New entries,
 and entries whose English changed, arrive empty; a changed entry's old

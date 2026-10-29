@@ -395,10 +395,11 @@ STACKTEST := STACK + ' test --fast'
 @i18n-check:
     tools/i18n-extract.py --check hledger-lib/locale/hledger.pot hledger-lib/locale/*.po
 
-# (Without fuzzy matching, since its guesses are often translations of unrelated strings: new and changed ones arrive empty.)
+# (Without fuzzy matching, since its guesses are often translations of unrelated strings: new and changed ones arrive empty.
+# Without wrapping, so that each string is one line and a changed string one changed line in git.)
 # merge new and changed source strings into the translation catalogs, during the pre-release message freeze (needs gettext's msgmerge).
 @i18n-merge: i18n-pot
-    for f in hledger-lib/locale/*.po; do msgmerge --update --no-fuzzy-matching --backup=none "$f" hledger-lib/locale/hledger.pot; done
+    for f in hledger-lib/locale/*.po; do msgmerge --update --no-fuzzy-matching --no-wrap --backup=none "$f" hledger-lib/locale/hledger.pot; done
 
 # write a pseudo-locale catalog to ~/.config/hledger/locale/xx.po; then `hledger ... --lang xx` shows any output that is still English
 @i18n-pseudo:

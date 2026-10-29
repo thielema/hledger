@@ -31,7 +31,9 @@ hledger-lib/locale/hledger.pot), and a new entry goes after the entry
 that precedes it in the sources. So moving code between files changes
 only the #: lines, not the order of the template and of the catalogs,
 which msgmerge orders like the template. --reorder ignores the existing
-order and writes the entries in source order.
+order and writes the entries in source order. Either way the entries for
+the command line and hledger-ui come before hledger-web's, and the first
+entry of each group gets an extracted comment saying which group it starts.
 
 --pseudo writes a pseudo-locale catalog instead, translating every entry
 to "[TEXT]"; running hledger with it shows which output is still English.
@@ -272,10 +274,27 @@ PSEUDO_HEADER = HEADER.replace('#, fuzzy\n', '').replace('"Language: \\n"', '"La
     .replace('nplurals=INTEGER; plural=EXPRESSION;', 'nplurals=2; plural=(n != 1);')
 
 
+# Notes heading each group of entries: those for the command line and
+# hledger-ui (including hledger-lib's, shared by all), then hledger-web's.
+GROUP_NOTES = {
+    False: '---- Entries for the command line and hledger-ui (and shared with hledger-web). '
+           'Translating just these gives a translated command line. ----',
+    True: '---- Entries for hledger-web. ----',
+}
+
+
+def is_web(e):
+    return e.refs[0].startswith('hledger-web/')
+
+
 def render(entries, pseudo=False):
     out = [PSEUDO_HEADER if pseudo else HEADER]
+    group = None
     for e in entries:
         block = []
+        if is_web(e) != group:
+            group = is_web(e)
+            block.append('#. ' + GROUP_NOTES[group])
         for c in e.comments:
             block.append('#. ' + c)
         block.append('#: ' + ' '.join(e.refs))

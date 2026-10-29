@@ -75,12 +75,14 @@ to avoid interfering with branch switching; RELEASING.md should be updated from 
 ### Phase 1: prepare main
 
 1. **main: finish fixes/features/docs/issues/prs**
-1. **(major or preview release) main: message freeze and translation sprint:** `just i18n-pot`, `just i18n-merge`,
-   `just i18n-check`; commit the template and catalogs. Tell the translators which entries each language lacks
+1. **(major or preview release) main: message freeze and translation sprint:**
+   `tools/i18n-extract.py --reorder -o hledger-lib/locale/hledger.pot` (restores source order, which between freezes
+   drifts as code changes, so that related entries sit together, and the command line's come before hledger-web's),
+   `just i18n-merge`, `just i18n-check`; commit the template and catalogs. Tell the translators which entries each language lacks
    (`just i18n-check` counts them), and allow a few days for their updates; until the release, avoid changing
    translatable text. (Feature work updates only the template, so this is when the catalogs catch up.)
    The freeze is soft: a late text change runs `just i18n-pot` and `just i18n-merge` too, so main's catalogs stay current,
-   and a translation received is fitted to the latest template with `msgmerge --update --no-fuzzy-matching`.
+   and a translation received is fitted to the latest template with `msgmerge --update --no-fuzzy-matching --no-wrap`.
    A bugfix release skips this unless its changes touch translatable text.
 1. **(major or preview release) main: fill the translation gaps,** after the translation deadline and before the
    final binaries: `just i18n-pot`, `just i18n-merge`, then machine-translate every entry still untranslated in

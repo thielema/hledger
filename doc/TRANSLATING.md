@@ -176,11 +176,20 @@ msgstr ""
 - `#.` lines are notes from the developers about where and how the text
   is used. Read them; they say things like "this precedes a report
   title" or "stand-alone month name, used as a column heading".
-- `#:` lines name the source files the text comes from. You can ignore them.
+- `#:` lines name the source files the text comes from. You can mostly ignore them.
 - `#, python-brace-format` means the text contains placeholders.
 
 In Poedit the same entry appears as a row; the notes show in the right
 hand panel.
+
+The entries are grouped by program, and a note on each group's first
+entry says which it is. First come those for the command line and
+hledger-ui, whose `#:` lines start with `hledger-lib/`, `hledger/` or
+`hledger-ui/`; then hledger-web's, starting with `hledger-web/`, which
+are most of them. So translating only the first
+group, up to the first hledger-web entry, is a quicker way to a useful
+translation: the command line and hledger-ui are then fully translated,
+and hledger-web shows English where you stopped.
 
 ### Placeholders
 
@@ -362,7 +371,7 @@ step 1, so every release ships complete catalogs.
 
 To refresh your file:
 
-- With the gettext tools: `msgmerge --update --no-fuzzy-matching fr.po hledger.pot`.
+- With the gettext tools: `msgmerge --update --no-fuzzy-matching --no-wrap fr.po hledger.pot`.
   New entries, and entries whose English changed, appear untranslated.
   An entry whose English changed keeps its old translation at the end of
   the file, as an obsolete `#~` entry, for reference.

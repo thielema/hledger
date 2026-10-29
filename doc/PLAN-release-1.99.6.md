@@ -99,6 +99,8 @@ In order.
   - put it in hledger-lib/locale/ (or merge the PR); merge it with the latest template if it is behind
     (`msgmerge --update --no-fuzzy-matching`), so translators needn't track late text changes;
     `just i18n-check` (placeholders, stale entries)
+    Files made before Oct 29 have the help text "match with a boolean query (and, or, not, ()", since fixed to
+    "... ())": after the merge, copy any translation of it from the obsolete `#~` entry, adding the `)`.
   - try it in the CLI (`--lang`), hledger-ui and hledger-web (see the translations skill)
   - commit on main with the translator as author (`git commit --author`); cherry-pick to the release branch
   - credit the translators in the changelog / release notes
@@ -108,7 +110,8 @@ In order.
 - [ ] **Late text changes**: the freeze is soft. Prefer fixes that don't change text; any that do land by
   Sat morning, with `just i18n-pot` and `just i18n-merge` (during the freeze the catalogs on main
   follow the template, so translators' files stay current). No follow-up request unless there are several and time allows.
-- [ ] **Fill the gaps** (after the deadline, before `just ghbin`): `just i18n-pot`, `just i18n-merge`, then
+- [ ] **Fill the gaps** (after the deadline, before `just ghbin`): `just i18n-pot`, `just i18n-merge`
+  (which now unwraps the catalogs, one line per string: a one-off layout diff, kept separate in its own commit), then
   machine-translate every entry still untranslated in every catalog, each marked with the translator comment
   `# machine-translated, please review` (msgmerge keeps it; not fuzzy, which hledger would ignore);
   `just i18n-check` shows 0 untranslated; try them as above; commit on main and cherry-pick.
