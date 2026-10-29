@@ -23,10 +23,10 @@ translatable string.
 
 ## What you need
 
-- hledger with the `--lang` option (check with `hledger --help | grep lang`).
-- The template, `hledger.pot`. Download it from
-  <https://raw.githubusercontent.com/hledgerorg/hledger/main/hledger-lib/locale/hledger.pot>
-  or take it from a source checkout.
+- hledger 1.99.6 or newer, which can write out the file to translate
+  (check with `hledger --help | grep write-catalog`). With an older
+  hledger that has the `--lang` option, see
+  [Without --write-catalog](#without---write-catalog).
 - Either [Poedit](https://poedit.net) (free, runs on Windows, macOS and
   Linux, recommended if PO files are new to you), or any plain text
   editor. Weblate and Lokalize work too.
@@ -46,25 +46,58 @@ translatable string.
 
 ## The workflow in short
 
-1. Create `LANG.po` from `hledger.pot`.
-2. Translate the entries.
-3. Put the file in hledger's config directory and run hledger with `--lang LANG`.
+1. Run `hledger --write-catalog=LANG`. This puts your language's file,
+   `LANG.po`, in hledger's config directory: a copy of hledger's
+   translation if it has one, otherwise a new, untranslated file.
+2. Translate the entries, or improve the existing translations.
+3. Run hledger with `--lang LANG` to see them.
 4. Repeat 2 and 3 until you are happy.
-5. Send the file in.
+5. Send the file in (by mail is fine).
 
 The rest of this guide goes through each step with French as the example.
 
-## Step 1: create your language's file
+## Step 1: get your language's file
+
+Run hledger with `--write-catalog` and your language's tag:
+
+```
+$ hledger --write-catalog=fr
+Wrote a new, untranslated fr catalog to /home/you/.config/hledger/locale/fr.po.
+Edit it with Poedit or a text editor; hledger --lang fr uses it from now on.
+To share your translation, see https://hledger.org/TRANSLATING.html.
+```
+
+For a language hledger already has, like `de`, it writes a copy of
+hledger's own translation, to complete or improve. For a new language,
+it writes a file with every entry untranslated. Either way the file
+matches your hledger's version, so everything you translate shows up
+when you try it. If a file for that language is there already, it is
+left alone.
+
+Entries marked with a `# machine-translated, please review` comment were
+filled in by a machine translation before a release, so they are a good
+place to start reviewing. In Poedit, search for `machine-translated`.
+Once you have checked or corrected one, delete that comment line.
+
+For a new language, check the file's `Plural-Forms` header (see
+[Plural forms](#plural-forms)): hledger fills in the most common rule,
+which is wrong for some languages, including French.
+
+### Language tags
 
 Language files are named by their language tag: `de.po` for German,
 `fr.po` for French, `pt-BR.po` for Brazilian Portuguese, `zh-Hans.po`
 for Simplified Chinese. A plain two-letter tag is usually right; add a
 region or script only when the language really differs by it.
+`--write-catalog` puts the tag in hledger's form (`zh_CN` gives
+`zh-Hans`), and finds a built-in catalog as `--lang` does (`de-AT`
+gives `de`).
 
 The name matters: the file's name is the tag that `--lang` selects it
 by. A file named `fr_FR.po` is selected by `--lang fr-FR`, but not by
-`--lang fr`. Translation tools often suggest names in the style of
-locale codes, like `zh_CN.po` or `pt_BR.po`; use hledger's form instead:
+`--lang fr`. If you name or rename a file yourself, translation tools
+often suggest names in the style of locale codes, like `zh_CN.po` or
+`pt_BR.po`; use hledger's form instead:
 
 | Tools may suggest | Name the file |
 |---|---|
@@ -74,14 +107,10 @@ locale codes, like `zh_CN.po` or `pt_BR.po`; use hledger's form instead:
 | `zh_TW.po` | `zh-Hant.po` |
 | `no.po`, `nb_NO.po` | `nb.po` |
 
-**With Poedit:** File > New From POT/PO File, choose `hledger.pot`, pick
-your language when asked, and save as `fr.po` (changing the name Poedit
-suggests, if needed). Poedit fills in the file header, including the
-plural rule for your language. The header's `Language:` line can stay
-as Poedit writes it; hledger goes by the file name.
+### Plural forms
 
-**With a text editor:** copy `hledger.pot` to `fr.po` and edit the block
-at the top:
+A file's header, the block at the top, says how plurals work in its
+language:
 
 ```po
 msgid ""
@@ -94,8 +123,10 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 ```
 
-Set `Language` to your tag, keep the charset as UTF-8, and set
-`Plural-Forms` to your language's rule. Common ones:
+`--write-catalog` fills in a new file's header with the language's tag
+and `nplurals=2; plural=(n != 1);`; if your language's rule is
+different, change the `Plural-Forms` line (in Poedit, Translation >
+Properties). Keep the charset as UTF-8. Common rules:
 
 | Languages | Plural-Forms |
 |---|---|
@@ -104,8 +135,25 @@ Set `Language` to your tag, keep the charset as UTF-8, and set
 | Chinese, Japanese, Korean, Vietnamese, Thai | `nplurals=1; plural=0;` |
 | Russian, Ukrainian, Polish, Czech | see the [GNU gettext list](https://www.gnu.org/software/gettext/manual/html_node/Plural-forms.html) |
 
-Also remove the `#, fuzzy` line above the header if it is there: it
-marks the whole file as a draft.
+### Without --write-catalog
+
+With a hledger older than 1.99.6, start from the template that lists
+every translatable string, `hledger.pot`, for your version: download
+`https://raw.githubusercontent.com/hledgerorg/hledger/VERSION/hledger-lib/locale/hledger.pot`,
+with VERSION replaced by your hledger's version number, eg `1.99.5`.
+(To improve a language hledger already has, download `LANG.po` from
+the same place instead.) Then:
+
+- **With Poedit:** File > New From POT/PO File, choose `hledger.pot`, pick
+  your language when asked, and save as `fr.po` (changing the name Poedit
+  suggests, if needed). Poedit fills in the file header, including the
+  plural rule for your language. The header's `Language:` line can stay
+  as Poedit writes it; hledger goes by the file name.
+- **With a text editor:** copy `hledger.pot` to `fr.po`, set `Language`
+  and `Plural-Forms` in its header as above, and remove the `#, fuzzy`
+  line above the header: it marks the whole file as a draft.
+
+Put the file in hledger's config directory (see step 3).
 
 ## Step 2: translate the entries
 
@@ -191,11 +239,11 @@ Translations are always shown as plain text, including on web pages, so
 ## Step 3: try it out
 
 hledger looks for translations in the `locale` folder of its config
-directory, and uses one found there in preference to the built-in
-catalog for the same language. So you can test without rebuilding
-anything:
+directory, where `--write-catalog` puts your file, and uses one found
+there in preference to the built-in catalog for the same language. So
+you can test without rebuilding anything:
 
-| System | Put your file at |
+| System | Your file is at |
 |---|---|
 | Linux, macOS | `~/.config/hledger/locale/fr.po` |
 | Windows | `%APPDATA%\hledger\locale\fr.po` |
@@ -263,11 +311,13 @@ without `--lang`, or look at Poedit's counter of untranslated entries.
 
 ## Step 4: send it in
 
-When you are happy with it, contribute the file. First make sure it is
-up to date with the latest template (see
-[Keeping a translation up to date](#keeping-a-translation-up-to-date)),
-since hledger's text may have changed since you started.
+When you are happy with it, or have done as much as you want to,
+contribute the file. It needn't match the latest hledger: if hledger's
+text has changed since you started, the maintainers will fit your file
+to it.
 
+- By mail: attach the file to a message on the
+  [mail list](https://hledger.org/support.html), and someone will add it.
 - If you use GitHub: add it as `hledger-lib/locale/fr.po` and open a pull
   request. Two one-line changes are also needed to build it into hledger,
   and a maintainer will add them if you would rather not: list the file
@@ -278,8 +328,6 @@ since hledger's text may have changed since you started.
   in hledger's form (see step 1), or `--lang` can not select it.
   `just i18n-check` reports a catalog that is not registered, and one
   that is not up to date; the unit tests check the tag.
-- Otherwise, attach the file to an issue or a message on the
-  [mail list](https://hledger.org/support.html), and someone will add it.
 
 Please say in the pull request or message which terminology you chose
 for the accounting terms (assets, liabilities, equity, revenues,
@@ -290,15 +338,26 @@ second speaker, ideally someone who reads financial statements, look
 over the file before it ships is worth a lot; hledger's maintainers
 usually can not check a language themselves.
 
+Your file keeps taking precedence over hledger's built-in translation,
+entry by entry. Once your work is in a release, delete your file or move
+it aside, so that later improvements to the built-in translation show.
+
 ## Keeping a translation up to date
 
-When hledger's English text changes, the template changes with it. The
-built-in catalogs on main are refreshed only before a release, so
-between releases they can lag behind the template: refresh your file
-first. Before each major or preview release there is a short message
-freeze, when the English text stops changing and the catalogs are
-refreshed, and a translation sprint; that is the best time to update a
-translation. To refresh your file:
+When hledger's English text changes, the template changes with it, and
+a file made for an older version lacks the new entries. To keep working
+on your file after upgrading hledger, refresh it from the new version's
+template, as below (for where to download it, see
+[Without --write-catalog](#without---write-catalog)).
+
+If you work from hledger's source: the built-in catalogs on main are
+refreshed only before a release, so between releases refresh your file
+from main's template. Before each major or preview release there is a
+short message freeze, when the English text stops changing and the
+catalogs are refreshed, and a translation sprint; that is the best time
+to update a translation.
+
+To refresh your file:
 
 - With the gettext tools: `msgmerge --update --no-fuzzy-matching fr.po hledger.pot`.
   New entries, and entries whose English changed, appear untranslated.
