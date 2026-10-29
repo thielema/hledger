@@ -281,7 +281,7 @@ translationsOverrideDir = (</> "locale") <$> getXdgDirectory XdgConfig "hledger"
 catalogTemplate :: ByteString
 catalogTemplate = $(embedFileRelativeBytes "locale/hledger.pot")
 
--- | The catalog to start translating a language from, for --write-catalog:
+-- | The catalog to start translating a language from, for --write-lang:
 -- the language's canonical tag, whether the catalog is a built-in one, and
 -- its content. That is the built-in catalog for the language if there is
 -- one (found as --lang finds it, so de-AT gives de), otherwise the template,

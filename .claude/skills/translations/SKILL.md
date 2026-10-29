@@ -58,11 +58,11 @@ In a source checkout, run `just i18n-check`. It fails if
 `hledger-lib/locale/hledger.pot` is out of date with the sources; then run
 `just i18n-pot` first (a maintainer commits the regenerated template).
 Without a checkout, with hledger 1.99.6 or newer installed,
-`hledger --write-catalog=TAG` writes the built-in catalog for the language,
+`hledger --write-lang=TAG` writes the built-in catalog for the language,
 or for a new one the template with its header filled in, to the user's
 config directory, matching the installed version. With an older hledger,
 download the template for that version (`doc/TRANSLATING.md`, "Without
---write-catalog").
+--write-lang").
 
 Entries with a `# machine-translated, please review` comment were filled
 in by machine translation at release time. In a review, check them first,

@@ -79,7 +79,7 @@ uimode =
         ,flagNone ["menu"] (setboolopt "menu") "old flag, menu screen is now the default"
         ]
       -- hledger-ui has no built-in tests
-      ,groupNamed = mkgeneralflagsgroups1 $ filter ((`notElem` [["test"], ["write-catalog"]]) . flagNames) helpflags
+      ,groupNamed = mkgeneralflagsgroups1 $ filter ((`notElem` [["test"], ["write-lang"]]) . flagNames) helpflags
       }
   ,modeHelpSuffix=[
     -- "Reads your ~/.hledger.journal file, or another specified by $LEDGER_FILE or -f, and starts the full-window TUI."

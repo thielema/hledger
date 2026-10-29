@@ -24,9 +24,9 @@ translatable string.
 ## What you need
 
 - hledger 1.99.6 or newer, which can write out the file to translate
-  (check with `hledger --help | grep write-catalog`). With an older
+  (check with `hledger --help | grep write-lang`). With an older
   hledger that has the `--lang` option, see
-  [Without --write-catalog](#without---write-catalog).
+  [Without --write-lang](#without---write-lang).
 - Either [Poedit](https://poedit.net) (free, runs on Windows, macOS and
   Linux, recommended if PO files are new to you), or any plain text
   editor. Weblate and Lokalize work too.
@@ -46,7 +46,7 @@ translatable string.
 
 ## The workflow in short
 
-1. Run `hledger --write-catalog=LANG`. This puts your language's file,
+1. Run `hledger --write-lang=LANG`. This puts your language's file,
    `LANG.po`, in hledger's config directory: a copy of hledger's
    translation if it has one, otherwise a new, untranslated file.
 2. Translate the entries, or improve the existing translations.
@@ -58,10 +58,10 @@ The rest of this guide goes through each step with French as the example.
 
 ## Step 1: get your language's file
 
-Run hledger with `--write-catalog` and your language's tag:
+Run hledger with `--write-lang` and your language's tag:
 
 ```
-$ hledger --write-catalog=fr
+$ hledger --write-lang=fr
 Wrote a new, untranslated fr catalog to /home/you/.config/hledger/locale/fr.po.
 Edit it with Poedit or a text editor; hledger --lang fr uses it from now on.
 To share your translation, see https://hledger.org/TRANSLATING.html.
@@ -89,7 +89,7 @@ Language files are named by their language tag: `de.po` for German,
 `fr.po` for French, `pt-BR.po` for Brazilian Portuguese, `zh-Hans.po`
 for Simplified Chinese. A plain two-letter tag is usually right; add a
 region or script only when the language really differs by it.
-`--write-catalog` puts the tag in hledger's form (`zh_CN` gives
+`--write-lang` puts the tag in hledger's form (`zh_CN` gives
 `zh-Hans`), and finds a built-in catalog as `--lang` does (`de-AT`
 gives `de`).
 
@@ -123,7 +123,7 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 ```
 
-`--write-catalog` fills in a new file's header with the language's tag
+`--write-lang` fills in a new file's header with the language's tag
 and `nplurals=2; plural=(n != 1);`; if your language's rule is
 different, change the `Plural-Forms` line (in Poedit, Translation >
 Properties). Keep the charset as UTF-8. Common rules:
@@ -135,7 +135,7 @@ Properties). Keep the charset as UTF-8. Common rules:
 | Chinese, Japanese, Korean, Vietnamese, Thai | `nplurals=1; plural=0;` |
 | Russian, Ukrainian, Polish, Czech | see the [GNU gettext list](https://www.gnu.org/software/gettext/manual/html_node/Plural-forms.html) |
 
-### Without --write-catalog
+### Without --write-lang
 
 With a hledger older than 1.99.6, start from the template that lists
 every translatable string, `hledger.pot`, for your version: download
@@ -239,7 +239,7 @@ Translations are always shown as plain text, including on web pages, so
 ## Step 3: try it out
 
 hledger looks for translations in the `locale` folder of its config
-directory, where `--write-catalog` puts your file, and uses one found
+directory, where `--write-lang` puts your file, and uses one found
 there in preference to the built-in catalog for the same language. So
 you can test without rebuilding anything:
 
@@ -348,7 +348,7 @@ When hledger's English text changes, the template changes with it, and
 a file made for an older version lacks the new entries. To keep working
 on your file after upgrading hledger, refresh it from the new version's
 template, as below (for where to download it, see
-[Without --write-catalog](#without---write-catalog)).
+[Without --write-lang](#without---write-lang)).
 
 If you work from hledger's source: the built-in catalogs on main are
 refreshed only before a release, so between releases refresh your file

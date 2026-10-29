@@ -407,7 +407,7 @@ main = handleExit $ withGhcDebug' $ do
     manFlag      = boolopt "man"      rawopts
     versionFlag  = boolopt "version"  rawopts
     testFlag     = maybestringopt "test" rawopts
-    writeCatalogFlag = maybestringopt "write-catalog" rawopts
+    writeLangFlag = maybestringopt "write-lang" rawopts
     -- ignoredopts    cmd = error' $ cmd ++ " tried to read options but is not supposed to"
     ignoredjournal cmd = error' $ cmd ++ " tried to read the journal but is not supposed to"
 
@@ -442,8 +442,8 @@ main = handleExit $ withGhcDebug' $ do
         if nocmdprovided then runUnitTests pat
         else error' $ "--test can't be used with a command (" <> cmdarg <> "); to select tests, use --test=PATTERN"
 
-    -- or --write-catalog flag found - write a translation catalog to start translating from
-    | Just lang <- writeCatalogFlag, not isaddoncmd -> writeCatalog lang
+    -- or --write-lang flag found - write a translation catalog to start translating from
+    | Just lang <- writeLangFlag, not isaddoncmd -> writeLang lang
 
     -- 6.3. no command found, nothing else to do - show the quick reference card
     | nocmdprovided -> do
@@ -532,10 +532,10 @@ main = handleExit $ withGhcDebug' $ do
 
 ------------------------------------------------------------------------------
 
--- | Write a catalog for translating hledger into this language, for --write-catalog,
+-- | Write a catalog for translating hledger into this language, for --write-lang,
 -- and say where it is and what to do next.
-writeCatalog :: String -> IO ()
-writeCatalog lang = writeStartingCatalog (pack lang) >>= \case
+writeLang :: String -> IO ()
+writeLang lang = writeStartingCatalog (pack lang) >>= \case
   Left e -> error' e
   Right (path, tag, builtin) -> putStr $ unlines
     [ (if builtin then "Wrote hledger's built-in " else "Wrote a new, untranslated ")
@@ -575,7 +575,7 @@ canSkipConf cmdarg args
         process (mainmode addons) [cmdarg]
   where
     rawopts = cmdargsParse "for help flags" helpflagsmode $ dropUnsupportedOpts helpflagsmode args
-    helpflag = isJust (maybestringopt "test" rawopts) || isJust (maybestringopt "write-catalog" rawopts)
+    helpflag = isJust (maybestringopt "test" rawopts) || isJust (maybestringopt "write-lang" rawopts)
       || any (`boolopt` rawopts) ["help","info","man","webman","examples","quickref","version"]
 
 -- | Parse the given command line arguments/options with the given cmdargs mode,

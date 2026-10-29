@@ -80,7 +80,7 @@ In order.
   github issue, or mail it); a github issue template for translations; hosted Weblate (free for libre projects;
   web-based, so works everywhere, but another service to maintain). Link it from the release notes and
   announcement.
-  Done (Oct 28): `hledger --write-catalog=LANG` writes the built-in catalog, or a filled-in template, to the
+  Done (Oct 28): `hledger --write-lang=LANG` writes the built-in catalog, or a filled-in template, to the
   config directory, matching the installed version; TRANSLATING.md is rewritten around it, with mail as the
   main way to send a file back, and says how to review machine-translated entries.
   Deferred: a github submission workflow (issue template; .po attachments may be refused), and Weblate
