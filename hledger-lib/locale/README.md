@@ -16,6 +16,23 @@ hledger takes number styles from the journal and keeps ISO dates.
   both in package.yaml's extra-source-files and in `builtinCatalogSources`
   in `Hledger/Utils/I18n.hs` (see doc/TRANSLATING.md, step 4).
 
+## Translators
+
+People to ping when a language needs updating, eg in a pre-release
+translation sprint (see doc/RELEASING.md). Their email addresses are in
+the git log.
+
+| Language | Name | GitHub | Role |
+|---|---|---|---|
+| de | Henning Thielemann | @thielema | chose the vocabulary (#2735) |
+| es | - | - | machine-made; a native speaker to review it is wanted |
+| ru | Daniil Iaitskov | @yaitskov | translator (#2773) |
+| zh-Hans | Chunhui Ouyang | @jack9603301 | translator (#2757, #2761) |
+
+Also interested in hledger's i18n: Arthur Cinader (@acinader), who built
+it (#2736), and @mildred, @alerque (#1025) and @weakish (#231), who asked
+for it.
+
 ## Translating
 
 The step-by-step guide for translators, and the developer notes on
