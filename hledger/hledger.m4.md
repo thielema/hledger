@@ -5736,6 +5736,9 @@ hledger also looks for catalogs in the `locale` subdirectory of its config direc
 and merges a catalog found there over the built-in catalog for the same language, if any.
 So a translator can work on a new language with a released hledger,
 and a user can adjust terminology to taste.
+`hledger --write-catalog=LANG` puts a catalog there to start from:
+a copy of the built-in catalog for that language, or for a new language, an untranslated one.
+(It won't overwrite a catalog that is already there.)
 Contributed catalogs are welcome, and no programming is needed:
 see [Translating hledger](https://hledger.org/TRANSLATING.html) in the developer docs.
 

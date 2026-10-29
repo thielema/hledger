@@ -132,7 +132,7 @@ webmode =
           ++
           [flagNone ["server"] (setboolopt "serve") "old flag, use --serve instead"]
       -- hledger-web's --lang (in webflags) works differently from the other tools'
-      , groupNamed = mkgeneralflagsgroups1 $ filter ((/= ["lang"]) . flagNames) helpflags
+      , groupNamed = mkgeneralflagsgroups1 $ filter ((`notElem` [["lang"], ["write-catalog"]]) . flagNames) helpflags
       }
   , modeHelpSuffix = []
   }

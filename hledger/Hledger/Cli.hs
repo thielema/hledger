@@ -107,7 +107,7 @@ import Data.Function ((&))
 import Data.Functor ((<&>))
 import Data.List
 import Data.Maybe (isJust, fromMaybe, fromJust)
-import Data.Text (pack, Text)
+import Data.Text (pack, unpack, Text)
 import Data.Time.Clock.POSIX (getPOSIXTime)
 import Safe
 import System.Console.CmdArgs.Explicit
@@ -129,6 +129,7 @@ import Hledger.Cli.Commands.Run
 import Hledger.Cli.DocFiles
 import Hledger.Cli.Utils
 import Hledger.Cli.Version
+import Hledger.Utils.I18n (shortLangTag, writeStartingCatalog)
 
 
 verboseDebugLevel = 8
@@ -406,6 +407,7 @@ main = handleExit $ withGhcDebug' $ do
     manFlag      = boolopt "man"      rawopts
     versionFlag  = boolopt "version"  rawopts
     testFlag     = maybestringopt "test" rawopts
+    writeCatalogFlag = maybestringopt "write-catalog" rawopts
     -- ignoredopts    cmd = error' $ cmd ++ " tried to read options but is not supposed to"
     ignoredjournal cmd = error' $ cmd ++ " tried to read the journal but is not supposed to"
 
@@ -439,6 +441,9 @@ main = handleExit $ withGhcDebug' $ do
     | Just pat <- testFlag, not isaddoncmd ->
         if nocmdprovided then runUnitTests pat
         else error' $ "--test can't be used with a command (" <> cmdarg <> "); to select tests, use --test=PATTERN"
+
+    -- or --write-catalog flag found - write a translation catalog to start translating from
+    | Just lang <- writeCatalogFlag, not isaddoncmd -> writeCatalog lang
 
     -- 6.3. no command found, nothing else to do - show the quick reference card
     | nocmdprovided -> do
@@ -527,6 +532,19 @@ main = handleExit $ withGhcDebug' $ do
 
 ------------------------------------------------------------------------------
 
+-- | Write a catalog for translating hledger into this language, for --write-catalog,
+-- and say where it is and what to do next.
+writeCatalog :: String -> IO ()
+writeCatalog lang = writeStartingCatalog (pack lang) >>= \case
+  Left e -> error' e
+  Right (path, tag, builtin) -> putStr $ unlines
+    [ (if builtin then "Wrote hledger's built-in " else "Wrote a new, untranslated ")
+      ++ unpack tag ++ " catalog to " ++ path ++ "."
+    , "Edit it with Poedit or a text editor; hledger --lang " ++ unpack (shortLangTag tag)
+      ++ " uses it from now on."
+    , "To share your translation, see https://hledger.org/TRANSLATING.html."
+    ]
+
 -- | A helper for addons/scripts: this parses hledger CliOpts from these
 -- command line arguments and add-on command names, roughly how hledger main does.
 -- If option parsing/validating fails, it exits the program with usageError.
@@ -557,7 +575,7 @@ canSkipConf cmdarg args
         process (mainmode addons) [cmdarg]
   where
     rawopts = cmdargsParse "for help flags" helpflagsmode $ dropUnsupportedOpts helpflagsmode args
-    helpflag = isJust (maybestringopt "test" rawopts)
+    helpflag = isJust (maybestringopt "test" rawopts) || isJust (maybestringopt "write-catalog" rawopts)
       || any (`boolopt` rawopts) ["help","info","man","webman","examples","quickref","version"]
 
 -- | Parse the given command line arguments/options with the given cmdargs mode,

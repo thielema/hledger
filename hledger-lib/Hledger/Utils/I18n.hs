@@ -59,10 +59,13 @@ module Hledger.Utils.I18n (
   loadTranslations,
   loadAllTranslations,
   translationsOverrideDir,
+  startingCatalog,
+  writeStartingCatalog,
   -- * Language tags
   isValidLangTag,
   normalizeLangTag,
   langTagCandidates,
+  shortLangTag,
   resolveLang,
   langPrefsFromEnv,
   -- * Plural forms
@@ -87,11 +90,12 @@ import Data.Set qualified as S
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
+import Data.Text.Encoding.Error (lenientDecode)
 import Data.Time.Clock (UTCTime, diffUTCTime, getCurrentTime)
 import Data.Time.Format (TimeLocale(..), defaultTimeLocale)
 import Data.Void (Void)
 import Numeric (readHex, readOct)
-import System.Directory (XdgDirectory(..), doesDirectoryExist, getFileSize, getXdgDirectory, listDirectory)
+import System.Directory (XdgDirectory(..), createDirectoryIfMissing, doesDirectoryExist, getFileSize, getXdgDirectory, listDirectory)
 import System.Environment (getEnvironment)
 import System.FilePath ((</>), dropExtension, takeExtension)
 import Text.Megaparsec
@@ -272,6 +276,53 @@ builtinLanguages = "en" : M.keys builtinTranslations
 -- (~/.config/hledger/locale on unix, %APPDATA%\\hledger\\locale on windows).
 translationsOverrideDir :: IO FilePath
 translationsOverrideDir = (</> "locale") <$> getXdgDirectory XdgConfig "hledger"
+
+-- | The template that catalogs are made from, embedded at build time.
+catalogTemplate :: ByteString
+catalogTemplate = $(embedFileRelativeBytes "locale/hledger.pot")
+
+-- | The catalog to start translating a language from, for --write-catalog:
+-- the language's canonical tag, whether the catalog is a built-in one, and
+-- its content. That is the built-in catalog for the language if there is
+-- one (found as --lang finds it, so de-AT gives de), otherwise the template,
+-- with its header filled in so that hledger can use it straight away.
+-- English, or something that is not a language tag, gives an error message.
+startingCatalog :: Text -> Either String (Text, Bool, ByteString)
+startingCatalog raw = case normalizeLangTag raw of
+  Nothing -> Left $ show raw ++ " is not a language tag; try eg de, fr or pt-BR"
+  Just "en" -> Left "English is hledger's own language, and has no catalog"
+  Just tag -> Right $ fromMaybe (tag, False, TE.encodeUtf8 $ newCatalog tag) $ do
+    b <- resolveLang (map fst builtinCatalogSources) [tag]
+    (\c -> (b, True, c)) <$> lookup b builtinCatalogSources
+  where
+    -- the template, with its header filled in as a translator tool would
+    newCatalog tag =
+        T.replace "# Translation template for hledger.\n"
+          ("# hledger's " <> tag <> " translations, made from its translation template.\n"
+          <> "# Check the Plural-Forms rule below: see https://hledger.org/TRANSLATING.html\n")
+      . T.replace "#, fuzzy\nmsgid \"\"\n" "msgid \"\"\n"
+      . T.replace "\"Language: \\n\"" ("\"Language: " <> tag <> "\\n\"")
+      . T.replace "\"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\\n\"" "\"Plural-Forms: nplurals=2; plural=(n != 1);\\n\""
+      $ TE.decodeUtf8With lenientDecode catalogTemplate
+
+-- | Write the catalog to start translating a language from (see
+-- 'startingCatalog') into 'translationsOverrideDir', where --lang will find
+-- it, returning its path, tag and whether it is a built-in catalog.
+-- If the user has a catalog for that language already, it is left alone
+-- and an error message returned.
+writeStartingCatalog :: Text -> IO (Either String (FilePath, Text, Bool))
+writeStartingCatalog raw = case startingCatalog raw of
+  Left e -> return $ Left e
+  Right (tag, builtin, content) -> do
+    dir <- translationsOverrideDir
+    let path = dir </> T.unpack tag <> ".po"
+    existing <- lookup tag <$> overrideCatalogFiles
+    case existing of
+      Just f -> return $ Left $ f ++ " exists already; to start afresh, move it aside first"
+      Nothing -> do
+        createDirectoryIfMissing True dir
+        BS.writeFile path content
+        return $ Right (path, tag, builtin)
 
 -- | The largest user catalog we will read.
 maxCatalogSize :: Integer
@@ -853,6 +904,19 @@ tests_I18n = testGroup "I18n" [
 
   ,testCase "built-in catalogs" $
      mapM_ checkBuiltin builtinCatalogSources
+
+  ,testCase "startingCatalog" $ do
+     let tagOf = fmap (\(t, b, _) -> (t, b)) . startingCatalog
+     tagOf "de-AT" @?= Right ("de", True)
+     tagOf "fr_FR" @?= Right ("fr-FR", False)
+     assertBool "en" $ isLeft $ startingCatalog "en"
+     assertBool "not a tag" $ isLeft $ startingCatalog "x"
+     -- a new language's catalog, made from the template, is usable as it is
+     case startingCatalog "fr" of
+       Right (_, _, bs) -> do
+         t <- either assertFailure return $ parsePo "fr" "fr" $ TE.decodeUtf8With lenientDecode bs
+         assertBool "plural rule" $ isJust $ trPluralForms t
+       Left e -> assertFailure e
   ]
   where
     checkBuiltin (lang, bs) = do

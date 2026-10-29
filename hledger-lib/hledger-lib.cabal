@@ -38,6 +38,7 @@ tested-with:
 extra-source-files:
     CHANGES.md
     README.md
+    locale/hledger.pot
     locale/de.po
     locale/es.po
     locale/ru.po
