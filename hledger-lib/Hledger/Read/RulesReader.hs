@@ -277,7 +277,7 @@ readRulesFileWith iopts rulesfile postprocess = do
     ) $ mdatafile
   let
     -- Show a source command on stderr, saying which rules file it's from.
-    logCommand verb c = hPutStrLn stderr $ takeFileName rulesfile <> ": " <> verb <> " " <> datacmddesc <> ": " <> c
+    logCommand c = hPutStrLn stderr $ takeFileName rulesfile <> ": running source command: " <> c
   cleandata <- dbg1With (\t -> "read "++(show $ length $ T.lines t)++" lines") <$> case (mpat, mexistingdatafile, mcmd) of
 
     -- file pattern, but no file found
@@ -285,22 +285,20 @@ readRulesFileWith iopts rulesfile postprocess = do
       return ""
 
     -- file found, and maybe a data cleaning command
-    -- (run even in a dry run import; it should be a pure filter, and is needed to preview the data)
     (_, Just f,  mc) -> do  -- trace "file found" $
       mencoding <- rulesEncoding rulesfile rules
       liftIO $ do
         raw <- openFileOrStdin f >>= hGetContentsPortably mencoding
-        maybe (return raw) (\c -> logCommand "running" c >> runCommandAsFilter rulesfile c raw) mc
+        maybe (return raw) (\c -> logCommand c >> runCommandAsFilter rulesfile c raw) mc
 
     -- no file pattern, but a data generating command
-    -- (not run in a dry run import, since it may fetch from the network or change things)
-    (Nothing, _, Just cmd)
-      | dryrun -> liftIO $ logCommand "would run" cmd >> return ""
-      | otherwise ->
-        liftIO $
-          (logCommand "running" cmd >> runCommand rulesfile cmd)
-          -- if it fails, warn and carry on
-          `catchAny` (\e -> warn (show e) $ return "")
+    -- (run even in a dry run import, which needs the data to preview it;
+    -- hledger can't tell whether the command is safe to repeat)
+    (Nothing, _, Just cmd) ->
+      liftIO $
+        (logCommand cmd >> runCommand rulesfile cmd)
+        -- if it fails, warn and carry on
+        `catchAny` (\e -> warn (show e) $ return "")
 
     -- neither a file pattern nor a data generating command
     (Nothing, _, Nothing) -> -- trace "no file pattern or data generating command" $

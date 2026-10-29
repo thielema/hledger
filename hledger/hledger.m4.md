@@ -3334,12 +3334,11 @@ If the command produces error output, but exits successfully, hledger will show 
 If a data cleaning command fails, hledger will fail and show the error output in the error message.
 If a data generating command fails, hledger will show the error as a warning and continue, treating this as if no data was found.
 
-`import --dry-run` does not run data generating commands, since they may fetch from the network or have other effects;
-it just shows the command it would run, and treats that source as having no data.
-Data cleaning commands do still run in a dry run, since they are needed to preview the data;
-so they should be pure filters, which only read their input and write their output.
-If you want a dry run to preview fetched data, fetch it beforehand (eg with the [get](#get) command's `getdata` script)
-and use a file pattern to read it.
+These commands run in an `import --dry-run` too, since their output is needed to preview the data.
+So they should be safe to run repeatedly: a data cleaning command should be a pure filter,
+and a data generating command should not consume or change anything that the real import will need.
+A fetch that isn't safe to repeat belongs in the [get](#get) command's `getdata` script instead
+(which `get --dry-run` and `import --dry-run -g` don't run), with a file pattern to read its output.
 
 ### `archive`
 
