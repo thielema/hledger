@@ -2316,8 +2316,8 @@ msgid "prepend not: to negate a search term"
 msgstr "поставьте not: в начало, чтобы инвертировать условие поиска"
 
 #: hledger-web/templates/default-layout.hamlet
-msgid "match with a boolean query (and, or, not, ()"
-msgstr ""
+msgid "match with a boolean query (and, or, not, ())"
+msgstr "найти с помощью логического выражения (and, or, not, ())"
 
 #: hledger-web/templates/default-layout.hamlet
 msgid "match transactions where any posting matches"
@@ -2532,9 +2532,6 @@ msgstr "Все"
 
 #~ msgid "match account types"
 #~ msgstr "найти типы счетов"
-
-#~ msgid "match with a boolean query (and, or, not, (..))"
-#~ msgstr "найти с помощью логического выражения (and, or, not, (..))"
 
 #~ msgid "clip account names at this depth"
 #~ msgstr "обрезать названия счетов до этой глубины"

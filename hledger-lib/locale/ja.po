@@ -2214,8 +2214,8 @@ msgid "prepend not: to negate a search term"
 msgstr "検索語の前に not: を付けると否定になります"
 
 #: hledger-web/templates/default-layout.hamlet
-msgid "match with a boolean query (and, or, not, ()"
-msgstr "論理式のクエリで一致 (and, or, not, ()"
+msgid "match with a boolean query (and, or, not, ())"
+msgstr "論理式のクエリで一致 (and, or, not, ())"
 
 #: hledger-web/templates/default-layout.hamlet
 msgid "match transactions where any posting matches"

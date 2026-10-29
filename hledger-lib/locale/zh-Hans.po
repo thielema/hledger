@@ -2309,8 +2309,8 @@ msgid "prepend not: to negate a search term"
 msgstr "在搜索词前加上 not：用于否定该搜索词"
 
 #: hledger-web/templates/default-layout.hamlet
-msgid "match with a boolean query (and, or, not, ()"
-msgstr ""
+msgid "match with a boolean query (and, or, not, ())"
+msgstr "与布尔查询（and、or、not、()）匹配"
 
 #: hledger-web/templates/default-layout.hamlet
 msgid "match transactions where any posting matches"
@@ -2515,9 +2515,6 @@ msgstr "全部"
 
 #~ msgid "match account types"
 #~ msgstr "匹配账户类型"
-
-#~ msgid "match with a boolean query (and, or, not, (..))"
-#~ msgstr "与布尔查询（and、or、not、(..)）匹配"
 
 #~ msgid "clip account names at this depth"
 #~ msgstr "在此层级截断账户名称"

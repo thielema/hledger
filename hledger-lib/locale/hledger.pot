@@ -2215,7 +2215,7 @@ msgid "prepend not: to negate a search term"
 msgstr ""
 
 #: hledger-web/templates/default-layout.hamlet
-msgid "match with a boolean query (and, or, not, ()"
+msgid "match with a boolean query (and, or, not, ())"
 msgstr ""
 
 #: hledger-web/templates/default-layout.hamlet

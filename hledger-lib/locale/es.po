@@ -2318,8 +2318,8 @@ msgid "prepend not: to negate a search term"
 msgstr "anteponer not: para negar un término de búsqueda"
 
 #: hledger-web/templates/default-layout.hamlet
-msgid "match with a boolean query (and, or, not, ()"
-msgstr ""
+msgid "match with a boolean query (and, or, not, ())"
+msgstr "buscar con una consulta booleana (and, or, not, ())"
 
 #: hledger-web/templates/default-layout.hamlet
 msgid "match transactions where any posting matches"
@@ -2536,9 +2536,6 @@ msgstr "Todos"
 
 #~ msgid "match account types"
 #~ msgstr "buscar por tipo de cuenta"
-
-#~ msgid "match with a boolean query (and, or, not, (..))"
-#~ msgstr "buscar con una consulta booleana (and, or, not, (..))"
 
 #~ msgid "clip account names at this depth"
 #~ msgstr "recortar los nombres de cuenta a esta profundidad"
