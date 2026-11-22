@@ -155,6 +155,7 @@ getBalanceR = do
                   (tr trs "Shift-click selects several commodities.") j ] ++
               [ depthLinks trs BalanceR pageParams qparam deepest | deepest > 1 ] ++
               [ paramLinks listParam trs BalanceR (qParams ++ pageParams) (accountlistmode_ roptsOrig) (accountlistmode_ ropts)
+              , paramLinks layoutParam trs BalanceR (qParams ++ pageParams) (layout_ roptsOrig) (layout_ ropts)
               , amountLinks trs BalanceR (qParams ++ removeAttributes ["value"] pageParams) (amountModeOf roptsOrig) (amountModeOf ropts)
               , pricesLinks trs BalanceR (qParams ++ removeAttributes ["infer"] pageParams) (infer_prices_ ropts)
               , zeroBalanceLinks trs BalanceR (qParams ++ removeAttributes ["empty"] pageParams) (empty_ roptsOrig) hideEmpty ] ++

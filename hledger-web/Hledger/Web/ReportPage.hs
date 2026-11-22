@@ -23,6 +23,7 @@ module Hledger.Web.ReportPage (
   readParam,
   accumParam,
   calcParam,
+  layoutParam,
   listParam,
   sortParam,
   optionsSummary,
@@ -117,6 +118,7 @@ reportParams rspecOrig qparam q qopts hideEmpty params = do
     Just t  -> either (Left . BadInterval . errorBundlePretty) Right $ parseInterval t
   rpAccum <- readParam accumParam (param $ paramName accumParam)
   rpValue <- parseValue (param "value")
+  rpLayout <- readParam layoutParam (param $ paramName layoutParam)
   mlist   <- readParam listParam (param $ paramName listParam)
   total   <- parseFlag "total" (param "total")
   avg     <- parseFlag "avg" (param "avg")
@@ -135,7 +137,8 @@ reportParams rspecOrig qparam q qopts hideEmpty params = do
           date2_ = date2_ roptsOrig || dat2,
           infer_prices_ = infer_prices_ roptsOrig || infer,
           querystring_ = filter (not . T.null) (Query.words'' queryprefixes qparam),
-          interval_ = rpInterval
+          interval_ = rpInterval,
+          layout_ = fromMaybe (layout_ roptsOrig) rpLayout
         }
       tree = fromMaybe (accountlistmode_ roptsOrig) mlist == ALTree
   -- The combinations the command line rejects too, judged on the
@@ -200,6 +203,7 @@ startupUrlState rspec@ReportSpec{_rsReportOpts = ropts} = (params, rspec')
       paramSettings accumParam PerPeriod (balanceaccum_ ropts) ++
       [("value", valueWord m) | Just m <- [amountModeOf ropts], m /= AsRecorded] ++
       paramSettings listParam ALFlat (accountlistmode_ ropts) ++
+      paramSettings layoutParam (LayoutWide Nothing) (layout_ ropts) ++
       [("total", "1")         | row_total_ ropts] ++
       [("avg", "1")           | average_ ropts] ++
       paramSettings sortParam False (sort_amount_ ropts) ++
@@ -369,6 +373,24 @@ calcParam = Param
       _                 -> ("", "")
   }
 
+layoutParam :: Param Layout
+layoutParam = Param
+  { paramName  = "layout"
+  , paramModes = [LayoutWide Nothing, LayoutTall, LayoutBare, LayoutBareWide]
+  , paramWord  = \case
+      LayoutWide _   -> "wide"
+      LayoutTall     -> "tall"
+      LayoutBare     -> "bare"
+      LayoutBareWide -> "barewide"
+  -- TRANSLATORS: the label before a report's layout links, and the links' text and tooltips.
+  , paramRowLabel = \trs -> tr trs "Layout:"
+  , paramLabel = \trs -> \case
+      LayoutWide _   -> (trc trs "layout" "Wide"     , tr trs "Show report with wide layout (--layout=wide)")
+      LayoutTall     -> (trc trs "layout" "Tall"     , tr trs "Show report with tall layout (--layout=tall)")
+      LayoutBare     -> (trc trs "layout" "Bare"     , tr trs "Show report with bare layout (--layout=bare)")
+      LayoutBareWide -> (trc trs "layout" "Bare-Wide", tr trs "Show report with bare-wide layout (--layout=bare-wide)")
+  }
+
 -- | The list parameter: show accounts as a flat list or a tree; absent
 -- for the page's default, the startup one. The t key toggles them
 -- (hledger.js).
@@ -439,6 +461,7 @@ optionsSummary trs deepest = mapMaybe phrase . sortOn (rowOrder . fst)
       ("value", "cost")   -> Just $ trc trs "amounts" "Cost"
       ("value", _)        -> Just $ trc trs "amounts" "Value"
       (k, w) | k == paramName listParam -> paramPhrase listParam trs w
+      (k, w) | k == paramName layoutParam -> paramPhrase layoutParam trs w
       (k, w) | k == paramName sortParam -> paramPhrase sortParam trs w
       ("pct", "1")        -> Just $ tr trs "Percentages"
       (k, w) | k == paramName calcParam -> paramPhrase calcParam trs w
